@@ -19,6 +19,14 @@ In which we define for people how we write out the BOLD time series properties.
 
 We need to choose the HRF model as part of this.  Also the TR so the timing makes sense.
 
+We also need to choose a noise model.  We might use Gaussian, or we might use Poisson.
+
+## PRF model
+
+We start with estimates of the either linear, circular PRF model.  We will quickly move to the CSS circular model (adds the exponent).  And then to the CSS with a potentially elliptical shape model.
+
+We will be able to evaluate the models by creating repeats of the same model with different noise samples.  So we fit on one set of data with two different models, and then we compare on a new batch of data with different noise samples which model fits better.  The usual cross-validation approach.
+
 # Data sharing
 
 We aren't yet sure where we will post these data.  Probably in Flywheel, but we may also put them on the Stanford Digital repository or somewhere else.
