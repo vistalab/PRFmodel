@@ -1,0 +1,76 @@
+{
+	"inputs": {
+		"nifti": {
+			"base": "file",
+			"location": {
+				"path": "/flywheel/v0/input/dicom/DTI 2mm 30dir 2x b1000.zip",
+				"name": "DTI 2mm 30dir 2x b1000.zip"
+			},
+			"object": {
+				"classification": {
+					"Intent": [
+						"Structural"
+					],
+					"Measurement": [
+						"Diffusion"
+					]
+				},
+				"info": {
+					"protocol": "Something"
+				},
+				"modality": "MR"
+			}
+		},
+		"Stimuli": {
+			"images": {
+				"base": "file",
+				"location": {
+					"path": "/Users/glerma/soft/PRF/local/inputs/Stimuli/images_knk_fliplr.mat",
+					"name": "images_knk_fliplr.mat"
+				},
+				"object": {
+					"classification": {
+						"Intent": [
+							"PrfImages"
+						],
+						"Measurement": [
+							"Images"
+						]
+					},
+					"info": {
+						"protocol": "Something"
+					},
+					"modality": "MR"
+				}
+		
+		},
+		"params": {
+			"base": "file",
+			"location": {
+				"path": "/Users/glerma/soft/PRF/local/inputs/Stimuli/params_knkfull_multibar_blank.mat",
+				"name": "params_knkfull_multibar_blank.mat"
+			},
+			"object": {
+				"classification": {
+					"Intent": [
+						"PrfImages"
+					],
+					"Measurement": [
+						"Images"
+					]
+				},
+				"info": {
+					"protocol": "Something"
+				},
+				"modality": "MR"
+			}
+		}
+      }
+	},
+	"config": {
+		"TR": 2,
+        "rescaleStimuliImages":true,
+		"imageSideSize": 100,
+		"ignore_series_descrip": false
+	}
+}
