@@ -7,26 +7,40 @@ We expect to produce increasing complex simulations of the bold time series, add
 
 In which we define for people how we write the stimulus
 
-We start with some existing stimuli.
+We start with existing stimuli from experiments we have run.
 
-Then, we create new stimuli (aperture with contrast stimuli carriers) and just the aperture (binary version with 1 for contrast and 0 elsewhere). This will let us have bars of different widths, off-times, and other parameters. We also expect rings and wedges, and we expect the KK style of put the image here and there.
+Then, we write code to create new stimuli, saving (a) the aperture with contrast stimuli carriers and (b) just the aperture (binary version with 1 for contrast and 0 elsewhere). This will let us explore the impact of bars of different widths, on/off-times, and other stimulus selection parameters. 
 
-We will probably try to do it with vistadisp in the long run.
+We also expect to implement rings and wedges, and we expect the KK style stimuli.
+
+We will probably create these stimuli using some combination of vistadisp and the KK methods, but hopefully we can do most of it in vistadisp and stay with the vistasoft programmatic effort.  KK has many special and redundant routines.
 
 ## BOLD Time series
 
-In which we define for people how we write out the BOLD time series properties.
+To write out the BOLD time series properties, we need to make some choices.
 
-We need to choose the HRF model as part of this.  Also the TR so the timing makes sense.
+We need to choose the HRF model.  We need to choose the TR so the impact of stimulus and MR acquisition timing makes sense.
 
 We also need to choose a noise model.  We might use Gaussian, or we might use Poisson.
 
+We might incorporate the possibility that the pRF is jittered slightly over time, accounting for eye movements.
+
 ## PRF model
 
-We start with estimates of the either linear, circular PRF model.  We will quickly move to the CSS circular model (adds the exponent).  And then to the CSS with a potentially elliptical shape model.
+We start with estimates of the linear, circular PRF model.  
 
-We will be able to evaluate the models by creating repeats of the same model with different noise samples.  So we fit on one set of data with two different models, and then we compare on a new batch of data with different noise samples which model fits better.  The usual cross-validation approach.
+Then we will move to the CSS circular model (adds the exponent).  And then to the CSS with a potentially elliptical shape model.  
+
+Finally, we expect to go all the way to SOC models that account for the carrier (contrast), not just the aperture.
+
+We will evaluate the models by creating repeats of the same model with different noise samples.  We fit  one set of data with two different models, and we compare on a new batch of synthetic data with different noise samples. This is the usual cross-validation approach.
 
 # Data sharing
 
-We aren't yet sure where we will post these data.  Probably in Flywheel, but we may also put them on the Stanford Digital repository or somewhere else.
+We aren't yet sure where we will post these data and the algorithms.
+
+Probably in Flywheel as data and Gears.
+
+We may also put them on the Stanford Digital repository and Dockerhub.
+
+
