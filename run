@@ -1,0 +1,83 @@
+#! /bin/bash
+#
+#
+
+CONTAINER="[scitran/dwi-split-shells]"
+echo -e "$CONTAINER  Initiated"
+
+
+# Built to flywheel-v0 spec.
+FLYWHEEL_BASE=/flywheel/v0
+MCR_ROOT=/opt/mcr/v93/
+OUTPUT_DIR=$FLYWHEEL_BASE/output
+
+
+# Make sure that /output directory exists
+if [[ ! -d "$OUTPUT_DIR" ]]
+    then
+        echo "$CONTAINER  $OUTPUT_DIR not found!"
+        exit 1
+fi
+
+
+# Set paths to input files
+bvecFile=$(find $FLYWHEEL_BASE/input/bvec/ -type f -name "*.bvec*")
+bvalFile=$(find $FLYWHEEL_BASE/input/bval/ -type f -name "*.bval*")
+dwiFile=$(find $FLYWHEEL_BASE/input/dwi/ -type f -name "*.nii*")
+CONFIG_FILE=${FLYWHEEL_BASE}/input/config.json
+
+# Check for required inputs
+if [[ -z "$bvecFile" ]] ||  [[ -z "$bvalFile" ]] || [[ -z "$dwiFile" ]]; then
+  echo -e "$CONTAINER  One or more input files were not found! Exiting!"
+  exit 1
+fi
+
+
+# Parse Config File
+if [[ -f $CONFIG_FILE ]]; then
+  # Parse config from config.json
+  echo -e "$CONTAINER  Loading configuration from ${CONFIG_FILE}"
+  doNorm=$(cat $CONFIG_FILE | jq -r '.config.doNorm')
+  echo "$CONTAINER  BVALUE normalization has been set to $doNorm"
+else
+  # Parse defaults from the manifest.json
+  CONFIG_FILE=$FLYWHEEL_BASE/manifest.json
+  echo -e "$CONTAINER  Loading defaults from ${CONFIG_FILE}"
+  doNorm=$(cat $CONFIG_FILE | jq -r '.config.doNorm.default')
+  echo "$CONTAINER  BVALUE normalization has been set to $doNorm"
+fi
+
+
+# Run the Matlab executable
+time /msa/run_dwisplitshells.sh "${MCR_ROOT}" "${bvecFile}" "${bvalFile}" "${dwiFile}" "${doNorm}"  "${OUTPUT_DIR}"
+
+
+# Check exit status
+exit_status=$?
+if [[ $exit_status != 0 ]]; then
+  echo -e "$CONTAINER  An error occurred during execution of the Matlab executable. Exiting!"
+  exit 1
+fi
+
+
+# Get a list of the files in the output directory
+outputs=$(find $OUTPUT_DIR/* -maxdepth 0 -type f)
+
+
+# If outputs exist, generate metadata, and exit
+if [[ -z $outputs ]]; then
+  echo "$CONTAINER  No results found in output directory... Exiting"
+  exit 1
+else
+  cd $OUTPUT_DIR
+  echo -e "$CONTAINER  Wrote: `ls`"
+  echo -e "$CONTAINER  Done!"
+fi
+
+
+# Handle permissions of the outputs
+chmod -R 777 $OUTPUT_DIR
+
+
+# Exit
+exit 0

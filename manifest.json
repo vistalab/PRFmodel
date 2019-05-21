@@ -1,0 +1,51 @@
+{
+  "name": "dwi-split-shells",
+  "label": "SCITRAN: DWI Split Shells",
+  "description": "Extract individual diffusion shells from multi-shell DWI data. Output includes a NIfTI, BVEC, and BVAL file for each diffusion shell found in the data. By default this gear will normalize the bvalues (e.g., b=998 will become b=1000).",
+  "author": "GLU <glerma@stanford.edu>",
+  "maintainer": "GLU <glerma@stanford.edu>",
+  "url": "https://github.com/scitran-apps/dwi-split-shells",
+  "source": "https://github.com/scitran-apps/dwi-split-shells",
+  "license": "MIT",
+  "flywheel": "0",
+  "version": "2.0.0",
+  "custom": {
+    "docker-image": "scitran/dwi-split-shells:2.0.0"
+  },
+  "config": {
+    "doNorm": {
+      "default": true,
+      "type": "boolean",
+      "description": "Normalize the bValues. (true/false, default=true)"
+    }
+  },
+  "inputs": {
+    "bval": {
+      "base": "file",
+      "description": "Multi-Shell BVAL text file.",
+      "type": {
+        "enum": [
+          "bval"
+        ]
+      }
+    },
+    "bvec": {
+      "base": "file",
+      "description": "Multi-Shell BVAL text file.",
+      "type": {
+        "enum": [
+          "bvec"
+        ]
+      }
+    },
+    "dwi": {
+      "base": "file",
+      "description": "Multi-Shell DWI NIfTI file.",
+      "type": {
+        "enum": [
+          "nifti"
+        ]
+      }
+    }
+  }
+}
