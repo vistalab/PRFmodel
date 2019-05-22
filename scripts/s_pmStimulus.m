@@ -10,3 +10,4 @@
 % Here is the moving bar stimulus that contains a checkerboard.
 %
 %?????
+
