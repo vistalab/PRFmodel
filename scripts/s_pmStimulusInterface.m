@@ -14,6 +14,10 @@ load(words,'images');
 masks = fullfile(pmRootPath,'data','images','maskimages.mat');
 load(masks,'maskimages');
 
+% loads the variable spatialoverlay
+fixation = fullfile(pmRootPath,'data','images','fixationgrid.mat');
+a1 = load(fixation);
+
 %% end modification section 
 
 % background color
@@ -26,13 +30,13 @@ fixationGrid = 1;
 triggerkey = 's';          
 
 % full path of image matrix
-pathImages = fullfile(prfModelPath,wordsDir,imagesName);
+% pathImages = fullfile(prfModelPath,wordsDir,imagesName);
 
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 expnum      = 103;
 runnum      = 3; 
-pathMasks = fullfile('./', 'maskimages.mat');
+% pathMasks = fullfile('./', 'maskimages.mat');
 
 % how many frames we want a refresh to last. default: 15. previously: 4. 
 % the lower the faster
@@ -40,7 +44,7 @@ frameduration = 4;
 
 % directories
 % path to directory that contains the stimulus .mat files
-stimulusdir = fullfile('./');
+% stimulusdir = fullfile('./');
 
 %tweaking (in the cni)
 dres    = -.9;              % <dres> (optional) is
@@ -101,8 +105,6 @@ ptonparams = {ptres,[],0};
 iscolor = 1;
 soafun = @() round(meanchange*(60/frameduration) + changeplusminus*(2*(rand-.5))*(60/frameduration));
 
-% load specialoverlay
-a1 = load(fullfile(stimulusdir,'fixationgrid.mat'));
 % assign depending on whether or not we want fixation grid
 if fixationGrid
     g = a1.specialoverlay;
@@ -112,14 +114,15 @@ else
     gridImage = [];
 end
 
-
 % some prep
 if ~exist('images','var')
   images = [];
   maskimages = [];
 end
 % filename = sprintf('%s_subj%d_run%02d_exp%02d.mat',gettimestring,subID,runnum,expnum);
-filename = sprintf('%s_subj%s_run%i_exp%i.mat',gettimestring,subID,runnum,expnum)
+filename = sprintf('%s_subj%s_run%i_exp%i.mat',gettimestring,subID,runnum,expnum);
+
+stimulusdir = '';
 
 [images,maskimages] = ...
   showmulticlass(filename,offset,movieflip,frameduration,fixationinfo,...
@@ -127,8 +130,6 @@ filename = sprintf('%s_subj%s_run%i_exp%i.mat',gettimestring,subID,runnum,expnum
                  ptonparams,soafun,0,images,expnum,[],grayval,iscolor,...
                  [],[],[],dres,triggerkey, ...
                  [],trialparams,[],maskimages,gridImage,stimulusdir);  
-
-
 
 % template version
 % function [images,maskimages] = showmulticlass(outfile,offset,movieflip,frameduration,fixationinfo,fixationsize, ...
