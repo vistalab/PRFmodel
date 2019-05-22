@@ -18,7 +18,8 @@ load(masks,'maskimages');
 fixation = fullfile(pmRootPath,'data','images','fixationgrid.mat');
 a1 = load(fixation);
 
-%% end modification section 
+% provide the dir with the simuli, log is written here. 
+stimulusdir = fullfile(pmRootPath,'data');
 
 % background color
 grayval = uint8(127); 
@@ -33,7 +34,7 @@ triggerkey = 's';
 % pathImages = fullfile(prfModelPath,wordsDir,imagesName);
 
 
-%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 expnum      = 103;
 runnum      = 3; 
 % pathMasks = fullfile('./', 'maskimages.mat');
@@ -122,25 +123,77 @@ end
 % filename = sprintf('%s_subj%d_run%02d_exp%02d.mat',gettimestring,subID,runnum,expnum);
 filename = sprintf('%s_subj%s_run%i_exp%i.mat',gettimestring,subID,runnum,expnum);
 
-stimulusdir = '';
 
-[images,maskimages] = ...
-  showmulticlass(filename,offset,movieflip,frameduration,fixationinfo,...
+
+[images,maskimages,frameorder] = ...
+  pmShowmulticlass(filename,offset,movieflip,frameduration,fixationinfo,...
                  fixationsize,tfun, ...
                  ptonparams,soafun,0,images,expnum,[],grayval,iscolor,...
                  [],[],[],dres,triggerkey, ...
                  [],trialparams,[],maskimages,gridImage,stimulusdir);  
+             
+             
+% Write .avi for visualization
+% Read the mask images (the apertures, they saw words inside the apertures)
 
-% template version
-% function [images,maskimages] = showmulticlass(outfile,offset,movieflip,frameduration,fixationinfo,fixationsize, ...
-%   triggerfun,ptonparams,soafun,skiptrials,images,setnum,isseq,grayval,iscolor, ...
-%   numrep,con,existingfile,dres,triggerkey,framefiles,trialparams,eyelinkfile,maskimages,specialoverlay, ...
-%   stimulusdir)
-%%%%%%s%%%%%%%%%%%%%%%%%%%%
+%     params{ns}.scanDuration = 300;
+%     params{ns}.totalScans   = 165;
+%     params{ns}.tr           = 1.82;
+%     config{ns}.config.rescaleStimuliImages = true;
+%     config{ns}.config.imageSideSize = 100;  
+    
+    
 
-% KK notes:
-% - remove performance check at end
-% - remove resampling and viewingdistance stuff
-% - remove hresgrid and vresgrid stuff
-% - hardcode grid and pregenerate
-% - trialparams became an internal constant
+    % This is what has been shown
+    ImgRefs  = frameorder(1,:);
+    maskRefs = frameorder(2,:);
+    
+    
+       
+    % Create the new trAdjImages stimuli set
+    % Images
+    trAdjImages = zeros([size(images,1),size(images,2),size(ImgRefs,2)]);
+    trAdjImages(:,:,ImgRefs~=0) = images(:,:,ImgRefs(ImgRefs~=0));
+    % Masks
+    trAdjMaskImages = zeros([size(maskimages,1),size(maskimages,2),size(maskRefs,2)]);
+    trAdjMaskImages(:,:,maskRefs~=0) = maskimages(:,:,maskRefs(maskRefs~=0));
+    
+    
+    % If working only with masks maybe we want to resize and binarize
+    wantResize = 0
+    if wantResize
+        temp = zeros(config{ns}.config.imageSideSize, config{ns}.config.imageSideSize, size(stimFileBcbl,3));
+        for p=1:size(trAdjImages{ns}, 3)
+            temp(:,:,p) = imresize(trAdjImages{ns}(:,:,p),[config{ns}.config.imageSideSize config{ns}.config.imageSideSize],'cubic');
+        end
+        trAdjImages{ns} = temp;
+
+        % ensure that all values are between 0 and 1
+        trAdjImages{ns}(trAdjImages{ns} < 0) = 0;
+        trAdjImages{ns}(trAdjImages{ns} > 1) = 1;
+    end
+    
+
+% We can just work with masks or create the final stimuli multplying the mask
+% with the actual images
+stim = trAdjImages .* trAdjMaskImages;
+% Check:
+% figure(6);image(stim(:,:,1000));colormap gray;axis equal tight off;
+
+% TODO: 
+% flip the images so that the words read well
+
+% Prepare the new file.
+vidObj = VideoWriter(fullfile(pmRootPath,'local','stimuliFlip.avi'));
+open(vidObj);
+% Create an animation.
+axis equal tight off
+set(gca,'nextplot','replacechildren');
+for k = 1:size(stim,3)
+    image(flip(stim(:,:,k))); colormap gray;
+   % Write each frame to the file.
+   currFrame = getframe(gcf);
+   writeVideo(vidObj,currFrame);
+end
+% Close the file.
+close(vidObj);

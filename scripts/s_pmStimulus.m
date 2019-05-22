@@ -3,11 +3,14 @@
 % Experimenting with stimulus generation
 %
 % Path needs:
-%    vistadisp
+%    -----  vistadisp
 %    vistasoft
-%    psychtoolbox    
+%    ------ psychtoolbox    
 %
 % Here is the moving bar stimulus that contains a checkerboard.
 %
-%?????
+% ?????
+
+
+
 
