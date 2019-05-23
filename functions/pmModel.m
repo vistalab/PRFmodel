@@ -1,3 +1,16 @@
+% Read cached stimuli
+clear all; close all; clc; 
+load(fullfile(pmRootPath,'data','Exp103_onlyMask_Downsampled_Resized.mat'))
+
+% Working with mask only, make sure the stim is binarized
+% Make decision regarding binarization, color use, etc. and add them to s_pmStimulusInterface.m
+nstim = stim - min(stim(:));
+nstim = nstim ./ max(nstim(:));
+stim = imbinarize(nstim,.5);
+mrvNewGraphWin; imagesc(stim(:,:,66)); colormap gray; axis equal tight off;
+
+
+
 
 % Define variables that will be looped afterwards
 fieldRange = 20;  % Deg
