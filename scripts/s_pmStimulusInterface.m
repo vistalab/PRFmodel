@@ -6,15 +6,20 @@ expnum         = 103;  % See "doc pmShowmulticlass" for explanation of alternati
 % Select if only mask or mask and images are required
 onlyMasks      = true;
 % To visualize a sample of the stimuli in each step, set to true
-checkImages    = true;
+checkImages    = false;
 % To downsample to the same number of volume images
 wantDownsample = true;
 % To resize the images to 100x100 for example
 wantResize     = true;
 imageSideSize  = 100;
+% To save stim file:
+saveStimMat    = true;
+fileName       = 'Exp103_onlyMask_Downsampled_Resized';
+matFileName    = [fileName '.mat'];
+
 % To write a video file with the stimuli
 createVideo    = true;
-videoFileName  = 'downSampledScaledJustMask_Exp103.avi';
+videoFileName  = [fileName '.avi'];
 
 % directory where we have the spanish word matrices
 words  = fullfile(pmRootPath,'data','words','spanish.mat');
@@ -155,6 +160,11 @@ if wantResize
 end
 if checkImages
     figure(4); image(stim(:,:,66)); colormap gray; axis equal tight off;
+end
+
+
+if saveStimMat
+    save(fullfile(pmRootPath,'data',matFileName), 'stim');
 end
 
 
