@@ -54,14 +54,13 @@ sigma = 1;      % Deg
 
 % Orientation
 theta = pi/4;   % Radians
-sigmaMajor = 1;
-sigmaMinor = 1;
+sigmaMajor = 4;
+sigmaMinor = 4;
 
 RF = rfGaussian2d(X,Y,sigmaMajor,sigmaMinor,theta, x0,y0);
 % mesh(x,y,RF)
 
-%% BOLD signal
-
+% BOLD signal
 % Predicted prf response
 timeSeries = zeros(1,tSamples);
 for tt = 1:tSamples
@@ -99,8 +98,7 @@ sigmaMinor = 4;
 RF = rfGaussian2d(X,Y,sigmaMajor,sigmaMinor,theta, x0,y0);
 % mesh(x,y,RF)
 
-%% BOLD signal
-
+% BOLD signal
 % Predicted prf response
 timeSeries = zeros(1,tSamples);
 for tt = 1:tSamples
@@ -114,14 +112,55 @@ for tt = 1:tSamples
 end
 
 predictedTS = conv(timeSeries,HRF,'same');
+
+
+% Apply different noise models
+scaleNoise = 0.5;  % Multiplies the mean signal value
+predictedTS = pmNoiseWhite(predictedTS, scaleNoise);
+
+% Eye motion jitter
+eyeMotionJitter = 1;  % Deg
+
+
+
+% Motion related (translation and rotation)
+
+
+% Cardiac Related
+
+
+% Respiration related
+
+
+
+% Low frequency physiological fluctuations
+
+
+
+% Draining veins
+
+
+% Low frequency drifts
+% (slow head displacements, scanner related (e.g. heating...)
+
+
+% Hardware related instabilities
+
+
+
+
+
+
+
 hold on; 
 plot(predictedTS)
 grid on; xlabel('Time (sec)'); ylabel('Relative amplitude');
 
+
+
+%% MORE HRF stuff
 %{
-
-
-%% MORE HRF stuff:  This is one from the default at the Winawer lab in analyzePRF
+This is one from the default at the Winawer lab in analyzePRF
 testHIRF = getcanonicalhrf(TR,TR);
 mrvNewGraphWin; plot(testHIRF);
 set(gca,'xlim',[0 20]);
