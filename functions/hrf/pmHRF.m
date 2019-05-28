@@ -1,4 +1,4 @@
-function [HRF, tSteps, params] = pmHRF(hrfName, varargin)
+function [HRF, tSteps, params] = getHRF(hrfName, varargin)
 % Create the HRF from different models
 %
 %
