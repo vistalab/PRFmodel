@@ -47,8 +47,8 @@ classdef prfModel
             varargin = mrvParamFormat(varargin);
             
             p = inputParser;
-            p.addParameter('tr',2,@isnumeric);              % Seconds
-            p.addParameter('binarystimulus', [],@isnumeric);    % Binary stimulus
+            p.addParameter('tr',2,@isnumeric);                  % Seconds
+            p.addParameter('values', [],@isnumeric);            % actual values, matrix
             p.addParameter('fieldofviewHorz',[],@isnumeric);    % Deg
             p.addParameter('fieldofviewVert',[],@isnumeric);    % Deg
             p.addParameter('hrfduration'    ,20,@isnumeric);    % Seconds
@@ -72,17 +72,17 @@ classdef prfModel
             % for us.
             pm.stimulus.fieldofviewHorz = p.Results.fieldofviewHorz;
             pm.stimulus.fieldofviewVert = p.Results.fieldofviewVert;
-            pm.stimulus.binary          = p.Results.binarystimulus;
+            pm.stimulus.values          = p.Results.values;
             
             % Obtain the X and Y values
             pm                          = pm.spatialSampleCompute;
             
             %% The receptive field parameters
             
-            pm.RF.center = [0 0];    % Deg
-            pm.RF.theta =   0;       % Radians
-            pm.RF.sigmaMajor = 1;    % deg
-            pm.RF.sigmaMinor = 1;    % deg
+            pm.RF.center     = [0 0];    % Deg
+            pm.RF.theta      = 0;        % Radians
+            pm.RF.sigmaMajor = 1;        % deg
+            pm.RF.sigmaMinor = 1;        % deg
             
             
             %% The predicted BOLD signal

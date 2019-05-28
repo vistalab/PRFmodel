@@ -1,5 +1,4 @@
-%% Wrapper script to generate stimuli
-clear all; close all; clc; 
+%% Wrapper function to generate stimuli
 
 % Select type of experiment
 expnum         = 103;  % See "doc pmShowmulticlass" for explanation of alternatives
@@ -12,13 +11,15 @@ wantDownsample = true;
 % To resize the images to 100x100 for example
 wantResize     = true;
 imageSideSize  = 100;
+% To binarize
+binarize       = true;
 % To save stim file:
 saveStimMat    = true;
-fileName       = 'Exp103_onlyMask_Downsampled_Resized';
+fileName       = 'Exp-103_binary-true_size-100x100';
 matFileName    = [fileName '.mat'];
 
 % To write a video file with the stimuli
-createVideo    = true;
+createVideo    = false;
 videoFileName  = [fileName '.avi'];
 
 % directory where we have the spanish word matrices
@@ -163,10 +164,17 @@ if checkImages
 end
 
 
+if binarize
+    % Normalize to 0>1 and binarize 
+    nstim   = stim - min(stim(:));
+    nstim   = nstim ./ max(nstim(:));
+    % Add it to the pm we just created. 
+    stim    = imbinarize(nstim,.5);
+end
+
 if saveStimMat
     save(fullfile(pmRootPath,'data',matFileName), 'stim');
 end
-
 
 if createVideo
 % Write .avi for visualization
