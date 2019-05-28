@@ -34,6 +34,8 @@ classdef prfModel
         
         noise;     % Struct of BOLD noise properties
         
+        BOLD;      % Struct of the predicted time series and params
+        
     end
     
     %%
@@ -46,43 +48,34 @@ classdef prfModel
             
             p = inputParser;
             p.addParameter('tr',2,@isnumeric);              % Seconds
-            p.addParameter('binarystimulus',[],@isnumeric); % Binary stimulus
-            p.addParameter('fieldofview',[],@isnumeric);    % Binary stimulus
-            p.addParameter('hrfduration',20,@isnumeric);    % Seconds
+            p.addParameter('binarystimulus', [],@isnumeric);    % Binary stimulus
+            p.addParameter('fieldofviewHorz',[],@isnumeric);    % Deg
+            p.addParameter('fieldofviewVert',[],@isnumeric);    % Deg
+            p.addParameter('hrfduration'    ,20,@isnumeric);    % Seconds
             
             p.parse(varargin{:});
             
             %% MR parameters
-            pm.TR  = p.Results.tr;
+            pm.TR         = p.Results.tr;
             
-            
+               
             %% Initialize time steps and HRF
-            pm.HRF.duration          = p.Results.hrfduration;
-            pm.HRF.tSteps = 0:(pm.TR):pm.HRF.duration;   % For now, always to 20 sec
-            pm.HRF.values = pmHRF('friston','time steps',pm.HRF.tSteps);
+            pm.HRF.duration  = p.Results.hrfduration;
+            pm.HRF.tSteps    = 0:(pm.TR):pm.HRF.duration;   % For now, always to 20 sec
+            pm.HRF.modelName = 'friston';
+            pm               = pm.getHRF;
             
             %% The sequence of stimulus images
             
             % We will probably attach the stimulus movie (time series of images)
             % and write a method that converts the movie to the binary stimulus
             % for us.
-            pm.stimulus.fieldofview = p.Results.fieldofview;
-            pm.stimulus.binary      = p.Results.binarystimulus;
+            pm.stimulus.fieldofviewHorz = p.Results.fieldofviewHorz;
+            pm.stimulus.fieldofviewVert = p.Results.fieldofviewVert;
+            pm.stimulus.binary          = p.Results.binarystimulus;
             
-            % Spatial field of view
-            
-            % This will be a derived quantity
-            spatialSample = pm.stimulus.fieldofview/size(pm.stimulus.binary,2);
-            
-            x = (spatialSample:spatialSample:pm.stimulus.fieldofview);
-            x = x - mean(x);
-            % mrvNewGraphWin; plot(x,x); grid on;
-            
-            % Set the spatial sampling parameters
-            y = x;
-            [X,Y] = meshgrid(x,y);
-            pm.stimulus.X = X;
-            pm.stimulus.Y = Y;
+            % Obtain the X and Y values
+            pm                          = pm.spatialSampleCompute;
             
             %% The receptive field parameters
             
@@ -90,6 +83,15 @@ classdef prfModel
             pm.RF.theta =   0;       % Radians
             pm.RF.sigmaMajor = 1;    % deg
             pm.RF.sigmaMinor = 1;    % deg
+            
+            
+            %% The predicted BOLD signal
+            pm.BOLD.timeSeries          = [];
+            pm.BOLD.predicted           = [];
+            
+            %% Noise
+            pm.BOLD.predictedwithNoise  = [];
+            
             
         end
     end
