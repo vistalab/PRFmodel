@@ -24,12 +24,25 @@ function pm = noiseCompute(pm)
 % Hardware related instabilities
 
 
-
+%% Check
+if isempty(pm.BOLD.predicted)
+    error("There are no values in BOLD.predicted where to add noise")
+end
 
 
 %% Calculate
-scaleNoise = 0.5;  % Multiplies the mean signal value
-pm.BOLD.predictedWithNoise = pmNoiseWhite(pm.BOLD.predicted, scaleNoise);
+switch lower(pm.noise.Type)
+    case 'white'
+        if isempty(pm.noise.white_k)
+            scaleNoise = 0.5;  % Multiplies the mean signal value
+        else
+            scaleNoise = pm.noise.white_k;
+        end
+        pm.BOLD.predictedWithNoise = pmNoiseWhite(pm.BOLD.predicted, scaleNoise);
+    otherwise
+        error('Unknown noise type %s\n', pm.noise.Type);
+end
+
 
 
 end

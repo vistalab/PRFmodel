@@ -7,13 +7,19 @@ function pm = timeSeriesCompute(pm)
 
 % BOLD signal
 % Predicted prf response
-tSamples = size(pm.stimulus.binary,3);
+
+% Obtain the values if it is a path
+stimValues     = stimValuesRead(pm.stimulus.values);
+% Obtain number of samples    
+tSamples = size(stimValues,3);
+
+% Initialize timeSeries
 pm.BOLD.timeSeries = zeros(1,tSamples);
 for tt = 1:tSamples
     % This is called the hadamard product.  It is the pointwise
     % multiplication of the RF with the stimulus.  The hadProduct is
     % the same size as the stimulus
-    hadProduct = pm.stimulus.binary(:,:,tt) .* pm.RF.values;
+    hadProduct = stimValues(:,:,tt) .* pm.RF.values;
     
     % Now, we add up all of the hadProduct values
     pm.BOLD.timeSeries(tt) = sum(hadProduct(:));
@@ -25,6 +31,7 @@ end
 pm.BOLD.predicted = conv(pm.BOLD.timeSeries, ...
                          pm.HRF.values, ...
                          'same');
+pm.BOLD.tSamples  = 1:pm.TR:pm.TR*tSamples;
 
 
 end

@@ -1,4 +1,4 @@
-function pm = getHRF(pm)
+function pm = HRFget(pm)
 % Create the HRF from different models
 %
 %
@@ -37,10 +37,16 @@ function pm = getHRF(pm)
 
 %%
 
-switch pm.HRF.modelName
+switch lower(pm.HRF.modelName)
     case 'friston'
-        [HRF, params] = fristonHIRF(pm.HRF.tSteps);
-      
+        if (isempty(pm.HRF.Friston_a) || isempty(pm.HRF.Friston_b) || isempty(pm.HRF.Friston_c))
+            [HRF, params] = fristonHIRF(pm.HRF.tSteps);
+        else
+            params.a = pm.HRF.Friston_a;
+            params.b = pm.HRF.Friston_b;
+            params.c = pm.HRF.Friston_c;
+            HRF      = fristonHIRF(pm.HRF.tSteps, params);
+        end
     otherwise
         error('Unknown HRF type %s\n',hrfName);
         
@@ -48,5 +54,27 @@ end
 
 pm.HRF.params = params;
 pm.HRF.values = HRF;
+
+
+
+%% MORE HRF stuff
+    %{
+    This is one from the default at the Winawer lab in analyzePRF
+    testHIRF = getcanonicalhrf(TR,TR);
+    mrvNewGraphWin; plot(testHIRF);
+    set(gca,'xlim',[0 20]);
+    grid on; xlabel('Time (sec)'); ylabel('Relative amplitude');
+
+    %% Another random one
+
+    TR  = 1;    % Imagine we want the HRF at every TR
+    tSteps = 0:TR/4:20;
+    HRF = fristonHIRF(tSteps,params);
+    mrvNewGraphWin; plot(tSteps,HRF)
+    grid on; xlabel('Time (sec)'); ylabel('Relative amplitude');
+
+    %}
+
+
 
 end

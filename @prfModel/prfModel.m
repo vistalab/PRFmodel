@@ -63,7 +63,10 @@ classdef prfModel
             pm.HRF.duration  = p.Results.hrfduration;
             pm.HRF.tSteps    = 0:(pm.TR):pm.HRF.duration;   % For now, always to 20 sec
             pm.HRF.modelName = 'friston';
-            pm               = pm.getHRF;
+            pm.HRF.Friston_a = [];
+            pm.HRF.Friston_b = [];
+            pm.HRF.Friston_c = [];
+            pm               = pm.HRFget;
             
             %% The sequence of stimulus images
             
@@ -87,10 +90,13 @@ classdef prfModel
             
             %% The predicted BOLD signal
             pm.BOLD.timeSeries          = [];
+            pm.BOLD.tSamples            = [];
             pm.BOLD.predicted           = [];
             
             %% Noise
-            pm.BOLD.predictedwithNoise  = [];
+            pm.noise.Type               = "white";
+            pm.noise.white_k            = 0.5;
+            pm.BOLD.predictedWithNoise  = [];
             
             
         end
