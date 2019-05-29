@@ -14,10 +14,13 @@ function dt = forwardModelCalculate(dt)
 
 
 for ii=1:height(dt)
-    % Do it row to row and parameter to parameter first, for debuging
+    % Do it row to row and parameter to parameter first, for debugging
     
     %% Initialize the basic model with defaults
     pm = dt.pm(ii);
+    
+    %% TR
+    pm.TR = dt.TR(ii);
 
     %% Stimulus
     % If the stimulus have been calculated and exists in /data, load it. 
@@ -50,54 +53,66 @@ for ii=1:height(dt)
     pm.stimulus.values  =  stimNameWithPath;
     
     % Calculate the X and Y values as well. TODO: do it inline...
-    pm = spatialSampleCompute(pm);
+    pm = pm.spatialSampleCompute;
     
     
     %% Receptive field (RF)
-    pm.RF.sigmaMajor = dt.RF.sigMajor;
-    pm.RF.sigmaMinor = dt.RF.sigMinor;
-    pm.RF.theta      = dt.RF.theta;
-    pm.RF.center     = [dt.RF.x0, dt.RF.y0];
+    % Read values from table
+    pm.RF.sigmaMajor = dt.RF.sigMajor(ii);
+    pm.RF.sigmaMinor = dt.RF.sigMinor(ii);
+    pm.RF.theta      = dt.RF.theta(ii);
+    pm.RF.center     = [dt.RF.x0(ii), dt.RF.y0(ii)];
+    % Compute
     pm = pm.rfCompute;
-    % Visualize the receptive field (RF)
-    % pm.plot('receptive field')
 
+    %% Obtain HRF
+    % Read values from table
+    pm.HRF.modelName = dt.HRF.Type(ii);
+    pm.HRF.duration  = dt.HRF.duration(ii);
+    pm.HRF.tSteps    = 0:(pm.TR):pm.HRF.duration; % Calculated
+                   a = dt.HRF.Friston_a(ii,:);
+                   b = dt.HRF.Friston_b(ii,:);
+    pm.HRF.Friston_a = [a(1), a(2)];
+    pm.HRF.Friston_b = [b(1), b(2)];
+    pm.HRF.Friston_c = dt.HRF.Friston_c(ii);
+    % Compute
+    pm               = pm.HRFget;
+    % TODO: Fix the whole parameter thing. Depending on the model we will have
+    % different parameters. The output is creating params now but it shuold
+    % update the parameters if they don't exist. 
+    
     %% Synthetic time series
     % This function performs the Hadamard product between the RF and the stimuli,
     % and then the convolution with the hrf signal. 
-
-    % Use default 20s Friston HRF. Otherwise change it now. 
-    % pm = pm.getHRF('Boynton');  % For example
     pm = pm.timeSeriesCompute;
+    
+    % DEBUGGING
     % Visualize the predicted time series
-    % mrvNewGraphWin; plot(tSteps,HRF)
-    % grid on; xlabel('Time (sec)'); ylabel('Relative amplitude');
-    mrvNewGraphWin('predicted'); plot(pm.BOLD.predicted)
-    grid on; xlabel('Time (sec)'); ylabel('Relative amplitude');
-
-    %% Apply different noise models
-    pm = pm.noiseCompute;
-
-    hold on; 
-    plot(pm.BOLD.predictedWithNoise)
-    grid on; xlabel('Time (sec)'); ylabel('Relative amplitude');
-
-    %% MORE HRF stuff
     %{
-    This is one from the default at the Winawer lab in analyzePRF
-    testHIRF = getcanonicalhrf(TR,TR);
-    mrvNewGraphWin; plot(testHIRF);
-    set(gca,'xlim',[0 20]);
-    grid on; xlabel('Time (sec)'); ylabel('Relative amplitude');
+      tSteps = 0:size(pm.HRF.values,2)-1;
+      mrvNewGraphWin; plot(tSteps, pm.HRF.values)
+      grid on; xlabel('Time (sec)'); ylabel('Relative amplitude');
+      
+      tSteps = pm.BOLD.tSamples;
+      mrvNewGraphWin('predicted'); plot(tSteps, pm.BOLD.predicted)
+      grid on; xlabel('Time (sec)'); ylabel('Relative amplitude');
+    %}    
+    
+    %% Apply different noise models
+    % Read values from table
+    pm.noise.Type    = dt.Noise.Type(ii);
+    pm.noise.white_k = dt.Noise.white_k(ii);
+    pm               = pm.noiseCompute;
 
-    %% Another random one
-
-    TR  = 1;    % Imagine we want the HRF at every TR
-    tSteps = 0:TR/4:20;
-    HRF = fristonHIRF(tSteps,params);
-    mrvNewGraphWin; plot(tSteps,HRF)
-    grid on; xlabel('Time (sec)'); ylabel('Relative amplitude');
-
+    % DEBUGGING
+    %{
+      hold on; 
+      plot(pm.BOLD.tSamples, pm.BOLD.predictedWithNoise)
+      grid on; xlabel('Time (sec)'); ylabel('Relative amplitude');
     %}
+    
+    %% Write back the updated volume
+    dt.pm(ii) = pm;
+    
 end
 

@@ -3,9 +3,14 @@ function pm = spatialSampleCompute(pm)
 %
 %
 % See also
+    
 
-    spatialSampleHorz = pm.stimulus.fieldofviewHorz/size(pm.stimulus.values,2);
-    spatialSampleVert = pm.stimulus.fieldofviewVert/size(pm.stimulus.values,1);
+    % Obtain the values if it is a path
+    stimValues     = stimValuesRead(pm.stimulus.values);
+    
+    % Derive variables
+    spatialSampleHorz = pm.stimulus.fieldofviewHorz/size(stimValues,2);
+    spatialSampleVert = pm.stimulus.fieldofviewVert/size(stimValues,1);
 
     x = (spatialSampleVert:spatialSampleVert:pm.stimulus.fieldofviewVert);
     x = x - mean(x);
