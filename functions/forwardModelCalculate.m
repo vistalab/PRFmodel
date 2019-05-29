@@ -32,34 +32,32 @@ for ii=1:height(dt)
                       '_binary-', choose(dt.Stimulus.Binary(ii),'true','false'), ...
                       '_size-', num2str(pm.stimulus.fieldofviewVert), 'x', ...
                                num2str(pm.stimulus.fieldofviewHorz), '.mat'); 
-    if exist(fullfile(pmRootPath,'data','stimulus',stimName), 'file')
+    stimNameWithPath = fullfile(pmRootPath,'data','stimulus',stimName);
+    if exist(stimNameWithPath, 'file')
         % Load stimulus produced by s_pmStimulusInterface
-        s = load(fullfile(pmRootPath,'data','stimulus',stimName));
+        s = load(stimNameWithPath);
     else
         % TODO: convert s_pmStimulusInterface to pmStimulusInterface
         % Write here the routines that calls and saves stimuli based on the
         % parameters of the table.
+        s.stim = pmStimulusGenerate('filename', stimNameWithPath);
     end
-                           
+    % Add the image series of the stimuli, in numeric matrix form to the struct.
+    % pm.stimulus.values  =  s.stim;
+    % TODO: I think it would be more efficient if here we would just store the
+    % link to the stimulus, a .mat file on file, that would be use on the
+    % calculations and it would be reused. 
+    pm.stimulus.values  =  stimNameWithPath;
     
+    % Calculate the X and Y values as well. TODO: do it inline...
+    pm = spatialSampleCompute(pm);
     
-    
-    
-    
-    
-
-    % We can add it, or create it here
-    %    pm.stimulusCreate('aperture type');
-    %    pm.stimulusBinarize;
-    %    pm.plot('stimulus movie');
-
-    % Add the field of view information
-    %   This should be pm.set() and the set() function should make sure that all the
-    %   places where fieldofview is used, is updated. 
-    pm.stimulus.fieldofviewHorz = 20;
-    pm.stimulus.fieldofviewVert = 20;
     
     %% Receptive field (RF)
+    pm.RF.sigmaMajor = dt.RF.sigMajor;
+    pm.RF.sigmaMinor = dt.RF.sigMinor;
+    pm.RF.theta      = dt.RF.theta;
+    pm.RF.center     = [dt.RF.x0, dt.RF.y0];
     pm = pm.rfCompute;
     % Visualize the receptive field (RF)
     % pm.plot('receptive field')

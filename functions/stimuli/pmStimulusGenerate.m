@@ -1,21 +1,41 @@
-%% Wrapper function to generate stimuli
+function stim = pmStimulusGenerate(varargin)
+% Wrapper function to generate stimuli
 
-% Select type of experiment
-expnum         = 103;  % See "doc pmShowmulticlass" for explanation of alternatives
-% Select if only mask or mask and images are required
-onlyMasks      = true;
-% To visualize a sample of the stimuli in each step, set to true
-checkImages    = false;
-% To downsample to the same number of volume images
-wantDownsample = true;
-% To resize the images to 100x100 for example
-wantResize     = true;
-imageSideSize  = 100;
-% To binarize
-binarize       = true;
-% To save stim file:
-saveStimMat    = true;
-fileName       = 'Exp-103_binary-true_size-100x100';
+
+
+varargin = mrvParamFormat(varargin);
+            
+p = inputParser;
+p.addParameter('expname'       , "103", @isstring) ; % See "doc pmShowmulticlass" for explanation of alternatives                
+p.addParameter('onlymasks'     , true , @islogical); % Select if only mask or mask and images are required
+p.addParameter('checkimages'   , false, @islogical); % To visualize a sample of the stimuli in each step, set to true
+p.addParameter('wantdownsample', true , @islogical); % To downsample to the same number of volume images
+p.addParameter('wantresize'    , true , @islogical); % To resize the images to 100x100 for example
+p.addParameter('imagesidesize' , 100  , @isnumeric); % Size of side. TODO: vert and horz sides
+p.addParameter('normalize01'   , true , @islogical); % To normalize all values between 0 and 1
+p.addParameter('binarize'      , true , @islogical); % To binarize (threshold 0.5)
+p.addParameter('savestimmat'   , true , @islogical); % To save images in fileName
+p.addParameter('filename'      , './stimulus.mat' , @isstring); % filename
+
+p.parse(varargin{:});
+            
+%% MR parameters
+expName         = p.Results.expname;
+onlyMasks       = p.Results.onlymasks;
+checkImages     = p.Results.checkimages;
+wantDownsample  = p.Results.wantdownsample;
+wantResize      = p.Results.wantresize;
+imageSideSize   = p.Results.imagesidesize;
+normalize01     = p.Results.normalize01;
+binarize        = p.Results.binarize;
+saveStimMat     = p.Results.savestimmat;
+fileName        = p.Results.filename;
+
+% TODO: simplify pmShowmulticlass to take just the stimuli we are interested with,
+%       for example "bars with words" (this is 103), or similar. 
+expnum = str2num(expName);
+
+% fileName       = 'Exp-103_binary-true_size-100x100';
 matFileName    = [fileName '.mat'];
 
 % To write a video file with the stimuli
@@ -163,17 +183,23 @@ if checkImages
     figure(4); image(stim(:,:,66)); colormap gray; axis equal tight off;
 end
 
-
-if binarize
+if normalize01
     % Normalize to 0>1 and binarize 
     nstim   = stim - min(stim(:));
     nstim   = nstim ./ max(nstim(:));
-    % Add it to the pm we just created. 
-    stim    = imbinarize(nstim,.5);
+    stim    = stim;
+    % We cannot binarize if it has not been normalized. 
+    % TODO: warning if normalize01 is false and binarize true?
+    if binarize
+        % Add it to the pm we just created. 
+        stim    = imbinarize(stim,.5);
+    end
 end
 
+
+
 if saveStimMat
-    save(fullfile(pmRootPath,'data',matFileName), 'stim');
+    save(fileName, 'stim');
 end
 
 if createVideo
@@ -194,4 +220,7 @@ if createVideo
     end
     % Close the file.
     close(vidObj);
+end
+
+
 end
