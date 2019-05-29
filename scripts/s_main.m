@@ -1,6 +1,9 @@
 %% MAIN SCRIPT
-% Add to path
-% winawerlab/analyzePRF
+% Generate the parameter table, generate synthetic bold signal, run PRF model, 
+%           and compare/visualize results with the synthetically created ones. 
+% Add to path:
+%    1. winawerlab/analyzePRF
+%    2. 
 
 %% Create tables with different parameters and generate synthetic BOLD timeseries
 
@@ -13,7 +16,7 @@ synthDT = forwardModelTableCreate();
     grid on;xlabel('Time (sec)');ylabel('Relative amplitude');
 %}
               
-%% Add rows with the combinations of parameters we want to check
+% Add rows with the combinations of parameters we want to check
 % BEWARE: THIS GROWS VERY FAST: each line multiplyes the rows of the previous
 %         one, accumulatively
 synthDT = forwardModelTableAddRows(synthDT, 'RF.x0',[1,2,3]);
@@ -34,6 +37,11 @@ synthDT = forwardModelTableAddRows(synthDT, 'RF.sigMinor',[2,3]);
     end
 %}
 
+%% Convert to other formats
+% To nifti
+
+% To csv (for Python implementations?)
+
 %% Run different PRF models
 % In the first version run one model per row. 
 % We will change the stimuli and most of the parameters, even the algorithm
@@ -42,10 +50,43 @@ synthDT = forwardModelTableAddRows(synthDT, 'RF.sigMinor',[2,3]);
 % analyzePRF
 analyzePRF_estimates = calculateFit(synthDT, 'analyzePRF');
 
-
 %% Compare models
 % Method 1
 
 
 
 % Method 2
+
+%% Plot synthetic data versus predicted
+% Select the 11th row parameters and results. 
+% We can use filtering over the parameters as well 
+ii = 11;  
+% Select if we want to save the plots as images for offline validation/publishing
+savePlot     = false;
+FileName = fullfile(pmRootPath,'data','figures',['analyzePRF_Voxel-' num2str(ii) '.svg']);  % .svg for publishing
+plotSynthvsPredicted(synthDT.pm(ii), analyzePRF_estimates(ii,:),'savePlot',false,'plotFileName',FileName);
+                            
+%%
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

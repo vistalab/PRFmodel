@@ -2,7 +2,7 @@ function stim = pmStimulusGenerate(varargin)
 % Wrapper function to generate stimuli
 
 
-
+%% Read parameters
 varargin = mrvParamFormat(varargin);
             
 p = inputParser;
@@ -19,7 +19,7 @@ p.addParameter('filename'      , './stimulus.mat' , @isstring); % filename
 
 p.parse(varargin{:});
             
-%% MR parameters
+
 expName         = p.Results.expname;
 onlyMasks       = p.Results.onlymasks;
 checkImages     = p.Results.checkimages;
@@ -31,6 +31,8 @@ binarize        = p.Results.binarize;
 saveStimMat     = p.Results.savestimmat;
 fileName        = p.Results.filename;
 
+
+%% Generate stimuli
 % TODO: simplify pmShowmulticlass to take just the stimuli we are interested with,
 %       for example "bars with words" (this is 103), or similar. 
 expnum = str2num(expName);
