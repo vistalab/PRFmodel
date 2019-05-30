@@ -1,13 +1,26 @@
 function synthDT = forwardModelTableCreate()
-% Creates a table with all parameters (defaults) required to perform a forward
-% calculation
+% Creates default format for a PRF model table
+%
+% Syntax
+%  synthDT = forwardModelTableCreate()
+%
+% Brief description
+%   This function defines the default parameters (defaults) required
+%   to perform a forward calculation
 % 
-%  Inputs: none
+% Inputs
+%  N/A
 % 
-%  Outputs: Matlab table
+% Outputs
+%  Matlab table
 % 
 % 
 
+%%
+p = inputParser;
+
+
+%%
 
 HRF      = cell2table(     {"Friston",  20, [6,12],  [0.9,0.9],   0.35}, ...
            'VariableNames',{'Type','duration','Friston_a','Friston_b','Friston_c'});
@@ -22,7 +35,6 @@ Noise    = cell2table(     {"white", 0.5}, ...
 synthDT = cell2table(      {"1" ,   1, HRF , Stimulus , RF , Noise , prfModel()}, ...
            'VariableNames',{'ID','TR','HRF','Stimulus','RF','Noise','pm'});
 
-synthDT = forwardModelCalculate(synthDT);
 
 end
 
