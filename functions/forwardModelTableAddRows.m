@@ -20,12 +20,6 @@ for ii=1:length(values)
     end
     synthDT = [synthDT; tmp];
 end
-       
-       
-       
-       
-% Calculate the models       
-synthDT = forwardModelCalculate(synthDT);
 
 end
 

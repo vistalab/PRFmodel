@@ -1,10 +1,20 @@
-function pmEstimates = pmCompute(inputTable, prfImplementation)
+function pmEstimates = pmModelFit(inputTable, prfImplementation)
 % Select and apply a PRF model to estimate model parameters
 % 
+% Syntax:
+%    pmEstimates = pmModelFit(inputTable, prfImplementation)
+%  
+% Brief description:
+%    Takes a table whose rows describe the BOLD time series in a
+%    single voxel (along with its metadata) and estimates the pRF
+%    model parameters for some implementation.
+%
 % Inputs:
-%   inputTable  - Data table including stimulus parameters and BOLD time series
+%   inputTable  - Data table including stimulus parameters and BOLD
+%                 time series. Each row of the data table is another
+%                 voxel
 %   prfImplementation - String defining the model
-% 
+%
 % Outputs: 
 %   pmEstimates: Data table of the estimated pRF model parameters
 % 
@@ -13,8 +23,9 @@ function pmEstimates = pmCompute(inputTable, prfImplementation)
 %
 % GLU Vistalab 05.2019
 %
-% See also
+% See also:
 %     pmXXX
+%
 
 %  TODO: Make all the outputs the same so that we can use the same function to
 %        compare them to the synthetic data. 
