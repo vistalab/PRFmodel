@@ -1,12 +1,75 @@
 %% MAIN SCRIPT
+% 
+% This script is a wrapper that generates ARRAYS OF synthetic BOLD signal and 
+% estimates calculated with different pRF implementations. It is intended to be
+% used as a data analysis tool to combine a selected combinations of
+% parameters and compare performamces of different tools. 
+% 
+% 
 %
-% Generate the parameter table, generate synthetic bold signal, run
-% PRF model, and compare/visualize results with the synthetically
-% created ones.
+% STEPS:
+% 1.- Create a table with parameters required to generate the synthetic BOLD
+%     signal(s) we want to use. It can be one or many. 
+%     We populate a table with all the parameters)
+%   1.1.- Stimulus
+%   1.2.- RF  (Receptive field)
+%   1.3.- HRF (Hemodynamic Response Function)
+%   1.4.- Noise
+% 
+% 2.- Calculate the forward model BOLD time series per every possible
+%     combination of parameters provided in STEP 1. 
+%     This creates a synthetic BOLD signal TEST dataset, which is matlab table. 
+% 
+% 3.- Save or export the TEST dataset to other formats. For example: nifti for AFNI. 
+% 
+% 4.- Estimate parameters for a given model. For example: analyzePRF, or AFNI. 
+%     The result will be formated into a table, with the same format for all
+%     different models. 
+%     We will have a table per each set of results, that we will store as well. 
+% 
+% 5.- Compare synthetic BOLD data with the different result. 
+%   5.1.- Create stats  
+%   5.2.- Create visualizations
+% 
+% 
 %
-% Add to path:
-%    1. winawerlab/analyzePRF
-%    2. 
+% To make this work:
+%    0. add PRFmodel to the path
+%    1. to test analyzePRF add winawerlab/analyzePRF to the path
+%    2. (TODO: vistasoft implementation, maybe we'll add just the functions we want)
+%    3. (TODO: test an AFNI wrapper, and requirement will be to have it installed)
+%    4. 
+% 
+% 
+% % See also:
+%     s_main_table.m
+
+%% STEP 1: create a table with parameters that will generate synthetic BOLD signal
+% The values that are not set-up below will use defaults. To see default parameters, execute:
+%      forwardModelTableCreate()   % to see a table
+%              or 
+%      prfModel()                  % to see a struct
+% 
+% Each parameter below can be unique or an array of values: 
+%     - If only one value is provided per every parameter, it will substitute
+%       the defaults, and generate only one synthetic BOLD signal. 
+%     - If one or more arrays of values are provided, it will generate all
+%       possible combinations between parameters. TODO: provide more control to this...
+% 
+% How to include parameters: 
+%     - If it is 
+% 
+% Stimulus params
+% 
+% RF params
+
+% 
+
+
+
+
+
+
 
 %% Include the stimulus generation here
 

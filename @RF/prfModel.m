@@ -1,4 +1,4 @@
-classdef prfModel < handle
+classdef prfModel 
     % Initialize a prf model object for the forward time series
     % calculation
     %
@@ -23,66 +23,50 @@ classdef prfModel < handle
     %}
     
     properties (GetAccess=public, SetAccess=public)
-        % Here we should have all the parameters we will allow to be 
-        TR = 1;                % Repetition time of the MR acquisition
-""""""
-"
-    
-    properties(Access = private)
-        tire;
-        bodyColor;
-    end
-    methods        
-        function set.color(this, v)
-            this.bodyColor = v;
-            this.tire.paintColor = v;
-        end
-        function v = get.color(this)
-            v = this.bodyColor;
-        end
-        function obj = Car
-            obj.tire = Tire;
-            obj.color = 'black';
-        end
-    end
-
-""""""
-             
+        
+        TR;        % Repetition time of the MR acquisition
+        
+        HRF;       % Struct of hemodynamic response function variables
+        
+        stimulus;  % Struct of stimulus properties, including images
+        
+        RF;        % Struct of receptive field properties
+        
+        noise;     % Struct of BOLD noise properties
+        
+        BOLD;      % Struct of the predicted time series and params
         
     end
     
-    properties (Access = private)
-        HRF;      % Class: Hemodynamic Response Function
-        Stimulus; % Class: Stimulus.
-        RF;       % Class: Receptive field. 
-        Noise;    % Class: Noise
-        BOLD;     % Class: Predicted synthetic time series
+    properties (Dependent = true)
+        
+        BOLD.predictedWithNoise
+        
     end
     
     %%
     methods
         
-        % Constructs 
-        function pm = prfModel  % varargin
-            % Return a working prfModel using only defaults.
+        % Construct
+        function pm = prfModel(varargin)
             
-%             varargin = mrvParamFormat(varargin);
-%             
-%             p = inputParser;
-%             p.addParameter('tr',2,@isnumeric);                  % Seconds
-%             p.addParameter('values', [],@isnumeric);            % actual values, matrix
-%             p.addParameter('fieldofviewHorz',[],@isnumeric);    % Deg
-%             p.addParameter('fieldofviewVert',[],@isnumeric);    % Deg
-%             p.addParameter('hrfduration'    ,20,@isnumeric);    % Seconds
-%             
-%             p.parse(varargin{:});
+            varargin = mrvParamFormat(varargin);
+            
+            p = inputParser;
+            p.addParameter('tr',2,@isnumeric);                  % Seconds
+            p.addParameter('values', [],@isnumeric);            % actual values, matrix
+            p.addParameter('fieldofviewHorz',[],@isnumeric);    % Deg
+            p.addParameter('fieldofviewVert',[],@isnumeric);    % Deg
+            p.addParameter('hrfduration'    ,20,@isnumeric);    % Seconds
+            
+            p.parse(varargin{:});
             
             %% MR parameters
-            % pm.TR         = p.Results.tr;
+            pm.TR         = p.Results.tr;
             
                
             %% Initialize time steps and HRF
-            % pm.HRF.duration  = p.Results.hrfduration;
+            pm.HRF.duration  = p.Results.hrfduration;
             pm.HRF.tSteps    = 0:(pm.TR):pm.HRF.duration;   % For now, always to 20 sec
             pm.HRF.modelName = 'friston';
             pm.HRF.Friston_a = [];
@@ -122,24 +106,6 @@ classdef prfModel < handle
             
             
         end
-        
-        
-        function set.TR(pm, tr)
-            pm.HRF.TR       = tr;
-            pm.Stimulus.TR  = tr;
-        end
-        function v = get.color(this)
-            v = this.bodyColor;
-        end
-        function obj = Car
-            obj.tire = Tire;
-            obj.color = 'black';
-        end
-        
-        
-        
-        
-        
     end
     
 end
