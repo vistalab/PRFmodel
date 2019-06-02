@@ -47,7 +47,7 @@ for ii=1:height(dt)
     end
     % Add the image series of the stimuli, in numeric matrix form to the struct.
     % pm.stimulus.values  =  s.stim;
-    % TODO: I think it would be more efficient if here we would just store the
+    % TODO: I think it would be more efficient if here we would just s  tore the
     % link to the stimulus, a .mat file on file, that would be use on the
     % calculations and it would be reused. 
     pm.stimulus.values  =  stimNameWithPath;
