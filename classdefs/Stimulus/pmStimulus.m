@@ -50,11 +50,11 @@ classdef pmStimulus <  matlab.mixin.SetGet
     methods
         % Constructor
         function stim = pmStimulus
-            stim.fieldofviewHorz = 20;  % Degrees
-            stim.fieldofviewVert = 20;  % Degrees
+            stim.fieldofviewHorz = 20;    % Degrees
+            stim.fieldofviewVert = 20;    % Degrees
             stim.expName         = "103"; % TODO: give it meaningful names
             stim.Binary          = true;  % True: only apertures. False: images/words inside apertures
-            stim.barWidth        = 2;  % Degrees. TODO
+            stim.barWidth        = 2;     % Degrees. TODO
             % If it does not exist, create the stim file. 
             % Always store just the path and the name
             stimName = strcat('Exp-',stim.expName, ...
@@ -123,7 +123,7 @@ classdef pmStimulus <  matlab.mixin.SetGet
             set(gca,'nextplot','replacechildren');
             stimValues = pmStimulusRead(stim.values);
             for k = 1:size(stimValues,3)
-                image(stimValues(:,:,k)); colormap gray;
+                imagesc(stimValues(:,:,k)); colormap gray;
                 % Write each frame to the file.
                 currFrame = getframe(gcf);
                 writeVideo(vidObj,currFrame);
