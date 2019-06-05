@@ -22,7 +22,7 @@ classdef pmNoise_respiratory < pmNoise
        
     %}
     
-    properties (GetAccess=public, SetAccess=private)
+    properties
         params;  
     end
     
