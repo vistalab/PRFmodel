@@ -31,8 +31,8 @@ classdef prfModel < matlab.mixin.SetGet
         % the pm model itself will be a property of the subclass as well.
         uniqueTR;          % This is part of the main model. It will be set in all subclasses
     end
-    properties (GetAccess=public, SetAccess=private) 
-        Type;
+    properties (GetAccess=public, SetAccess=private)
+        Type            ;
         Stimulus        ;
         RF              ;
         HRF             ;
@@ -46,8 +46,6 @@ classdef prfModel < matlab.mixin.SetGet
         values          ; % Final value, composed of the BOLD + noise
     end
     
-    
-    %%
     methods
         % Constructor
         function pm = prfModel
@@ -55,21 +53,29 @@ classdef prfModel < matlab.mixin.SetGet
             pm.Type     = 'basic';
             
             % Create the classes
+            disp('Creating stimulus ...')
+            pm.Stimulus = pmStimulus;     % Create an Stimulus object
+            pm.Stimulus.PM = pm;          % Initialize the prfModel inside it
+            disp('                  ... created')
+            
+            disp('Creating HRF ...')
             pm.HRF      = pmHRF_friston;  % Create an HRF object
             pm.HRF.PM   = pm;             % Initialize the prfModel inside it
+            disp('                  ... created')
             
+            disp('Creating RF ...')
             pm.RF       = pmRF;
             pm.RF.PM    = pm;             % Initialize the prfModel inside it
+            disp('                  ... created')
             
-            pm.Stimulus = pmStimulus;
-            pm.Stimulus.PM= pm;             % Initialize the prfModel inside it
-            
+            disp('Creating Noise ...')
             pm.Noise{1} = pmNoise_white;  % TODO: this should be able to take several noise models
-            pm.Noise{1}.PM = pm;          
-            pm.Noise{2} = pmNoise_cardiac;  
-            pm.Noise{2}.PM = pm;    
-            pm.Noise{3} = pmNoise_respiratory;  
-            pm.Noise{3}.PM = pm;    
+            pm.Noise{1}.PM = pm;
+            pm.Noise{2} = pmNoise_cardiac;
+            pm.Noise{2}.PM = pm;
+            pm.Noise{3} = pmNoise_respiratory;
+            pm.Noise{3}.PM = pm;
+            disp('                  ... created')
         end
         
         % Functions that apply the setting of main parameters to subclasses
@@ -87,6 +93,7 @@ classdef prfModel < matlab.mixin.SetGet
         % NOTE: in a real experiment I think that the number of dicoms should
         % lead this, because then we calculate the stimuli that was shown in
         % every dicom.
+        %
         % When creating this synthetic data, we are creating the forward model,
         % where starting with the stimulus we calculate the synthetic BOLD.
         
@@ -102,14 +109,27 @@ classdef prfModel < matlab.mixin.SetGet
             % This function will obtain all the defaults from all the
             % subclasses, so that we can construct a parameter table
             defaultsTable = table();
+            
+            % defaultsTable.Stimulus = pm.Stimulus.defaultsTable;
+            % defaultsTable.HRF      = pm.HRF.defaultsTable;
+            % defaultsTable.RF       = pm.RF.defaultsTable;
+            % defaultsTable.Noise    = pm.Noise.defaultsTable;
+            
+            
+            % pmFindAttributes(pm,'Dependent',true)
+            
         end
         
+        
+        
         function values = get.values(pm)
+            disp('Creating synthetic BOLD with noise ...')
             sumOfNoise = zeros(size(pm.BOLD));
             for ii=1:length(pm.Noise)
                 sumOfNoise = sumOfNoise + pm.Noise{ii}.values;
             end
             values = pm.BOLD + sumOfNoise;
+            disp('                  ... created')
         end
         
         % Plot it
@@ -133,7 +153,7 @@ classdef prfModel < matlab.mixin.SetGet
             end
             
         end
-
+        
     end
     
 end

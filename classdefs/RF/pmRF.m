@@ -27,8 +27,6 @@ classdef pmRF <  matlab.mixin.SetGet
         Theta;      % Radians
         sigmaMajor; % Deg
         sigmaMinor; % Deg
-        X;
-        Y;
     end
     
     properties (Dependent = true, Access = public)
@@ -49,17 +47,14 @@ classdef pmRF <  matlab.mixin.SetGet
             rf.Theta      = 0;        % Radians
             rf.sigmaMajor = 1;        % deg
             rf.sigmaMinor = 1;        % deg
-            % Calculate the default spatial sampling parameters
-            % This will come from the Stimulus class in the prfModel class.
-            x = (0.2:0.2:20); x = x - mean(x); y = x;
-            [rf.X,rf.Y] = meshgrid(x,y);
         end
         function v = get.TR(rf)
             v      = rf.PM.TR;
         end
         % Methods available to this class and childrens, if any
         function values = get.values(rf)
-            values = rfGaussian2d(rf.X, rf.Y, ...
+            XY = rf.PM.Stimulus.XY;
+            values = rfGaussian2d(XY{1}, XY{2}, ...
                 rf.sigmaMajor,rf.sigmaMinor,rf.Theta, ...
                 rf.Center(1),rf.Center(2));
         end

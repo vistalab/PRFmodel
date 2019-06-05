@@ -46,7 +46,7 @@ classdef pmHRF <  matlab.mixin.SetGet
         % Put here the values that are duplicated from prfModel but that we need
         % to work with them independently.
         function v = get.TR(hrf)
-            v       = hrf.PM.TR;
+            v = hrf.PM.TR;
         end
         function tSteps = get.tSteps(hrf)
             % I think we don't want this to be stored in the object.
@@ -60,6 +60,10 @@ classdef pmHRF <  matlab.mixin.SetGet
             mrvNewGraphWin([hrf.Type ' HRF']);
             plot(hrf.tSteps, hrf.values);
             grid on; xlabel('Time (sec)'); ylabel('Relative amplitude');
+        end
+        % Return the defaults that can be changed to generate different HRF
+        function HRF = defaultsTable
+            HRF = table();
         end
     end
     % Here the methods that are only allowed from the pm class

@@ -37,8 +37,7 @@ classdef pmStimulus <  matlab.mixin.SetGet
     properties (Dependent = true, Access = public)
         spatialSampleHorz;
         spatialSampleVert;
-        X;
-        Y;
+        XY;
         timePointsN;
         timePointsSeries;
     end
@@ -89,21 +88,14 @@ classdef pmStimulus <  matlab.mixin.SetGet
             % Obtain the values if it is a path
             spatialSampleVert = stim.fieldofviewHorz/size(stim.getStimValues,1);
         end
-        function X = get.X(stim)
+        function XY = get.XY(stim)
             x = (stim.spatialSampleVert:stim.spatialSampleVert:stim.fieldofviewVert);
             x = x - mean(x);
             y = (stim.spatialSampleHorz:stim.spatialSampleHorz:stim.fieldofviewHorz);
             y = y - mean(y);
             % Calculate the spatial sampling parameters
             [X,Y] = meshgrid(x,y);
-        end
-        function Y = get.Y(stim)
-            x = (stim.spatialSampleVert:stim.spatialSampleVert:stim.fieldofviewVert);
-            x = x - mean(x);
-            y = (stim.spatialSampleHorz:stim.spatialSampleHorz:stim.fieldofviewHorz);
-            y = y - mean(y);
-            % Calculate the spatial sampling parameters
-            [X,Y] = meshgrid(x,y);
+            XY = [{X},{Y}];
         end
         function v = get.timePointsN(stim)
             v = size(stim.getStimValues,3);
