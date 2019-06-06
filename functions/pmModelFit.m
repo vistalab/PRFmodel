@@ -1,4 +1,4 @@
-function pmEstimates = pmModelFit(inputTable, prfImplementation)
+function pmEstimates = pmModelFit(input, prfImplementation)
 % Select and apply a PRF model to estimate model parameters
 % 
 % Syntax:
@@ -38,7 +38,7 @@ function pmEstimates = pmModelFit(inputTable, prfImplementation)
 
 %%
 p = inputParser;
-p.addRequired('dataTable',@istable);
+p.addRequired('input');
 p.addRequired('prfImplementation',@ischar);
 
 %% Choose the analysis case
@@ -51,22 +51,38 @@ switch prfImplementation
         % the same for all the methods.
         pmEstimates = table();
         
-        % TODO: use parfor if the number of rows is larger than XX
-        for ii=1:height(inputTable)
-            
+        if istable(input)
+            % TODO: if is not a table, create a table of 1 row and use the same
+            %       loop.
+            % TODO: use parfor if the number of rows is larger than XX
+            for ii=1:height(input)
+
+                % Obtain the required values for this pRF model
+                pm       = input.pm(ii);
+                stimulus = pm.Stimulus.getStimValues;
+                data     = pm.BOLDnoise;
+                TR       = pm.TR;
+                options  = struct('seedmode',[0 1],'display','off');
+
+                % Calculate PRF
+                results  = analyzePRF({stimulus},{data},TR, options);
+                % TODO: make "results" the same format for everybody
+                 
+                % Add a new row of results
+                pmEstimates = [pmEstimates; struct2table(results,'AsArray',true)];
+            end
+        else
             % Obtain the required values for this pRF model
-            pm       = inputTable.pm(ii);
-            stimulus = stimValuesRead(pm.stimulus.values);
-            data     = pm.BOLD.predictedWithNoise;
+            pm       = input;
+            stimulus = pm.Stimulus.getStimValues;
+            data     = pm.BOLDnoise;
             TR       = pm.TR;
             options  = struct('seedmode',[0 1],'display','off');
-            
             % Calculate PRF
             results  = analyzePRF({stimulus},{data},TR, options);
             
             % Add a new row of results
             pmEstimates = [pmEstimates; struct2table(results,'AsArray',true)];
-            
         end
     case {'afni'}
         disp('NYI');

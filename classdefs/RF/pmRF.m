@@ -1,4 +1,4 @@
-classdef pmRF <  matlab.mixin.SetGet
+classdef pmRF <   matlab.mixin.SetGet
     % This is a superclass for RF-s. Every particular instance of this class
     % will have different parameters, so it will be a children class.
     %
@@ -58,6 +58,13 @@ classdef pmRF <  matlab.mixin.SetGet
                 rf.sigmaMajor,rf.sigmaMinor,rf.Theta, ...
                 rf.Center(1),rf.Center(2));
         end
+        
+        
+        
+        
+        
+        
+        
         % Plot it
         function plot(rf)
             % I think we don't want this to be stored in the object.
