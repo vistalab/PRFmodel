@@ -52,9 +52,11 @@ switch prfImplementation
         pmEstimates = table();
         
         if istable(input)
-            % TODO: if is not a table, create a table of 1 row and use the same
-            %       loop.
-            % TODO: use parfor if the number of rows is larger than XX
+            % TODO: if is not a table, create a table of 1 row and use
+            % the same loop.
+            %
+            % TODO: use parfor if the number of rows if the table is
+            % larger than XX
             for ii=1:height(input)
 
                 % Obtain the required values for this pRF model
@@ -66,6 +68,7 @@ switch prfImplementation
 
                 % Calculate PRF
                 results  = analyzePRF({stimulus},{data},TR, options);
+                
                 % TODO: make "results" the same format for everybody
                  
                 % Add a new row of results

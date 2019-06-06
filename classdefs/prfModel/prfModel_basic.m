@@ -27,7 +27,8 @@ classdef prfModel_basic < prfModel
     %
     
     properties (SetAccess = private)
-        BOLD            ; % This is the synthetic BOLD signal after the added noise(s)
+        % This is the synthetic BOLD signal with several types of noise
+        BOLD; 
     end
     
     
@@ -40,20 +41,29 @@ classdef prfModel_basic < prfModel
     end
        
     methods (Access = public)
-        function computeBOLD(pm)
+        function computeBOLD(pm,varargin)
+            % For this linear model we take the inner product of the
+            % receptive field with the stimulus contrast.  Then we
+            % convolve that value with the HRF.
+            %
+            
+            varargin = mrvParamFormat(varargin);
+            p = inputParser;
+            p.addRequired('pm',@(x)(isa(x,'prfModel')));
+            p.addParameter('randomseed',1000,@(x)(round(x) == x && x > 0));
+            p.parse(pm,varargin{:});
+            
             % Load example stimulus
             stimValues = pm.Stimulus.getStimValues;
             
             % Initialize timeSeries, it is the signal prior to convolution
-            timeSeries = zeros(1, pm.timePointsN);
-            for tt = 1:pm.timePointsN
-                % This is called the hadamard product.  It is the pointwise
-                % multiplication of the RF with the stimulus.  The hadProduct is
-                % the same size as the stimulus
-                hadProduct = stimValues(:,:,tt) .* pm.RF.values;
-                % Now, we add up all of the hadProduct values
-                timeSeries(tt) = sum(hadProduct(:));
-            end
+            [r,c,t] = size(stimValues);
+            spaceStim = reshape(stimValues,r*c,t);
+
+            % I had didactic code here that GL used at first. But that
+            % took 9 secs.  This code takes 0.1 sec.  So harder to
+            % read, but let's use it.
+            timeSeries  = pm.RF.values(:)' * spaceStim;
             
             % Convolution between the timeSeries and the HRF
             pm.BOLD = conv(timeSeries, pm.HRF.values, 'same');

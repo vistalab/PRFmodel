@@ -53,33 +53,25 @@ classdef prfModel < handle % matlab.mixin.SetGet
             pm.Type     = 'basic';
             
             % Create the classes
-            disp('Creating stimulus ...')
             pm.Stimulus    = pmStimulus;     % Create an Stimulus object
             pm.Stimulus.PM = pm;          % Initialize the prfModel inside it
-            disp('                  ... done')
             
-            disp('Creating HRF ...')
             pm.HRF      = pmHRF_friston;  % Create an HRF object
             pm.HRF.PM   = pm;             % Initialize the prfModel inside it
-            disp('                  ... done')
             
-            disp('Creating RF ...')
             pm.RF       = pmRF;
             pm.RF.PM    = pm;             % Initialize the prfModel inside it
-            disp('                  ... done')
             
-            disp('Creating Noise ...')
-            pm.Noise{1} = pmNoise_white;  % TODO: this should be able to take several noise models
+            % We should initialize the RNG here and return the seed
+            
+            % TODO: this should be able to take several noise models
+            pm.Noise{1} = pmNoise_white;  
             pm.Noise{1}.PM = pm;
             pm.Noise{2} = pmNoise_cardiac;
             pm.Noise{2}.PM = pm;
             pm.Noise{3} = pmNoise_respiratory;
             pm.Noise{3}.PM = pm;
-            disp('                  ... done')
             
-            % BOLDnoise is the final result we want as output of our model. 
-            % This function populates it in the initialization. 
-            pm.compute;
         end
         
         % Functions that apply the setting of main parameters to subclasses
@@ -127,11 +119,12 @@ classdef prfModel < handle % matlab.mixin.SetGet
         
         
         function compute(pm)
-            % Everything that it is not inside this function will be calculated
-            % on the fly. 
-            % Every inner class has a compute function that needs to be invoked 
-            disp('Creating synthetic BOLD with noise ...')
-            % Compute BOLD with the latest version of the parameters
+            % Everything that it is not inside this function will be
+            % calculated on the fly.
+            
+            % Every class has a compute function that needs to be
+            % invoked Compute BOLD with the latest version of the
+            % parameters
             pm.computeBOLD;
             
             sumOfNoise = zeros(size(pm.BOLD));
@@ -139,7 +132,6 @@ classdef prfModel < handle % matlab.mixin.SetGet
                 sumOfNoise = sumOfNoise + pm.Noise{ii}.values;
             end
             pm.BOLDnoise = pm.BOLD + sumOfNoise;
-            disp('                  ... done')
         end
         
         % Plot it
