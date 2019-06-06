@@ -1,4 +1,4 @@
-classdef pmStimulus <  matlab.mixin.SetGet
+classdef pmStimulus <  handle % matlab.mixin.SetGet
     % This is a superclass for Stimulus-s. Every particular instance of this class
     % will have different parameters, so it will be a children class. For
     % example, "bars" or "wedges". 
@@ -103,6 +103,33 @@ classdef pmStimulus <  matlab.mixin.SetGet
         function timePointsSeries = get.timePointsSeries(stim)
             timePointsSeries = pmTimePointsSeries(stim.TR, stim.timePointsN);
         end
+        
+        
+        % COMPUTE
+        function compute(stim)
+            % If it does not exist, create the stim file.
+            % Always store just the path and the name
+            stimName = strcat('Exp-',stim.expName, ...
+                '_binary-', choose(stim.Binary,'true','false'), ...
+                '_size-', num2str(stim.fieldofviewVert), 'x', ...
+                num2str(stim.fieldofviewHorz));
+            stimNameWithPath = fullfile(pmRootPath,'data','stimulus',strcat(stimName,'.mat'));
+            if ~exist(stimNameWithPath, 'file')
+                fprintf('Computing and storing new stimulus file in %s',stimNameWithPath)
+                pmStimulusGenerate('filename', stimNameWithPath);
+            end
+            fprintf('Retrieving stimulus file in %s',stimNameWithPath)
+            stim.values        =  char(stimNameWithPath);
+            % Default fileName if we want to write a video of the stimuli
+            stim.videoFileName = char(fullfile(pmRootPath,'local',strcat(stimName,'.avi')));
+        end
+        
+        
+        
+        
+        
+        
+        % VISUALIZATION
         % Plot it
         function plot(stim)
             mrvNewGraphWin('Stimulus file montage');

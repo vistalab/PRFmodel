@@ -51,7 +51,7 @@ classdef pmHRF <  matlab.mixin.SetGet
         function tSteps = get.tSteps(hrf)
             % I think we don't want this to be stored in the object.
             % Calculate it and return every time we need it.
-            tSteps  = pmTimePointsSeries(hrf.TR, hrf.Duration);
+            tSteps  = 0:hrf.TR: hrf.Duration;
         end
         % Plot it
         function plot(hrf)

@@ -15,27 +15,32 @@ classdef prfModel_basic < prfModel
     %
     % See also
     %
-    
     % Examples
     %{
-       pm = prfModel_basic;
-       pm.rfCompute;
+       pm = prfModel_basic;  % It is a special case of a prfModel, for the basic
+                             % implementation, others are CSS...
     %}
     
     %     properties (GetAccess=public, SetAccess=public)
     %
     %     end
     %
-    properties (Dependent = true)
+    
+    properties (SetAccess = private)
         BOLD            ; % This is the synthetic BOLD signal after the added noise(s)
     end
     
-    %%
+    
     methods
-        % Constructs
-        
-        % Methods
-        function BOLD = get.BOLD(pm)
+         % Constructs
+         function pm = prfModel_basic
+             pm.BOLD = [];
+         end
+         % Methods
+    end
+       
+    methods (Access = public)
+        function computeBOLD(pm)
             % Load example stimulus
             stimValues = pm.Stimulus.getStimValues;
             
@@ -51,7 +56,7 @@ classdef prfModel_basic < prfModel
             end
             
             % Convolution between the timeSeries and the HRF
-            BOLD = conv(timeSeries, pm.HRF.values, 'same');
+            pm.BOLD = conv(timeSeries, pm.HRF.values, 'same');
         end
         
     end
