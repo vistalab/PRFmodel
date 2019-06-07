@@ -1,4 +1,4 @@
-classdef prfModel < handle % matlab.mixin.SetGet
+classdef prfModel < handle % matlab.mixin.SetGet, matlab.mixin.Copyable is another possible
     % Initialize a prf model object for the forward time series
     % calculation
     %
@@ -116,21 +116,20 @@ classdef prfModel < handle % matlab.mixin.SetGet
             
         end
         
-        
-        
+        % 
         function compute(pm)
-            % Everything that it is not inside this function will be
-            % calculated on the fly.
+            % Computes the mean BOLD response and then adds noise.
             
-            % Every class has a compute function that needs to be
-            % invoked Compute BOLD with the latest version of the
-            % parameters
+            % Every sub-class has a computeBOLD function to compute
+            % the mean response.
             pm.computeBOLD;
             
+            % Here is how we add the noise terms.
             sumOfNoise = zeros(size(pm.BOLD));
             for ii=1:length(pm.Noise)
                 sumOfNoise = sumOfNoise + pm.Noise{ii}.values;
             end
+            
             pm.BOLDnoise = pm.BOLD + sumOfNoise;
         end
         
@@ -139,15 +138,15 @@ classdef prfModel < handle % matlab.mixin.SetGet
             what = mrvParamFormat(what);
             switch what
                 case 'nonoise'
-                    mrvNewGraphWin([pm.Type 'synthetic BOLD signal without noise']);
+                    mrvNewGraphWin([pm.Type 'Synthetic BOLD signal (no noise)']);
                     plot(pm.timePointsSeries, pm.BOLD);
                     grid on; xlabel('Time (sec)'); ylabel('Relative amplitude');
                 case 'withnoise'
-                    mrvNewGraphWin([pm.Type 'synthetic BOLD signal with noise']);
+                    mrvNewGraphWin([pm.Type 'Synthetic BOLD signal (noise)']);
                     plot(pm.timePointsSeries, pm.BOLDnoise);
                     grid on; xlabel('Time (sec)'); ylabel('Relative amplitude');
                 case 'both'
-                    mrvNewGraphWin([pm.Type 'synthetic BOLD signal with and without noise']);
+                    mrvNewGraphWin([pm.Type 'Synthetic BOLD signals']);
                     plot(pm.timePointsSeries, pm.BOLD); hold on;
                     plot(pm.timePointsSeries, pm.BOLDnoise);
                     grid on; xlabel('Time (sec)'); ylabel('Relative amplitude');

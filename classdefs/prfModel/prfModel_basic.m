@@ -37,7 +37,7 @@ classdef prfModel_basic < prfModel
          function pm = prfModel_basic
              pm.BOLD = [];
          end
-         % Methods
+         
     end
        
     methods (Access = public)
