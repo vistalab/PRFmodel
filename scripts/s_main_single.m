@@ -18,9 +18,25 @@
 %% Create default values:
 pm = prfModel_basic;
 
+pm.RF.Center = [2 1];
+pm.RF.Theta  = 10;
+
+%{
+% How to transform the results parameters into a center and size all
+% in degrees
+%
+thetaRadians = deg2rad(pm.RF.Theta);
+eccentricity = norm(pm.RF.Center,2);
+[cX,cY] = pol2cart(theta,eccentricity);
+rfSizeDeg = pm.RF.sigmaMajor;
+mrvNewGraphWin;
+center = [cX,cY];
+ellipsePlot(thetaRadians,eccentricity,center);
+%}
+
 % BOLDnoise is the final result we want as output of our model.
 % This function populates it in the initialization.
-pm.compute;
+pm.computeBOLD;
 
 % Visualize them
 pm.plot('with noise');
@@ -28,16 +44,22 @@ pm.plot('with noise');
 % Visualize them
 pm.plot('no noise');
 
+% Visualize both on the same graph
+pm.plot('both');
+
 % And compute it with, for example, analyzePRF
 results = pmModelFit(pm, 'analyzePRF');
+results.ecc
 
 %{
 % How to transform the results parameters into a center and size all
 % in degrees
 %
-theta = deg2rad(results.ang);
+thetaRadians = deg2rad(results.ang);
 [cX,cY] = pol2cart(theta,results.ecc);
-
+rfSizeDeg = pm.RF.sigmaMajor;
+mrvNewGraphWin;
+ellipsePlot(rfSizeDeg,rfSizeDeg,thetaRadians);
 %}
 % Evaluation: TODO
 % TODO: make sense of the analyzePRF output and relate to the input
