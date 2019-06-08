@@ -1,8 +1,8 @@
-function pmEstimates = pmModelFit(input, prfImplementation)
+function [pmEstimates, results] = pmModelFit(input, prfImplementation)
 % Select and apply a PRF model to estimate model parameters
 % 
 % Syntax:
-%    pmEstimates = pmModelFit(inputTable, prfImplementation)
+%    [pmEstimates, results] = pmModelFit(inputTable, prfImplementation)
 %  
 % Brief description:
 %    Takes a table whose rows describe the BOLD time series in a
@@ -16,8 +16,9 @@ function pmEstimates = pmModelFit(input, prfImplementation)
 %   prfImplementation - String defining the model
 %
 % Outputs: 
-%   pmEstimates: Data table of the estimated pRF model parameters
-% 
+%   pmEstimates: Table format of the pRF model parameters in results
+%   results:     The struct from analyzePRF
+%
 % Key/val parameters (Optional)
 %   N/A
 %
@@ -64,10 +65,12 @@ switch prfImplementation
                 stimulus = pm.Stimulus.getStimValues;
                 data     = pm.BOLDnoise;
                 TR       = pm.TR;
-                options  = struct('seedmode',[0 1],'display','off');
+                options  = struct('seedmode',[0 1],...
+                    'display','off',...
+                    'dosave','modelpred');
 
                 % Calculate PRF
-                results  = analyzePRF({stimulus},{data},TR, options);
+                results  = analyzePRF({stimulus}, {data}, TR, options);
                 
                 % TODO: make "results" the same format for everybody
                  
