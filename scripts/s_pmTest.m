@@ -1,11 +1,11 @@
-%% MAIN SCRIPT: for a single synthetic BOLD signal generation and testing
+%% TEST SCRIPT: A single synthetic BOLD signal generation and testing
 %
-% This script is a wrapper that generates A SINGLE synthetic BOLD signal and
-% estimates calculated with different pRF implementations. It is intended to be
-% used as a learning and testing tool. Once it is mastered and tested with a
-% single BOLD series that this is what we want to do, we can create multiple
-% variations in s_main_table.m, analyze them with different implementations and
-% test them.
+% This script is a wrapper that generates A synthetic BOLD signal and
+% estimates calculated with different pRF implementations. It is intended
+% to be used as a learning and testing tool. Once it is mastered and tested
+% with a single BOLD series that this is what we want to do, we can create
+% multiple variations in s_main_table.m, analyze them with different
+% implementations and test them.
 %
 % The unit element of this software is a prfModel class.
 % BRIAN: there is the main class which is prfModel, and prfModel_basic and
@@ -19,24 +19,24 @@
 pm = prfModel_basic;
 
 pm.RF.Center = [2 1];
-pm.RF.Theta  = 10;
+pm.RF.Theta  = 30;      % Degrees, x-axis = 0, positive y-axis 90
+pm.RF.sigmaMajor  = 1.0;      % Degrees, x-axis = 0, positive y-axis 90
+pm.RF.sigmaMinor  = 0.1;      % Degrees, x-axis = 0, positive y-axis 90
+
 
 %{
 % How to transform the results parameters into a center and size all
 % in degrees
 %
-thetaRadians = deg2rad(pm.RF.Theta);
-eccentricity = norm(pm.RF.Center,2);
-[cX,cY] = pol2cart(theta,eccentricity);
-rfSizeDeg = pm.RF.sigmaMajor;
+rfThetaRadians = deg2rad(pm.RF.Theta);
+rfCenter  = pm.RF.Center;
+rfSizeDeg = [pm.RF.sigmaMajor, pm.RF.sigmaMinor];
 mrvNewGraphWin;
-center = [cX,cY];
-ellipsePlot(thetaRadians,eccentricity,center);
+ellipsePlot(rfCenter,rfSizeDeg,rfThetaRadians);
 %}
 
-% BOLDnoise is the final result we want as output of our model.
-% This function populates it in the initialization.
-pm.computeBOLD;
+% Computes noise free and noise BOLD signals.
+pm.compute;
 
 % Visualize them
 pm.plot('with noise');
