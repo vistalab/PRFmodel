@@ -1,4 +1,4 @@
-classdef prfModel < handle % matlab.mixin.SetGet, matlab.mixin.Copyable is another possible
+classdef prfModel < matlab.mixin.SetGet % handle % matlab.mixin.SetGet, matlab.mixin.Copyable is another possible
     % Initialize a prf model object for the forward time series
     % calculation
     %
@@ -31,7 +31,7 @@ classdef prfModel < handle % matlab.mixin.SetGet, matlab.mixin.Copyable is anoth
         % the pm model itself will be a property of the subclass as well.
         uniqueTR;          % This is part of the main model. It will be set in all subclasses
     end
-    properties (GetAccess=public, SetAccess=private)
+    properties (GetAccess=public, SetAccess=public) % Changed from SetAccess=private, check
         Type            ;
         Stimulus        ;
         RF              ;
@@ -73,6 +73,7 @@ classdef prfModel < handle % matlab.mixin.SetGet, matlab.mixin.Copyable is anoth
             pm.Noise{3}.PM = pm;
             
         end
+        
         
         % Functions that apply the setting of main parameters to subclasses
         % TR: set and get

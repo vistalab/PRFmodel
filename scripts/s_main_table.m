@@ -1,4 +1,4 @@
-%% MAIN SCRIPT
+%% MAIN SCRIPT (it works again, but I still need to do many other things)
 % 
 % This script is a wrapper that generates ARRAYS OF synthetic BOLD signal and 
 % estimates calculated with different pRF implementations. It is intended to be
@@ -57,89 +57,30 @@
 %       possible combinations between parameters. TODO: provide more control to this...
 % 
 % How to include parameters: 
-%     - If it is 
+%     - TO DO
 % 
-% Stimulus params
-% 
-% RF params
-
-% 
-
-
-
-
-
-
-
-%% Include the stimulus generation here
-
-% For a single stimulus
-stimulus = pmStimulusCreate(varargin);
-
-%% Build the current PRF model
-prfModelBase = pmModelCreate('model name');  % This is the prfModel class
-
-%% Make the time series
-prfModelBase.computeTimeSeries(stimulus);    % Make the TS
-
-%% Estimate parameters for a model
-
-prfModelBase.estimate('prfEstimationMethod');  % Estimate the pRF parameters from the time series
-
-%% Array the model
-
-% Tools to build up a lot of receptive fields in a table of parameters
-% We might also have a table of model parameters.
-%{
- prfModelBase     = prfModel;
- rfParameterTable = pmRFTable('rf parameters defined');
- prfModelArray    = prfModelBase.computeMultipleTimeSeries(rfParameterTable)
-%}
-
-%% How to get a parameter out if we need it
-
-% Always configure what we store so that there can be no conflicts.
-
-%{
-% Maybe a parfor if we need it
-for ii=1:numel(prfModelArray)
-    loop on prfModels to estimate
-end
-%}
-
-%
-noisyTimeSeries = prfModelArray(ii).get('noisy time series');
-
-% prfModelGet('noisy time series');
-% switch
-%     case {'noisytimeseries'}
-%         val = prfModelArray(ii).timeSeries + prfModelArray(ii).noise;
-%     case {'timeseries'}
-%         val = prfModelArray(ii).timeSeries;
-%     case {'noise'}
-%         val = prfModelArray(ii).noise;
-% end
-
-
-%% Create tables with different pRF parameters 
-%
 % The entries in these different tables will be used to generate
 % synthetic BOLD timeseries.  These will be analyzed and the estimates
 % will be compared with the parameters set here.
 
-% Generate a default seed table with default values
-synthDT = forwardModelTableCreate();
+synthDT = pmForwardModelTableCreate();
+% TODO: make this into a function
+            % Generate a default seed table with default values
+            synthDT = pmForwardModelTableCreate();
+
+            % Add rows with the combinations of parameters we want to check
+            % BEWARE: THIS GROWS VERY FAST: each line multiplyes the rows of the
+            % previous one, accumulatively
+            synthDT = pmForwardModelAddRows(synthDT, 'RF.x0',[1,2,3]);
+            synthDT = pmForwardModelAddRows(synthDT, 'RF.y0',[1,2,3]);
+            synthDT = pmForwardModelAddRows(synthDT, 'RF.sigMajor',[2,3]);
+            synthDT = pmForwardModelAddRows(synthDT, 'RF.sigMinor',[2,3]);
+
+%% Create tables with different pRF parameters 
        
-% Add rows with the combinations of parameters we want to check
-% BEWARE: THIS GROWS VERY FAST: each line multiplyes the rows of the
-% previous one, accumulatively
-synthDT = forwardModelTableAddRows(synthDT, 'RF.x0',[1,2,3]);
-synthDT = forwardModelTableAddRows(synthDT, 'RF.y0',[1,2,3]);
-synthDT = forwardModelTableAddRows(synthDT, 'RF.sigMajor',[2,3]);
-synthDT = forwardModelTableAddRows(synthDT, 'RF.sigMinor',[2,3]);
-       
-% Calculate the models       
-synthDT = forwardModelCalculate(synthDT);
+% Once all the desired combinations of parameters have been created, 
+% compute the forward models       
+synthDT = pmForwardModelCalculate(synthDT);
 
 % To see the big list of cases, just type
 %   synthDT

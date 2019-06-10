@@ -18,8 +18,8 @@
 %% Create default values:
 pm = prfModel_basic;
 
-pm.RF.Center = [2 1];
-pm.RF.Theta  = 30;      % Degrees, x-axis = 0, positive y-axis 90
+pm.RF.Center      = [2 1];
+pm.RF.Theta       = 30;       % Degrees, x-axis = 0, positive y-axis 90
 pm.RF.sigmaMajor  = 1.0;      % Degrees, x-axis = 0, positive y-axis 90
 pm.RF.sigmaMinor  = 0.1;      % Degrees, x-axis = 0, positive y-axis 90
 
