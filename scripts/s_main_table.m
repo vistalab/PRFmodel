@@ -63,6 +63,10 @@
 % synthetic BOLD timeseries.  These will be analyzed and the estimates
 % will be compared with the parameters set here.
 
+
+
+
+
 synthDT = pmForwardModelTableCreate();
 % TODO: make this into a function
             % Generate a default seed table with default values

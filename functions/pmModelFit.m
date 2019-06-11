@@ -62,7 +62,7 @@ switch prfImplementation
 
                 % Obtain the required values for this pRF model
                 pm       = input.pm(ii);
-                stimulus = pm.Stimulus.getStimValues;
+                stimulus = double(pm.Stimulus.getStimValues);
                 data     = pm.BOLDnoise;
                 TR       = pm.TR;
                 options  = struct('seedmode',[0 1],...
@@ -80,12 +80,12 @@ switch prfImplementation
         else
             % Obtain the required values for this pRF model
             pm       = input;
-            stimulus = pm.Stimulus.getStimValues;
+            stimulus = double(pm.Stimulus.getStimValues);
             data     = pm.BOLDnoise;
             TR       = pm.TR;
             options  = struct('seedmode',[0 1],'display','off');
             % Calculate PRF
-            results  = analyzePRF({stimulus},{data},TR, options);
+            results  = analyzePRF(stimulus,data,TR, options);
             
             % Add a new row of results
             pmEstimates = [pmEstimates; struct2table(results,'AsArray',true)];

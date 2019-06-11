@@ -49,7 +49,8 @@ pm.plot('both');
 
 % And compute it with, for example, analyzePRF
 results = pmModelFit(pm, 'analyzePRF');
-results.ecc
+results
+
 
 %{
 % How to transform the results parameters into a center and size all
@@ -57,6 +58,7 @@ results.ecc
 %
 thetaRadians = deg2rad(results.ang);
 [cX,cY] = pol2cart(theta,results.ecc);
+[cX,cY] = pol2cart(thetaRadians,results.ecc);
 rfSizeDeg = pm.RF.sigmaMajor;
 mrvNewGraphWin;
 ellipsePlot(rfSizeDeg,rfSizeDeg,thetaRadians);
