@@ -32,11 +32,16 @@ classdef prfModel < matlab.mixin.SetGet % handle % matlab.mixin.SetGet, matlab.m
         uniqueTR;          % This is part of the main model. It will be set in all subclasses
     end
     properties (GetAccess=public, SetAccess=public) % Changed from SetAccess=private, check
-        Type            ;
+        % Basic, CSS ... (char)
+        Type            ; 
+        % Components required to build the synthetic bold signal (classes)
         Stimulus        ;
         RF              ;
         HRF             ;
         Noise           ;
+        % Other required options (double)
+        BOLDMeanValue   ; % Mean value of the synthetic BOLD signal
+        % The result: synthetic BOLD series (1 dim array of doubles)
         BOLDnoise       ; % Final value, composed of the BOLD + noise
     end
     properties (Dependent)
@@ -50,27 +55,22 @@ classdef prfModel < matlab.mixin.SetGet % handle % matlab.mixin.SetGet, matlab.m
         % Constructor
         function pm = prfModel
             pm.TR       = 1;
+            
             pm.Type     = 'basic';
+            % Required mean signal values. 
+            pm.BOLDMeanValue = 1000;
             
-            % Create the classes
-            pm.Stimulus    = pmStimulus;     % Create an Stimulus object
-            pm.Stimulus.PM = pm;          % Initialize the prfModel inside it
-            
-            pm.HRF      = pmHRF_friston;  % Create an HRF object
-            pm.HRF.PM   = pm;             % Initialize the prfModel inside it
-            
-            pm.RF       = pmRF;
-            pm.RF.PM    = pm;             % Initialize the prfModel inside it
-            
+            % Create the classes, and initialize a prfModel inside it
+            pm.Stimulus = pmStimulus(pm);  
+            pm.HRF      = pmHRF_friston(pm);  
+            pm.RF       = pmRF(pm);       
+                       
             % We should initialize the RNG here and return the seed
             
             % TODO: this should be able to take several noise models
-            pm.Noise{1} = pmNoise_white;  
-            pm.Noise{1}.PM = pm;
-            pm.Noise{2} = pmNoise_cardiac;
-            pm.Noise{2}.PM = pm;
-            pm.Noise{3} = pmNoise_respiratory;
-            pm.Noise{3}.PM = pm;
+            pm.Noise{1} = pmNoise_white(pm);  
+            pm.Noise{2} = pmNoise_cardiac(pm);
+            pm.Noise{3} = pmNoise_respiratory(pm);
             
         end
         
@@ -128,6 +128,7 @@ classdef prfModel < matlab.mixin.SetGet % handle % matlab.mixin.SetGet, matlab.m
             % Here is how we add the noise terms.
             sumOfNoise = zeros(size(pm.BOLD));
             for ii=1:length(pm.Noise)
+                pm.Noise{ii}.compute;
                 sumOfNoise = sumOfNoise + pm.Noise{ii}.values;
             end
             

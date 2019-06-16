@@ -45,7 +45,6 @@ classdef prfModel_basic < prfModel
             % For this linear model we take the inner product of the
             % receptive field with the stimulus contrast.  Then we
             % convolve that value with the HRF.
-            %
             
             varargin = mrvParamFormat(varargin);
             p = inputParser;
@@ -60,15 +59,44 @@ classdef prfModel_basic < prfModel
             [r,c,t] = size(stimValues);
             spaceStim = reshape(stimValues,r*c,t);
 
-            % I had didactic code here that GL used at first. But that
-            % took 9 secs.  This code takes 0.1 sec.  So harder to
-            % read, but let's use it.
+            % Calculate time series
             timeSeries  = pm.RF.values(:)' * spaceStim;
             
             % Convolution between the timeSeries and the HRF
             pm.BOLD = conv(timeSeries, pm.HRF.values, 'same');
+            
+            % Scale the to the required mean signal
+            pm.BOLD = (pm.BOLD - mean(pm.BOLD)) + pm.BOLDMeanValue;
+            
         end
         
     end
     
 end
+
+
+
+
+
+
+
+
+%{
+plot(timeSeries)
+plot(pm.BOLD)
+
+100*(   (max(pm.BOLD)-min(pm.BOLD))  /mean(pm.BOLD))
+%}
+
+
+
+
+
+
+
+
+
+
+
+
+

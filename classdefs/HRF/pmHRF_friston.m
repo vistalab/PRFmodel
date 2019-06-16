@@ -54,7 +54,8 @@ classdef pmHRF_friston <  pmHRF
     %%
     methods
         % Constructor
-        function hrf = pmHRF_friston
+        function hrf = pmHRF_friston(pm,varargin)
+            hrf.PM = pm;
             % Default parameters
             a  = [6  ,  12];
             b  = [0.9, 0.9];

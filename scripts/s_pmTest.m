@@ -36,11 +36,12 @@ ellipsePlot(rfCenter,rfSizeDeg,rfThetaRadians);
 %}
 
 % Computes noise free and noise BOLD signals.
-pm.compute;
+pm.compute; pm.plot('both');
+
 
 % Visualize them
 pm.plot('with noise');
-
+            
 % Visualize them
 pm.plot('no noise');
 
@@ -138,7 +139,9 @@ pm.Noise
 pm.Noise{3}.plot
 % Change a parameter
 pm.Noise{3}.params.amplitude = 0.9;
-% Visualize it (no compute required, calculated on the fly)
+% Compute the changes
+pm.Noise{3}.compute;
+% Visualize it 
 pm.Noise{3}.plot
 % Compute and visualize the new synthetic BOLD with noise
 pm.compute;

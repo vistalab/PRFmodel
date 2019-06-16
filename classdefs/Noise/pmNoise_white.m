@@ -23,24 +23,29 @@ classdef pmNoise_white < pmNoise
     
     properties (GetAccess=public, SetAccess=public)
         params;
+        values;
     end
     
     properties (Dependent = true)
-        values;
+        % values;
     end
     
     
     %%
     methods
         % Constructor
-        function noise = pmNoise_white
-            noise.Type = 'white';
-            noise.params.k      =  0.5; % Value between 0 (no noise) and 1 (proportional to mean signal)
+        function noise = pmNoise_white(pm)
+            noise.PM            = pm;
+            noise.Type          = 'white';
+            noise.params.k      =  0.1; % Value between 0 (no noise) and 1 (proportional to amplitude of signal)
         end
-        % Methods available to this class and his childrens (friston, boynton... classes)
-        function values = get.values(noise)
-            n      = noise.params.k * mean(noise.PM.BOLD);
-            values = n * randn(size(noise.PM.BOLD));
+        
+        % Methods available to this class 
+        
+        % COMPUTE
+        function compute(noise)
+            n            = noise.params.k * (max(noise.PM.BOLD) - min(noise.PM.BOLD));
+            noise.values = n * randn([1,noise.PM.timePointsN]);
         end
         
     end

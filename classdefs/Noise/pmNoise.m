@@ -55,8 +55,8 @@ classdef pmNoise <  matlab.mixin.SetGet
     %%
     methods
         % Constructor
-%         function noise = pmNoise
-%         end
+        function noise = pmNoise
+        end
         % Methods available to this class and his childrens (friston, boynton... classes)
         function TR = get.TR(noise)
             TR = noise.PM.TR;

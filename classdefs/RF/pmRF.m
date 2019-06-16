@@ -41,8 +41,9 @@ classdef pmRF <   matlab.mixin.SetGet
     %%
     methods
         % Constructor
-        function rf = pmRF
-            %% The receptive field parameters
+        function rf = pmRF(pm)
+            rf.PM         = pm;
+            % The receptive field parameters
             rf.Center     = [0 0];    % Deg
             rf.Theta      = 0;        % Radians
             rf.sigmaMajor = 1;        % deg

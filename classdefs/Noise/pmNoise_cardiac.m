@@ -24,30 +24,34 @@ classdef pmNoise_cardiac < pmNoise
     
     properties
         params;  
-    end
-    
-    properties (Dependent = true)
         values;
     end
+    
+    % properties (Dependent = true)
+    %     values;
+    % end
     
     
     %%
     methods
         % Constructor
-        function noise = pmNoise_cardiac
-             noise.Type                  =  'cardiac';  
-             noise.params.frequency      =  1.25;  % 1.25 Hz:75 beats/min
-             noise.params.amplitude      =  0.50;  % 0-1 proportion over mean BOLD signal
-             
+        function noise = pmNoise_cardiac(pm)
+            noise.PM                    =  pm;
+            noise.Type                  =  'cardiac';
+            noise.params.frequency      =  1.25;  % 1.25 Hz:75 beats/min
+            noise.params.amplitude      =  0.10;  % 0-1 proportion over mean BOLD signal
+            
         end
-        % Methods available to this class and his childrens (friston, boynton... classes)
-        function values = get.values(noise)
+        % Methods available to this class 
+        function compute(noise)
             signal = noise.PM.BOLD;
-            fNoise = noise.params.frequency;                % Frequency [Hz]
-            aNoise = noise.params.amplitude * mean(signal); % Amplitude
+            % Frequency [Hz]
+            fNoise = noise.params.frequency;                
+            % Amplitude
+            aNoise = noise.params.amplitude * (max(noise.PM.BOLD) - min(noise.PM.BOLD)); 
             t      = noise.PM.timePointsSeries;
             % Calculate the noise
-            values = aNoise*sin(2*pi.*t.*fNoise);
+            noise.values = aNoise*sin(2*pi.*t.*fNoise);
         end
 
     end

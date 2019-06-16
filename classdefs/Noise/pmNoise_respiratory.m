@@ -23,31 +23,36 @@ classdef pmNoise_respiratory < pmNoise
     %}
     
     properties
-        params;  
+        params;
+        values
     end
     
-    properties (Dependent = true)
-        values;
-    end
+    % properties (Dependent = true)
+    %    values;
+    % end
     
     
     %%
     methods
         % Constructor
-        function noise = pmNoise_respiratory
-             noise.Type                  =  'respiratory';  
-             noise.params.frequency      =  0.3;  % 0.3 Hz : 18 breaths/min
-             noise.params.amplitude      =  0.5;  % 0-1 proportion over mean BOLD signal
-             
+        function noise = pmNoise_respiratory(pm)
+            noise.PM                    =  pm;
+            noise.Type                  =  'respiratory';
+            noise.params.frequency      =  0.3;  % 0.3 Hz : 18 breaths/min
+            noise.params.amplitude      =  0.1;  % 0-1 proportion over BOLD signal amplitude
+            
         end
-        % Methods available to this class and his childrens (friston, boynton... classes)
-        function values = get.values(noise)
+        % Methods available to this class 
+                % COMPUTE
+        function compute(noise)
             signal = noise.PM.BOLD;
-            fNoise = noise.params.frequency;                % Frequency [Hz]
-            aNoise = noise.params.amplitude * mean(signal); % Amplitude
+            % Frequency [Hz]
+            fNoise = noise.params.frequency;
+            % Amplitude
+            aNoise = noise.params.amplitude * (max(noise.PM.BOLD) - min(noise.PM.BOLD)); 
             t      = noise.PM.timePointsSeries;
             % Calculate the noise
-            values = aNoise*sin(2*pi.*t.*fNoise);
+            noise.values = aNoise*sin(2*pi.*t.*fNoise);
             
         end
 

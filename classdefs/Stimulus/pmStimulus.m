@@ -49,7 +49,10 @@ classdef pmStimulus <  handle % matlab.mixin.SetGet
     %%
     methods
         % Constructor
-        function stim = pmStimulus
+        function stim = pmStimulus(pm)
+            % Initialize the PM model
+            stim.PM              = pm; 
+            % Edit the parameters
             stim.fieldofviewHorz = 20;    % Degrees
             stim.fieldofviewVert = 20;    % Degrees
             stim.expName         = "103"; % TODO: give it meaningful names

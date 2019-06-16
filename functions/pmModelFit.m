@@ -48,48 +48,35 @@ prfImplementation = mrvParamFormat(prfImplementation);
 
 switch prfImplementation
     case {'analyzeprf'}
-        % Let's define the format for the estimates so that this is
-        % the same for all the methods.
+        % TODO: Let's define the format for the estimates so that this is
+        %       the same for all the methods.
         pmEstimates = table();
         
-        if istable(input)
-            % TODO: if is not a table, create a table of 1 row and use
-            % the same loop.
-            %
-            % TODO: use parfor if the number of rows if the table is
-            % larger than XX
-            for ii=1:height(input)
-
-                % Obtain the required values for this pRF model
-                pm       = input.pm(ii);
-                stimulus = double(pm.Stimulus.getStimValues);
-                data     = pm.BOLDnoise;
-                TR       = pm.TR;
-                options  = struct('seedmode',[0 1],...
-                    'display','off',...
-                    'dosave','modelpred');
-
-                % Calculate PRF
-                results  = analyzePRF({stimulus}, {data}, TR, options);
-                
-                % TODO: make "results" the same format for everybody
-                 
-                % Add a new row of results
-                pmEstimates = [pmEstimates; struct2table(results,'AsArray',true)];
-            end
-        else
-            % Obtain the required values for this pRF model
-            pm       = input;
+        % Check if the pm-s come in a table or alone
+        if ~istable(input)
+            temp = table();
+            temp.pm = input;
+            input = temp;
+        end
+        
+        % Go line by line and compute required values for each pRF model
+        for ii=1:height(input)
+            % TODO: use parfor if the number of rows if the table is larger than XX
+            pm       = input.pm(ii);
             stimulus = double(pm.Stimulus.getStimValues);
             data     = pm.BOLDnoise;
             TR       = pm.TR;
-            options  = struct('seedmode',[0 1],'display','off');
+            options  = struct('seedmode',[0 1],...
+                              'display','off',...
+                              'dosave','modelpred');
+            
             % Calculate PRF
-            results  = analyzePRF(stimulus,data,TR, options);
+            results  = analyzePRF({stimulus}, {data}, TR, options);
             
             % Add a new row of results
             pmEstimates = [pmEstimates; struct2table(results,'AsArray',true)];
         end
+        
     case {'afni'}
         disp('NYI');
     case {'popeye'}

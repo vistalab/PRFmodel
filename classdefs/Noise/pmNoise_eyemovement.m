@@ -36,7 +36,7 @@ classdef pmNoise_eyemovement < pmNoise
         function noise = pmNoise_eyemovement
              noise.params.k      =  0.5; % Value between 0 (no noise) and 1 (proportional to mean signal)
         end
-        % Methods available to this class and his childrens (friston, boynton... classes)
+        % Methods available to this class 
         function values = get.values(noise)
             n      = noise.params.k * mean(noise.baselineBOLD);
             values = n * randn(size(noise.baselineBOLD));
