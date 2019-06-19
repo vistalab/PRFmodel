@@ -30,11 +30,11 @@ classdef pmHRF_friston <  pmHRF
     %
     %Brief description:
     %
-    %   
+    %
     % Example:
     %    t = 0:0.1:15
     %    [hirf, params] = fristonHIRF(t);
-    %    plot(t,hirf); 
+    %    plot(t,hirf);
     %    xlabel('Time (sec)'); ylabel('Relative amp'); grid on;
     %
     
@@ -44,28 +44,40 @@ classdef pmHRF_friston <  pmHRF
     
     properties (GetAccess=public, SetAccess=public)
         params;
-    end
-    
-    properties (Dependent = true)
         values;
     end
+    properties (GetAccess=public, SetAccess=private )
+        Type;
+    end    
     
     
     %%
     methods
         % Constructor
         function hrf = pmHRF_friston(pm,varargin)
-            hrf.PM = pm;
-            % Default parameters
-            a  = [6  ,  12];
-            b  = [0.9, 0.9];
-            c  = 0.35;
+            % Create default parameter struct
+            a  = [6  ,  12]; b  = [0.9, 0.9]; c  = 0.35;
             params.a = a; params.b = b; params.c = c;
-            hrf.params = params;
+            
+            % Read the inputs
+            varargin = mrvParamFormat(varargin);
+            p = inputParser;
+            p.addRequired('pm'       ,        @(x)(isa(x,'prfModel')));
+            p.addParameter('params'  ,params, @isstruct);
+            p.addParameter('duration',20    , @isnumeric);
+            p.parse(pm,varargin{:});
+            % Assign it
+            params   = p.Results.params;
+            Duration = p.Results.duration;
+            
+            % Initialize the pm model and hrf model parameters
+            hrf.PM       = pm;
+            hrf.Type     = 'friston';
+            hrf.Duration = Duration;
+            hrf.params   = params;
         end
         
-        
-        function values = get.values(hrf)
+        function compute(hrf)
             a = hrf.params.a;
             b = hrf.params.b;
             c = hrf.params.c;
@@ -76,8 +88,8 @@ classdef pmHRF_friston <  pmHRF
                 d(ii) = a(ii)*b(ii);
             end
             % Calculate actual values
-            values = (t/d(1)).^a(1)   .* exp(-(t - d(1))/b(1)) ...
-                   - c*(t/d(2)).^a(2) .* exp(-(t-d(2))/b(2));
+            hrf.values = (t/d(1)).^a(1)   .* exp(-(t - d(1))/b(1)) ...
+                          - c*(t/d(2)).^a(2) .* exp(-(t-d(2))/b(2));
             
         end
     end

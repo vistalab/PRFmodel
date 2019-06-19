@@ -16,12 +16,14 @@
 %
 
 %% Create default values:
-pm = prfModel_basic;
+pm = prfModel;
+pm.compute; 
 
-pm.RF.Center      = [2 1];
-pm.RF.Theta       = 30;       % Degrees, x-axis = 0, positive y-axis 90
+
+pm.RF.Center      = [0 0];
+pm.RF.Theta       = 0;        % Degrees, x-axis = 0, positive y-axis 90
 pm.RF.sigmaMajor  = 1.0;      % Degrees, x-axis = 0, positive y-axis 90
-pm.RF.sigmaMinor  = 0.1;      % Degrees, x-axis = 0, positive y-axis 90
+pm.RF.sigmaMinor  = 1.0;      % Degrees, x-axis = 0, positive y-axis 90
 
 
 %{
@@ -36,7 +38,11 @@ ellipsePlot(rfCenter,rfSizeDeg,rfThetaRadians);
 %}
 
 % Computes noise free and noise BOLD signals.
-pm.compute; pm.plot('both');
+% NOTE: the call to compute calls the compute functions for the rest of
+%       subclasses. In this case, after the RF parameter changes, the call to
+%       pm.RF.compute only would necessary if we wanted to visualize the RF with
+%       pm.RF.plot
+pm.compute; 
 
 
 % Visualize them
@@ -50,7 +56,6 @@ pm.plot('both');
 
 % And compute it with, for example, analyzePRF
 results = pmModelFit(pm, 'analyzePRF');
-results
 
 
 %{
@@ -103,20 +108,17 @@ pm.RF.plot
 % Change a couple of parameters
 pm.RF.sigmaMajor = 3;
 pm.RF.Theta      = pi/2;
-% NOTE::: RF.COMPUTE: not required, this is light and everything done on the fly
-% TODO: Let's discuss this, maybe you want to always have it for coherence
+% Compute 
+pm.RF.compute;
 % Visualize
 pm.RF.plot
 % See the new predicted synthetic BOLD signal
 % We need to compute it first.
-% TODO: I think I would avoid the compute steps and internally
-%       always launch the compute function when the BOLD signal is
-%       required.
 pm.compute;
 pm.plot('with noise');
 
 %{
-radSpacing = 0.01;
+     radSpacing = 0.01;
      a = 1; b = 3; theta = pi/4;
      [x,y] = ellipsePoints(a,b,theta,radSpacing);
      x = [x,x(1)]; y = [y, y(1)];   % Close it up for plotting
@@ -129,7 +131,15 @@ radSpacing = 0.01;
 pm.HRF.plot
 % Change a parameter
 pm.HRF.params.c = 0.7;
-% Visualize (no HRF.compute required, calculated on the fly)
+% Compute 
+pm.HRF.compute;
+% Visualize 
+pm.HRF.plot
+% Change HRF from Friston to Canonical
+pm.HRF = pmHRF_canonical(pm);
+% Compute 
+pm.HRF.compute;
+% Visualize 
 pm.HRF.plot
 
 %% 4./ Noise

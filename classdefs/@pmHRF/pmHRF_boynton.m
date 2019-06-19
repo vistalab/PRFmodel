@@ -27,11 +27,12 @@ classdef pmHRF_boynton <  pmHRF
     %%
     properties (GetAccess=public, SetAccess=public)
         params;
-    end
-    
-    properties (Dependent = true)
         values;
     end
+    
+    % properties (Dependent = true)
+    %     values;
+    % end
     
     
     %%
@@ -46,7 +47,7 @@ classdef pmHRF_boynton <  pmHRF
             params.a = a; params.b = b; params.c = c;
             hrf.params = params;
         end
-        function values = get.values(hrf)
+        function compute(hrf)
             a = hrf.params.a;
             b = hrf.params.b;
             c = hrf.params.c;
@@ -57,8 +58,8 @@ classdef pmHRF_boynton <  pmHRF
                 d(ii) = a(ii)*b(ii);
             end
             % Calculate actual values
-            values = (t/d(1)).^a(1) .* exp(-(t - d(1))/b(1)) ...
-                   - c*(t/d(2)).^a(2) .* exp(-(t-d(2))/b(2));
+            hrf.values = (t/d(1)).^a(1) .* exp(-(t - d(1))/b(1)) ...
+                          - c*(t/d(2)).^a(2) .* exp(-(t-d(2))/b(2));
             
         end
     end
