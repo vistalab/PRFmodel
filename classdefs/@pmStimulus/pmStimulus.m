@@ -47,18 +47,44 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
     
     
     %%
+    
+    methods (Static)
+        function d = defaultsGet
+            d.fieldofviewHorz = 20;    % Degrees
+            d.fieldofviewVert = 20;    % Degrees
+            d.expName         = "103"; % TODO: give it meaningful names
+            d.Binary          = true;  % True: only apertures. False: images/words inside apertures
+            d.barWidth        = 2;     % Degrees. TODO
+            % Convert to table and return
+            d = struct2table(d,'AsArray',true);
+        end
+    end
+    % Constructor
     methods
-        % Constructor
-        function stim = pmStimulus(pm)
+        function stim = pmStimulus(pm, varargin)
+            % Obtain defaults table. If a parameters is not passed, it will use
+            % the default one defined in the static function
+            d = stim.defaultsGet;
+            % Read the inputs
+            varargin = mrvParamFormat(varargin);
+            p = inputParser;
+            p.addRequired ('pm'             ,                   @(x)(isa(x,'prfModel')));
+            p.addParameter('fieldofviewhorz',d.fieldofviewHorz, @isnumeric);
+            p.addParameter('fieldofviewvert',d.fieldofviewVert, @isnumeric);
+            p.addParameter('expname'        ,d.expName{:}     , @ischar);
+            p.addParameter('binary'         ,d.Binary         , @islogical);
+            p.addParameter('barwidth'       ,d.barWidth       , @isnumeric);
+            p.parse(pm,varargin{:});
+            
             % Initialize the PM model
-            stim.PM              = pm; 
+            stim.PM              = pm;
             % Edit the parameters
-            stim.fieldofviewHorz = 20;    % Degrees
-            stim.fieldofviewVert = 20;    % Degrees
-            stim.expName         = "103"; % TODO: give it meaningful names
-            stim.Binary          = true;  % True: only apertures. False: images/words inside apertures
-            stim.barWidth        = 2;     % Degrees. TODO
-            % If it does not exist, create the stim file. 
+            stim.fieldofviewHorz = p.Results.fieldofviewhorz;
+            stim.fieldofviewVert = p.Results.fieldofviewvert;
+            stim.expName         = p.Results.expname;
+            stim.Binary          = p.Results.binary;
+            stim.barWidth        = p.Results.barwidth;
+            % If it does not exist, create the stim file.
             % Always store just the path and the name
             stimName = strcat('Exp-',stim.expName, ...
                 '_binary-', choose(stim.Binary,'true','false'), ...
@@ -121,7 +147,7 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
                 fprintf('Computing and storing new stimulus file in %s',stimNameWithPath)
                 pmStimulusGenerate('filename', stimNameWithPath);
             end
-            fprintf('Retrieving stimulus file in %s',stimNameWithPath)
+            % fprintf('Retrieving stimulus file in %s',stimNameWithPath)
             stim.values        =  char(stimNameWithPath);
             % Default fileName if we want to write a video of the stimuli
             stim.videoFileName = char(fullfile(pmRootPath,'local',strcat(stimName,'.avi')));

@@ -17,6 +17,10 @@
 
 %% Create default values:
 pm = prfModel;
+% Visualize the default values
+pm.defaultsTable
+
+
 pm.compute; 
 
 

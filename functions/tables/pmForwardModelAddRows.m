@@ -13,10 +13,17 @@ vars = strsplit(variableName,'.');
 % variable that we want to expand
 tmp = synthDT;
 for ii=1:length(values)
+    if length(vars) == 1
+        tmp.(vars{1})           = repmat(values(ii), [height(tmp),1]);
+    end
     if length(vars) == 2
         tmp.(vars{1}).(vars{2}) = repmat(values(ii), [height(tmp),1]);
-    else
-        tmp.(vars{1})           = repmat(values(ii), [height(tmp),1]);
+    end
+    if length(vars) == 3
+        tmp.(vars{1}).(vars{2}).(vars{3}) = repmat(values(ii), [height(tmp),1]);
+    end
+    if length(vars) >= 4
+        error('Only implemented until 3 levels of nesting in the table')
     end
     synthDT = [synthDT; tmp];
 end

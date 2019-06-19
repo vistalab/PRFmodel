@@ -53,16 +53,28 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
         defaultsTable   ;
     end
     
+    methods (Static)
+        function d = defaultsGet
+            d.TR            = 1;
+            d.Type          = 'basic';
+            d.BoldMeanValue = 200;
+            % Convert to table and return
+            d = struct2table(d,'AsArray',true);
+        end
+    end
     methods
         % Constructor
         function pm = prfModel(varargin)
-            % make all lower case, remove white spaces...
+            % Obtain defaults table. If a parameters is not passed, it will use
+            % the default one defined in the static function
+            d = pm.defaultsGet;
+            % Make varargin lower case, remove white spaces...
             varargin = mrvParamFormat(varargin);
             % Parse the inputs/assign default values
             p = inputParser;
-            p.addParameter('tr'           ,  1      ,  @isnumeric);
-            p.addParameter('type'         ,  'basic',  @ischar);
-            p.addParameter('boldmeanValue',  200    ,  @isnumeric);
+            p.addParameter('tr'           ,  d.TR           , @isnumeric);
+            p.addParameter('type'         ,  d.Type{:}      , @ischar);
+            p.addParameter('boldmeanValue',  d.BoldMeanValue, @isnumeric);
             
             p.parse(varargin{:});
             % Assign defaults/parameters to class/variables
@@ -71,17 +83,18 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             pm.BOLDMeanValue = 200;
             
             % Create the classes, and initialize a prfModel inside it
-            pm.Stimulus      = pmStimulus(pm);  
-            pm.HRF           = pmHRF_friston(pm);  
-            pm.RF            = pmRF(pm);       
-                       
+            pm.Stimulus      = pmStimulus(pm);
+            pm.HRF           = pmHRF(pm);
+            pm.RF            = pmRF(pm);
+            
             % We should initialize the RNG here and return the seed
             
-            % TODO: this should be able to take several noise models
-            pm.Noise{1} = pmNoise_white(pm);  
-            pm.Noise{2} = pmNoise_cardiac(pm);
-            pm.Noise{3} = pmNoise_respiratory(pm);
-            
+            % pm.Noise takes one or several noise models that will be added
+            % recursively and independently to the bold signal, i.e. each noise
+            % is independent from each other.
+%             pm.Noise = {pmNoise(pm, 'Type','white'), ...
+%                         pmNoise(pm, 'Type','cardiac'), ...
+%                         pmNoise(pm, 'Type','respiratory')};
         end
         
         
@@ -112,18 +125,15 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
         end
         
         function defaultsTable = get.defaultsTable(pm)
-            % TODO
-            % This function will obtain all the defaults from all the
+            % This function obtains all the defaults from all the
             % subclasses, so that we can construct a parameter table
-            defaultsTable = table();
+            defaultsTable          = pm.defaultsGet;
+            defaultsTable.HRF      = pm.HRF.defaultsGet;
+            defaultsTable.RF       = pm.RF.defaultsGet;
+            defaultsTable.Stimulus = pm.Stimulus.defaultsGet;
             
-            % defaultsTable.Stimulus = pm.Stimulus.defaultsTable;
-            % defaultsTable.HRF      = pm.HRF.defaultsTable;
-            % defaultsTable.RF       = pm.RF.defaultsTable;
-            % defaultsTable.Noise    = pm.Noise.defaultsTable;
+            % defaultsTable.Noise    = pm.Noise.defaultsGet;
             
-            
-            % pmFindAttributes(pm,'Dependent',true)
             
         end
         function computeBOLD(pm,varargin)

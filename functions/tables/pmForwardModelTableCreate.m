@@ -1,20 +1,20 @@
-function synthDT = pmForwardModelTableCreate()
+function synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS)
 % Creates default format for a PRF model table
 %
 % Syntax
-%  synthDT = forwardModelTableCreate()
+%  synthDT = pmForwardModelTableCreate()
 %
 % Brief description
 %   This function defines the default parameters (defaults) required
 %   to perform a forward calculation
-% 
+%
 % Inputs
 %  N/A
-% 
+%
 % Outputs
 %  Matlab table
-% 
-% 
+%
+%
 
 %%
 % p = inputParser;
@@ -22,20 +22,40 @@ function synthDT = pmForwardModelTableCreate()
 
 %%
 
-HRF      = cell2table(     {"friston",  20, [6,12],  [0.9,0.9],   0.35}, ...
-           'VariableNames',{'Type','duration','params_a','params_b','params_c'});
-Stimulus = cell2table(     {"103"    , true   , 20      , 20}, ...
-           'VariableNames',{'ExpName','Binary','fovHorz','fovVert'});
-RF       = cell2table(     {0 ,    0,      0,         1,      1}, ...
-           'VariableNames',{'x0','y0','theta','sigMajor','sigMinor'});
-Noise    = cell2table(     {"white", 0.5}, ...
-           'VariableNames',{'Type' ,'white_k'});
 
 % Create the main table with one row and default values
-pm = prfModel_basic;
-synthDT = cell2table(      {"1" , 'basic',  1, HRF , Stimulus , RF , Noise , pm}, ...
-           'VariableNames',{'ID','Type','TR','HRF','Stimulus','RF','Noise','pm'});
+pm         = prfModel;
+synthDT    = pm.defaultsTable;
+synthDT.pm = pm;
 
+% Extract parameters and keed adding rows.
+% BEWARE: THIS GROWS VERY FAST: each line multiplyes the rows of the
+% previous one, accumulatively
 
+fieldsToCombine = fieldnames(COMBINE_PARAMETERS);
+for ii=1:length(fieldsToCombine)
+    % Construct fieldname
+    fieldName  = fieldsToCombine{ii};
+    fieldValues=getfield(COMBINE_PARAMETERS,fieldName);
+    if ~isstruct(fieldValues)
+        % Add rows with the combinations of parameters we want to check
+        synthDT = pmForwardModelAddRows(synthDT, fieldName,fieldValues);
+    else
+        subFieldsToCombine = fieldnames(fieldValues);
+        for ii=1:length(subFieldsToCombine)
+            % Construct fieldname
+            subFieldName  = subFieldsToCombine{ii};
+            fieldValues   = getfield(COMBINE_PARAMETERS,fieldName,subFieldName);
+            if ~isstruct(fieldValues)
+                % Add rows with the combinations of parameters we want to check
+                subFieldName  = [fieldName '.' subFieldsToCombine{ii}];
+                synthDT = pmForwardModelAddRows(synthDT, subFieldName,fieldValues);
+            else
+                error('Only two levels of nesting implemented');
+            end
+            
+        end
+    end
+    
 end
 

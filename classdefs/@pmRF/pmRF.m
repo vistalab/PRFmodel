@@ -23,16 +23,16 @@ classdef pmRF <   matlab.mixin.SetGet & matlab.mixin.Copyable
     
     properties
         PM;         % prfModel that has some of the variables we need, such as TR
-        Center;     % Deg
+        Centerx0;   % Deg
+        Centery0;   % Deg
         Theta;      % Radians
         sigmaMajor; % Deg
         sigmaMinor; % Deg
-        values;
+        % values;
     end
-    
-    % properties (Dependent = true, Access = public)
-    %     values;
-    % end
+    properties (SetAccess = private, GetAccess = public)
+         values;    % Result. Only can be changes from within this func.
+    end
     properties(Dependent= true, SetAccess = private, GetAccess = public)
         TR;            % Seconds, it will be read from the parent class pm
     end
@@ -40,39 +40,65 @@ classdef pmRF <   matlab.mixin.SetGet & matlab.mixin.Copyable
     
     
     %%
+    methods (Static)
+        function d = defaultsGet
+            d.Centerx0   = 0;        % Deg
+            d.Centery0   = 0;        % Deg
+            d.Theta      = 0;        % Radians
+            d.sigmaMajor = 1;        % deg
+            d.sigmaMinor = 1;        % deg
+            % Convert to table and return
+            d = struct2table(d,'AsArray',true);
+        end
+    end
     methods
         % Constructor
-        function rf = pmRF(pm)
+        function rf = pmRF(pm, varargin)
+            % Obtain defaults table. If a parameters is not passed, it will use
+            % the default one defined in the static function
+            d = rf.defaultsGet;
+            % Read the inputs
+            varargin = mrvParamFormat(varargin);
+            p = inputParser;
+            p.addRequired ('pm'        ,              @(x)(isa(x,'prfModel')));
+            p.addParameter('centerx0'  ,d.Centerx0  , @isnumeric);
+            p.addParameter('centery0'  ,d.Centery0  , @isnumeric);
+            p.addParameter('theta'     ,d.Theta     , @isnumeric);
+            p.addParameter('sigmamajor',d.sigmaMajor, @isnumeric);
+            p.addParameter('sigmaminor',d.sigmaMinor, @isnumeric);
+            p.parse(pm,varargin{:});
             
-            
-            rf.PM         = pm;
+            % Initialize the pm model and hrf model parameters
+            rf.PM           = pm;
             % The receptive field parameters
-            rf.Center     = [0 0];    % Deg
-            rf.Theta      = 0;        % Radians
-            rf.sigmaMajor = 1;        % deg
-            rf.sigmaMinor = 1;        % deg
+            rf.Centerx0     = p.Results.centerx0;
+            rf.Centery0     = p.Results.centery0;
+            rf.Theta        = p.Results.theta;
+            rf.sigmaMajor   = p.Results.sigmamajor;
+            rf.sigmaMinor   = p.Results.sigmaminor;
         end
         function v = get.TR(rf)
             v      = rf.PM.TR;
         end
         % Methods available to this class and childrens, if any
         function compute(rf)
+            % Compute stimulus
+            rf.PM.Stimulus.compute;
+            % Obtain grid XY
             XY = rf.PM.Stimulus.XY;
+            % Calculate values
             rf.values = rfGaussian2d(XY{1}, XY{2}, ...
                         rf.sigmaMajor,rf.sigmaMinor,rf.Theta, ...
-                        rf.Center(1),rf.Center(2));
+                        rf.Centerx0,rf.Centery0);
         end
-        
-        function 
-            
-        end
-        
+                
         
         
         % Plot it
         function plot(rf)
-            % I think we don't want this to be stored in the object.
-            % Calculate it and return every time we need it.
+            % Compute before plotting
+            rf.compute
+            % Plot it
             mrvNewGraphWin('Receptive Field');
             mesh(rf.values);
             grid on; xlabel('x'); ylabel('y');
