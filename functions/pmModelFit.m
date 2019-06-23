@@ -1,4 +1,4 @@
-function [pmEstimates, results] = pmModelFit(input, prfImplementation)
+function [pmEstimates, results] = pmModelFit(input, prfimplementation, varargin)
 % Select and apply a PRF model to estimate model parameters
 % 
 % Syntax:
@@ -37,16 +37,26 @@ function [pmEstimates, results] = pmModelFit(input, prfImplementation)
   pmCompute...
 %}
 
-%%
+%% Read the inputs
+% Make varargin lower case, remove white spaces...
+varargin = mrvParamFormat(varargin);
+% Parse
 p = inputParser;
 p.addRequired('input');
-p.addRequired('prfImplementation',@ischar);
+p.addRequired('prfimplementation',@ischar);
+% This options structs are defaults for analyzePRF
+options  = struct('seedmode', [0 1], 'display' , 'off');
+p.addParameter('options'    ,  options , @isstruct);
+p.parse(input,prfimplementation,varargin{:});
+
+
+
 
 %% Choose the analysis case
+prfimplementation = mrvParamFormat(prfimplementation);
 
-prfImplementation = mrvParamFormat(prfImplementation);
 
-switch prfImplementation
+switch prfimplementation
     case {'analyzeprf'}
         % TODO: Let's define the format for the estimates so that this is
         %       the same for all the methods.
@@ -66,10 +76,8 @@ switch prfImplementation
             stimulus = double(pm.Stimulus.getStimValues);
             data     = pm.BOLDnoise;
             TR       = pm.TR;
-            options  = struct('seedmode',[0 1],...
-                              'display','off',...
-                              'dosave','modelpred');
-            
+            options  = p.Results.options;
+
             % Calculate PRF
             results  = analyzePRF({stimulus}, {data}, TR, options);
             
@@ -82,7 +90,7 @@ switch prfImplementation
     case {'popeye'}
         disp('NYI');
     otherwise
-        error('Method %s not implemented yet.', prfImplementation)
+        error('Method %s not implemented yet.', prfimplementation)
 end
 
 
