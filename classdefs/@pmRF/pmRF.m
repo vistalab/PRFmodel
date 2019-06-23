@@ -77,12 +77,14 @@ classdef pmRF <   matlab.mixin.SetGet & matlab.mixin.Copyable
             rf.sigmaMajor   = p.Results.sigmamajor;
             rf.sigmaMinor   = p.Results.sigmaminor;
         end
+        
         function v = get.TR(rf)
             v      = rf.PM.TR;
         end
+        
         % Methods available to this class and childrens, if any
         function compute(rf)
-            % Compute stimulus
+            % Compute stimulus just in case
             rf.PM.Stimulus.compute;
             % Obtain grid XY
             XY = rf.PM.Stimulus.XY;

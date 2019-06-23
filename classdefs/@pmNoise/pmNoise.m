@@ -44,6 +44,8 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
     properties
         PM;           % prfModel that has some of the variables we need, such as TR
         Type;         % 'White', ...
+        params;
+        values;
     end
     
     properties(Dependent= true, SetAccess = private, GetAccess = public)
@@ -53,14 +55,104 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
     
     
     %%
+    methods (Static)
+        function d = defaultsGet
+            d.Type                = 'white';
+            d.params.noise2signal = 0.1; % white noise; constant to relate to signal
+            d.params.amplitude    = 0.1; % cardiac and respiratory
+            d.params.frequency    = 1.25; % cardiac and respiratory
+            % Convert to table and return
+            d = struct2table(d,'AsArray',true);
+        end
+    end
     methods
         % Constructor
-        function noise = pmNoise
+        
+        function noise = pmNoise(pm,varargin)
+            % Obtain defaults table. If a parameters is not passed, it will use
+            % the default one defined in the static function
+            d = noise.defaultsGet;
+            % Read the inputs
+            varargin = mrvParamFormat(varargin);
+            p = inputParser;
+            p.addRequired('pm'       ,             @(x)(isa(x,'prfModel')));
+            p.addParameter('type'    ,d.Type{:}  , @ischar);
+            p.addParameter('params'  ,d.params   , @isstruct);
+            p.parse(pm,varargin{:});
+            
+            % Initialize the pm model and hrf model parameters
+            noise.PM       = pm;
+            noise.Type     = p.Results.type;
+            % Check if only some of the fields in params where set
+            noise.params   = pmParamsCompletenessCheck(p.Results.params,d.params);
         end
+        
         % Methods available to this class and his childrens (friston, boynton... classes)
         function TR = get.TR(noise)
             TR = noise.PM.TR;
         end
+        
+        % COMPUTE
+        function compute(noise)
+            % TODO: move the code to the .m functions of the same name
+            switch noise.Type
+                case 'white'
+                    % This is the amplitude of the white noise, the goal is to
+                    % scale it so that it h
+                    signal       = noise.PM.BOLD; % Retrieved from the parent model
+                    n            = noise.params.noise2signal * (max(signal) - min(signal));
+                    noise.values = n * randn([1,noise.PM.timePointsN]);
+                case 'cardiac'
+                    %                     % Make sure that when cardiac is selected, params comes with
+                    %                     % the correct parameters, otherwise use defaults for cardiac
+                    %                     if ~isfield(noise.params,'frequency')
+                    %                         params.frequency = 1.25;% 1.25 Hz:75 beats/min
+                    %                     end
+                    %                     if ~isfield(noise.params,'amplitude')
+                    %                         params.amplitude = 0.10;  % 0-1 proportion over mean BOLD signal
+                    %                     end
+                    %
+                    %                     % Update the obj just in case
+                    %                     noise.params = params;
+                    
+                    % Compute the noise
+                    signal = noise.PM.BOLD;  % BOLD signal, add noise to this
+                    % Frequency [Hz]
+                    fNoise = noise.params.frequency;
+                    % Amplitude
+                    aNoise = noise.params.amplitude * (max(noise.PM.BOLD) - min(noise.PM.BOLD));
+                    t      = noise.PM.timePointsSeries;
+                    % Calculate the noise
+                    noise.values = aNoise*sin(2*pi.*t.*fNoise);
+                case 'respiratory'
+                    %                     % Make sure that when respiratory is selected, params comes with
+                    %                     % the correct parameters, otherwise use defaults for respiratory
+                    %                     if ~isfield(noise.params,'frequency')
+                    %                         params.frequency = 0.3;  % 0.3 Hz : 18 breaths/min
+                    %                     end
+                    %                     if ~isfield(noise.params,'amplitude')
+                    %                         params.amplitude = 0.1;  % 0-1 proportion over BOLD signal amplitude
+                    %                     end
+                    %
+                    %                     % Update the obj just in case
+                    %                     noise.params = params;
+                    
+                    % Compute the noise
+                    signal = noise.PM.BOLD;  % BOLD signal, add noise to this
+                    % Frequency [Hz]
+                    fNoise = noise.params.frequency;
+                    % Amplitude
+                    aNoise = noise.params.amplitude * (max(noise.PM.BOLD) - min(noise.PM.BOLD));
+                    t      = noise.PM.timePointsSeries;
+                    % Calculate the noise
+                    noise.values = aNoise*sin(2*pi.*t.*fNoise);
+                case 'eyemovement'
+                    warning('eyemovement noise model not implemented yet')
+                otherwise
+                    error('Noise model %s not implemented or valid.',noise.Type);
+            end
+        end
+        
         
         % Plot it
         function plot(noise)

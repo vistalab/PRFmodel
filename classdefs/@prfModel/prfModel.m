@@ -33,14 +33,15 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
     end
     properties (GetAccess=public, SetAccess=public) % Changed from SetAccess=private, check
         % Basic, CSS ... (char)
-        Type            ; 
+        Type            ;
         % Components required to build the synthetic bold signal (classes)
         Stimulus        ;
         RF              ;
         HRF             ;
         Noise           ;
         % Other required options (double)
-        BOLDMeanValue   ; % Mean value of the synthetic BOLD signal
+        BOLDmeanValue   ; % Required mean value of the synthetic BOLD signal
+        BOLDcontrast    ; % Required  contrast  of the synthetic BOLD signal
         % BOLD signal value (before noise)
         BOLD            ;
         % The result: synthetic BOLD series (1 dim array of doubles)
@@ -57,7 +58,8 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
         function d = defaultsGet
             d.TR            = 1;
             d.Type          = 'basic';
-            d.BoldMeanValue = 200;
+            d.BOLDmeanValue = 10000;
+            d.BOLDcontrast  = 8;
             % Convert to table and return
             d = struct2table(d,'AsArray',true);
         end
@@ -74,13 +76,16 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             p = inputParser;
             p.addParameter('tr'           ,  d.TR           , @isnumeric);
             p.addParameter('type'         ,  d.Type{:}      , @ischar);
-            p.addParameter('boldmeanValue',  d.BoldMeanValue, @isnumeric);
+            p.addParameter('boldmeanValue',  d.BOLDmeanValue, @isnumeric);
+            p.addParameter('boldcontrast' ,  d.BOLDcontrast , @isnumeric);
+            
             
             p.parse(varargin{:});
             % Assign defaults/parameters to class/variables
             pm.TR            = p.Results.tr;
             pm.Type          = p.Results.type;
-            pm.BOLDMeanValue = 200;
+            pm.BOLDmeanValue = 10000;
+            pm.BOLDcontrast  = 8;  % In percentage
             
             % Create the classes, and initialize a prfModel inside it
             pm.Stimulus      = pmStimulus(pm);
@@ -92,9 +97,11 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             % pm.Noise takes one or several noise models that will be added
             % recursively and independently to the bold signal, i.e. each noise
             % is independent from each other.
-%             pm.Noise = {pmNoise(pm, 'Type','white'), ...
-%                         pmNoise(pm, 'Type','cardiac'), ...
-%                         pmNoise(pm, 'Type','respiratory')};
+            pm.Noise = {pmNoise(pm, 'Type','white'), ...
+                pmNoise(pm, 'Type','cardiac',...
+                'params',struct('frequency',1.3)), ...
+                pmNoise(pm, 'Type','respiratory',...
+                'params',struct('frequency',1.3))};
         end
         
         
@@ -127,15 +134,18 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
         function defaultsTable = get.defaultsTable(pm)
             % This function obtains all the defaults from all the
             % subclasses, so that we can construct a parameter table
-            defaultsTable          = pm.defaultsGet;
-            defaultsTable.HRF      = pm.HRF.defaultsGet;
-            defaultsTable.RF       = pm.RF.defaultsGet;
-            defaultsTable.Stimulus = pm.Stimulus.defaultsGet;
-            
-            % defaultsTable.Noise    = pm.Noise.defaultsGet;
-            
-            
+            defaultsTable           = pm.defaultsGet;
+            defaultsTable.HRF       = pm.HRF.defaultsGet;
+            defaultsTable.RF        = pm.RF.defaultsGet;
+            defaultsTable.Stimulus  = pm.Stimulus.defaultsGet;
+            % Noise are several noise models by default, add them all
+            for nn = 1:length(pm.Noise)
+                tmp                 = pm.Noise{nn}.defaultsGet;
+                tmp.Type            = pm.Noise{nn}.Type;
+                defaultsTable.(['Noise_' tmp.Type]) = tmp;
+            end
         end
+        % Compute synthetic BOLD without noise
         function computeBOLD(pm,varargin)
             % For this linear model we take the inner product of the
             % receptive field with the stimulus contrast. Then we
@@ -158,10 +168,31 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             timeSeries  = pm.RF.values(:)' * spaceStim;
             
             % Convolution between the timeSeries and the HRF
+            % The HRF is defined in its own time frame
+            % hrfValues   = pm.HRF.values;
+            % hrftSteps   = pm.HRF.tSteps;
+            % hrfDuration = pm.HRF.Duration;
+            % Resample the HRF to n timepoints corresponding to the TR and duration
+            % pm.TR has to be multiple of 0.1
+            
+            % hrfResampled= 0:pm.TR:hrfDuration-pm.TR;
+            
+            
             pm.BOLD = conv(timeSeries, pm.HRF.values, 'same');
             
-            % Scale the to the required mean signal
-            pm.BOLD = (pm.BOLD - mean(pm.BOLD)) + pm.BOLDMeanValue;
+            % Scale the signal so that it has the required mean and contrast
+            % Normalize to 0-1, so that min(normBOLD) == 0
+            normBOLD    = (pm.BOLD - min(pm.BOLD))/(max(pm.BOLD) - min(pm.BOLD));
+            % Calculate the max value, so that the relation between the
+            % meanValue and the amplitude is the one set in pm.BOLDcontrast
+            maxValue    = (pm.BOLDcontrast/100) * pm.BOLDmeanValue;
+            % No obtain the scaled value with the following formula
+            minValue    = 0;
+            scaledBOLD  = minValue + normBOLD .* (maxValue - minValue);
+            % Now 100 * (max(scaledBOLD) - min(scaledBOLD)) / pm.BOLDmeanValue
+            % is equal to pm.BOLDcontrast. Now we need to add the correct mean
+            % to the signal so that pm.BOLD == pm.BOLDmeanValue
+            pm.BOLD     = (scaledBOLD - mean(scaledBOLD)) + pm.BOLDmeanValue;
             
             switch pm.Type
                 case 'basic'
@@ -173,7 +204,7 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             end
             
         end
-        % 
+        % Compute synthetic BOLD with noise in top of the BOLD signal
         function compute(pm)
             % Computes the mean BOLD response and then adds noise.
             

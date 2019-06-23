@@ -145,7 +145,7 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             stimNameWithPath = fullfile(pmRootPath,'data','stimulus',strcat(stimName,'.mat'));
             if ~exist(stimNameWithPath, 'file')
                 fprintf('Computing and storing new stimulus file in %s',stimNameWithPath)
-                pmStimulusGenerate('filename', stimNameWithPath);
+                pmStimulusGenerate('filename', string(stimNameWithPath));
             end
             % fprintf('Retrieving stimulus file in %s',stimNameWithPath)
             stim.values        =  char(stimNameWithPath);
