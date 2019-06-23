@@ -17,17 +17,26 @@
 
 %% Create default values:
 pm = prfModel;
-% Visualize the default values
-pm.defaultsTable
 
-
-pm.compute; 
-
-
-pm.RF.Center      = [0 0];
+% TODO: if not strictly necessary, change Center to an array
+pm.RF.Centerx0    = 0.5;
+pm.RF.Centery0    = 1;
 pm.RF.Theta       = 0;        % Degrees, x-axis = 0, positive y-axis 90
-pm.RF.sigmaMajor  = 1.0;      % Degrees, x-axis = 0, positive y-axis 90
-pm.RF.sigmaMinor  = 1.0;      % Degrees, x-axis = 0, positive y-axis 90
+pm.RF.sigmaMajor  = 0.8;      % Degrees, x-axis = 0, positive y-axis 90
+pm.RF.sigmaMinor  = 1.2;      % Degrees, x-axis = 0, positive y-axis 90
+
+pm.TR             = 2;
+
+% Compute
+pm.compute; 
+% Fit model
+options = struct('seedmode', [0 1], 'display' , 'iter');
+results = pmModelFit(pm, 'analyzePRF', 'options',options);
+mrvNewGraphWin('data and fit'); 
+plot(1:pm.TR:pm.TR*pm.timePointsN,results.testdata(1,:));hold on;
+plot(1:pm.TR:pm.TR*pm.timePointsN,results.modelpred(1,:));
+legend({'testdata','modelpred'})
+text(1, max(results.testdata(1,:)) , sprintf('R^2:%2.2f',results.R2(1)))
 
 
 %{
@@ -52,6 +61,11 @@ pm.compute;
 % Visualize them
 pm.plot('with noise');
             
+pm.Noise{1}.params.noise2signal = 0;
+pm.BOLDmeanValue = 1000;
+pm.compute;
+pm.plot('with noise');
+
 % Visualize them
 pm.plot('no noise');
 
@@ -140,7 +154,7 @@ pm.HRF.compute;
 % Visualize 
 pm.HRF.plot
 % Change HRF from Friston to Canonical
-pm.HRF = pmHRF_canonical(pm);
+pm.HRF = pmHRF(pm, 'Type','boynton');
 % Compute 
 pm.HRF.compute;
 % Visualize 
@@ -160,5 +174,31 @@ pm.Noise{3}.plot
 % Compute and visualize the new synthetic BOLD with noise
 pm.compute;
 pm.plot('with noise');
+
+
+%% Some PRF tests: use demo data from Winawer's tutorials
+addpath(genpath('~/winawerlab/analyzePRF'))
+setup
+load('exampledataset.mat');
+data = data{1};
+data = data(1,:);
+stimulus = stimulus{1};
+stimulus = stimulus(:,:,1:2:300);
+data = double(data);
+stimulus = double(stimulus);
+size(data)
+size(stimulus)
+
+TR       = 2;
+options  = struct('seedmode',[0 1],...
+    'display','iter');
+% Calculate PRF
+results  = analyzePRF({stimulus}, {data}, TR, options);
+mrvNewGraphWin('data and fit'); 
+plot(1:TR:300,results.testdata(1,:));hold on;
+plot(1:TR:300,results.modelpred(1,:))
+legend({'testdata','modelpred'})
+text(1, max(results.testdata(1,:)) , sprintf('R^2:%2.2f',results.R2(1)))
+
 
 %% END
