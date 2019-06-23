@@ -47,6 +47,7 @@
 %% STEP 1: create a table with parameters that will generate synthetic BOLD signal
 % The values that are not set-up below will use defaults. 
 % To see default parameters, execute:
+% clear classes
 pm       = prfModel;
 DEFAULTS = pm.defaultsTable
 % 
@@ -58,14 +59,40 @@ DEFAULTS = pm.defaultsTable
 % 
 % How to include parameters:
 %     - Visualize default values
-%     - Create struct with exactly the same organization as the table. 
+%     - Create struct with the same organization as the table. 
 %     - (DO NOT ADD DEFAULTS, they will be in the first row of the synthDT table)
 
-COMBINE_PARAMETERS.TR            = [1.82,2]; % Don't add 1
-COMBINE_PARAMETERS.Type          = {'CSS'};  % Don't add basic
-COMBINE_PARAMETERS.RF.Centerx0   = [1,2];  % etc ...
-COMBINE_PARAMETERS.RF.Centery0   = [1,2];
-COMBINE_PARAMETERS.RF.sigmaMinor = [1,2];
+% COMBINE_PARAMETERS.TR            = [2];      % Don't add 1
+% COMBINE_PARAMETERS.Type          = {'CSS'};  % Don't add basic
+COMBINE_PARAMETERS.RF.Centerx0   = [1,2];    % etc ...
+COMBINE_PARAMETERS.RF.Centery0   = [1];
+COMBINE_PARAMETERS.RF.sigmaMinor = [1];
+COMBINE_PARAMETERS.RF.sigmaMajor = [1,2];
+% Some parameters go in groups, because params are specific to the choice
+% If we change only some, the rest will remain defaults. 
+% HRF
+HRF(1).Type                      = 'friston';
+HRF(1).Duration                  = 18;
+HRF(1).params.c                  = 0.5;
+
+HRF(2).Type                      = 'canonical';
+HRF(2).params.stimDuration       = 2;
+
+COMBINE_PARAMETERS.HRF           = HRF;
+% Noise
+% Noise is an array of noises. 
+% For simplicity, we are going to make it fixed: i.e. always the same noise 
+% models will be present. As with the other cases, just specify what we want to
+% change, and the rest will be maintained with the default
+% Noise(1).Type                      = 'friston';
+% Noise(1).params.noise2                  = 0.5;
+% % Another one with the three default ones
+% HRF(2).Type                      = 'canonical';
+% HRF(2).params.stimDuration       = 2;
+
+
+% TODO: add the possibility to repeat the same line N times (to check for random effects)
+
 % 
 % The entries in these different tables will be used to generate
 % synthetic BOLD timeseries.  These will be analyzed and the estimates
