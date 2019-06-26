@@ -62,6 +62,11 @@ switch prfimplementation
         %       the same for all the methods.
         pmEstimates = table();
         
+        % Make sure we are using winawerlab analyzePRF (I am using branch gari)
+        if ~contains(which('analyzePRF'), 'winawerlab')
+            addpath(genpath('~/soft/winawerlab/analyzePRF'));
+        end
+        
         % Check if the pm-s come in a table or alone
         if ~istable(input)
             temp = table();
