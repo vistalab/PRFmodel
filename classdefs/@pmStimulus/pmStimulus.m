@@ -32,6 +32,10 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
         barWidth       ;   % Degrees
         values         ;   % char/string with path to the stimulus .mat
         videoFileName  ;
+        niftiFileName  ;
+        Name           ;
+        DataPath       ;
+        LocalPath      ;
     end
     
     properties (Dependent = true, Access = public)
@@ -86,17 +90,21 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             stim.barWidth        = p.Results.barwidth;
             % If it does not exist, create the stim file.
             % Always store just the path and the name
-            stimName = strcat('Exp-',stim.expName, ...
+            stim.Name = strcat('Exp-',stim.expName, ...
                 '_binary-', choose(stim.Binary,'true','false'), ...
                 '_size-', num2str(stim.fieldofviewVert), 'x', ...
                 num2str(stim.fieldofviewHorz));
-            stimNameWithPath = fullfile(pmRootPath,'data','stimulus',strcat(stimName,'.mat'));
+            stim.LocalPath = fullfile(pmRootPath,'local');
+            stim.DataPath      = fullfile(pmRootPath,'data','stimulus');
+            stimNameWithPath = fullfile(stim.DataPath, strcat(stim.Name,'.mat'));
             if ~exist(stimNameWithPath, 'file')
                 pmStimulusGenerate('filename', stimNameWithPath);
             end
             stim.values        =  char(stimNameWithPath);
             % Default fileName if we want to write a video of the stimuli
-            stim.videoFileName = char(fullfile(pmRootPath,'local',strcat(stimName,'.avi')));
+            stim.videoFileName = fullfile(stim.LocalPath,[stim.Name '.avi']);
+            % Default fileName if we want to write a nifti of the stimuli
+            stim.niftiFileName = fullfile(stim.LocalPath,[stim.Name '.nii.gz']);
         end
         
         % Methods
@@ -138,25 +146,21 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
         function compute(stim)
             % If it does not exist, create the stim file.
             % Always store just the path and the name
-            stimName = strcat('Exp-',stim.expName, ...
+            stim.Name = strcat('Exp-',stim.expName, ...
                 '_binary-', choose(stim.Binary,'true','false'), ...
                 '_size-', num2str(stim.fieldofviewVert), 'x', ...
                 num2str(stim.fieldofviewHorz));
-            stimNameWithPath = fullfile(pmRootPath,'data','stimulus',strcat(stimName,'.mat'));
+            stimNameWithPath = fullfile(stim.DataPath, strcat(stim.Name,'.mat'));
             if ~exist(stimNameWithPath, 'file')
                 fprintf('Computing and storing new stimulus file in %s',stimNameWithPath)
                 pmStimulusGenerate('filename', string(stimNameWithPath));
             end
             % fprintf('Retrieving stimulus file in %s',stimNameWithPath)
             stim.values        =  char(stimNameWithPath);
-            % Default fileName if we want to write a video of the stimuli
-            stim.videoFileName = char(fullfile(pmRootPath,'local',strcat(stimName,'.avi')));
+            
         end
         
-        
-        
-        
-        
+  
         
         % VISUALIZATION
         % Plot it
@@ -167,12 +171,20 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             grid off; axis equal off; 
         end
         % TODO: add here the code to make it a video out of it.
-        function toVideo(stim)
+        function toVideo(stim,varargin)
+             % Read the inputs
+            varargin = mrvParamFormat(varargin);
+            p = inputParser;
+            p.addRequired ('stim'  ,  @(x)(isa(x,'pmStimulus')));
+            p.addParameter('fname',stim.videoFileName, @ischar);
+            p.parse(stim,varargin{:});
+            fname = p.Results.fname;
+            
             % Write .avi for visualization
             % TODO:
             %      - check/flip the images so that the words read well in the video
             % Prepare the new file.
-            vidObj = VideoWriter(char(stim.videoFileName));
+            vidObj = VideoWriter(fname);
             open(vidObj);
             % Create an animation.
             axis equal tight off
@@ -186,6 +198,19 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             end
             % Close the file.
             close(vidObj);
+        end
+        function fname = toNifti(stim,varargin)
+            % Read the inputs
+            varargin = mrvParamFormat(varargin);
+            p = inputParser;
+            p.addRequired ('stim'  ,  @(x)(isa(x,'pmStimulus')));
+            p.addParameter('fname',stim.niftiFileName, @ischar);
+            p.parse(stim,varargin{:});
+            fname = p.Results.fname;
+            stimValues = pmStimulusRead(stim.values,'format','nifti');
+            writeFileNifti(niftiCreate('data', stimValues, ...
+                'fname',fname, 'tr',stim.TR));
+            
         end
     end
     
