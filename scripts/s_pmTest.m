@@ -14,19 +14,19 @@
 pm = prfModel;
 
 % TODO: if not strictly necessary, change Center to an array
-% pm.RF.Centerx0    = 4;
-% pm.RF.Centery0    = 1;
-% pm.RF.Theta       = pi/3;        % Degrees, x-axis = 0, positive y-axis 90
-% pm.RF.sigmaMajor  = 0.8;      % Degrees, x-axis = 0, positive y-axis 90
-% pm.RF.sigmaMinor  = 2;      % Degrees, x-axis = 0, positive y-axis 90
+pm.RF.Centerx0    = 0;
+pm.RF.Centery0    = 0;
+pm.RF.Theta       = 0;        % Degrees, x-axis = 0, positive y-axis 90
+pm.RF.sigmaMajor  = 1;      % Degrees, x-axis = 0, positive y-axis 90
+pm.RF.sigmaMinor  = 1;      % Degrees, x-axis = 0, positive y-axis 90
 
 pm.TR               = 2;
 
 % Compute
 pm.compute; 
+
 % Fit model
 options = struct('seedmode', [0 1], 'display' , 'iter');
-options = struct('seedmode', [0 1]);
 results = pmModelFit(pm, 'analyzePRF', 'options',options);
 mrvNewGraphWin('data and fit'); 
 plot(1:pm.TR:pm.TR*pm.timePointsN,results.testdata(1,:));hold on;

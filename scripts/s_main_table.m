@@ -64,10 +64,10 @@ DEFAULTS = pm.defaultsTable
 
 % COMBINE_PARAMETERS.TR            = [2];      % Don't add 1
 % COMBINE_PARAMETERS.Type          = {'CSS'};  % Don't add basic
-COMBINE_PARAMETERS.RF.Centerx0   = [1,2];    % etc ...
-COMBINE_PARAMETERS.RF.Centery0   = [1];
+COMBINE_PARAMETERS.RF.Centerx0   = [-6, 6];    % etc ...
+COMBINE_PARAMETERS.RF.Centery0   = [-6,-3,3,6];
 COMBINE_PARAMETERS.RF.sigmaMinor = [1];
-COMBINE_PARAMETERS.RF.sigmaMajor = [1,2];
+COMBINE_PARAMETERS.RF.sigmaMajor = [1];
 % Some parameters go in groups, because params are specific to the choice
 % If we change only some, the rest will remain defaults. 
 % HRF
