@@ -1,6 +1,55 @@
 clear all;
 
 
+%% Create demo data based on PRFmodel
+COMBINE_PARAMETERS.RF.Centerx0   = [-6, 6];    % etc ...
+COMBINE_PARAMETERS.RF.Centery0   = [-6,-3,3,6];
+COMBINE_PARAMETERS.RF.sigmaMinor = [1];
+COMBINE_PARAMETERS.RF.sigmaMajor = [1];
+COMBINE_PARAMETERS.TR            = 2;
+synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS);
+synthDT = synthDT(61:76,:);
+synthDT = pmForwardModelCalculate(synthDT);
+
+
+% Write the sitimulus to Nifti
+%{
+pm1 = synthDT.pm(1);
+stimNiftiFname = pm5.Stimulus.toNifti;
+% Write the BOLDnoise to Nifti
+niftiBOLDfile  = pmForwardModelToNifti(synthDT, 'fname',...
+    fullfile(pm5.Stimulus.LocalPath,'synthDataExample_TR2.nii.gz'));
+% Check that we can read the nifti files properly
+NIdata     = niftiRead(niftiBOLDfile);
+data       = reshape(NIdata.data, [NIdata.dim(1)*NIdata.dim(2),NIdata.dim(4)]);
+NIstimulus = niftiRead(stimNiftiFname);
+stimulus   = squeeze(NIstimulus.data);
+%}
+
+% Analyze it with analyzePRF
+results_analyzePRF = pmModelFit(synthDT,'analyzePRF');
+
+% Analyze it with AFNI
+results_AFNI       = pmModelFit(synthDT,'AFNI');
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 %% Obtain vistasofts data, right before the pRF model is applied
 % One of the first try-s was to take the tSeries and try to go back to a 3D, but
 % this cannot be done, since there are repeated positions
@@ -33,9 +82,9 @@ clear all;
 % tSeries = int16(tSeriesinGrayST.tSeries);
 
 % Now read the reallyGood data from Rosemary
-load('/home/glerma/PROJECTS/PRF/AFNI/DATA/LV3v_reallyGood.mat')
+load(fullfile(pmRootPath,'data','AFNI/DATA/LV3v_reallyGood.mat'));
 % Now the big data
-load('/home/glerma/PROJECTS/PRF/AFNI/DATA/WangAtlas_V1v_co0p2_tSeries.mat')
+% load(fullfile(pmRootPath,'data','AFNI/DATA/WangAtlas_V1v_co0p2_tSeries.mat'));
 
 % tSeries = int16(tSeries');
 % There is no need on converting it to int16
@@ -107,12 +156,14 @@ isequal(max(prfTEST.data(:)), max(tSeries(:)))
 % myValues    = tSeries(:, cols-6:cols+5)';
 % myCube      = reshape(myValues, [2,2,3,144]);
 
-% myCube      = reshape(tSeries, [2,2,3,144]);
-myCube      = reshape(tSeries, [10,10,5,144]);
+% I understand this is the 12 voxel one
+myCube      = reshape(tSeries, [2,2,3,144]);
+% And this is the big data link from above
+% myCube      = reshape(tSeries, [10,10,5,144]);
 
 % writeFileNifti(niftiCreate('data', myCube, 'fname','/data/localhome/glerma/PROJECTS/prf_afni_cube.nii.gz' ));
-% writeFileNifti(niftiCreate('data', myCube, 'fname','/home/glerma/PROJECTS/PRF/AFNI/DATA/reallyGood_cube.nii.gz' ));
-writeFileNifti(niftiCreate('data', myCube, 'fname','/home/glerma/PROJECTS/PRF/AFNI/DATA/Wang_cube.nii.gz' ));
+writeFileNifti(niftiCreate('data', myCube, 'fname',fullfile(pmRootPath,'data','AFNI','DATA/reallyGood_cube.nii.gz' )));
+% writeFileNifti(niftiCreate('data', myCube, 'fname','/home/glerma/PROJECTS/PRF/AFNI/DATA/Wang_cube.nii.gz' ));
 
 % to convert to  BRIK format:
 % delete('/home/glerma/PROJECTS/PRF/AFNI/DATA/reallyGood_cube+orig.BRIK')
@@ -191,24 +242,26 @@ done
 % I do not think this is right:
 % - change TR to 2
 % - make it 2D instead of 3D
-cd /home/glerma/PROJECTS/PRF/AFNI/ANALYSIS/DW_01_default
-system('3drefit -TR 2 images/DSIMAGE_MOVIE+orig')
+cd(fullfile(pmRootPath,'data','AFNI','ANALYSIS/DW_01_default'))
+system('3drefit -TR 2 ../DATA/images/DSIMAGE_MOVIE+orig')
 % system('3drefit -TR 2 reallyGood_cube+orig')
 system('3drefit -TR 2 Wang_cube+orig')
 system('3drefit -space orig images/DSIMAGE_MOVIE+orig')
 % system('3drefit -space orig reallyGood_cube+orig')
 system('3drefit -space orig Wang_cube+orig')
 % See if the changes are there
-% system('3dinfo images/DSIMAGE_MOVIE+orig')
-% system('3dinfo reallyGood_cube+orig')
+system('3dinfo images/DSIMAGE_MOVIE+orig')
+system('3dinfo reallyGood_cube+orig')
 
 
 
 %% AFNI command for DW:pRF
+% MAke everything full paths...
+
 % Now follow the steps on the 3dNLfim.help file
 3dDeconvolve -nodata 10 2 -polort -1                \
                    -num_stimts 1 -stim_times 1 '1D:0' GAM \
-                   -x1D conv.ref.GAM.1D
+                   -x1D conv2.ref.GAM.1D
 
 
 export AFNI_CONVMODEL_REF=conv.ref.GAM.1D \
@@ -218,7 +271,7 @@ export AFNI_MODEL_PRF_ON_GRID=YES \
 export AFNI_MODEL_PRF_RAM_STATS=Y
     
 % This is the impulse created with the function above
-load('hrfresponse.mat')
+load('/Users/glerma/soft/PRFmodel/data/AFNI/DATA/hrfresponse.mat')
 plot([1:2:20 ],   [0
  0.089639335870743
  0.89834398031235
@@ -306,7 +359,7 @@ cmd = (['3dNLfim -input reallyGood_cube+orig  ' ...
              ' -bucket 0 buck30.PRF' ...
              ' -snfit snfit30.PRF' ...
              ' -TR 2 ' ...
-             ' -jobs 12'])         
+             ' -jobs 4'])         
          
          % The fit is worse with this one
 %try with the GAM HRF now
@@ -381,7 +434,7 @@ cmd = (['3dNLfim -input Wang_cube+orig  ' ...
              ' -jobs 10'])
          
          
-% We have teerror with the sima ratios at zero, as rick recommended, making
+% We have error with the sima ratios at zero, as rick recommended, making
 
 printenv | grep AFNI 
 
@@ -465,6 +518,8 @@ dlmwrite('~/Downloads/103818_dwi_1000_norm.bval', valnorm);
 
 
 %% HREF CESAR
+% Make this launch in command line with system
+%{
 TR=2
 
 echo "Create GAM"
@@ -482,11 +537,12 @@ echo "Create SPMG1"
 # El valor entre parentesis de (0) es necesario para que esté normalizada a pico=1
 
 1dplot -one sisar.conv.ref.SPMG1.1D sisar.conv.ref.GAM.1D
-
+%}
 
 %% Read the results in Matlab so that we can compare to vistasoft
 % First we need to see that we are doing things properly
-cd /home/glerma/PROJECTS/PRF/AFNI/ANALYSIS/DW_01_default
+cd(fullfile(pmRootPath, 'data', 'AFNI/ANALYSIS/DW_01_default'))
+addpath(genpath('~/soft/afni_matlab'));
 [err, V, Info, ErrMessage] = BrikLoad('snfit_Wang_6nogrid.PRF+orig');
 % Plot the fit and the signal of voxel 2,2,2
 plot(squeeze(myCube(5,5,2,:)),'k-');hold on;plot(squeeze(V(5,5,2,:)),'r-');
