@@ -1,4 +1,4 @@
-function dt = pmForwardModelCalculate(dt)
+function DT = pmForwardModelCalculate(DT)
 % Creates a table with all parameters (defaults) required to perform a forward
 % calculation
 % 
@@ -13,19 +13,23 @@ function dt = pmForwardModelCalculate(dt)
 
 
 
-for ii=1:height(dt)
+for ii=1:height(DT)
     % Do it row to row and parameter to parameter first, for debugging
     
     %% Initialize the basic model with defaults
-    pm = dt.pm(ii);
+    dt     = DT(ii,:);
+    % we need a fresh copy of the prfModel class here, otherwise it references
+    % the same one and changes are not persistent
+    pm     = prfModel;
+
     
     %% TR
-    pm.TR = dt.TR(ii);
+    pm.TR = dt.TR;
 
     %% Stimulus
     for jj=1:width(dt.Stimulus)
         paramName               = dt.Stimulus.Properties.VariableNames{jj};
-        pm.Stimulus.(paramName) = dt.Stimulus.(paramName)(jj);
+        pm.Stimulus.(paramName) = dt.Stimulus.(paramName);
     end
     pm.Stimulus.compute;
     
@@ -33,14 +37,14 @@ for ii=1:height(dt)
     %% RF
     for jj=1:width(dt.RF)
         paramName         = dt.RF.Properties.VariableNames{jj};
-        pm.RF.(paramName) = dt.RF.(paramName)(jj);
+        pm.RF.(paramName) = dt.RF.(paramName);
     end
     pm.RF.compute;
     
     %% HRF
     for jj=1:width(dt.HRF)
         paramName          = dt.HRF.Properties.VariableNames{jj};
-        val                = dt.HRF.(paramName)(jj);
+        val                = dt.HRF.(paramName);
         if iscell(val)
             pm.HRF.(paramName) = val{:};
         else
@@ -60,7 +64,7 @@ for ii=1:height(dt)
     %% Compute the synthetic signal
     pm.compute;
     %% Write back the updated pm model
-    dt.pm(ii) = pm;
+    DT.pm(ii) = pm;
     
 end
 
