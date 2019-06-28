@@ -13,12 +13,13 @@ synthDT = pmForwardModelCalculate(synthDT);
 
 
 % Write the sitimulus to Nifti
-%{
+% {
 pm1 = synthDT.pm(1);
-stimNiftiFname = pm5.Stimulus.toNifti;
+pm5 = synthDT.pm(5);
+stimNiftiFname = pm1.Stimulus.toNifti;
 % Write the BOLDnoise to Nifti
 niftiBOLDfile  = pmForwardModelToNifti(synthDT, 'fname',...
-    fullfile(pm5.Stimulus.LocalPath,'synthDataExample_TR2.nii.gz'));
+    fullfile(pm1.Stimulus.LocalPath,'synthDataExample2_TR2.nii.gz'));
 % Check that we can read the nifti files properly
 NIdata     = niftiRead(niftiBOLDfile);
 data       = reshape(NIdata.data, [NIdata.dim(1)*NIdata.dim(2),NIdata.dim(4)]);
@@ -31,21 +32,6 @@ results_analyzePRF = pmModelFit(synthDT,'analyzePRF');
 
 % Analyze it with AFNI
 results_AFNI       = pmModelFit(synthDT,'AFNI');
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -356,8 +342,8 @@ cmd = (['3dNLfim -input reallyGood_cube+orig  ' ...
              ' -BOTH ' ...
              ' -nrand 10000 ' ...
              ' -nbest 5 ' ...
-             ' -bucket 0 buck30.PRF' ...
-             ' -snfit snfit30.PRF' ...
+             ' -bucket 0 buck30_2.PRF' ...
+             ' -snfit snfit30_2.PRF' ...
              ' -TR 2 ' ...
              ' -jobs 4'])         
          
@@ -541,9 +527,9 @@ echo "Create SPMG1"
 
 %% Read the results in Matlab so that we can compare to vistasoft
 % First we need to see that we are doing things properly
-cd(fullfile(pmRootPath, 'data', 'AFNI/ANALYSIS/DW_01_default'))
+cd(fullfile(pmRootPath, 'data', 'AFNI/ANALYSIS/DW_02_default'))
 addpath(genpath('~/soft/afni_matlab'));
-[err, V, Info, ErrMessage] = BrikLoad('snfit_Wang_6nogrid.PRF+orig');
+[err, V, Info, ErrMessage] = BrikLoad('snfit30_2.PRF+orig');
 % Plot the fit and the signal of voxel 2,2,2
 plot(squeeze(myCube(5,5,2,:)),'k-');hold on;plot(squeeze(V(5,5,2,:)),'r-');
 

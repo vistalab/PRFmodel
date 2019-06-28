@@ -221,7 +221,7 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     
                     % make the peak equal to one
                     thrf = thrf / max(thrf);
-                    
+                    plot(thrf)
                     % make the same time points as TR
                     thrf = thrf(1:length(hrf.tSteps));
                     
@@ -242,7 +242,6 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
             % Calculate it and return every time we need it.
             % TODO: Does it need to be in TR intervals?
             tSteps  = 0: hrf.TR: hrf.Duration;
-            % tSteps  = 0: 0.1: hrf.Duration;
         end
         
         

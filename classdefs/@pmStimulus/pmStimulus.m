@@ -164,9 +164,18 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
         
         % VISUALIZATION
         % Plot it
-        function plot(stim)
+        function plot(stim, varargin)
+            % Read the inputs
+            varargin = mrvParamFormat(varargin);
+            p = inputParser;
+            p.addRequired ('stim'  ,  @(x)(isa(x,'pmStimulus')));
+            p.addParameter('slicelist',[], @isnumeric);
+            p.parse(stim,varargin{:});
+            slicelist = p.Results.slicelist;
+            
+            
             mrvNewGraphWin('Stimulus file montage');
-            img = makeMontage(pmStimulusRead(stim.values));
+            img = makeMontage(pmStimulusRead(stim.values),slicelist);
             imagesc(img); colormap(gray);
             grid off; axis equal off; 
         end

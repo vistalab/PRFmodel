@@ -13,17 +13,163 @@
 %% Create default values:
 pm = prfModel;
 
+
+
+
+
 % TODO: if not strictly necessary, change Center to an array
 pm.RF.Centerx0    = 0;
 pm.RF.Centery0    = 0;
-pm.RF.Theta       = 0;        % Degrees, x-axis = 0, positive y-axis 90
+pm.RF.Theta       = 0;      % Degrees, x-axis = 0, positive y-axis 90
 pm.RF.sigmaMajor  = 1;      % Degrees, x-axis = 0, positive y-axis 90
 pm.RF.sigmaMinor  = 1;      % Degrees, x-axis = 0, positive y-axis 90
 
-pm.TR               = 2;
+pm.TR             = 2;
+
+% Compute
+% pm.Type = 'CSS';
+pm.compute; 
+
+
+% Tests for finding out why we don't get any solutions
+% TEST 1: add a circshift to see if we change the relation between the signal and the stimuli
+R2array = [];
+ResultsArray = table();
+options = struct('seedmode', [0 1], 'display' , 'off');
+startSignal = pm.BOLDnoise;
+for kk=1:pm.timePointsN
+    kk
+    pm.BOLDnoise = circshift(startSignal,kk-1);
+    results      = pmModelFit(pm, 'analyzePRF', 'options',options);
+    R2array      = [R2array, results.R2];
+    ResultsArray = [ResultsArray; results];
+end
+mrvNewGraphWin('TEST1');plot(1:pm.TR:pm.TR*pm.timePointsN, R2array)
+xlabel('Amount of circshift');ylabel('R2')
+text(25,50,'TR=2 sec, Center=[0,0]deg, Theta=0deg, SigmaMajor=1 deg, SigmaMinor=1 deg')
+
+
+bbb = R2array;
+
+% plot signals, we need to delay them to fit the stimuli
+startSignal = pm.BOLDnoise;
+for kk=1:16
+    subplot(4,4,kk)
+    pm.BOLDnoise = circshift(startSignal,kk-1);
+    plot(BOLDnoise)
+end
+
+% plot signals, we need to delay them to fit the stimuli
+startSignal = pm.BOLDnoise;
+for kk=1:16
+    subplot(4,4,kk)
+    pm.BOLDnoise = circshift(startSignal,kk-1);
+    pm.plot('what','no noise time series','window',false)
+end
+
+
+
+
+
+
+
+
+
+% TEST 2: add a circshift to see if we change the relation between the signal
+% and the stimuli, and pass our hrf to the function
+pm = prfModel;
+
+% TODO: if not strictly necessary, change Center to an array
+pm.RF.Centerx0    = 0;
+pm.RF.Centery0    = 0;
+pm.RF.Theta       = 0;      % Degrees, x-axis = 0, positive y-axis 90
+pm.RF.sigmaMajor  = 1;      % Degrees, x-axis = 0, positive y-axis 90
+pm.RF.sigmaMinor  = 1;      % Degrees, x-axis = 0, positive y-axis 90
+
+pm.TR = 1;
+
+pm.HRF.Type       = 'canonical';
+pm.HRF.compute
+pm.HRF.plot
+
+
 
 % Compute
 pm.compute; 
+
+R2array = [];
+ResultsArray = table();
+options = struct('seedmode', [0 1], 'display' , 'off');
+startSignal = pm.BOLDnoise;
+for kk=1:pm.timePointsN
+    pm.BOLDnoise = circshift(startSignal,kk);
+    results      = pmModelFit(pm, 'analyzePRF', 'options',options);
+    R2array      = [R2array, results.R2];
+    ResultsArray = [ResultsArray; results];
+end
+figure(3);plot(1:pm.timePointsN, R2array)
+
+
+
+% TEST 3: do the same with the demo data
+addpath(genpath('~/winawerlab/analyzePRF'))
+setup
+load('exampledataset.mat');
+data = data{1};
+data = data(1,:);
+stimulus = stimulus{1};
+stimulus = stimulus(:,:,1:2:300);
+data = double(data);
+stimulus = double(stimulus);
+size(data)
+size(stimulus)
+
+TR       = 2;
+options  = struct('seedmode',[0 1],'display','off');
+% Calculate PRF
+R2array = [];
+for kk=1:pm.timePointsN
+    dataShifted = circshift(data,kk);
+    results     = analyzePRF({stimulus}, {dataShifted}, TR, options); 
+    R2array     = [R2array, results.R2];
+end
+mrvNewGraphWin('TEST2');;plot(1:pm.timePointsN, R2array)
+
+
+
+% TEST 3: do the same with the demo data
+addpath(genpath('~/winawerlab/analyzePRF'))
+setup
+load('exampledataset.mat');
+data = data{1};
+data = data(1,:);
+stimulus = stimulus{1};
+stimulus = stimulus(:,:,1:2:300);
+data = double(data);
+stimulus = double(stimulus);
+size(data)
+size(stimulus)
+
+TR       = 1;
+options  = struct('seedmode',[0 1],'display','off');
+% Calculate PRF
+R2array = [];
+for kk=1:pm.timePointsN
+    dataShifted = circshift(data,kk);
+    results     = analyzePRF({stimulus}, {dataShifted}, TR, options); 
+    R2array     = [R2array, results.R2];
+end
+mrvNewGraphWin('TEST4');;plot(1:pm.timePointsN, R2array)
+
+
+% TEST 2: add a different noise
+
+
+
+
+
+
+
 
 % Fit model
 options = struct('seedmode', [0 1], 'display' , 'iter');
