@@ -1,0 +1,134 @@
+
+type = string-attribute
+name = HISTORY_NOTE
+count = 734
+'[glerma@vistalab-compute-1: Fri May 18 01:44:34 2018] 3dcopy /home/glerma/PROJECTS/PRF/AFNI/DATA/reallyGood_cube.nii.gz /home/glerma/PROJECTS/PRF/AFNI/DATA/reallyGood_cube+orig\n[glerma@vistalab-compute-1: Fri May 18 01:55:41 2018] 3drefit -TR 2 reallyGood_cube+orig\n[glerma@vistalab-compute-1: Fri May 18 01:55:48 2018] 3drefit -space orig reallyGood_cube+orig\n[glerma@vistalab-compute-1: Tue May 22 00:44:38 2018] 3dNLfim -input reallyGood_cube+orig -noise Zero -signal Conv_PRF -sconstr 0 -10.0 10.0 -sconstr 1 -1.0 1.0 -sconstr 2 -1.0 1.0 -sconstr 3 0.0 1.0 -BOTH -nrand 10000 -nbest 5 -bucket 0 buck_GAM.PRF -snfit snfit_GAM.PRF -TR 2 -jobs 12\n[glerma@vistalab-compute-1: Tue May 22 00:44:38 2018] Output prefix: buck_GAM.PRF~
+
+type = string-attribute
+name = TYPESTRING
+count = 15
+'3DIM_HEAD_FUNC~
+
+type = string-attribute
+name = IDCODE_STRING
+count = 27
+'XYZ_nJpHbnnNL6EiMye2yes1Dg~
+
+type = string-attribute
+name = IDCODE_DATE
+count = 25
+'Tue May 22 00:44:38 2018~
+
+type = integer-attribute
+name = SCENE_DATA
+count = 8
+ 0 11 1 -999 -999
+ -999 -999 -999
+
+type = string-attribute
+name = LABEL_1
+count = 5
+'zyxt~
+
+type = string-attribute
+name = LABEL_2
+count = 5
+'zyxt~
+
+type = string-attribute
+name = DATASET_NAME
+count = 5
+'zyxt~
+
+type = integer-attribute
+name = ORIENT_SPECIFIC
+count = 3
+ 1 2 4
+
+type  = float-attribute
+name  = ORIGIN
+count = 3
+             -1             -1              1
+
+type  = float-attribute
+name  = DELTA
+count = 3
+             -1             -1              1
+
+type  = float-attribute
+name  = IJK_TO_DICOM
+count = 12
+             -1              0              0             -1              0
+             -1              0             -1              0              0
+              1              1
+
+type  = float-attribute
+name  = IJK_TO_DICOM_REAL
+count = 12
+             -1              0              0             -1              0
+             -1              0             -1              0              0
+              1              1
+
+type  = float-attribute
+name  = BRICK_STATS
+count = 24
+       4.614411       9.999971      0.2883326       0.490014     -0.4304132
+      -0.343598      0.3517548       0.471657            200            224
+       2.132761       3.791395              0              0       130.5677
+       229.0813              0              0      0.5505038      0.9442014
+      0.7896184      0.8058251       131.3643       145.2498
+
+type = integer-attribute
+name = DATASET_RANK
+count = 8
+ 3 12 0 0 0
+ 0 0 0
+
+type = integer-attribute
+name = DATASET_DIMENSIONS
+count = 5
+ 2 2 3 0 0
+
+type = integer-attribute
+name = BRICK_TYPES
+count = 12
+ 3 3 3 3 3
+ 3 3 3 3 3
+ 3 3
+
+type  = float-attribute
+name  = BRICK_FLOAT_FACS
+count = 12
+              0              0              0              0              0
+              0              0              0              0              0
+              0              0
+
+type = string-attribute
+name = BRICK_LABS
+count = 112
+'Amp~X~Y~Sigma~Signal TMax~Signal SMax~Signal % SMax~Signal Area~Signal % Area~Sigma Resid~R^2~F-stat Regression~
+
+type  = float-attribute
+name  = BRICK_STATAUX
+count = 5
+             11              4              2              4            140
+
+type = string-attribute
+name = BRICK_STATSYM
+count = 68
+'none;none;none;none;none;none;none;none;none;none;none;Ftest(4,140)~
+
+type = string-attribute
+name = TEMPLATE_SPACE
+count = 5
+'orig~
+
+type = integer-attribute
+name = INT_CMAP
+count = 1
+ 0
+
+type = string-attribute
+name = BYTEORDER_STRING
+count = 10
+'LSB_FIRST~

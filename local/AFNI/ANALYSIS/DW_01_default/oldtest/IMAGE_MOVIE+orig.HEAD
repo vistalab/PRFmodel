@@ -1,0 +1,246 @@
+
+type = string-attribute
+name = HISTORY_NOTE
+count = 363
+'[glerma@vistalab-compute-1: Tue May 15 07:44:03 2018] 3dTcat -glueto IMAGE_MOVIE+orig. IMG_143.jpg\n[glerma@vistalab-compute-1: Tue May 15 14:35:28 2018] 3drefit -TR 2 IMAGE_MOVIE+orig\n[glerma@vistalab-compute-1: Wed May 16 01:31:41 2018] 3drefit -TR 2 IMAGE_MOVIE+orig\n[glerma@vistalab-compute-1: Thu May 17 03:42:33 2018] 3drefit -space orig IMAGE_MOVIE+orig~
+
+type = string-attribute
+name = TYPESTRING
+count = 15
+'3DIM_HEAD_ANAT~
+
+type = string-attribute
+name = IDCODE_STRING
+count = 27
+'XYZ_HE5DRyEUPsl5B1OKQHdtnA~
+
+type = string-attribute
+name = IDCODE_DATE
+count = 25
+'Tue May 15 07:42:25 2018~
+
+type = integer-attribute
+name = SCENE_DATA
+count = 8
+ 0 2 0 -999 -999
+ -999 -999 -999
+
+type = string-attribute
+name = LABEL_1
+count = 5
+'zyxt~
+
+type = string-attribute
+name = LABEL_2
+count = 5
+'zyxt~
+
+type = string-attribute
+name = DATASET_NAME
+count = 5
+'zyxt~
+
+type = integer-attribute
+name = ORIENT_SPECIFIC
+count = 3
+ 0 3 4
+
+type  = float-attribute
+name  = ORIGIN
+count = 3
+         -383.5         -383.5             -0
+
+type  = float-attribute
+name  = DELTA
+count = 3
+              1              1              1
+
+type  = float-attribute
+name  = IJK_TO_DICOM
+count = 12
+              1              0              0         -383.5              0
+              1              0         -383.5              0              0
+              1              0
+
+type  = float-attribute
+name  = IJK_TO_DICOM_REAL
+count = 12
+              1              0              0         -383.5              0
+              1              0         -383.5              0              0
+              1             -0
+
+type  = float-attribute
+name  = BRICK_STATS
+count = 288
+              0             34              0             34              0
+            255              0            255              0            255
+              0            255              0            255              0
+            255              0            255              0            255
+              0            255              0            255              0
+            255              0            255              0            255
+              0            255              0             34              0
+             34              0            255              0            255
+              0            255              0            255              0
+            255              0            255              0            255
+              0            255              0            255              0
+            255              0            255              0            255
+              0            255              0            255              0
+             34              0             34              0            255
+              0            255              0            255              0
+            255              0            255              0            255
+              0            255              0            255              0
+            255              0            255              0            255
+              0            255              0            255              0
+            255              0             34              0             34
+              0            255              0            255              0
+            255              0            255              0            255
+              0            255              0            255              0
+            255              0            255              0            255
+              0            255              0            255              0
+            255              0            255              0             34
+              0             34              0             34              0
+             34              0             34              0             34
+              0             34              0             34              0
+            255              0            255              0            255
+              0            255              0            255              0
+            255              0            255              0            255
+              0            255              0            255              0
+            255              0            255              0            255
+              0            255              0             34              0
+             34              0            255              0            255
+              0            255              0            255              0
+            255              0            255              0            255
+              0            255              0            255              0
+            255              0            255              0            255
+              0            255              0            255              0
+             34              0             34              0            255
+              0            255              0            255              0
+            255              0            255              0            255
+              0            255              0            255              0
+            255              0            255              0            255
+              0            255              0            255              0
+            255              0             34              0             34
+              0            255              0            255              0
+            255              0            255              0            255
+              0            255              0            255              0
+            255              0            255              0            255
+              0            255              0            255              0
+            255              0            255              0             34
+              0             34              0             34              0
+             34              0             34              0             34
+              0             34              0             34              0
+             34              0             34
+
+type = integer-attribute
+name = TAXIS_NUMS
+count = 8
+ 144 0 77002 -999 -999
+ -999 -999 -999
+
+type  = float-attribute
+name  = TAXIS_FLOATS
+count = 8
+              0              2              0              0              0
+        -999999        -999999        -999999
+
+type = integer-attribute
+name = DATASET_RANK
+count = 8
+ 3 144 0 0 0
+ 0 0 0
+
+type = integer-attribute
+name = DATASET_DIMENSIONS
+count = 5
+ 768 768 1 0 0
+
+type = integer-attribute
+name = BRICK_TYPES
+count = 144
+ 0 0 0 0 0
+ 0 0 0 0 0
+ 0 0 0 0 0
+ 0 0 0 0 0
+ 0 0 0 0 0
+ 0 0 0 0 0
+ 0 0 0 0 0
+ 0 0 0 0 0
+ 0 0 0 0 0
+ 0 0 0 0 0
+ 0 0 0 0 0
+ 0 0 0 0 0
+ 0 0 0 0 0
+ 0 0 0 0 0
+ 0 0 0 0 0
+ 0 0 0 0 0
+ 0 0 0 0 0
+ 0 0 0 0 0
+ 0 0 0 0 0
+ 0 0 0 0 0
+ 0 0 0 0 0
+ 0 0 0 0 0
+ 0 0 0 0 0
+ 0 0 0 0 0
+ 0 0 0 0 0
+ 0 0 0 0 0
+ 0 0 0 0 0
+ 0 0 0 0 0
+ 0 0 0 0
+
+type  = float-attribute
+name  = BRICK_FLOAT_FACS
+count = 144
+              0              0              0              0              0
+              0              0              0              0              0
+              0              0              0              0              0
+              0              0              0              0              0
+              0              0              0              0              0
+              0              0              0              0              0
+              0              0              0              0              0
+              0              0              0              0              0
+              0              0              0              0              0
+              0              0              0              0              0
+              0              0              0              0              0
+              0              0              0              0              0
+              0              0              0              0              0
+              0              0              0              0              0
+              0              0              0              0              0
+              0              0              0              0              0
+              0              0              0              0              0
+              0              0              0              0              0
+              0              0              0              0              0
+              0              0              0              0              0
+              0              0              0              0              0
+              0              0              0              0              0
+              0              0              0              0              0
+              0              0              0              0              0
+              0              0              0              0              0
+              0              0              0              0              0
+              0              0              0              0              0
+              0              0              0              0              0
+              0              0              0              0
+
+type = string-attribute
+name = BRICK_LABS
+count = 2148
+'#0~IMG_001.jpg[0]~IMG_002.jpg[0]~IMG_003.jpg[0]~IMG_004.jpg[0]~IMG_005.jpg[0]~IMG_006.jpg[0]~IMG_007.jpg[0]~IMG_008.jpg[0]~IMG_009.jpg[0]~IMG_010.jpg[0]~IMG_011.jpg[0]~IMG_012.jpg[0]~IMG_013.jpg[0]~IMG_014.jpg[0]~IMG_015.jpg[0]~IMG_016.jpg[0]~IMG_017.jpg[0]~IMG_018.jpg[0]~IMG_019.jpg[0]~IMG_020.jpg[0]~IMG_021.jpg[0]~IMG_022.jpg[0]~IMG_023.jpg[0]~IMG_024.jpg[0]~IMG_025.jpg[0]~IMG_026.jpg[0]~IMG_027.jpg[0]~IMG_028.jpg[0]~IMG_029.jpg[0]~IMG_030.jpg[0]~IMG_031.jpg[0]~IMG_032.jpg[0]~IMG_033.jpg[0]~IMG_034.jpg[0]~IMG_035.jpg[0]~IMG_036.jpg[0]~IMG_037.jpg[0]~IMG_038.jpg[0]~IMG_039.jpg[0]~IMG_040.jpg[0]~IMG_041.jpg[0]~IMG_042.jpg[0]~IMG_043.jpg[0]~IMG_044.jpg[0]~IMG_045.jpg[0]~IMG_046.jpg[0]~IMG_047.jpg[0]~IMG_048.jpg[0]~IMG_049.jpg[0]~IMG_050.jpg[0]~IMG_051.jpg[0]~IMG_052.jpg[0]~IMG_053.jpg[0]~IMG_054.jpg[0]~IMG_055.jpg[0]~IMG_056.jpg[0]~IMG_057.jpg[0]~IMG_058.jpg[0]~IMG_059.jpg[0]~IMG_060.jpg[0]~IMG_061.jpg[0]~IMG_062.jpg[0]~IMG_063.jpg[0]~IMG_064.jpg[0]~IMG_065.jpg[0]~IMG_066.jpg[0]~IMG_067.jpg[0]~IMG_068.jpg[0]~IMG_069.jpg[0]~IMG_070.jpg[0]~IMG_071.jpg[0]~IMG_072.jpg[0]~IMG_073.jpg[0]~IMG_074.jpg[0]~IMG_075.jpg[0]~IMG_076.jpg[0]~IMG_077.jpg[0]~IMG_078.jpg[0]~IMG_079.jpg[0]~IMG_080.jpg[0]~IMG_081.jpg[0]~IMG_082.jpg[0]~IMG_083.jpg[0]~IMG_084.jpg[0]~IMG_085.jpg[0]~IMG_086.jpg[0]~IMG_087.jpg[0]~IMG_088.jpg[0]~IMG_089.jpg[0]~IMG_090.jpg[0]~IMG_091.jpg[0]~IMG_092.jpg[0]~IMG_093.jpg[0]~IMG_094.jpg[0]~IMG_095.jpg[0]~IMG_096.jpg[0]~IMG_097.jpg[0]~IMG_098.jpg[0]~IMG_099.jpg[0]~IMG_100.jpg[0]~IMG_101.jpg[0]~IMG_102.jpg[0]~IMG_103.jpg[0]~IMG_104.jpg[0]~IMG_105.jpg[0]~IMG_106.jpg[0]~IMG_107.jpg[0]~IMG_108.jpg[0]~IMG_109.jpg[0]~IMG_110.jpg[0]~IMG_111.jpg[0]~IMG_112.jpg[0]~IMG_113.jpg[0]~IMG_114.jpg[0]~IMG_115.jpg[0]~IMG_116.jpg[0]~IMG_117.jpg[0]~IMG_118.jpg[0]~IMG_119.jpg[0]~IMG_120.jpg[0]~IMG_121.jpg[0]~IMG_122.jpg[0]~IMG_123.jpg[0]~IMG_124.jpg[0]~IMG_125.jpg[0]~IMG_126.jpg[0]~IMG_127.jpg[0]~IMG_128.jpg[0]~IMG_129.jpg[0]~IMG_130.jpg[0]~IMG_131.jpg[0]~IMG_132.jpg[0]~IMG_133.jpg[0]~IMG_134.jpg[0]~IMG_135.jpg[0]~IMG_136.jpg[0]~IMG_137.jpg[0]~IMG_138.jpg[0]~IMG_139.jpg[0]~IMG_140.jpg[0]~IMG_141.jpg[0]~IMG_142.jpg[0]~IMG_143.jpg[0]~
+
+type = string-attribute
+name = TEMPLATE_SPACE
+count = 5
+'orig~
+
+type = integer-attribute
+name = INT_CMAP
+count = 1
+ 0
+
+type = string-attribute
+name = BYTEORDER_STRING
+count = 10
+'LSB_FIRST~
+
+type = string-attribute
+name = BRICK_KEYWORDS
+count = 144
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -1,0 +1,32 @@
+# <matrix
+#  ni_type = "double"
+#  ni_dimen = "10"
+#  ColumnLabels = "Stim#1#0"
+#  ColumnGroups = "1"
+#  RowTR = "2"
+#  GoodList = "0..9"
+#  NRowFull = "10"
+#  RunStart = "0"
+#  Nstim = "1"
+#  StimBots = "0"
+#  StimTops = "0"
+#  StimLabels = "Stim#1"
+#  BasisNstim = "1"
+#  BasisOption_000001 = "-stim_times"
+#  BasisName_000001 = "Stim#1"
+#  BasisFormula_000001 = "GAM"
+#  BasisColumns_000001 = "0:0"
+#  CommandLine = "3dDeconvolve -nodata 10 2 -polort -1 -num_stimts 1 -stim_times 1 1D:0 GAM -x1D conv.ref.GAM.1D"
+# >
+ 0
+ 0.089639335870743
+ 0.89834398031235
+ 0.75842666625977
+ 0.23252660036087
+ 0.040924623608589
+ 0
+ 0
+ 0
+ 0
+# </matrix>
+

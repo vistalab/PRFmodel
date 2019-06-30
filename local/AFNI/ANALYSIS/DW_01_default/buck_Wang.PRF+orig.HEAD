@@ -1,0 +1,159 @@
+
+type = string-attribute
+name = HISTORY_NOTE
+count = 707
+'[glerma@vistalab-compute-1: Wed May 23 15:53:04 2018] 3dcopy /home/glerma/PROJECTS/PRF/AFNI/DATA/Wang_cube.nii.gz /home/glerma/PROJECTS/PRF/AFNI/DATA/Wang_cube+orig\n[glerma@vistalab-compute-1: Wed May 23 16:00:01 2018] 3drefit -TR 2 Wang_cube+orig\n[glerma@vistalab-compute-1: Wed May 23 16:00:17 2018] 3drefit -space orig Wang_cube+orig\n[glerma@vistalab-compute-1: Wed May 23 16:17:57 2018] 3dNLfim -input Wang_cube+orig -noise Zero -signal Conv_PRF -sconstr 0 -10.0 10.0 -sconstr 1 -1.0 1.0 -sconstr 2 -1.0 1.0 -sconstr 3 0.0 1.0 -BOTH -nrand 10000 -nbest 5 -bucket 0 buck_Wang.PRF -snfit snfit_Wang.PRF -TR 2 -jobs 10\n[glerma@vistalab-compute-1: Wed May 23 16:17:57 2018] Output prefix: buck_Wang.PRF~
+
+type = string-attribute
+name = TYPESTRING
+count = 15
+'3DIM_HEAD_FUNC~
+
+type = string-attribute
+name = IDCODE_STRING
+count = 27
+'XYZ_0j_Fh2G9f2JqjFE4SFv4xQ~
+
+type = string-attribute
+name = IDCODE_DATE
+count = 25
+'Wed May 23 16:17:57 2018~
+
+type = integer-attribute
+name = SCENE_DATA
+count = 8
+ 0 11 1 -999 -999
+ -999 -999 -999
+
+type = string-attribute
+name = LABEL_1
+count = 5
+'zyxt~
+
+type = string-attribute
+name = LABEL_2
+count = 5
+'zyxt~
+
+type = string-attribute
+name = DATASET_NAME
+count = 5
+'zyxt~
+
+type = integer-attribute
+name = ORIENT_SPECIFIC
+count = 3
+ 1 2 4
+
+type  = float-attribute
+name  = ORIGIN
+count = 3
+             -1             -1              1
+
+type  = float-attribute
+name  = DELTA
+count = 3
+             -1             -1              1
+
+type  = float-attribute
+name  = IJK_TO_DICOM
+count = 12
+             -1              0              0             -1              0
+             -1              0             -1              0              0
+              1              1
+
+type  = float-attribute
+name  = IJK_TO_DICOM_REAL
+count = 12
+             -1              0              0             -1              0
+             -1              0             -1              0              0
+              1              1
+
+type  = float-attribute
+name  = BRICK_STATS
+count = 24
+      0.9083579        9.99998     -0.1309614      0.9987453     -0.8893979
+      0.2131707   7.453374e-05      0.9987456             18            258
+      0.2460996       3.288151              0              0       14.40808
+       147.3826              0              0      0.3032884       1.752823
+      0.1136693      0.7058377       4.488649       83.98196
+
+type = integer-attribute
+name = DATASET_RANK
+count = 8
+ 3 12 0 0 0
+ 0 0 0
+
+type = integer-attribute
+name = DATASET_DIMENSIONS
+count = 5
+ 10 10 5 0 0
+
+type = integer-attribute
+name = BRICK_TYPES
+count = 12
+ 3 3 3 3 3
+ 3 3 3 3 3
+ 3 3
+
+type  = float-attribute
+name  = BRICK_FLOAT_FACS
+count = 12
+              0              0              0              0              0
+              0              0              0              0              0
+              0              0
+
+type = string-attribute
+name = BRICK_LABS
+count = 112
+'Amp~X~Y~Sigma~Signal TMax~Signal SMax~Signal % SMax~Signal Area~Signal % Area~Sigma Resid~R^2~F-stat Regression~
+
+type  = float-attribute
+name  = BRICK_STATAUX
+count = 5
+             11              4              2              4            140
+
+type = string-attribute
+name = BRICK_STATSYM
+count = 68
+'none;none;none;none;none;none;none;none;none;none;none;Ftest(4,140)~
+
+type  = float-attribute
+name  = FDRCURVE_000011
+count = 103
+       4.488649      0.2760254       3.101955       3.226917       3.351879
+       3.471403       3.584278       3.695903       3.802219       3.905154
+       4.004853       4.103391        4.19851       4.292408       4.384493
+       4.473826       4.560887       4.646561       4.729708       4.812057
+       4.892354       4.972342       5.049805       5.126454       5.201103
+       5.274739       5.347013       5.418842       5.488707       5.557571
+       5.625476       5.689581       5.754918       5.818283       5.882051
+       5.943949       6.004795       6.065373       6.122633       6.179382
+       6.237056       6.294386       6.351042       6.405629       6.460769
+       6.514203       6.566724        6.61761       6.669194       6.720283
+       6.770372        6.82078       6.870664       6.919624       6.967379
+       7.015306       7.062686       7.108728       7.154857       7.198982
+        7.24404       7.288199       7.332631       7.376324       7.420218
+       7.462833       7.504446       7.545793       7.587848       7.627453
+       7.666986       7.706821       7.746981       7.786313       7.825311
+        7.86415       7.901769       7.924064       7.924199       7.924332
+       7.924466         7.9246       7.924734       7.924868       7.925002
+       7.925135       7.925269       7.925403       7.925537       7.925671
+       7.925805       7.925939       7.926072       7.926206        7.92634
+       7.926474       7.926607       7.926742       7.926875       7.927009
+       7.927143       7.927277       7.938839
+
+type = string-attribute
+name = TEMPLATE_SPACE
+count = 5
+'orig~
+
+type = integer-attribute
+name = INT_CMAP
+count = 1
+ 0
+
+type = string-attribute
+name = BYTEORDER_STRING
+count = 10
+'LSB_FIRST~
