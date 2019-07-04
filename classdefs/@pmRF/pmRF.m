@@ -28,6 +28,7 @@ classdef pmRF <   matlab.mixin.SetGet & matlab.mixin.Copyable
         Theta;      % Radians
         sigmaMajor; % Deg
         sigmaMinor; % Deg
+        Type      ;
         % values;
     end
     properties (SetAccess = private, GetAccess = public)
@@ -47,6 +48,7 @@ classdef pmRF <   matlab.mixin.SetGet & matlab.mixin.Copyable
             d.Theta      = 0;        % Radians
             d.sigmaMajor = 1;        % deg
             d.sigmaMinor = 1;        % deg
+            d.Type       = 'mrvista';
             % Convert to table and return
             d = struct2table(d,'AsArray',true);
         end
@@ -66,6 +68,7 @@ classdef pmRF <   matlab.mixin.SetGet & matlab.mixin.Copyable
             p.addParameter('theta'     ,d.Theta     , @isnumeric);
             p.addParameter('sigmamajor',d.sigmaMajor, @isnumeric);
             p.addParameter('sigmaminor',d.sigmaMinor, @isnumeric);
+            p.addParameter('type'      ,d.Type      , @ischar);
             p.parse(pm,varargin{:});
             
             % Initialize the pm model and hrf model parameters
@@ -76,6 +79,7 @@ classdef pmRF <   matlab.mixin.SetGet & matlab.mixin.Copyable
             rf.Theta        = p.Results.theta;
             rf.sigmaMajor   = p.Results.sigmamajor;
             rf.sigmaMinor   = p.Results.sigmaminor;
+            rf.Type         = p.Results.type;
         end
         
         function v = get.TR(rf)
@@ -84,17 +88,34 @@ classdef pmRF <   matlab.mixin.SetGet & matlab.mixin.Copyable
         
         % Methods available to this class and childrens, if any
         function compute(rf)
+            
             % Compute stimulus just in case
             rf.PM.Stimulus.compute;
             % Obtain grid XY
             XY = rf.PM.Stimulus.XY;
             % Calculate values
-            rf.values = rfGaussian2d(XY{1}, XY{2}, ...
-                        rf.sigmaMajor,rf.sigmaMinor,rf.Theta, ...
-                        rf.Centerx0,rf.Centery0);
+            if iscell(rf.Type);type = rf.Type{:};else;type=rf.Type;end
+            switch type
+                case {'mrvista'}
+                    rf.values = rfGaussian2d(XY{1}, XY{2}, ...
+                                rf.sigmaMajor,rf.sigmaMinor,rf.Theta, ...
+                                rf.Centerx0,rf.Centery0);
+                case {'analyzeprf'}
+                    res     = max(size(XY{1},1), size(XY{1},1));
+                    r       = rf.Centery0;
+                    c       = rf.Centerx0;
+                    sr      = rf.sigmaMajor;
+                    sc      = rf.sigmaMinor;
+                    xx      = XY{1};
+                    yy      = XY{2};
+                    ang     = rf.Theta;
+                    omitexp = 0;
+                    % calculate
+                    rf.values = makegaussian2d(res,r,c,sr,sc,xx,yy,ang,omitexp);
+                otherwise
+                    error('%s not implemented yet', type)
+            end
         end
-                
-        
         
         % Plot it
         function plot(rf)
