@@ -27,22 +27,25 @@ pm1    = DT.pm(1);
 Ntime  = pm1.timePointsN;
 Nvoxels = height(DT);
 
-
-dim1 = ceil(sqrt(Nvoxels));
-dim2 = ceil(Nvoxels/dim1);
-
+% We can do a flat nifti, but I think it id better to create just 1D.
+% Otherwise I am not confident that reshape is returning the order I want
+% dim1 = ceil(sqrt(Nvoxels));
+% dim2 = ceil(Nvoxels/dim1);
+dim1 = Nvoxels;
+dim2 = 1;
 
 % Create a cube of timeSeries
 myCube = zeros(dim1,dim2,1,Ntime);
 index = 0;
 for ii=1:dim1
-    for jj=1:dim2
+    % for jj=1:dim2
+    jj = 1; 
         index = index + 1;
         if index <= Nvoxels
             myCube(ii,jj,1,:) =   DT.pm(index).BOLDnoise;
             assert(DT.pm(index).TR == pm1.TR, 'All BOLDnoise signals TRs should be equal')
         end
-    end
+    % end
 end
 % Save it as a nifti
 writeFileNifti(niftiCreate('data', myCube, 'tr', 2, ...
