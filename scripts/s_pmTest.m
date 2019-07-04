@@ -29,6 +29,9 @@ pm.TR             = 2;
 % Compute
 % pm.Type = 'CSS';
 pm.compute; 
+pm.RF.plot
+pm.RF.Type='analyzeprf'
+pm.RF.plot
 
 
 % Tests for finding out why we don't get any solutions

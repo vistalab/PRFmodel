@@ -13,13 +13,13 @@ synthDT = pmForwardModelCalculate(synthDT);
 
 
 % Write the sitimulus to Nifti
-% {
+%{
 pm1 = synthDT.pm(1);
 pm5 = synthDT.pm(5);
 stimNiftiFname = pm1.Stimulus.toNifti;
 % Write the BOLDnoise to Nifti
 niftiBOLDfile  = pmForwardModelToNifti(synthDT, 'fname',...
-    fullfile(pm1.Stimulus.LocalPath,'synthDataExample2_TR2.nii.gz'));
+    fullfile(pm1.Stimulus.LocalPath,'synthDataExample3_1D_TR2.nii.gz'));
 % Check that we can read the nifti files properly
 NIdata     = niftiRead(niftiBOLDfile);
 data       = reshape(NIdata.data, [NIdata.dim(1)*NIdata.dim(2),NIdata.dim(4)]);
@@ -33,6 +33,9 @@ results_analyzePRF = pmModelFit(synthDT,'analyzePRF');
 % Analyze it with AFNI
 results_AFNI       = pmModelFit(synthDT,'AFNI');
 
+
+% Visualize results
+[synthDT(:,{'Type','RF'}),results_analyzePRF]
 
 
 
@@ -156,6 +159,8 @@ writeFileNifti(niftiCreate('data', myCube, 'fname',fullfile(pmRootPath,'data','A
 % delete('/home/glerma/PROJECTS/PRF/AFNI/DATA/reallyGood_cube+orig.HEAD')
 % system('3dcopy /home/glerma/PROJECTS/PRF/AFNI/DATA/reallyGood_cube.nii.gz /home/glerma/PROJECTS/PRF/AFNI/DATA/reallyGood_cube+orig')
 system('3dcopy /home/glerma/PROJECTS/PRF/AFNI/DATA/Wang_cube.nii.gz /home/glerma/PROJECTS/PRF/AFNI/DATA/Wang_cube+orig')
+system('3dcopy ~/soft/PRFmodel/local/AFNI/ANALYSIS/DW_02_default/synthDataExample2_TR2.nii.gz ~/soft/PRFmodel/local/AFNI/ANALYSIS/DW_02_default/synthDataExample2_TR2+orig')
+
 
 % copyfile('/home/glerma/PROJECTS/PRF/AFNI/DATA/reallyGood_cube+orig.BRIK', ...
 %          '/home/glerma/PROJECTS/PRF/AFNI/ANALYSIS/DW_01_default/reallyGood_cube+orig.BRIK')
@@ -238,6 +243,9 @@ system('3drefit -space orig Wang_cube+orig')
 % See if the changes are there
 system('3dinfo images/DSIMAGE_MOVIE+orig')
 system('3dinfo reallyGood_cube+orig')
+
+system('3drefit -TR 2 synthDataExample2_TR2+orig')
+system('3drefit -space orig synthDataExample2_TR2+orig')
 
 
 
@@ -332,6 +340,7 @@ cmd = (['3dNLfim -input reallyGood_cube+orig  ' ...
          
 % Rosemary checked the data and saw that the results are off by a factor of 30
 % Change the call to this:
+% cmd = (['3dNLfim -input reallyGood_cube+orig  ' ...
 cmd = (['3dNLfim -input reallyGood_cube+orig  ' ...
              ' -noise Zero ' ...
              ' -signal Conv_PRF ' ...
@@ -535,6 +544,8 @@ plot(squeeze(myCube(5,5,2,:)),'k-');hold on;plot(squeeze(V(5,5,2,:)),'r-');
 
 [berr, bV, bInfo, bErrMessage] = BrikLoad('buck_Wang_6nogrid.PRF+orig');
 
+[err, V, Info, ErrMessage] = BrikLoad('buck30_3.PRF+orig');
+[berr, bV, bInfo, bErrMessage] = BrikLoad('snfit30_3.PRF+orig');
 
 % Write it back to matlab so that Rosemary can check it
 fitSeries = reshape(V,  [500, 144]);
