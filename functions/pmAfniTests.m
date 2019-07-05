@@ -12,6 +12,15 @@ synthDT = synthDT(61:76,:);
 synthDT = pmForwardModelCalculate(synthDT);
 
 
+
+
+COMBINE_PARAMETERS.RF.sigmaMinor = [1,2,3];
+COMBINE_PARAMETERS.RF.sigmaMajor = [1,2,3];
+synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS);
+% synthDT = synthDT(61:76,:);
+synthDT = pmForwardModelCalculate(synthDT);
+
+
 % Write the sitimulus to Nifti
 %{
 pm1 = synthDT.pm(1);
@@ -33,11 +42,57 @@ results_analyzePRF = pmModelFit(synthDT,'analyzePRF');
 % Analyze it with AFNI
 results_AFNI       = pmModelFit(synthDT,'AFNI');
 
+% Analyze it with mrVista (or vistasoft, it takes both)
+results_vista      = pmModelFit(synthDT,'vistasoft','model','oneovalgaussian');
 
-% Visualize results
-[synthDT(:,{'Type','RF'}),results_analyzePRF]
+% compare results
+% Inputs are the parameter table and the results in a cell array of tables, with
+% names. Example
+% Params list for the table. The defaults are
+paramDefaults = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
+compTable = pmResultsCompare(synthDT, ... % Defines the input params
+                            {'aPRF','vista'}, ... % Analysis names we want to see
+                            {results_analyzePRF,results_vista}, ...
+                            'params', paramDefaults, ...
+                            'shorten names',true); 
+% And now create plots to understand better the results
+% if 'to compare' is not specified, then the first will go in x and the rest in y
+% if a list (>=2) is specified, the first in x will be compared to the rest in y
+pmResultsPlot(compTable, ...
+              'to compare', {'synth','aPRF','vista'}, ...
+              'result','x0', ...  % If we shortened the names (see above)
+              'metric','RMSE', ...
+              'newWin',true);
+
+          
+          
+          
+% NOTES: July 5th meeting, Brian, Jon, Gari
+%{
+
+- (BW)       done - Share the gDocs we had alreadt to add literature. Add the email history from Baker, Harvey, ...
+- (Jon-Gari) Monday 8 at 09:00. Check the anisotropic implementation in vistasoft.
+
+- Contact other software authors: 
+--- (Jon)     Kendrick: ask if he wants to add it to his code or do ourselves
+--- (on hold) D. Ress 
+--- (BW)      Stellios Smirnakis, Papanikolau 
+--- (BW)      Ione Fine 
+--- (Noah)    Popeye
+--- (paper)   Zeidmann ... DS Schwarzkopf ... Baker, Penny: Bayesian population receptive field modelling Neuroimage 2018
+              Understand what they did, the model too.
+--- (BW)      Justin Gardner??? check if he is using vistasoft  
 
 
+- How we test the synthetic data and tools (some ideas below...)
+--- Make some tables without noise and then keep adding gradual noise and check performance of different models
+--- What happens when we change HRFs. Add noise to HRF as well. 
+--- Full gris vs multidimensional cross: 
+------- Muiltidimensional cross: fix all and change one variable. 
+----------- full grid of x,y,sigmaminor and major
+
+
+%}
 
 %% Obtain vistasofts data, right before the pRF model is applied
 % One of the first try-s was to take the tSeries and try to go back to a 3D, but

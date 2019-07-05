@@ -47,8 +47,10 @@ p.addRequired('prfimplementation',@ischar);
 % This options structs are defaults for analyzePRF
 options  = struct('seedmode', [0 1], 'display' , 'off');
 p.addParameter('options'    ,  options , @isstruct);
-p.parse(input,prfimplementation,varargin{:});
+p.addParameter('model'      ,  'one gaussian' , @ischar);
 
+p.parse(input,prfimplementation,varargin{:});
+model = p.Results.model;
 
 
 
@@ -82,7 +84,7 @@ switch prfimplementation
             data     = pm.BOLDnoise;
             TR       = pm.TR;
             options  = p.Results.options;
-
+            
             % Calculate PRF
             results  = analyzePRF({stimulus}, {data}, TR, options);
             % This is the explanation of the results
@@ -107,7 +109,7 @@ switch prfimplementation
             %   (Because of this projection, R^2 values can sometimes drop below 0%.)  Note that
             %   if cross-validation is used (see <xvalmode>), the interpretation of <R2> changes
             %   accordingly.
-            % <resnorms> and <numiters> contain optimization details (residual norms and 
+            % <resnorms> and <numiters> contain optimization details (residual norms and
             %   number of iterations, respectively).
             % <meanvol> contains the mean volume, that is, the mean of each voxel's time-series.
             % <noisereg> contains a record of the noise regressors used in the model.
@@ -119,10 +121,10 @@ switch prfimplementation
             
             % Add a new row of results
             % (Here we need to select what results go to the table and adecuate them to be comparable to the vakues we put into)
-            % We will use this to interpret and modify the parameters. 
+            % We will use this to interpret and modify the parameters.
             %{
-               The first seed is a generic large pRF that is centered with 
-               respect to the stimulus, has a pRF size equal to 1/4th of the 
+               The first seed is a generic large pRF that is centered with
+               respect to the stimulus, has a pRF size equal to 1/4th of the
                stimulus extent (thus, +/- 2 pRF sizes matches
                the stimulus extent), and has an exponent of 0.5.
                resmx is the res in pixels of the biggest side
@@ -134,7 +136,7 @@ switch prfimplementation
             Centerx0         = results.params(2);
             Centery0         = results.params(1);
             if (Centerx0 < 0 || Centerx0 > size(pm.RF.values,1) || ...
-                Centery0 < 0 || Centery0 > size(pm.RF.values,2))
+                    Centery0 < 0 || Centery0 > size(pm.RF.values,2))
                 error('The parameter estimate cannot be outside RF size limits')
             end
             
@@ -145,12 +147,12 @@ switch prfimplementation
             % makegaussian2d(resmx,p1,p2,p3,p3) /(2*pi*p3^2)
             % p3 is the standard deviation in the vertical/horizontal direction
             % if you want an L1-normalized image, divide the image by 2*pi*p3^2
-            % note that this is in reference to the ideal case where the Gaussian has 
+            % note that this is in reference to the ideal case where the Gaussian has
             % enough room to extend out.  so, if you are constructing a Gaussian that
             % does not fit very well within the image, the actual L1 length of the image
             % that is constructed will not be exactly 1.
             %
-            % note that it doesn't matter if <sr> or <sc> are negative, since they 
+            % note that it doesn't matter if <sr> or <sc> are negative, since they
             % are always squared in function evaluation.
             
             % In his RF function he is normalizing it, then the sigma has not
@@ -167,29 +169,60 @@ switch prfimplementation
             % It is calculated in analyzePRF in this line:
             % results.rfsize(options.vxs,:) = permute(abs(paramsA(:,3,:)) ./ sqrt(posrect(paramsA(:,5,:))),[3 1 2]);
             % This means that we can go back to the sigma in pixels, and then
-            % convert it to sigma in deg, as we inputed it. 
-            sigmaMinor = (pm.Stimulus.spatialSampleVert * abs(results.params(3)));
-            sigmaMajor = (pm.Stimulus.spatialSampleHorz * abs(results.params(3)));
+            % convert it to sigma in deg, as we inputed it.
+            % 
+            % After conversation with Jon, adding the /sqrt(n)
+            sigmaMinor = (pm.Stimulus.spatialSampleVert * abs(results.params(3))/sqrt(posrect(results.params(5))));
+            sigmaMajor = (pm.Stimulus.spatialSampleHorz * abs(results.params(3))/sqrt(posrect(results.params(5))));
             
             
             tmpTable            = struct2table(results,'AsArray',true);
             tmpTable.Centerx0   = Centerx0;
             tmpTable.Centery0   = Centery0;
             tmpTable.Theta      = 0; % Is circular, we can't model it
-            tmpTable.sigmaMajor = sigmaMinor; % Circular, same value 
+            tmpTable.sigmaMajor = sigmaMinor; % Circular, same value
             tmpTable.sigmaMinor = sigmaMinor; % Circular, same value
             % Make results table smaller (this is for Brian The Substractor :) )
-            % Leave the testdata and modelpred so that we have the fit. 
+            % Leave the testdata and modelpred so that we have the fit.
             % Testdata is not exactly the same to the data (=pm.BOLDnoise), he
             % removes I think part of the low frew noise, check later. If we
             % cannot get testdata in other tools, we will just obtain modelpred.
             % We'll need to add pm.BOLDmeanValue to modelpred to have it in the
             % same range as the data (=pm.BOLDnoise)
             tmpTable            = tmpTable(:,{'R2','Centerx0','Centery0', 'Theta' ,...
-                                             'rfsize', 'sigmaMinor', 'sigmaMajor' ,...
-                                               'testdata','modelpred'});
+                'rfsize', 'sigmaMinor', 'sigmaMajor' ,...
+                'testdata','modelpred'});
             pmEstimates = [pmEstimates; tmpTable];
         end
+    case {'mrvista','vistasoft'}
+        tmpName = tempname(fullfile(pmRootPath,'local'));
+        mkdir(tmpName);
+        % Write the stimuli as a nifti
+        pm1            = input.pm(1);
+        stimNiftiFname = fullfile(tmpName, 'tmpstim.nii.gz');
+        stimNiftiFname = pm1.Stimulus.toNifti('fname',stimNiftiFname);
+        % Create a tmp nifti file and convert it to a tmp AFNI format
+        niftiBOLDfile  = pmForwardModelToNifti(input, 'fname', ...
+                                               fullfile(tmpName,'tmp.nii.gz'));
+        
+        % Prepare the function call
+        homedir    = tmpName;
+        stimfile   = stimNiftiFname;
+        datafile   = niftiBOLDfile;
+        warning('mrvista is assuming all stimuli with same radius. Fix this')
+        stimradius = pm1.Stimulus.fieldofviewHorz/2;
+        % model      = 'CSS'; % Default is 'one gaussian'
+        % Make the call to the function based on Jon's script
+        results = pmVistasoft(homedir, stimfile, datafile, stimradius,...
+                              'model',model);
+        
+        % Prepare the outputs in a table format
+        pmEstimates = table();
+        pmEstimates.Centerx0   = results.model{1}.x0';
+        pmEstimates.Centery0   = results.model{1}.y0';
+        pmEstimates.Theta      = results.model{1}.sigma.theta';
+        pmEstimates.sigmaMajor = results.model{1}.sigma.major';
+        pmEstimates.sigmaMinor = results.model{1}.sigma.minor';
         
     case {'afni', 'afni6', 'afnidog', 'afni_6', 'afni_dog'}
         % AFNI provides 
@@ -352,6 +385,10 @@ switch prfimplementation
             ]);
 
         % Read the results back to matlab
+        kk = which('BrikLoad');
+        if isempty(kk)
+            addpath(genpath('~/soft/afni_matlab'));
+        end
         [err, V, Info, ErrMessage] = BrikLoad('snfit_tmp.PRF.1D');
         % Plot the fit and the signal of voxel 2,2,2
         % plot(squeeze(myCube(5,5,2,:)),'k-');hold on;plot(squeeze(V(5,5,2,:)),'r-');
@@ -367,7 +404,7 @@ switch prfimplementation
         results   = bV;
         
         % Results Table
-        plot(fitSeries)
+        % plot(fitSeries)
 %{
         
         % save('fitSeries_Wang_6nogrid.mat', 'fitSeries');
@@ -403,44 +440,14 @@ switch prfimplementation
         xlabel('Time Points (144, TR=2)')
         ylabel('Mean(Measured - predicted) values (500 voxels)')
 %}
-        % TODO: Let's define the format for the estimates so that this is
-        %       the same for all the methods.
+        % TODO: calculate correct estimates
         pmEstimates = table();
+        pmEstimates.Centerx0   = results(:,1);
+        pmEstimates.Centery0   = results(:,2);
+        pmEstimates.Theta      = results(:,4);
+        pmEstimates.sigmaMajor = results(:,10);
+        pmEstimates.sigmaMinor = results(:,10);
         
-        % Go line by line and compute required values for each pRF model
-        for ii=1:height(input)
-            % Assert that every pm has the same TR and the same stimuli, and hrf
-            % TR
-            assert(DT.pm(index).TR == pm1.TR, 'All BOLDnoise signals TRs should be equal')
-            % Stimuli
-            assert(DT.pm(index).Stimuli.getStimValues == pm1.Stimuli.getStimValues, ...
-                'All Stimuli should be equal')
-            % Hrf
-            assert(DT.pm(index).HRF.values == pm1.HRF.values, 'All HRF should be equal')
-            
-            % TODO: use parfor if the number of rows if the table is larger than XX
-            pm       = input.pm(ii);
-            stimulus = double(pm.Stimulus.getStimValues);
-            data     = pm.BOLDnoise;
-            TR       = pm.TR;
-            options  = p.Results.options;
-            
-            % Calculate PRF
-            results  = analyzePRF({stimulus}, {data}, TR, options);
-            
-            % Add a new row of results
-            pmEstimates = [pmEstimates; struct2table(results,'AsArray',true)];
-
-
-
-
-        end
-        
-        
-
-
-
-
 case {'popeye'}
         disp('NYI');
     otherwise
