@@ -20,16 +20,33 @@ homedir = fullfile(filesep, 'Volumes', 'server', 'Projects', 'PRF_Simulations', 
 % Read the inputs
 varargin = mrvParamFormat(varargin);
 p = inputParser;
-p.addRequired('homedir'     , @ischar);
-p.addRequired('stimfile'    , @ischar);
-p.addRequired('datafile'    , @ischar);
-p.addRequired('stimradius'  , @isnumeric);
+p.addRequired('homedir'                       , @ischar);
+p.addRequired('stimfile'                      , @ischar);
+p.addRequired('datafile'                      , @ischar);
+p.addRequired('stimradius'                    , @isnumeric);
 p.addParameter('sessioncode', 'pRFsynthetic01', @ischar);
-p.addParameter('model', 'one gaussian', @ischar);
+p.addParameter('model'      , 'one gaussian'  , @ischar);
+p.addParameter('grid'       , false           , @islogical);
+p.addParameter('wsearch'    , 'coarse to fine', @ischar);
 p.parse(homedir, stimfile, datafile, stimradius, varargin{:});
 % Assign it
 sessioncode = p.Results.sessioncode;
 model       = p.Results.model;
+grid        = p.Results.grid;
+wSearch     = p.Results.wsearch;
+
+%   wSearch     : 1 = grid search only ("coarse"),
+%                 2 = minimization search only ("fine"),
+%                 3 = grid followed by minimization search [default]
+%                 4 = grid followed by two minimization searches, the first
+%                     with temporal decimation, the second without.
+%                 5 = grid followed by two minimization searches, followed
+%                     by HRF search, followed by PRF search
+
+
+
+
+
 
 %% Set up files and directories
 % mkdir(homedir); 
@@ -78,7 +95,7 @@ params.functionals  = fullfile('.', filesep,'Raw', sprintf('%s%s', f,e));
 ok = mrInit(params);
 
 %% Check it
-
+%{
 vw = initHiddenInplane();
 sz =  viewGet(vw,'anatsize');
 [a, b, c] = ind2sub(sz, 1:prod(sz));
@@ -86,13 +103,13 @@ coords = [a; b; c];
 vw = newROI(vw,'all',true,'w',coords, 'all voxels');
 
 % plot raw signal
-% newGraphWin();
-% plotMeanTSeries(vw, viewGet(vw, 'current scan'), [], true);
+newGraphWin();
+plotMeanTSeries(vw, viewGet(vw, 'current scan'), [], true);
 
 % plot percent signal modulation
-% newGraphWin();
-% plotMeanTSeries(vw, viewGet(vw, 'current scan'), [], false);
-
+newGraphWin();
+plotMeanTSeries(vw, viewGet(vw, 'current scan'), [], false);
+%}
 
 %% Set up prf model
 
@@ -134,18 +151,20 @@ vw = rmLoadParameters(vw);
 %% Solve prf Models
 vw = initHiddenInplane();
 
-vw = rmMain(vw, [], 'coarse to fine', ...
+vw = rmMain(vw, [], wSearch, ...
             'model', {model}, ...
             'matFileName', 'tmpResults');
-% vw = rmMain(vw, [], 'coarse to fine and hrf', ...
-%             'model', {model}, ...
-%             'matFileName', 'tmpResults');
+
 % Load the results        
-d = dir(fullfile(dataDir(vw), sprintf('%s*', 'tmpResults')));
-[~,newestIndex] = max([d.datenum]);
-results = load(fullfile(dataDir(vw), d(newestIndex).name));
 
-
+if grid 
+    d = dir(fullfile(dataDir(vw), sprintf('%s*', 'tmpResults-gFit')));
+    results = load(fullfile(dataDir(vw), d.name));
+else
+    d = dir(fullfile(dataDir(vw), sprintf('%s*', 'tmpResults')));
+    [~,newestIndex] = max([d.datenum]);
+    results = load(fullfile(dataDir(vw), d(newestIndex).name));
+end
 
 % Examples below, delete at some point
 %{
@@ -158,22 +177,6 @@ vw = rmMain(vw, [], 'coarse to fine', ...
 %}
 
 %% Delete all global variables created by mrVista
-% whos('global') is returning more globals than the ones visible in the
-% workspace
-% For now, delete them manually
-% clear dataTYPES
-% clear FLAT
-% clear GRAPHWIN
-% clear GUI
-% clear HOMEDIR
-% clear INPLANE
-% clear mrLoadRetVERSION
-% clear mrSESSION
-% clear selectedFLAT
-% clear selectedINPLANE
-% clear selectedVOLUME
-% clear vANATOMYPATH
-% clear VOLUME
 mrvCleanWorkspace
 
 % Delete the temp folder with all the tmp files, we only want the results

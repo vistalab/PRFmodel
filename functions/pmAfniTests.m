@@ -2,20 +2,20 @@ clear all;
 
 
 %% Create demo data based on PRFmodel
-COMBINE_PARAMETERS.RF.Centerx0   = [-6, 6];    % etc ...
-COMBINE_PARAMETERS.RF.Centery0   = [-6,-3,3,6];
-COMBINE_PARAMETERS.RF.sigmaMinor = [1];
-COMBINE_PARAMETERS.RF.sigmaMajor = [1];
-COMBINE_PARAMETERS.TR            = 2;
-synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS);
-synthDT = synthDT(61:76,:);
-synthDT = pmForwardModelCalculate(synthDT);
+% COMBINE_PARAMETERS.RF.Centerx0   = [-6, 6];    % etc ...
+% COMBINE_PARAMETERS.RF.Centery0   = [-6,-3,3,6];
+% COMBINE_PARAMETERS.RF.sigmaMinor = [1];
+% COMBINE_PARAMETERS.RF.sigmaMajor = [1];
+% COMBINE_PARAMETERS.TR            = 2;
+% synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS);
+% synthDT = synthDT(61:76,:);
+% synthDT = pmForwardModelCalculate(synthDT);
 
 
 
 
-COMBINE_PARAMETERS.RF.sigmaMinor = [1,2,3];
-COMBINE_PARAMETERS.RF.sigmaMajor = [1,2,3];
+COMBINE_PARAMETERS.RF.sigmaMinor = [3];
+COMBINE_PARAMETERS.RF.sigmaMajor = [3];
 synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS);
 % synthDT = synthDT(61:76,:);
 synthDT = pmForwardModelCalculate(synthDT);
@@ -40,10 +40,18 @@ stimulus   = squeeze(NIstimulus.data);
 results_analyzePRF = pmModelFit(synthDT,'analyzePRF');
 
 % Analyze it with AFNI
-results_AFNI       = pmModelFit(synthDT,'AFNI');
+% results_AFNI       = pmModelFit(synthDT,'AFNI');
 
 % Analyze it with mrVista (or vistasoft, it takes both)
-results_vista      = pmModelFit(synthDT,'vistasoft','model','oneovalgaussian');
+results_vista      = pmModelFit(synthDT,'vistasoft', ...
+                                        'model','CSS', ...
+                                        'grid', false, ...
+                                        'wSearch', 'coarse to fine and hrf');
+
+% results_vista      = pmModelFit(synthDT,'vistasoft');
+
+
+
 
 % compare results
 % Inputs are the parameter table and the results in a cell array of tables, with
@@ -64,32 +72,6 @@ pmResultsPlot(compTable, ...
               'metric','RMSE', ...
               'newWin',true);
 
-          
-          
-          
-% NOTES: July 5th meeting, Brian, Jon, Gari
-%{
-
-- (BW)       done - Share the gDocs we had alreadt to add literature. Add the email history from Baker, Harvey, ...
-- (Jon-Gari) Monday 8 at 09:00. Check the anisotropic implementation in vistasoft.
-
-- Contact other software authors: 
---- (Jon)     Kendrick: ask if he wants to add it to his code or do ourselves
---- (on hold) D. Ress 
---- (BW)      Stellios Smirnakis, Papanikolau 
---- (BW)      Ione Fine 
---- (Noah)    Popeye
---- (paper)   Zeidmann ... DS Schwarzkopf ... Baker, Penny: Bayesian population receptive field modelling Neuroimage 2018
-              Understand what they did, the model too.
---- (BW)      Justin Gardner??? check if he is using vistasoft  
-
-
-- How we test the synthetic data and tools (some ideas below...)
---- Make some tables without noise and then keep adding gradual noise and check performance of different models
---- What happens when we change HRFs. Add noise to HRF as well. 
---- Full gris vs multidimensional cross: 
-------- Muiltidimensional cross: fix all and change one variable. 
------------ full grid of x,y,sigmaminor and major
 
 
 %}

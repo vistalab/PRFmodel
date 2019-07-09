@@ -46,12 +46,18 @@ p.addRequired('input');
 p.addRequired('prfimplementation',@ischar);
 % This options structs are defaults for analyzePRF
 options  = struct('seedmode', [0 1], 'display' , 'off');
-p.addParameter('options'    ,  options , @isstruct);
+% Implementation specifics
+% AnalyzePRF
+p.addParameter('options'    ,  options        , @isstruct);
+% Vistasoft
 p.addParameter('model'      ,  'one gaussian' , @ischar);
+p.addParameter('grid'       , false           , @islogical);
+p.addParameter('wsearch'    , 'coarse to fine', @ischar);
+% AFNI
+% p.addParameter('wsearch'    , 'coarse to fine', @ischar);
 
+% Parse. Assign result inside each case
 p.parse(input,prfimplementation,varargin{:});
-model = p.Results.model;
-
 
 
 %% Choose the analysis case
@@ -174,7 +180,7 @@ switch prfimplementation
             % After conversation with Jon, adding the /sqrt(n)
             sigmaMinor = (pm.Stimulus.spatialSampleVert * abs(results.params(3))/sqrt(posrect(results.params(5))));
             sigmaMajor = (pm.Stimulus.spatialSampleHorz * abs(results.params(3))/sqrt(posrect(results.params(5))));
-            
+            pm.Stimulus.spatialSampleHorz * results.rfsize
             
             tmpTable            = struct2table(results,'AsArray',true);
             tmpTable.Centerx0   = Centerx0;
@@ -211,10 +217,15 @@ switch prfimplementation
         datafile   = niftiBOLDfile;
         warning('mrvista is assuming all stimuli with same radius. Fix this')
         stimradius = pm1.Stimulus.fieldofviewHorz/2;
-        % model      = 'CSS'; % Default is 'one gaussian'
+        model      = p.Results.model;
+        grid       = p.Results.grid;
+        wSearch    = p.Results.wsearch;
+        
         % Make the call to the function based on Jon's script
         results = pmVistasoft(homedir, stimfile, datafile, stimradius,...
-                              'model',model);
+                              'model'  , model, ...
+                              'grid'   , grid, ...
+                              'wSearch', wSearch);
         
         % Prepare the outputs in a table format
         pmEstimates = table();
