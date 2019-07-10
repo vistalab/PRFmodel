@@ -17,6 +17,10 @@ sessioncode = 'pRFsynthetic01';
 homedir = fullfile(filesep, 'Volumes', 'server', 'Projects', 'PRF_Simulations', sessioncode);
 %}
 
+% First clear the workspace just in case
+mrvCleanWorkspace
+
+
 % Read the inputs
 varargin = mrvParamFormat(varargin);
 p = inputParser;

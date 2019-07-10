@@ -17,7 +17,6 @@ clear all;
 COMBINE_PARAMETERS.RF.sigmaMinor = [3];
 COMBINE_PARAMETERS.RF.sigmaMajor = [3];
 synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS);
-% synthDT = synthDT(61:76,:);
 synthDT = pmForwardModelCalculate(synthDT);
 
 
@@ -44,9 +43,9 @@ results_analyzePRF = pmModelFit(synthDT,'analyzePRF');
 
 % Analyze it with mrVista (or vistasoft, it takes both)
 results_vista      = pmModelFit(synthDT,'vistasoft', ...
-                                        'model','CSS', ...
+                                        'model','one gaussian', ...
                                         'grid', false, ...
-                                        'wSearch', 'coarse to fine and hrf');
+                                        'wSearch', 'coarse to fine');
 
 % results_vista      = pmModelFit(synthDT,'vistasoft');
 

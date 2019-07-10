@@ -70,11 +70,6 @@ switch prfimplementation
         %       the same for all the methods.
         pmEstimates = table();
         
-        % Make sure we are using winawerlab analyzePRF (I am using branch gari)
-        if ~contains(which('analyzePRF'), 'winawerlab')
-            addpath(genpath('~/soft/winawerlab/analyzePRF'));
-        end
-        
         % Check if the pm-s come in a table or alone
         if ~istable(input)
             temp = table();
@@ -180,15 +175,19 @@ switch prfimplementation
             % After conversation with Jon, adding the /sqrt(n)
             sigmaMinor = (pm.Stimulus.spatialSampleVert * abs(results.params(3))/sqrt(posrect(results.params(5))));
             sigmaMajor = (pm.Stimulus.spatialSampleHorz * abs(results.params(3))/sqrt(posrect(results.params(5))));
-            pm.Stimulus.spatialSampleHorz * results.rfsize
+            
             
             tmpTable            = struct2table(results,'AsArray',true);
             tmpTable.Centerx0   = Centerx0;
             tmpTable.Centery0   = Centery0;
             tmpTable.Theta      = 0; % Is circular, we can't model it
-            tmpTable.sigmaMajor = sigmaMinor; % Circular, same value
+            tmpTable.sigmaMajor = sigmaMajor; % Circular, same value
             tmpTable.sigmaMinor = sigmaMinor; % Circular, same value
+            % rfsize is basically sigmaMajor
+            tmpTable.rfsize = pm.Stimulus.spatialSampleHorz * results.rfsize;
+            
             % Make results table smaller (this is for Brian The Substractor :) )
+            
             % Leave the testdata and modelpred so that we have the fit.
             % Testdata is not exactly the same to the data (=pm.BOLDnoise), he
             % removes I think part of the low frew noise, check later. If we

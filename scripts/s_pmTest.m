@@ -29,10 +29,8 @@ pm.TR             = 2;
 % Compute
 % pm.Type = 'CSS';
 pm.compute; 
-pm.RF.plot
-pm.RF.Type='analyzeprf'
-pm.RF.plot
-
+pm.plot('what','both')
+pm.Noise = {};
 
 % Tests for finding out why we don't get any solutions
 % TEST 1: add a circshift to see if we change the relation between the signal and the stimuli

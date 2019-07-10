@@ -99,9 +99,10 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             % recursively and independently to the bold signal, i.e. each noise
             % is independent from each other.
             % Add parameters like this:,'params',struct('frequency',1.3)
-            pm.Noise = {pmNoise(pm, 'Type','white'), ...
-                        pmNoise(pm, 'Type','cardiac'), ...
-                        pmNoise(pm, 'Type','respiratory')};
+            % pm.Noise = {pmNoise(pm, 'Type','white'), ...
+            %             pmNoise(pm, 'Type','cardiac'), ...
+            % pmNoise(pm, 'Type','respiratory')};
+            pm.Noise = {};
         end
         % Functions that apply the setting of main parameters to subclasses
         % TR: set and get
