@@ -1,23 +1,19 @@
-clear all;
 
 
 %% Create demo data based on PRFmodel
-% COMBINE_PARAMETERS.RF.Centerx0   = [-6, 6];    % etc ...
-% COMBINE_PARAMETERS.RF.Centery0   = [-6,-3,3,6];
-% COMBINE_PARAMETERS.RF.sigmaMinor = [1];
-% COMBINE_PARAMETERS.RF.sigmaMajor = [1];
-% COMBINE_PARAMETERS.TR            = 2;
-% synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS);
-% synthDT = synthDT(61:76,:);
-% synthDT = pmForwardModelCalculate(synthDT);
+% NOTE: for analyzePRF, any TR and Stimulus can be used, but for AFNI and
+% mrVista, they need to be the same, as they will be written into a nifti
 
-
-
-
-COMBINE_PARAMETERS.RF.sigmaMinor = [3];
-COMBINE_PARAMETERS.RF.sigmaMajor = [3];
+clear COMBINE_PARAMETERS;
+COMBINE_PARAMETERS.RF.Centerx0   = [-6, 0, 6];    % etc ...
+COMBINE_PARAMETERS.RF.Centery0   = [-6, 0, 6];
+COMBINE_PARAMETERS.RF.sigmaMinor = [1];
+COMBINE_PARAMETERS.RF.sigmaMajor = [1,3];
+COMBINE_PARAMETERS.TR            = 2;
 synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS);
 synthDT = pmForwardModelCalculate(synthDT);
+% Visually check that all the combinations we specified are there
+[synthDT.RF, synthDT(:,'TR')]
 
 
 % Write the sitimulus to Nifti
@@ -47,7 +43,7 @@ results_vista      = pmModelFit(synthDT,'vistasoft', ...
                                         'grid', false, ...
                                         'wSearch', 'coarse to fine');
 
-% results_vista      = pmModelFit(synthDT,'vistasoft');
+% results_vista     = pmModelFit(synthDT,'vistasoft');
 
 
 
