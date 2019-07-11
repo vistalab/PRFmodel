@@ -173,18 +173,24 @@ switch prfimplementation
             % convert it to sigma in deg, as we inputed it.
             % 
             % After conversation with Jon, adding the /sqrt(n)
-            sigmaMinor = (pm.Stimulus.spatialSampleVert * abs(results.params(3))/sqrt(posrect(results.params(5))));
-            sigmaMajor = (pm.Stimulus.spatialSampleHorz * abs(results.params(3))/sqrt(posrect(results.params(5))));
+            % As the result is always circular, we want to check that rfsize is
+            % always the same as sigmaMinor and sigmaMajor. 
+            % It is, so we are removing the rfsize column from the table and
+            % assigning it to sigmaMinor and sigmaMajor withouth the calculation
+            % Leave the code here comented to undertand it better in the future
+            % sigmaMinor = (pm.Stimulus.spatialSampleVert * abs(results.params(3))/sqrt(posrect(results.params(5))));
+            % sigmaMajor = (pm.Stimulus.spatialSampleHorz * abs(results.params(3))/sqrt(posrect(results.params(5))));
+            % tmpTable.rfsize = pm.Stimulus.spatialSampleHorz * results.rfsize;
             
             
             tmpTable            = struct2table(results,'AsArray',true);
             tmpTable.Centerx0   = Centerx0;
             tmpTable.Centery0   = Centery0;
             tmpTable.Theta      = 0; % Is circular, we can't model it
-            tmpTable.sigmaMajor = sigmaMajor; % Circular, same value
-            tmpTable.sigmaMinor = sigmaMinor; % Circular, same value
-            % rfsize is basically sigmaMajor
-            tmpTable.rfsize = pm.Stimulus.spatialSampleHorz * results.rfsize;
+            % sigmaMajor and sigmaMinor will have same value, is circular RF
+            % Convert it to degrees
+            tmpTable.sigmaMajor = pm.Stimulus.spatialSampleHorz * results.rfsize; 
+            tmpTable.sigmaMinor = pm.Stimulus.spatialSampleHorz * results.rfsize; 
             
             % Make results table smaller (this is for Brian The Substractor :) )
             
@@ -195,7 +201,7 @@ switch prfimplementation
             % We'll need to add pm.BOLDmeanValue to modelpred to have it in the
             % same range as the data (=pm.BOLDnoise)
             tmpTable            = tmpTable(:,{'R2','Centerx0','Centery0', 'Theta' ,...
-                'rfsize', 'sigmaMinor', 'sigmaMajor' ,...
+                'sigmaMinor', 'sigmaMajor' ,...
                 'testdata','modelpred'});
             pmEstimates = [pmEstimates; tmpTable];
         end
