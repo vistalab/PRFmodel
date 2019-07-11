@@ -7,7 +7,8 @@ function synthDT = pmForwardModelAddRows(synthDT, variableName, values)
 %
 %
 
-
+% We already have the defaults, which are the first value
+values = values(2:end);
 
 % TODO: add checks to values to validate that the value type corresponds to the
 % variable that we want to expand
