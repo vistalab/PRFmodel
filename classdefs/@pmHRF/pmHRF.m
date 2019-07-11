@@ -41,7 +41,7 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
     methods (Static)
         function d = defaultsGet
             % Defaults for all different models
-            d.Type                = 'friston';
+            d.Type                = 'canonical';  % 'friston'
             d.Duration            = 20;
             % Default params for friston
             d.params.a            = [6  ,  12];
@@ -101,7 +101,7 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                         - c*(t/d(2)).^a(2) .* exp(-(t-d(2))/b(2));
                 case 'boynton'
                     % TODO: use a function under @HRF again, remove code from here.
-                    
+                    params = hrf.params;
                     % Make sure that when boynton is selected, params comes with
                     % the correct parameters, otherwise use defaults.
                     if ~isfield(params,'n'),    params.n     = 3;   end
@@ -113,6 +113,8 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     n     = hrf.params.n;
                     tau   = hrf.params.tau;
                     delay = hrf.params.delay;
+                    
+                    t = hrf.tSteps;
                     
                     %    hrf = boyntonHIRF(t, [n=3], [tau=1.08], [delay=2.05]])
                     %
@@ -198,7 +200,8 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     
                     
                     % Obtain the parameters for this instance
-                    duration = hrf.params.stimDuration;
+                    % duration = hrf.params.stimDuration;
+                    duration = hrf.TR; % This is what they do internally in analyzePRF
                     tr       = hrf.TR;
                     
                     
@@ -221,9 +224,9 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     
                     % make the peak equal to one
                     thrf = thrf / max(thrf);
-                    plot(thrf)
+
                     % make the same time points as TR
-                    thrf = thrf(1:length(hrf.tSteps));
+                    % thrf = thrf(1:length(hrf.tSteps));
                     
                     
                     % Add it to the output
@@ -241,7 +244,15 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
         function tSteps = get.tSteps(hrf)
             % Calculate it and return every time we need it.
             % TODO: Does it need to be in TR intervals?
-            tSteps  = 0: hrf.TR: hrf.Duration;
+            switch hrf.Type
+                case {'friston','boynton'}
+                    tSteps  = 0: hrf.TR: hrf.Duration;
+                case {'canonical'}
+                    tSteps  = 0: hrf.TR: hrf.TR*(length(hrf.values)-1);
+                otherwise
+                    error('HRF method %s not implemented or valid.',hrf.Type);
+            end
+            
         end
         
         

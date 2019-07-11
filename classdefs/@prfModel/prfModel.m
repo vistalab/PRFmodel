@@ -90,7 +90,7 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             
             % Create the classes, and initialize a prfModel inside it
             pm.Stimulus      = pmStimulus(pm);
-            pm.HRF           = pmHRF(pm);
+            pm.HRF           = pmHRF(pm); 
             pm.RF            = pmRF(pm);
             
             % We should initialize the RNG here and return the seed
@@ -206,7 +206,8 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
                     % pm.BOLD = conv2(timeSeries',hrf,'same');
                     
                     pm.BOLD = conv(pm.timeSeries',pm.HRF.values);
-                    pm.BOLD = [0,pm.BOLD(1:(end-length(pm.HRF.values)))];
+                    pm.BOLD = pm.BOLD(1:(end+1-length(pm.HRF.values)));
+                    % pm.BOLD = [0,pm.BOLD(1:(end-length(pm.HRF.values)))];
                 case 'CSS'
                     % Import function from analyzePRF and use it to generate the predicted BOLD signal.
                     %                     aprff = ...

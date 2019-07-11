@@ -189,8 +189,8 @@ switch prfimplementation
             tmpTable.Theta      = 0; % Is circular, we can't model it
             % sigmaMajor and sigmaMinor will have same value, is circular RF
             % Convert it to degrees
-            tmpTable.sigmaMajor = pm.Stimulus.spatialSampleHorz * results.rfsize; 
-            tmpTable.sigmaMinor = pm.Stimulus.spatialSampleHorz * results.rfsize; 
+            tmpTable.sigmaMajor = pm.Stimulus.spatialSampleHorz * results.rfsize;  %  * sqrt(posrect(results.params(5))); 
+            tmpTable.sigmaMinor = pm.Stimulus.spatialSampleHorz * results.rfsize;  %  * sqrt(posrect(results.params(5))); 
             
             % Make results table smaller (this is for Brian The Substractor :) )
             
@@ -200,9 +200,9 @@ switch prfimplementation
             % cannot get testdata in other tools, we will just obtain modelpred.
             % We'll need to add pm.BOLDmeanValue to modelpred to have it in the
             % same range as the data (=pm.BOLDnoise)
-            tmpTable            = tmpTable(:,{'R2','Centerx0','Centery0', 'Theta' ,...
+            tmpTable            = tmpTable(:,{'Centerx0','Centery0', 'Theta' ,...
                 'sigmaMinor', 'sigmaMajor' ,...
-                'testdata','modelpred'});
+                'testdata','modelpred','R2'});
             pmEstimates = [pmEstimates; tmpTable];
         end
     case {'mrvista','vistasoft'}
@@ -239,6 +239,12 @@ switch prfimplementation
         pmEstimates.Theta      = results.model{1}.sigma.theta';
         pmEstimates.sigmaMajor = results.model{1}.sigma.major';
         pmEstimates.sigmaMinor = results.model{1}.sigma.minor';
+        % Add the time series as well
+        pmEstimates.testdata   = repmat(ones([1,pm1.timePointsN]), [height(pmEstimates),1]);
+        pmEstimates.modelpred  = pmEstimates.testdata;
+        pmEstimates.R2         = results.model{1}.x0';
+        % errperf(T,P,'mae')
+        
         
     case {'afni', 'afni6', 'afnidog', 'afni_6', 'afni_dog'}
         % AFNI provides 

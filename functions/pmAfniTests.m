@@ -5,11 +5,13 @@
 % mrVista, they need to be the same, as they will be written into a nifti
 
 clear COMBINE_PARAMETERS;
-COMBINE_PARAMETERS.RF.Centerx0   = [-6, 0, 6];    % etc ...
-COMBINE_PARAMETERS.RF.Centery0   = [-6, 0, 6];
-COMBINE_PARAMETERS.RF.sigmaMinor = [1];
+COMBINE_PARAMETERS.RF.Centerx0   = [0,6]; % [-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
+COMBINE_PARAMETERS.RF.Centery0   = [0,6];
+COMBINE_PARAMETERS.RF.Theta      = [0]; %, deg2rad(45)];
+COMBINE_PARAMETERS.RF.sigmaMinor = [1,3];
 COMBINE_PARAMETERS.RF.sigmaMajor = [1,3];
 COMBINE_PARAMETERS.TR            = 2;
+% HRF(1).Type                      = 'canonical';  % Make this work
 synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS);
 synthDT = pmForwardModelCalculate(synthDT);
 % Visually check that all the combinations we specified are there
@@ -34,16 +36,15 @@ stimulus   = squeeze(NIstimulus.data);
 % Analyze it with analyzePRF
 results_analyzePRF = pmModelFit(synthDT,'analyzePRF');
 
+% Analyze it with mrVista (or vistasoft, it takes both)
+% 'one gaussian', 'one oval gaussian', 'difference of gaussians'
+results_vista      = pmModelFit(synthDT,'vistasoft', ...
+                                        'model','one gaussian', ...
+                                        'grid', false, ... % if true, returns gFit
+                                        'wSearch', 'coarse to fine and hrf');  %  and hrf
 % Analyze it with AFNI
 % results_AFNI       = pmModelFit(synthDT,'AFNI');
 
-% Analyze it with mrVista (or vistasoft, it takes both)
-results_vista      = pmModelFit(synthDT,'vistasoft', ...
-                                        'model','one gaussian', ...
-                                        'grid', false, ...
-                                        'wSearch', 'coarse to fine');
-
-% results_vista     = pmModelFit(synthDT,'vistasoft');
 
 
 
@@ -53,11 +54,12 @@ results_vista      = pmModelFit(synthDT,'vistasoft', ...
 % names. Example
 % Params list for the table. The defaults are
 paramDefaults = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
-compTable = pmResultsCompare(synthDT, ... % Defines the input params
+[compTable,compSeries] = pmResultsCompare(synthDT, ... % Defines the input params
                             {'aPRF','vista'}, ... % Analysis names we want to see
                             {results_analyzePRF,results_vista}, ...
                             'params', paramDefaults, ...
                             'shorten names',true); 
+                        
 % And now create plots to understand better the results
 % if 'to compare' is not specified, then the first will go in x and the rest in y
 % if a list (>=2) is specified, the first in x will be compared to the rest in y

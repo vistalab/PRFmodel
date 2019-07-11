@@ -39,21 +39,21 @@ mpl.rcParams['savefig.dpi'] = 72*4
 # #Load Data
 # %
 # This is for the original 4x4 nifti
-# nii1 = ny.load('~/toolboxes/PRFmodel/data/examples/synthDataExample2_TR2.nii.gz', to='image')
-# data = np.reshape(nii1.dataobj, [nii1.shape[0]*nii1.shape[1], nii1.shape[-1]])
+nii1 = ny.load('~/toolboxes/PRFmodel/data/examples/synthDataExample2_TR2.nii.gz', to='image')
+data = np.reshape(nii1.dataobj, [nii1.shape[0]*nii1.shape[1], nii1.shape[-1]])
 
 # This is for the 1D nifti
 # With the 1D nifti I thing we will save lots of orientation problems. For example,
 # Freesurfers MRIread read the data in different order than niftiRead, flipping x and y.
 # With a 1D, we do a squeeze and that's it.
-nii1       = ny.load('~/toolboxes/PRFmodel/data/examples/synthDataExample3_1D_TR2.nii.gz', to='image')
-data       = np.squeeze(nii1.dataobj)
+# nii1       = ny.load('~/toolboxes/PRFmodel/data/examples/synthDataExample3_1D_TR2.nii.gz', to='image')
+# data       = np.squeeze(nii1.dataobj)
 input_data = data[4,:]  # Noah said he used the 5th voxel for the example
 
 # Stimulus related (we passed it as a nifti, to avoid sending matlab specific things)
 nii2 = ny.load('~/toolboxes/PRFmodel/data/examples/Exp-103_binary-true_size-20x20.nii.gz', to='image')
 stim = np.squeeze(nii2.dataobj)
-stim = np.roll(stim, -5, axis=2)
+# stim = np.roll(stim, -5, axis=2)
 stimulus = popeye.visual_stimulus.VisualStimulus(stim.astype('int16'), 30, 10.57962, 0.5, 2, 'int16')
 
 
@@ -77,7 +77,6 @@ fit = og_hrf.GaussianFit(model, input_data,
     # RSQarray.append((ii,fit.RSQ))
 
 
-popeye.__file__
 # %
 # find and show the parameters (x, y, sigma, n, beta, baseline)
 sol = fit.overloaded_estimate

@@ -39,6 +39,8 @@ model       = p.Results.model;
 grid        = p.Results.grid;
 wSearch     = p.Results.wsearch;
 
+% TODO: write all options for wSearch and model
+
 %   wSearch     : 1 = grid search only ("coarse"),
 %                 2 = minimization search only ("fine"),
 %                 3 = grid followed by minimization search [default]
