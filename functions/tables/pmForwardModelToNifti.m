@@ -48,6 +48,6 @@ for ii=1:dim1
     % end
 end
 % Save it as a nifti
-writeFileNifti(niftiCreate('data', myCube, 'tr', 2, ...
+writeFileNifti(niftiCreate('data', myCube, 'tr', pm1.TR, ...
                             'fname',fname));
 
