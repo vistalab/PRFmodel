@@ -21,8 +21,8 @@ function newDT = pmResultsPlot(DT, varargin)
 %% Read the inputs
 varargin = mrvParamFormat(varargin);
 p = inputParser;
-p.addRequired ('DT'           , @istable);
-p.addParameter('tocompare', {}, @iscell);  % Default is do them all
+p.addRequired ('DT'                   , @istable);
+p.addParameter('tocompare', {}        , @iscell);  % Default is do them all
 p.addParameter('result'   , 'Centerx0', @ischar);  
 p.addParameter('metric'   , 'RMSE'    , @ischar);  
 p.addParameter('newwin'   , true      , @islogical); % For subplot, set this to false
