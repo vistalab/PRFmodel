@@ -144,6 +144,10 @@ switch prfimplementation
             % Convert the inputs to the same units we used
             Centerx0 = (pm.Stimulus.spatialSampleHorz * Centerx0) - (pm.Stimulus.fieldofviewHorz/2);
             Centery0 = (pm.Stimulus.spatialSampleVert * Centery0) - (pm.Stimulus.fieldofviewVert/2);
+            
+            % Calculate RMSE
+            RMSE     = sqrt(mse(results.testdata, results.modelpred));
+            
             % This is the formula he uses to create the gaussian:
             % makegaussian2d(resmx,p1,p2,p3,p3) /(2*pi*p3^2)
             % p3 is the standard deviation in the vertical/horizontal direction
@@ -191,7 +195,7 @@ switch prfimplementation
             % Convert it to degrees
             tmpTable.sigmaMajor = pm.Stimulus.spatialSampleHorz * results.rfsize;  %  * sqrt(posrect(results.params(5))); 
             tmpTable.sigmaMinor = pm.Stimulus.spatialSampleHorz * results.rfsize;  %  * sqrt(posrect(results.params(5))); 
-            
+            tmpTable.RMSE       = RMSE;
             % Make results table smaller (this is for Brian The Substractor :) )
             
             % Leave the testdata and modelpred so that we have the fit.
@@ -202,7 +206,7 @@ switch prfimplementation
             % same range as the data (=pm.BOLDnoise)
             tmpTable            = tmpTable(:,{'Centerx0','Centery0', 'Theta' ,...
                 'sigmaMinor', 'sigmaMajor' ,...
-                'testdata','modelpred','R2'});
+                'testdata','modelpred','R2','RMSE'});
             pmEstimates = [pmEstimates; tmpTable];
         end
     case {'mrvista','vistasoft'}
@@ -241,8 +245,15 @@ switch prfimplementation
         pmEstimates.sigmaMinor = results.model{1}.sigma.minor';
         % Add the time series as well
         pmEstimates.testdata   = repmat(ones([1,pm1.timePointsN]), [height(pmEstimates),1]);
-        pmEstimates.modelpred  = pmEstimates.testdata;
-        pmEstimates.R2         = results.model{1}.x0';
+        PMs                    = input.pm;
+        for ii=1:height(pmEstimates); pmEstimates{ii,'testdata'}=PMs(ii).BOLDnoise;end
+        
+        % Obtain the modelfit, 
+        pmEstimates = pmVistaObtainPrediction(pmEstimates, input, results);
+        
+        pmEstimates.R2         = calccod(pmEstimates.testdata,  pmEstimates.modelpred,2);
+        pmEstimates.rss        = results.model{1}.rss';
+        pmEstimates.RMSE       = sqrt(mean((pmEstimates.testdata - pmEstimates.modelpred).^2,2));
         % errperf(T,P,'mae')
         
         
@@ -478,4 +489,234 @@ end
 
 
 end
+
+
+
+
+function pmEstimates = pmVistaObtainPrediction(pmEstimates, input, results)
+    % Initialize the results
+    pmEstimates.modelpred = pmEstimates.testdata;
+
+
+
+    % start from the function rmPlotGUI_makePrediction
+    recompFit = true;  % We want to recompute fit
+        
+    % paramsOrder is as follow : sigmaMajor,sigmaMinor,theta, x0,y0
+    % rfGaussian2d(X, Y,         rfParams(3), rfParams(5), rfParams(6), rfParams(1), rfParams(2));
+    % rfParams(4) is not used, at least in this function
+    % I need to create rfParams = []; per every voxel it seems
+    
+    for voxel=1:height(input) 
+        rfParams = zeros([1,6]);
+        rfParams(1) = results.model{1}.x0(voxel);
+        rfParams(2) = results.model{1}.y0(voxel);
+        rfParams(3) = results.model{1}.sigma.major(voxel);
+        % rfParams(4) =  % Esto se asigna luego, suele ser el beta(1)
+        rfParams(5) = results.model{1}.sigma.minor(voxel);
+        rfParams(6) = results.model{1}.sigma.theta(voxel);
+        
+        % %% make RFs
+        % RFs = rmPlotGUI_makeRFs(modelName, rfParams, M.params.analysis.X, M.params.analysis.Y);
+        RFs = rmPlotGUI_makeRFs(results.model{1}.description, ...
+            rfParams, ...
+            results.params.analysis.X,results.params.analysis.Y);
+        
+        %% make predictions for each RF
+        % pred = M.params.analysis.allstimimages * RFs;
+        pred = results.params.analysis.allstimimages * RFs;
+        
+        
+        % Determine which frames have no stimulus. We may want to use this
+        % information to highlight the blanks in the time series plots. We need to
+        % determine blanks from the original images, not the images that have been
+        % convolved with the hRF.
+        %{
+        stim = [];
+        for ii = 1:length(M.params.stim)
+            endframe = size(M.params.stim(ii).images_org, 2);
+            frames =  endframe - M.params.stim(ii).nFrames+1:endframe;
+            stim = [stim M.params.stim(ii).images_org(:, frames)];
+        end
+        blanks = sum(stim, 1) < .001;
+        %}
+        stim = [];
+        for ii = 1:length(results.params.stim)
+            endframe = size(results.params.stim(ii).images_org, 2);
+            frames =  endframe - results.params.stim(ii).nFrames+1:endframe;
+            stim = [stim results.params.stim(ii).images_org(:, frames)];
+        end
+        blanks = sum(stim, 1) < .001;
+        
+        
+        
+        %% get/make trends
+        [trends, ntrends, dcid] = rmMakeTrends(results.params, 0);
+        if isfield(results.params.analysis,'allnuisance')
+            trends = [trends results.params.analysis.allnuisance];
+        end
+        
+        %% Compute final predicted time series (and get beta values)
+        % we also add this to the rfParams, to report later
+        M = results;
+        
+        % In resutls we don't have M.tSeries(:,voxel)
+        % I am going to paste the testdata in vertical form. 
+        M.tSeries = pmEstimates.testdata';
+        
+        
+        switch M.model{1}.description,
+            case {'2D pRF fit (x,y,sigma, positive only)',...
+                    '2D RF (x,y,sigma) fit (positive only)',...
+                    '1D pRF fit (x,sigma, positive only)'};
+                if recompFit==0,
+                    beta = rmCoordsGet(M.viewType, model, 'b', coords);
+                    beta = beta([1 dcid+1])';
+                    
+                else
+                    beta = pinv([pred trends(:,dcid)])*M.tSeries(:,voxel);
+                    beta(1) = max(beta(1),0);
+                    
+                end
+                
+                RFs        = RFs .* (beta(1) .* M.params.analysis.HrfMaxResponse);
+                
+                rfParams(4) = beta(1);
+                
+                
+            case {'2D pRF fit (x,y,sigma_major,sigma_minor)' ...
+                    'oval 2D pRF fit (x,y,sigma_major,sigma_minor,theta)'};
+                if recompFit==0,
+                    beta = rmCoordsGet(M.viewType, model, 'b', coords);
+                    beta = beta([1 dcid+1]);
+                else
+                    beta = pinv([pred trends(:,dcid)])*M.tSeries(:,voxel);
+                    beta(1) = max(beta(1),0);
+                    
+                end
+                
+                RFs        = RFs .* (beta(1) .* M.params.analysis.HrfMaxResponse);
+                
+                rfParams(4) = beta(1);
+                
+            case 'unsigned 2D pRF fit (x,y,sigma)';
+                if recompFit==0,
+                    beta = rmCoordsGet(M.viewType, model, 'b', coords);
+                    beta = beta([1 dcid+1]);
+                else
+                    beta = pinv([pred trends(:,dcid)])*M.tSeries(:,voxel);
+                end
+                
+                RFs        = RFs .* (beta(1) .* M.params.analysis.HrfMaxResponse);
+                
+                rfParams(4) = beta(1);
+                
+            case {'Double 2D pRF fit (x,y,sigma,sigma2, center=positive)',...
+                    'Difference 2D pRF fit (x,y,sigma,sigma2, center=positive)',...
+                    'Difference 1D pRF fit (x,sigma, sigma2, center=positive)'},
+                if recompFit==0,
+                    beta = rmCoordsGet(M.viewType, model, 'b', coords);
+                    beta = beta([1 2 dcid+2]);
+                    beta = beta';
+                else
+                    beta = pinv([pred trends(:,dcid)])*M.tSeries(:,voxel);
+                    beta(1) = max(beta(1),0);
+                    beta(2) = max(beta(2),-abs(beta(1)));
+                end
+                
+                RFs        = RFs * (beta(1:2).*M.params.analysis.HrfMaxResponse);
+                
+                rfParams(:,4) = beta(1);
+                
+            case {'Two independent 2D pRF fit (2*(x,y,sigma, positive only))'},
+                if recompFit==0,
+                    beta = rmCoordsGet(M.viewType, model, 'b', coords);
+                    beta = beta([1 2 dcid+2]);
+                else
+                    beta = pinv([pred trends(:,dcid)])*M.tSeries(:,voxel);
+                    beta(1:2) = max(beta(1:2),0);
+                end
+                
+                RFs        = RFs * (beta(1:2) .* M.params.analysis.HrfMaxResponse);
+                
+                rfParams(:,4) = beta(1:2);
+                rfParams = rfParams(1,:);
+                
+            case {'Mirrored 2D pRF fit (2*(x,y,sigma, positive only))'},
+                if recompFit==0,
+                    beta = rmCoordsGet(M.viewType, model, 'b', coords);
+                    beta = beta([1 dcid+1]);
+                else
+                    beta = pinv([pred trends(:,dcid)])*M.tSeries(:,voxel);
+                    beta(1) = max(beta(1),0);
+                end
+                
+                RFs        = RFs * (beta(1) .* M.params.analysis.HrfMaxResponse);
+                
+                rfParams(:,4) = beta(1);
+                rfParams = rfParams(1,:);
+                
+            case {'Sequential 2D pRF fit (2*(x,y,sigma, positive only))'},
+                if recompFit==0,
+                    beta = rmCoordsGet(M.viewType, model, 'b', coords);
+                    beta = beta([1 2 dcid+2]);
+                else
+                    beta = pinv([pred trends(:,dcid)])*M.tSeries(:,voxel);
+                    beta(1:2) = max(beta(1:2),0);
+                end
+                
+                RFs        = RFs * (beta(1:2) .* M.params.analysis.HrfMaxResponse);
+                
+                rfParams(:,4) = beta(1:2);
+                rfParams = rfParams(1,:);
+            case {'css' '2D nonlinear pRF fit (x,y,sigma,exponent, positive only)'}
+                % we-do the prediction with stimulus that has not been convolved
+                % with the hrf, and then add in the exponent, and then convolve
+                
+                % make neural predictions for each RF
+                pred = (M.params.analysis.allstimimages_unconvolved * RFs).^rfParams(7);
+                % reconvolve with hRF
+                for scan = 1:length(M.params.stim)
+                    these_time_points = M.params.analysis.scan_number == scan;
+                    hrf = M.params.analysis.Hrf{scan};
+                    pred(these_time_points,:) = filter(hrf, 1, pred(these_time_points,:));
+                end
+                
+                if recompFit
+                    beta = pinv([pred trends(:,dcid)])*M.tSeries(:,voxel);
+                    beta(1) = max(beta(1),0);
+                    
+                else
+                    beta = rmCoordsGet(M.viewType, model, 'b', coords);
+                    beta = beta([1 dcid+1])';   % scale factor (gain) and DC (mean)
+                end
+                
+                RFs        = RFs .* (beta(1) .* M.params.analysis.HrfMaxResponse);
+                
+                rfParams(4) = beta(1);
+                
+                
+                
+            otherwise,
+                error('Unknown modelName: %s', modelName);
+        end;
+        
+        % Calculate the prediction
+        prediction = [pred trends(:,dcid)] * beta;
+        
+        % Add it to the return table
+        pmEstimates.modelpred(voxel,:) = prediction';
+    end
+
+
+    
+    
+    
+    
+    
+end
+
+
+
+
 
