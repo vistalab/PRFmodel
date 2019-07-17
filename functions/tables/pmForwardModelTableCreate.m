@@ -41,19 +41,20 @@ for ii=1:length(fieldsToCombine)
     fieldValues = COMBINE_PARAMETERS.(fieldName);
     switch fieldName
         case 'HRF'
-            for nh = 1:length(fieldValues)
-                % Add rows with the combinations of parameters we want to check
-                % Check if only some of the fields in params where set
-                % Check the struct params first
-                fieldValues(nh).params = pmParamsCompletenessCheck(fieldValues(nh).params, ...
-                                                   pm.defaultsTable.HRF.params);
-                % Then check that the whole thing should be complete
-                fieldValues(nh)        = pmParamsCompletenessCheck(fieldValues(nh), ...
+            % We are only interested in the first array if there are more than one
+            nh          = 1;
+            completeHRF = pmParamsCompletenessCheck(fieldValues(nh), ...
                                             table2struct(pm.defaultsTable.HRF));
-                % Convert it to table
-                fieldValuesTable = struct2table(fieldValues(nh),'AsArray',true);
-                % Change the default if provided
-                synthDT.(fieldName) = fieldValuesTable;
+            % Do the same with params
+            completeHRF.params = pmParamsCompletenessCheck(completeHRF.params, ...
+                                                    pm.defaultsTable.HRF.params);
+            % Convert it to table
+            fieldValuesTable = struct2table(completeHRF,'AsArray',true);
+            % Change the default
+            synthDT.(fieldName) = fieldValuesTable;
+            % If there is only only one HRF, then delete the variable
+            if length(fieldValues)==1
+                REDUCED_COMBINE_PARAMETERS = rmfield(REDUCED_COMBINE_PARAMETERS,'HRF');
             end
         case 'Noise'
         otherwise
@@ -102,19 +103,20 @@ for ii=1:length(fieldsToCombine)
     fieldValues = REDUCED_COMBINE_PARAMETERS.(fieldName);
     switch fieldName
         case 'HRF'
-            for nh = 1:length(fieldValues)
+            for nh = 2:length(fieldValues)  % the first one is the default
                 % Add rows with the combinations of parameters we want to check
+                % Then check that the whole thing should be complete
+                completeHRF        = pmParamsCompletenessCheck(fieldValues(nh), ...
+                                            table2struct(pm.defaultsTable.HRF));
                 % Check if only some of the fields in params where set
                 % Check the struct params first
-                fieldValues(nh).params = pmParamsCompletenessCheck(fieldValues(nh).params, ...
+                completeHRF.params = pmParamsCompletenessCheck(completeHRF.params, ...
                                                    pm.defaultsTable.HRF.params);
-                % Then check that the whole thing should be complete
-                fieldValues(nh)        = pmParamsCompletenessCheck(fieldValues(nh), ...
-                                            table2struct(pm.defaultsTable.HRF));
+                
                 % Convert it to table
-                fieldValuesTable = struct2table(fieldValues(nh),'AsArray',true);
+                fieldValuesTable = struct2table(completeHRF,'AsArray',true);
                 % Add all possible combinations based on this options
-                synthDT          = pmForwardModelAddRows(synthDT, fieldName,fieldValuesTable);
+                synthDT          = pmForwardModelAddRows(synthDT, fieldName, fieldValuesTable);
             end
         case 'Noise'
         otherwise

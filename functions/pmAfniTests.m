@@ -3,19 +3,23 @@
 %% Create demo data based on PRFmodel
 % NOTE: for analyzePRF, any TR and Stimulus can be used, but for AFNI and
 % mrVista, they need to be the same, as they will be written into a nifti
-
-clear COMBINE_PARAMETERS;
+clear all;
 COMBINE_PARAMETERS.RF.Centerx0   = [0,6]; % [-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
 COMBINE_PARAMETERS.RF.Centery0   = [0,6];
 COMBINE_PARAMETERS.RF.Theta      = [0]; %, deg2rad(45)];
-COMBINE_PARAMETERS.RF.sigmaMinor = [1,3];
-COMBINE_PARAMETERS.RF.sigmaMajor = [1,3];
-COMBINE_PARAMETERS.TR            = 2;
-% HRF(1).Type                    = 'canonical';  % Make this work
+COMBINE_PARAMETERS.RF.sigmaMinor = [2];
+COMBINE_PARAMETERS.RF.sigmaMajor = [2];
+COMBINE_PARAMETERS.TR            = [2];
+    HRF(1).Type                  = 'friston';
+    HRF(2).Type                  = 'canonical';
+COMBINE_PARAMETERS.HRF           = HRF;
 synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS);
 synthDT = pmForwardModelCalculate(synthDT);
 % Visually check that all the combinations we specified are there
-[synthDT.RF, synthDT(:,'TR')]
+[synthDT.RF(:,{'Centerx0','Centery0','Theta','sigmaMajor','sigmaMinor'}), ...
+ synthDT(:,'TR'), ...
+ synthDT.HRF(:,'Type')...
+]
 
 
 % Write the sitimulus to Nifti
