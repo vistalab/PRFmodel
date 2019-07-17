@@ -33,7 +33,6 @@ for ii=1:height(DT)
     end
     pm.Stimulus.compute;
     
-    
     %% RF
     for jj=1:width(dt.RF)
         paramName         = dt.RF.Properties.VariableNames{jj};

@@ -24,26 +24,29 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
     %}
     
     properties
-        PM             ;   % prfModel that has some of the variables we need, such as TR
-        fieldofviewHorz;   % Degrees
-        fieldofviewVert;   % Degrees
-        expName        ;   
-        Binary         ;   % Logical. If true only apertures are shown. 
-        barWidth       ;   % Degrees
-        values         ;   % char/string with path to the stimulus .mat
-        videoFileName  ;
-        niftiFileName  ;
-        Name           ;
-        DataPath       ;
-        LocalPath      ;
+        PM               ;   % prfModel that has some of the variables we need, such as TR
+        fieldofviewHorz  ;   % Degrees
+        fieldofviewVert  ;   % Degrees
+        expName          ;   
+        Binary           ;   % Logical. If true only apertures are shown. 
+        Resize           ;   % Logical. If true image resized according to ImageSideSize
+        ResizedHorz      ;   % Numeric. Size in pixels of resized horizontal side
+        ResizedVert      ;   % Numeric. Size in pixels of resized vertical side
+        barWidth         ;   % Degrees
+        values           ;   % char/string with path to the stimulus .mat
+        videoFileName    ;
+        niftiFileName    ;
+        DataPath         ;
+        LocalPath        ;
     end
     
     properties (Dependent = true, Access = public)
         spatialSampleHorz;
         spatialSampleVert;
-        XY;
-        timePointsN;
-        timePointsSeries;
+        XY               ;
+        timePointsN      ;
+        timePointsSeries ;
+        Name             ;
     end
     properties(Dependent= true, SetAccess = private, GetAccess = public)
         TR;            % Seconds, it will be read from the parent class pm
@@ -58,7 +61,11 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             d.fieldofviewVert = 20;    % Degrees
             d.expName         = "103"; % TODO: give it meaningful names
             d.Binary          = true;  % True: only apertures. False: images/words inside apertures
+            d.Resize          = true;  % True by default. Resize to ResizedHorz x ResizedVert
+            d.ResizedHorz     = 101;   % 101 is the default in mrVista
+            d.ResizedVert     = 101;   % 101 is the default in mrVista
             d.barWidth        = 2;     % Degrees. TODO
+            
             % Convert to table and return
             d = struct2table(d,'AsArray',true);
         end
@@ -77,6 +84,9 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             p.addParameter('fieldofviewvert',d.fieldofviewVert, @isnumeric);
             p.addParameter('expname'        ,d.expName{:}     , @ischar);
             p.addParameter('binary'         ,d.Binary         , @islogical);
+            p.addParameter('resize'         ,d.Resize         , @islogical);
+            p.addParameter('resizedhorz'    ,d.ResizedHorz    , @isnumeric);
+            p.addParameter('resizedvert'    ,d.ResizedVert    , @isnumeric);
             p.addParameter('barwidth'       ,d.barWidth       , @isnumeric);
             p.parse(pm,varargin{:});
             
@@ -87,16 +97,15 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             stim.fieldofviewVert = p.Results.fieldofviewvert;
             stim.expName         = p.Results.expname;
             stim.Binary          = p.Results.binary;
+            stim.Resize          = p.Results.resize;
+            stim.ResizedHorz     = p.Results.resizedhorz;
+            stim.ResizedVert     = p.Results.resizedvert;
             stim.barWidth        = p.Results.barwidth;
             % If it does not exist, create the stim file.
             % Always store just the path and the name
-            stim.Name = strcat('Exp-',stim.expName, ...
-                '_binary-', choose(stim.Binary,'true','false'), ...
-                '_size-', num2str(stim.fieldofviewVert), 'x', ...
-                num2str(stim.fieldofviewHorz));
-            stim.LocalPath = fullfile(pmRootPath,'local');
+            stim.LocalPath     = fullfile(pmRootPath,'local');
             stim.DataPath      = fullfile(pmRootPath,'data','stimulus');
-            stimNameWithPath = fullfile(stim.DataPath, strcat(stim.Name,'.mat'));
+            stimNameWithPath   = fullfile(stim.DataPath, [stim.Name '.mat']);
             if ~exist(stimNameWithPath, 'file')
                 pmStimulusGenerate('filename', stimNameWithPath);
             end
@@ -105,6 +114,19 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             stim.videoFileName = fullfile(stim.LocalPath,[stim.Name '.avi']);
             % Default fileName if we want to write a nifti of the stimuli
             stim.niftiFileName = fullfile(stim.LocalPath,[stim.Name '.nii.gz']);
+        end
+        function Name = get.Name(stim)
+            Name = [...
+                   'Exp-'          char(stim.expName) ...
+                   '_binary-'      choose(stim.Binary,'true','false') ...
+                   '_size-'        num2str(stim.fieldofviewVert) 'x' ...
+                                   num2str(stim.fieldofviewHorz) ...
+                   '_wantresize-'  choose(stim.Resize,'true', 'false') ...
+                   '_ResizedHorz-' num2str(stim.ResizedVert) 'x' ...
+                                   num2str(stim.ResizedHorz) ...
+                   '_barWidth-'    num2str(stim.barWidth) ...
+                   ];
+               assert(isa(Name, 'char'));
         end
         
         % Methods
@@ -146,18 +168,13 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
         function compute(stim)
             % If it does not exist, create the stim file.
             % Always store just the path and the name
-            stim.Name = strcat('Exp-',stim.expName, ...
-                '_binary-', choose(stim.Binary,'true','false'), ...
-                '_size-', num2str(stim.fieldofviewVert), 'x', ...
-                num2str(stim.fieldofviewHorz));
-            stimNameWithPath = fullfile(stim.DataPath, strcat(stim.Name,'.mat'));
+            stimNameWithPath = fullfile(stim.DataPath, [stim.Name '.mat']);
             if ~exist(stimNameWithPath, 'file')
                 fprintf('Computing and storing new stimulus file in %s',stimNameWithPath)
                 pmStimulusGenerate('filename', string(stimNameWithPath));
             end
             % fprintf('Retrieving stimulus file in %s',stimNameWithPath)
             stim.values        =  char(stimNameWithPath);
-            
         end
         
   
@@ -175,9 +192,12 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             
             
             mrvNewGraphWin('Stimulus file montage');
-            img = makeMontage(pmStimulusRead(stim.values),slicelist);
+            image3D = pmStimulusRead(stim.values);
+            [sz1,sz2,sz3] = size(image3D);
+            img = makeMontage(image3D,slicelist);
             imagesc(img); colormap(gray);
             grid off; axis equal off; 
+            aa = gca;text(1,aa.YLim(2)*(1.05),sprintf('%3.0fx%3.0fx%3.0f',sz1,sz2,sz3));
         end
         % TODO: add here the code to make it a video out of it.
         function toVideo(stim,varargin)

@@ -154,7 +154,13 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             p.addParameter('randomseed',1000,@(x)(round(x) == x && x > 0));
             p.parse(pm,varargin{:});
             
-            % Load example stimulus
+            % First, compute the values in the required sub-classes
+            % TODO: optimize this to not repeat operations
+            pm.Stimulus.compute;
+            pm.RF.compute;
+            pm.HRF.compute;
+                        
+            % Load stimulus
             stimValues = pm.Stimulus.getStimValues;
             
             % Initialize timeSeries, it is the signal prior to convolution

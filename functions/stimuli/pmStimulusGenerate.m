@@ -11,11 +11,13 @@ p.addParameter('onlymasks'     , true , @islogical); % Select if only mask or ma
 p.addParameter('checkimages'   , false, @islogical); % To visualize a sample of the stimuli in each step, set to true
 p.addParameter('wantdownsample', true , @islogical); % To downsample to the same number of volume images
 p.addParameter('wantresize'    , true , @islogical); % To resize the images to 100x100 for example
-p.addParameter('imagesidesize' , 100  , @isnumeric); % Size of side. TODO: vert and horz sides
+p.addParameter('resizedhorz'   , 101  , @isnumeric); % Size of resized side. horz
+p.addParameter('resizedvert'   , 101  , @isnumeric); % Size of resized side. vert
 p.addParameter('normalize01'   , true , @islogical); % To normalize all values between 0 and 1
 p.addParameter('binarize'      , true , @islogical); % To binarize (threshold 0.5)
 p.addParameter('savestimmat'   , true , @islogical); % To save images in fileName
-p.addParameter('filename'      , './stimulus.mat' , @isstring); % filename
+p.addParameter('barwidth'      , 2    , @isnumeric); % Width of bar in deg
+p.addParameter('filename'      , './stimulus.mat' , @ischar); % filename
 
 p.parse(varargin{:});
             
@@ -25,12 +27,13 @@ onlyMasks       = p.Results.onlymasks;
 checkImages     = p.Results.checkimages;
 wantDownsample  = p.Results.wantdownsample;
 wantResize      = p.Results.wantresize;
-imageSideSize   = p.Results.imagesidesize;
+ResizedVert     = p.Results.resizedvert;
+ResizedHorz     = p.Results.resizedhorz;
 normalize01     = p.Results.normalize01;
 binarize        = p.Results.binarize;
 saveStimMat     = p.Results.savestimmat;
 fileName        = p.Results.filename;
-
+barWidth        = p.Results.barwidth;
 
 %% Generate stimuli
 % TODO: simplify pmShowmulticlass to take just the stimuli we are interested with,
@@ -167,9 +170,9 @@ end
 
 % If working only with masks maybe we want to resize and binarize
 if wantResize
-    temp = zeros(imageSideSize, imageSideSize, size(stim,3));
+    temp = zeros(ResizedVert, ResizedHorz, size(stim,3));
     for p=1:size(stim, 3)
-        temp(:,:,p) = imresize(stim(:,:,p),[imageSideSize imageSideSize],'cubic');
+        temp(:,:,p) = imresize(stim(:,:,p),[ResizedVert ResizedHorz],'cubic');
     end
     % Make sure value go from 0 to 1
     %     normTemp = temp - min(temp(:));

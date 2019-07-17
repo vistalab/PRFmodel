@@ -11,7 +11,7 @@ COMBINE_PARAMETERS.RF.Theta      = [0]; %, deg2rad(45)];
 COMBINE_PARAMETERS.RF.sigmaMinor = [1,3];
 COMBINE_PARAMETERS.RF.sigmaMajor = [1,3];
 COMBINE_PARAMETERS.TR            = 2;
-% HRF(1).Type                      = 'canonical';  % Make this work
+% HRF(1).Type                    = 'canonical';  % Make this work
 synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS);
 synthDT = pmForwardModelCalculate(synthDT);
 % Visually check that all the combinations we specified are there
@@ -34,7 +34,8 @@ stimulus   = squeeze(NIstimulus.data);
 %}
 
 % Analyze it with analyzePRF
-results_analyzePRF = pmModelFit(synthDT,'analyzePRF');
+options  = struct('seedmode',[0,1], 'display','off', 'maxpolydeg',0);
+results_analyzePRF = pmModelFit(synthDT,'analyzePRF','options',options);
 
 % Analyze it with mrVista (or vistasoft, it takes both)
 % 'one gaussian', 'one oval gaussian', 'difference of gaussians'
@@ -63,21 +64,25 @@ paramDefaults = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
 % And now create plots to understand better the results
 % if 'to compare' is not specified, then the first will go in x and the rest in y
 % if a list (>=2) is specified, the first in x will be compared to the rest in y
+%{
 pmResultsPlot(compTable, ...
-              'to compare', {'synth','aPRF','vista'}, ...
-              'result','x0', ...  % If we shortened the names (see above)
-              'metric','RMSE', ...
-              'newWin',true);
-pmResultsPlot(compTable, ...
-              'to compare', {'synth','aPRF','vista'}, ...
-              'result','x0', ...  % If we shortened the names (see above)
-              'metric','RMSE', ...
-              'newWin',true);
-
+    'to compare', {'synth','aPRF','vista'}, ...
+    'result','x0', ...  % If we shortened the names (see above)
+    'metric','RMSE', ...
+    'newWin',true);
+%}
+% {
+pmTseriesPlot(tSeries, COMBINE_PARAMETERS.TR, ...
+    'to compare', {'synth','aPRF','vista'}, ...
+    'voxel',[1:4], ...
+    'metric','RMSE', ...
+    'newWin',true)
+%}
 
 
 %}
 
+%{
 %% Obtain vistasofts data, right before the pRF model is applied
 % One of the first try-s was to take the tSeries and try to go back to a 3D, but
 % this cannot be done, since there are repeated positions
@@ -624,6 +629,6 @@ xlabel('Time Points (144, TR=2)')
 ylabel('Mean(Measured - predicted) values (500 voxels)')
 
 
-
+%}
 
 

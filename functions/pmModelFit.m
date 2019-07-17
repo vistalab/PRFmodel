@@ -244,7 +244,8 @@ switch prfimplementation
         pmEstimates.sigmaMajor = results.model{1}.sigma.major';
         pmEstimates.sigmaMinor = results.model{1}.sigma.minor';
         % Add the time series as well
-        pmEstimates.testdata   = repmat(ones([1,pm1.timePointsN]), [height(pmEstimates),1]);
+        pmEstimates.testdata   = repmat(ones([1,pm1.timePointsN]), ...
+                                        [height(pmEstimates),1]);
         PMs                    = input.pm;
         for ii=1:height(pmEstimates); pmEstimates{ii,'testdata'}=PMs(ii).BOLDnoise;end
         
