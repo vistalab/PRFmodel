@@ -9,7 +9,7 @@ COMBINE_PARAMETERS.RF.Centery0   = [0,6];
 COMBINE_PARAMETERS.RF.Theta      = [0]; %, deg2rad(45)];
 COMBINE_PARAMETERS.RF.sigmaMinor = [2];
 COMBINE_PARAMETERS.RF.sigmaMajor = [2];
-COMBINE_PARAMETERS.TR            = [2];
+COMBINE_PARAMETERS.TR            = [1];
     HRF(1).Type                  = 'friston';
     HRF(2).Type                  = 'canonical';
 COMBINE_PARAMETERS.HRF           = HRF;
@@ -48,7 +48,11 @@ results_vista      = pmModelFit(synthDT,'vistasoft', ...
                                         'grid', false, ... % if true, returns gFit
                                         'wSearch', 'coarse to fine and hrf');  %  and hrf
 % Analyze it with AFNI
-% results_AFNI       = pmModelFit(synthDT,'AFNI');
+% We have 3 models implemented:
+%   - 'afni_4': the simple 4 parameter model
+%   - 'afni_6': the elliptical model,  adding sigmaMinor and theta
+%   - 'afni_dog': difference of gaussians
+results_AFNI       = pmModelFit(synthDT,'afni_6');
 
 
 
@@ -60,10 +64,14 @@ results_vista      = pmModelFit(synthDT,'vistasoft', ...
 % Params list for the table. The defaults are
 paramDefaults = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
 [compTable, tSeries] = pmResultsCompare(synthDT, ... % Defines the input params
-                            {'aPRF','vista'}, ... % Analysis names we want to see
-                            {results_analyzePRF,results_vista}, ...
+                            {'aPRF','vista','afni'}, ... % Analysis names we want to see
+                            {results_analyzePRF,results_vista,results_AFNI}, ...
                             'params', paramDefaults, ...
                             'shorten names',true); 
+% Visualize with 2 digits after comma
+format bank; disp(compTable); format
+
+
                         
 % And now create plots to understand better the results
 % if 'to compare' is not specified, then the first will go in x and the rest in y
@@ -77,9 +85,8 @@ pmResultsPlot(compTable, ...
 %}
 % {
 pmTseriesPlot(tSeries, COMBINE_PARAMETERS.TR, ...
-    'to compare', {'synth','aPRF','vista'}, ...
-    'voxel',[1:4], ...
-    'metric','RMSE', ...
+    'to compare', {'synth','aPRF','vista','afni'}, ...
+    'voxel',[1:8], ... % 'metric','RMSE', ...
     'newWin',true)
 %}
 
