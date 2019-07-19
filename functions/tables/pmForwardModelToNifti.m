@@ -17,10 +17,11 @@ varargin = mrvParamFormat(varargin);
 p = inputParser;
 p.addRequired ('DT', @istable);
 p.addParameter('fname','BOLDnoise.nii.gz', @ischar);
+p.addParameter('demean',false, @islogical);
 p.parse(DT,varargin{:});
 
-fname = p.Results.fname;
-
+fname  = p.Results.fname;
+demean = p.Results.demean;
 
 %% Calculate
 pm1    = DT.pm(1);
@@ -42,7 +43,12 @@ for ii=1:dim1
     jj = 1; 
         index = index + 1;
         if index <= Nvoxels
-            myCube(ii,jj,1,:) =   DT.pm(index).BOLDnoise;
+            tmp = DT.pm(index).BOLDnoise;
+            if demean
+                myCube(ii,jj,1,:) = (tmp-mean(tmp)) / mean(tmp);
+            else
+                myCube(ii,jj,1,:) = tmp;
+            end
             assert(DT.pm(index).TR == pm1.TR, 'All BOLDnoise signals TRs should be equal')
         end
     % end
