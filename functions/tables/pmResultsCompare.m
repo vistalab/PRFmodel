@@ -40,6 +40,12 @@ newDT.synth = synthDT.RF(:,params);
 if shortenNames && isequal(params,paramDefaults)
     newDT.synth.Properties.VariableNames = shortDefaults;
 end
+% Add the HRF type
+newDT.HRFtype = synthDT.HRF.Type;
+% Add the TR type
+newDT.TR      = synthDT.TR;
+
+
 for ii=1:length(resNames)
     newDT.(resNames{ii}) = resDT{ii}(:,params);
     newDT.(resNames{ii}).Properties.VariableNames = shortDefaults;
@@ -55,6 +61,8 @@ tSeries.synth.BOLDnoise = repmat(ones([1,pm1.timePointsN]), [height(synthDT),1])
 % Populate it with the real content in the pm-s
 PMs               = synthDT.pm;
 for ii=1:height(tSeries); tSeries.synth{ii,'BOLDnoise'}=PMs(ii).BOLDnoise;end
+
+
 
 % Now add the analysis results that we have
 
