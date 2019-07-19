@@ -63,9 +63,9 @@ p.parse(input,prfimplementation,varargin{:});
 %% Choose the analysis case
 prfimplementation = mrvParamFormat(prfimplementation);
 
-
 switch prfimplementation
     case {'analyzeprf'}
+        %% Create and check tables
         % TODO: Let's define the format for the estimates so that this is
         %       the same for all the methods.
         pmEstimates = table();
@@ -77,7 +77,7 @@ switch prfimplementation
             input = temp;
         end
         
-        % Go line by line and compute required values for each pRF model
+        %% Calculate values voxel to voxel
         for ii=1:height(input)
             % TODO: use parfor if the number of rows if the table is larger than XX
             pm       = input.pm(ii);
@@ -141,13 +141,14 @@ switch prfimplementation
                 error('The parameter estimate cannot be outside RF size limits')
             end
             
-            % Convert the inputs to the same units we used
+            %% Convert the inputs to the same units we used
             Centerx0 = (pm.Stimulus.spatialSampleHorz * Centerx0) - (pm.Stimulus.fieldofviewHorz/2);
             Centery0 = (pm.Stimulus.spatialSampleVert * Centery0) - (pm.Stimulus.fieldofviewVert/2);
             
             % Calculate RMSE
             RMSE     = sqrt(mse(results.testdata, results.modelpred));
             
+            %{
             % This is the formula he uses to create the gaussian:
             % makegaussian2d(resmx,p1,p2,p3,p3) /(2*pi*p3^2)
             % p3 is the standard deviation in the vertical/horizontal direction
@@ -185,7 +186,7 @@ switch prfimplementation
             % sigmaMinor = (pm.Stimulus.spatialSampleVert * abs(results.params(3))/sqrt(posrect(results.params(5))));
             % sigmaMajor = (pm.Stimulus.spatialSampleHorz * abs(results.params(3))/sqrt(posrect(results.params(5))));
             % tmpTable.rfsize = pm.Stimulus.spatialSampleHorz * results.rfsize;
-            
+            %}
             
             tmpTable            = struct2table(results,'AsArray',true);
             tmpTable.Centerx0   = Centerx0;
@@ -209,18 +210,22 @@ switch prfimplementation
                 'testdata','modelpred','R2','RMSE'});
             pmEstimates = [pmEstimates; tmpTable];
         end
+        
     case {'mrvista','vistasoft'}
+        %% Create temp folders
         tmpName = tempname(fullfile(pmRootPath,'local'));
         mkdir(tmpName);
-        % Write the stimuli as a nifti
+        
+        %% Write the stimuli as a nifti
         pm1            = input.pm(1);
         stimNiftiFname = fullfile(tmpName, 'tmpstim.nii.gz');
         stimNiftiFname = pm1.Stimulus.toNifti('fname',stimNiftiFname);
-        % Create a tmp nifti file and convert it to a tmp AFNI format
-        niftiBOLDfile  = pmForwardModelToNifti(input, 'fname', ...
-                                               fullfile(tmpName,'tmp.nii.gz'));
         
-        % Prepare the function call
+        %% Create a tmp nifti file
+        niftiBOLDfile  = pmForwardModelToNifti(input, 'fname', ...
+            fullfile(tmpName,'tmp.nii.gz'));
+        
+        %% Prepare the function call
         homedir    = tmpName;
         stimfile   = stimNiftiFname;
         datafile   = niftiBOLDfile;
@@ -232,11 +237,11 @@ switch prfimplementation
         
         % Make the call to the function based on Jon's script
         results = pmVistasoft(homedir, stimfile, datafile, stimradius,...
-                              'model'  , model, ...
-                              'grid'   , grid, ...
-                              'wSearch', wSearch);
+            'model'  , model, ...
+            'grid'   , grid, ...
+            'wSearch', wSearch);
         
-        % Prepare the outputs in a table format
+        %% Prepare the outputs in a table format
         pmEstimates = table();
         pmEstimates.Centerx0   = results.model{1}.x0';
         pmEstimates.Centery0   = results.model{1}.y0';
@@ -245,11 +250,11 @@ switch prfimplementation
         pmEstimates.sigmaMinor = results.model{1}.sigma.minor';
         % Add the time series as well
         pmEstimates.testdata   = repmat(ones([1,pm1.timePointsN]), ...
-                                        [height(pmEstimates),1]);
+            [height(pmEstimates),1]);
         PMs                    = input.pm;
         for ii=1:height(pmEstimates); pmEstimates{ii,'testdata'}=PMs(ii).BOLDnoise;end
         
-        % Obtain the modelfit, 
+        % Obtain the modelfit,
         pmEstimates = pmVistaObtainPrediction(pmEstimates, input, results);
         
         pmEstimates.R2         = calccod(pmEstimates.testdata,  pmEstimates.modelpred,2);
@@ -257,9 +262,10 @@ switch prfimplementation
         pmEstimates.RMSE       = sqrt(mean((pmEstimates.testdata - pmEstimates.modelpred).^2,2));
         % errperf(T,P,'mae')
         
-        
-    case {'afni', 'afni6', 'afnidog', 'afni_6', 'afni_dog'}
-        % AFNI provides 
+    case {'afni', 'simpleafni', 'basicafni', 'afni_4', 'afni4', ...
+          'afni6', 'afni_6','withsigmaratio', ...
+          'afni_dog', 'afnidog', 'dog'}
+        %% AFNI doc: algorithm options (TODO: add other implementations)
         %{
           Conv_PRF         : 4-param Population Receptive Field Model
                              (A, X, Y, sigma)
@@ -309,19 +315,26 @@ switch prfimplementation
                              3dNLfim -signal bunnies
         %}
         
-        
-        
         warning('For AFNI analysis, be sure that all options have the same TR and the same stimulus')
         tmpName = tempname(fullfile(pmRootPath,'local'));
         mkdir(tmpName);
         % Create a tmp nifti file and convert it to a tmp AFNI format
-        niftiBOLDfile  = pmForwardModelToNifti(input, 'fname', ...
-                                                fullfile(tmpName,'tmp.nii.gz'));
+        pm1            = input.pm(1);
+        niftiBOLDfile  = pmForwardModelToNifti(input, ...
+                                               'fname',fullfile(tmpName,'tmp.nii.gz'), ...
+                                               'demean',true);
         % Create an AFNI file
         setenv('AFNI_NIFTI_TYPE_WARN','YES');
         if exist(fullfile(tmpName,'tmp.nii.gz'), 'file')
             system(['3dcopy ' fullfile(tmpName,'tmp.nii.gz') ' ' fullfile(tmpName,'tmp')]);
         end
+        % We need to add this info fields
+        % Now that it has been converted to 1D, it doesn't need or accept the
+        % -space orig instruction anymore
+        system(['3drefit -TR ' num2str(pm1.TR) ' ' fullfile(tmpName,'tmp.1D')])
+        % system(['3drefit -space orig ' fullfile(tmpName, 'tmp+orig')])
+        
+        %% STIMULI
         % Prepare stimuli for AFNI
         pm1      = input.pm(1);
         stimulus = pm1.Stimulus.getStimValues;
@@ -333,77 +346,132 @@ switch prfimplementation
                              sprintf('DSIMG_%03d.jpg', ii-1 )));
         end
         % Create a movie now
-        setenv('NIMAGES', '143') % NUMBER OF IMAGES
+        % Careful, NIMAGES is one less than what we have
+        setenv('NIMAGES', num2str(size(stimulus,3)-1)) % NUMBER OF IMAGES
         system(['3dcopy ' fullfile(tmpName,'images','DSIMG_000.jpg') ...
             ' ' fullfile(tmpName,'images','DSIMAGE_MOVIE')]);
         system(['for NUM in $(count -digits 3 1 $NIMAGES);do 3dTcat -glueto ' ...
-                fullfile(tmpName, 'images','DSIMAGE_MOVIE+orig.') ' ' ...
-                fullfile(tmpName, 'images','DSIMG_') '${NUM}.jpg;done']);
-
-        % We need to add this info fields
-        system(['3drefit -TR ' num2str(pm1.TR) ' ' fullfile(tmpName,'tmp.1D')])
-        % system(['3drefit -space orig ' fullfile(tmpName, 'tmp+orig')])
-        system(['3drefit -TR ' num2str(pm1.TR) ' ' fullfile(tmpName,'images','DSIMAGE_MOVIE+orig')])
-        % system(['3drefit -space orig ' fullfile(tmpName, 'images','DSIMAGE_MOVIE+orig')])
-        
-        % Obtain the HRF: follow the steps on the 3dNLfim.help file
-        system(['3dDeconvolve -nodata 10 ' num2str(pm1.TR) ' -polort -1 ' ...
-            '-num_stimts 1 -stim_times 1 "1D:0" GAM ' ...
-            '-x1D ' fullfile(tmpName, 'conv.ref.GAM.1D')]);
-        
-        % Set the enviroment variables
-        % Change HRF to other models
-        setenv('AFNI_CONVMODEL_REF', fullfile(tmpName, 'conv.ref.GAM.1D'));
-        % Implement these other hrf-s for testing
-        %{
-            TR=2
-
-            echo "Create GAM"
-            3dDeconvolve -nodata 50 $TR -polort -1                \
-                               -num_stimts 1 -stim_times 1 '1D:0' GAM \
-                               -x1D sisar.conv.ref.GAM.1D
-
-            # La GAM por defecto esta normalizada a pico=1
-
-            echo "Create SPMG1"
-            3dDeconvolve -nodata 50 $TR -polort -1                \
-                               -num_stimts 1 -stim_times 1 '1D:0' 'SPMG1(0)' \
-                               -x1D sisar.conv.ref.SPMG1.1D
-        %}
-        % Add the stimuli we just created
+            fullfile(tmpName, 'images','DSIMAGE_MOVIE+orig.') ' ' ...
+            fullfile(tmpName, 'images','DSIMG_') '${NUM}.jpg;done']);
+        % Add the stimuli we just created to env variables
         setenv('AFNI_MODEL_PRF_STIM_DSET', fullfile(tmpName, 'images','DSIMAGE_MOVIE+orig'));
+        
+        % We need to add this info fields
+        system(['3drefit -TR ' num2str(pm1.TR) ' ' fullfile(tmpName,'images','DSIMAGE_MOVIE+orig')])
+        system(['3drefit -space orig ' fullfile(tmpName, 'images','DSIMAGE_MOVIE+orig')])
+        
+        %% HRF
+        % Obtain the HRF: follow the steps on the 3dNLfim.help file
+        % TODO: add to options what HRF to use
+        afni_hrf = 'SPM';
+        switch afni_hrf
+            case {'GAM'}
+                % Default GAM normalized to 1
+                system(['3dDeconvolve ' ...
+                          '-nodata 10 ' num2str(pm1.TR) ' ' ...
+                          '-polort -1 ' ... % Do not calculate detrending polinomials
+                          '-num_stimts 1 ' ...
+                          '-stim_times 1 "1D:0" GAM ' ... % k, tname, Rmodel
+                          '-x1D ' fullfile(tmpName, 'conv.ref.GAM.1D')]);
+                % Set the enviroment variable
+                setenv('AFNI_CONVMODEL_REF', fullfile(tmpName, 'conv.ref.GAM.1D'));
+            case {'SPM'}
+                system(['3dDeconvolve ' ...
+                          '-nodata 50 ' num2str(pm1.TR) ' ' ...
+                          '-polort -1 ' ...
+                          '-num_stimts 1 ' ...
+                          '-stim_times 1 "1D:0" SPMG1\(0\) ' ...
+                          '-x1D ' fullfile(tmpName, 'sisar.conv.ref.SPMG1.1D')]);
+                % Set the enviroment variable
+                setenv('AFNI_CONVMODEL_REF', fullfile(tmpName, 'sisar.conv.ref.SPMG1.1D'));
+            otherwise
+                error('%s afni hrf not recognized',afni_hrf)
+        end
+        
+        %% SET OTHER CONTROL ENVIROMENTAL VARIABLES
         % Not sure about the options here
         setenv('AFNI_MODEL_DEBUG', '3');
-        setenv('AFNI_MODEL_PRF_ON_GRID', 'YES');
-        setenv('AFNI_MODEL_PRF_RAM_STATS', 'Y');
+        setenv('AFNI_MODEL_PRF_ON_GRID', 'NO');
+        setenv('AFNI_MODEL_PRF_RAM_STATS', 'N');
         % If it takes too much, change this from 100 to 10 (if images too big, for
         % 100x100, 100 is ok)
         setenv('AFNI_MODEL_PRF_SIGMA_NSTEPS','100');
         
+        %% NOISE MODELS
+        %{
+        % Noise Models (see the appropriate model_*.c file for exact details) :
+        %
+        %   Zero                     : Zero Noise Model
+        %                              (no parameters)
+        %                              see model_zero.c
+        %
+        %   Constant                 : Constant Noise Model
+        %                              (constant)
+        %                              see model_constant.c
+        %
+        %   Linear                   : Linear Noise Model
+        %                              (constant, linear)
+        %                              see model_linear.c
+        %
+        %   Linear+Ort               : Linear+Ort Noise Model
+        %                              (constant, linear, Ort)
+        %                              see model_linplusort.c
+        %
+        %   Quadratic                : Quadratic Noise Model
+        %                              (constant, linear, quadratic)
+        %                              see model_quadratic.c
+        %}
+        
+        %% RUN THE ANALYSIS
         % Create the command line for the fit
         % Apply it to every voxel
         c = parcluster('local');
         % Adding the absolute path is throwing an error. Not Matlab related, same in CLI
         % Use cd() and then launch the command
         cd(fullfile(tmpName))
-        modelName   = 'Conv_PRF';
-        modelConstr =   [...
-            '-sconstr 0 -10.0 10.0 ' ...
-            '-sconstr 1 -1.0 1.0 ' ...
-            '-sconstr 2 -1.0 1.0 ' ...
-            '-sconstr 3 0.0 1.0 ' ...
-            ];
-        if strcmp(prfimplementation,'afni6') || strcmp(prfimplementation,'afni_6')
-            modelName   = 'Conv_PRF';
-            modelConstr =   [...
-                '-sconstr 0 -10.0 10.0 ' ...
-                '-sconstr 1 -1.0 1.0 ' ...
-                '-sconstr 2 -1.0 1.0 ' ...
-                '-sconstr 3 0.0 1.0 '
-                '-sconstr 4 1.0 1.0 ' ...
-                '-sconstr 5 -1.571 1.570 ' ...
-                ];
+        
+        switch prfimplementation
+            case {'afni', 'simpleafni', 'basicafni', 'afni_4', 'afni4'}
+                % 4-param pRF Field Model 
+                % (A, X, Y, sigma)
+                modelName   = 'Conv_PRF';
+                modelConstr =   [...
+                    '-sconstr 0 -10.0 10.0 ' ...
+                    '-sconstr 1  -1.0  1.0 ' ...
+                    '-sconstr 2  -1.0  1.0 ' ...
+                    '-sconstr 3   0.0  1.0 ' ...
+                    ];
+            case {'afni6', 'afni_6','withsigmaratio'}
+                % 6-param pRF Field Model 
+                % (A, X, Y, sigma, sigrat, theta)
+                % Theta in radiansm, constraints from -90 to +90
+                modelName   = 'Conv_PRF_6';
+                modelConstr =   [ ...
+                    '-sconstr 0 -10.0 10.0 ' ...
+                    '-sconstr 1  -1.0 1.0 ' ...
+                    '-sconstr 2  -1.0 1.0 ' ...
+                    '-sconstr 3   0.0 1.0 ' ...
+                    '-sconstr 4   1.0 5.0 ' ...
+                    '-sconstr 5  -1.571 1.570 ' ...
+                    ];
+            case {'afni_dog', 'afnidog', 'dog'}
+                % 6-param 'Difference of Gaussians' PRF Model
+                % As Conv_PRF, but with second A and sigma
+                % (A, X, Y, sig, A2, sig2)
+                modelName   = 'Conv_PRF_DOG';
+                modelConstr =   [...
+                    '-sconstr 0 -10.0 10.0 ' ...
+                    '-sconstr 1  -1.0  1.0 ' ...
+                    '-sconstr 2  -1.0  1.0 ' ...
+                    '-sconstr 3   0.0  1.0 ' ...
+                    '-sconstr 4 -10.0 10.0 ' ...
+                    '-sconstr 5   0.0  1.0 ' ...
+                    ];
+            otherwise
+                error('%s not implemented yet',prfimplementation)
         end
+        
+        % Launch the command
         system([...
             '3dNLfim -input tmp.1D ' ...
             '-noise Zero ' ... 
@@ -417,8 +485,7 @@ switch prfimplementation
             '-TR ' num2str(pm1.TR) ' ' ...
             '-jobs ' num2str(c.NumWorkers)...
             ]);
-
-        % Read the results back to matlab
+        %% Read the results back to Matlab
         kk = which('BrikLoad');
         if isempty(kk)
             addpath(genpath('~/soft/afni_matlab'));
@@ -427,62 +494,71 @@ switch prfimplementation
         % Plot the fit and the signal of voxel 2,2,2
         % plot(squeeze(myCube(5,5,2,:)),'k-');hold on;plot(squeeze(V(5,5,2,:)),'r-');
         [berr, bV, bInfo, bErrMessage] = BrikLoad('buck_tmp.PRF.1D');
-        
-        % Delete the tmp folder
+        %% Delete the tmp folder
         cd(fullfile(pmRootPath,'local'));
         rmdir(fullfile(tmpName),'s');
-        
-        % Reshape the data
+        %% Prepare data, return as results
         fitSeries = reshape(V,  [height(input), pm1.timePointsN]);
         % results   = reshape(bV, [height(input), size(bV,4)]); % Two more params
         results   = bV;
+        fits      = V;
         
-        % Results Table
-        % plot(fitSeries)
-%{
-        
-        % save('fitSeries_Wang_6nogrid.mat', 'fitSeries');
-        % save('results_Wang_6nogrid.mat', 'results');
-        
-        
-        
-        % Now we want to compare the measured the time series with the predicted
-        % time series in the voxels with the largest ratios.
-        measured  = reshape(myCube, [500, 144]);
-        predicted = reshape(V , [500, 144]);
-        results   = reshape(bV, [500, 14]);
-        sigRat    = results(:,5);
-        
-        % decimate for visualization
-        % decFact   = 10;
-        % measured  = measured(1:decFact:500,:);
-        % predicted = predicted(1:decFact:500,:);
-        % sigRat    = sigRat(1:decFact:500,:);
-        
-        % Create bins for ploting
-        [Y,E] = discretize(sigRat,5);
-        measuredMinusPredicted = measured - predicted;
-        
-        % Plot the differences in different colours
-        for e=1:(length(E)-1)
-            eSet = measuredMinusPredicted(Y==e, :);
-            % plot(repmat([1:144], [size(eSet,1),1])', eSet'); hold on;
-            plot([1:144], mean(eSet)); hold on;
-        end
-        legend('1<>1.6','1.6<>2.2','2.2<>2.8','2.8<>3.4','3.4<>4')
-        title('Categories come from different sigRat values (sigRat goes from 1 to 4 per constraint in the model.)')
-        xlabel('Time Points (144, TR=2)')
-        ylabel('Mean(Measured - predicted) values (500 voxels)')
-%}
-        % TODO: calculate correct estimates
+        % Calculate correct estimates, according to Reynolds:
+        %   You can provide constraints on the command line.
+        %   But note that [-1,1] is actually the definition of the
+        %   mask area.  It is evaluated as a unit field of view,
+        %   since the input width is really arbitrary anyway.
+        %   It sounds like the results are consistent between
+        %   the packages.  If your mask is of width 60, from
+        %   -30 to 30, then the X and Y results should be scaled
+        %   by that factor of 30 when comparing.
+        %   The '30' does not really add information here. A unit FOV made sense to me.
+
+        % Write results common to all of them
+        % Params
         pmEstimates = table();
-        pmEstimates.Centerx0   = results(:,1);
-        pmEstimates.Centery0   = results(:,2);
-        pmEstimates.Theta      = results(:,4);
-        pmEstimates.sigmaMajor = results(:,10);
-        pmEstimates.sigmaMinor = results(:,10);
+        pmEstimates.A          = results(:,1);
+        pmEstimates.Centerx0   = results(:,2) * pm1.Stimulus.fieldofviewHorz/2;
+        pmEstimates.Centery0   = results(:,3) * pm1.Stimulus.fieldofviewVert/2;
+        % Fits
+        %   - Testdata: same as input in the nifti
+        pmEstimates.testdata   = repmat(ones([1,pm1.timePointsN]), ...
+            [height(pmEstimates),1]);
+        PMs                    = input.pm;
+        for ii=1:height(pmEstimates); pmEstimates{ii,'testdata'}=PMs(ii).BOLDnoise;end
         
-case {'popeye'}
+        %   - modelpred: the fits comming out from AFNI
+        % restore back the demeaning
+        fitsScaledBack = (pm1.BOLDmeanValue * fits) + pm1.BOLDmeanValue;
+        pmEstimates.modelpred  = fitsScaledBack;
+        
+        
+        switch prfimplementation
+            case {'afni', 'simpleafni', 'basicafni', 'afni_4', 'afni4'}
+                % 4-param pRF Field Model
+                % (A, X, Y, sigma)
+                pmEstimates.Theta      = zeros(size(results(:,3)));
+                pmEstimates.sigmaMajor = results(:,4) * pm1.Stimulus.fieldofviewHorz/2;
+                pmEstimates.sigmaMinor = results(:,4) * pm1.Stimulus.fieldofviewVert/2;
+            case {'afni6', 'afni_6','withsigmaratio'}
+                % 6-param pRF Field Model
+                % (A, X, Y, sigma, sigrat, theta)
+                % Theta in radiansm, constraints from -90 to +90
+                pmEstimates.sigmaMajor = (results(:,4) .* results(:,5)) * pm1.Stimulus.fieldofviewHorz/2;
+                pmEstimates.sigmaMinor = results(:,4) * pm1.Stimulus.fieldofviewHorz/2;
+                pmEstimates.Theta      = results(:,6);
+            case {'afni_dog', 'afnidog', 'dog'}
+                % 6-param 'Difference of Gaussians' PRF Model
+                % As Conv_PRF, but with second A and sigma
+                % (A, X, Y, sig, A2, sig2)
+                pmEstimates.A2         = results(:,5);
+                pmEstimates.sigmaMajor = results(:,4) * pm1.Stimulus.fieldofviewHorz/2;
+                pmEstimates.sigmaMinor = results(:,6) * pm1.Stimulus.fieldofviewVert/2;
+            otherwise
+                error('%s not implemented yet',prfimplementation)
+        end
+        
+    case {'popeye'}
         disp('NYI');
     otherwise
         error('Method %s not implemented yet.', prfimplementation)
