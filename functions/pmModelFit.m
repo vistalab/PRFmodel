@@ -70,6 +70,7 @@ switch prfimplementation
         %       the same for all the methods.
         pmEstimates = table();
         
+        
         % Check if the pm-s come in a table or alone
         if ~istable(input)
             temp = table();
@@ -365,10 +366,11 @@ switch prfimplementation
         % TODO: add to options what HRF to use
         afni_hrf = 'SPM';
         switch afni_hrf
+            % TODO: synch it with the HRF creation process in pmHRF.m 
             case {'GAM'}
                 % Default GAM normalized to 1
                 system(['3dDeconvolve ' ...
-                          '-nodata 10 ' num2str(pm1.TR) ' ' ...
+                          '-nodata 50 ' num2str(pm1.TR) ' ' ...
                           '-polort -1 ' ... % Do not calculate detrending polinomials
                           '-num_stimts 1 ' ...
                           '-stim_times 1 "1D:0" GAM ' ... % k, tname, Rmodel
@@ -558,8 +560,72 @@ switch prfimplementation
                 error('%s not implemented yet',prfimplementation)
         end
         
-    case {'popeye'}
-        disp('NYI');
+    case {'popeye','popeye_onegaussian','popeye_CSS','popeye_dog'}
+        %% Create time series file
+        warning('For popeye analysis, be sure that all options have the same TR and the same stimulus')
+        tmpName = tempname(fullfile(pmRootPath,'local'));
+        mkdir(tmpName);
+        % Create a tmp nifti file and convert it to a tmp AFNI format
+        pm1            = input.pm(1);
+        niftiBOLDfile  = pmForwardModelToNifti(input, ...
+            'fname',fullfile(tmpName,'tmp.nii.gz'), ...
+            'demean',true);
+        %% Create stimulus file in nifti
+        pm1            = input.pm(1);
+        stimNiftiFname = fullfile(tmpName, 'tmpstim.nii.gz');
+        stimNiftiFname = pm1.Stimulus.toNifti('fname',stimNiftiFname);
+        
+        %% Prepare the json and function call
+        % Create struct  with variables for params.json
+        params.stimulus_file     = 'tmpstim.nii.gz';
+        params.data_file         = 'tmp.nii.gz';
+        params.screen_distance   = 50;
+        params.screen_width      = 28.67;
+        params.pixels_per_degree = pm1.Stimulus.ResizedHorz / pm1.Stimulus.fieldofviewHorz;
+        % Encode into json file 
+        jsonStr = jsonencode(params);
+        fid = fopen(fullfile(tmpName,'params.json'), 'w');
+        if fid == -1, error('Cannot create JSON file'); end
+        fwrite(fid, jsonStr, 'char');
+        fclose(fid);
+        % Run the docerk container
+        system(['docker run -it --rm '...
+                '-v "' tmpName ':/input" nben/popeye-mini' ...
+                ]);
+        
+        %% Read the results back to Matlab
+        x0    = niftiRead(fullfile(tmpName,'out_x.nii.gz'));
+        x0    = x0.data(:,1,1,1);
+        y0    = niftiRead(fullfile(tmpName,'out_y.nii.gz'));
+        y0    = -y0.data(:,1,1,1);
+        gain  = niftiRead(fullfile(tmpName,'out_gain.nii.gz'));
+        gain  = gain.data(:,1,1,1);
+        sigma = niftiRead(fullfile(tmpName,'out_sigma.nii.gz'));
+        sigma = sigma.data(:,1,1,1);
+        
+        
+        % Write results common to all of them
+        % Params
+        pmEstimates = table();
+        pmEstimates.A          = gain;
+        pmEstimates.Centerx0   = x0;
+        pmEstimates.Centery0   = y0;
+        pmEstimates.sigmaMajor = sigma;
+        pmEstimates.sigmaMinor = sigma;
+        pmEstimates.Theta      = zeros(size(sigma));
+        % Fits
+        %   - Testdata: same as input in the nifti
+        pmEstimates.testdata   = repmat(ones([1,pm1.timePointsN]), ...
+            [height(pmEstimates),1]);
+        PMs                    = input.pm;
+        for ii=1:height(pmEstimates); pmEstimates{ii,'testdata'}=PMs(ii).BOLDnoise;end
+        
+        %   - modelpred: the fits comming out from AFNI
+        % restore back the demeaning
+        % fitsScaledBack = (pm1.BOLDmeanValue * fits) + pm1.BOLDmeanValue;
+        % TODO
+        pmEstimates.modelpred  = pmEstimates.testdata;
+        
     otherwise
         error('Method %s not implemented yet.', prfimplementation)
 end

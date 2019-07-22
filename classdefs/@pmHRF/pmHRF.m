@@ -41,7 +41,7 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
     methods (Static)
         function d = defaultsGet
             % Defaults for all different models
-            d.Type                = 'canonical';  % 'canonical'
+            d.Type                = 'friston';  % 'canonical'
             d.Duration            = 20;
             % Default params for friston
             % [peak1 width1 peak2 width2 -weight2]
@@ -198,7 +198,7 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     
                     % I am still not sure how it does the conversion to seconds.
                     % Inside analyzePRF it knows the TR, but for mrVista we need
-                    % to provide the HRF in seconds. 
+                    % to provide the HRF in seconds.
                     % I had the code copied here, now use their function.
                     thrf = getcanonicalhrf(hrf.TR, hrf.TR);
                     
@@ -209,6 +209,31 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     
                     % Add it to the output
                     hrf.values = thrf;
+                case {'afni_gam','afni_GAM'}
+                    hrfFileName = fullfile(pmRootPath,...
+                        'data',['TR' num2str(hrf.TR) '_conv.ref.GAM.1D']);
+                    if ~exist(hrfFileName,'file')
+                        % Default GAM normalized to 1
+                        system(['3dDeconvolve ' ...
+                            '-nodata 50 ' num2str(hrf.TR) ' ' ...
+                            '-polort -1 ' ... % Do not calculate detrending polinomials
+                            '-num_stimts 1 ' ...
+                            '-stim_times 1 "1D:0" GAM ' ... % k, tname, Rmodel
+                            '-x1D ' hrfFileName]);
+                    end
+                    [~, hrf.values, ~, ~] = Read_1D (hrfFileName);
+                case {'afni_spm','afni_SPM'}
+                    hrfFileName = fullfile(pmRootPath,...
+                              'data',['TR' num2str(hrf.TR) 'sisar.conv.ref.SPMG1.1D']);
+                    if ~exist(hrfFileName,'file')
+                        system(['3dDeconvolve ' ...
+                            '-nodata 50 ' num2str(hrf.TR) ' ' ...
+                            '-polort -1 ' ...
+                            '-num_stimts 1 ' ...
+                            '-stim_times 1 "1D:0" SPMG1\(0\) ' ...
+                            '-x1D ' hrfFileName]);
+                    end
+                    [~, hrf.values, ~, ~] = Read_1D (hrfFileName);
                 otherwise
                     error('HRF method %s not implemented or valid.',hrf.Type);
             end
@@ -225,7 +250,7 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
             switch hrf.Type
                 case {'friston','boynton'}
                     tSteps  = 0: hrf.TR: hrf.Duration;
-                case {'canonical'}
+                case {'canonical', 'afni_gam','afni_spm'}
                     tSteps  = 0: hrf.TR: hrf.TR*(length(hrf.values)-1);
                 otherwise
                     error('HRF method %s not implemented or valid.',hrf.Type);

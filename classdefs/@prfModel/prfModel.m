@@ -99,10 +99,10 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             % recursively and independently to the bold signal, i.e. each noise
             % is independent from each other.
             % Add parameters like this:,'params',struct('frequency',1.3)
-            % pm.Noise = {pmNoise(pm, 'Type','white'), ...
-            %             pmNoise(pm, 'Type','cardiac'), ...
-            % pmNoise(pm, 'Type','respiratory')};
-            pm.Noise = {};
+            pm.Noise = {pmNoise(pm, 'Type','white'), ...
+                        pmNoise(pm, 'Type','cardiac'), ...
+                        pmNoise(pm, 'Type','respiratory')};
+            % pm.Noise = {};
         end
         % Functions that apply the setting of main parameters to subclasses
         % TR: set and get
@@ -136,11 +136,14 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             defaultsTable.RF        = pm.RF.defaultsGet;
             defaultsTable.Stimulus  = pm.Stimulus.defaultsGet;
             % Noise are several noise models by default, add them all
-            for nn = 1:length(pm.Noise)
-                tmp                 = pm.Noise{nn}.defaultsGet;
-                tmp.Type            = pm.Noise{nn}.Type;
-                defaultsTable.(['Noise_' tmp.Type]) = tmp;
-            end
+            % TODO: think about this. 
+            %       right now, return only params
+            % for nn = 1:length(pm.Noise)
+            %     tmp                 = pm.Noise{nn}.defaultsGet;
+            %     tmp.Type            = pm.Noise{nn}.Type;
+            %     defaultsTable.(['Noise_' tmp.Type]) = tmp;
+            % end
+            defaultsTable.Noise  = pm.Noise{1}.defaultsGet;
         end
         % Compute synthetic BOLD without noise
         function computeBOLD(pm,varargin)

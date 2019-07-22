@@ -58,11 +58,11 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
     methods (Static)
         function d = defaultsGet
             d.Type                = 'white';
-            d.params.noise2signal = 0.1; % white noise; constant to relate to signal
+            d.params.noise2signal = 0; % white noise; constant to relate to signal
             d.params.amplitude    = 0.1; % cardiac and respiratory
             d.params.frequency    = 1.25; % cardiac and respiratory
             % Convert to table and return
-            d = struct2table(d,'AsArray',true);
+            d = struct2table(d.params,'AsArray',true);
         end
     end
     methods
@@ -76,15 +76,19 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
             varargin = mrvParamFormat(varargin);
             p = inputParser;
             p.addRequired('pm'       ,             @(x)(isa(x,'prfModel')));
-            p.addParameter('type'    ,d.Type{:}  , @ischar);
-            p.addParameter('params'  ,d.params   , @isstruct);
+            % p.addParameter('type'    ,d.Type{:}  , @ischar);
+            % p.addParameter('params'  ,d.params   , @isstruct);
+            p.addParameter('type'    ,'white'  , @ischar);
+            p.addParameter('params'  ,table2struct(d)   , @isstruct);
             p.parse(pm,varargin{:});
             
             % Initialize the pm model and hrf model parameters
             noise.PM       = pm;
             noise.Type     = p.Results.type;
             % Check if only some of the fields in params where set
-            noise.params   = pmParamsCompletenessCheck(p.Results.params,d.params);
+            % noise.params   = pmParamsCompletenessCheck(p.Results.params,d.params);
+            noise.params   = pmParamsCompletenessCheck(p.Results.params,table2struct(d));
+            
         end
         
         % Methods available to this class and his childrens (friston, boynton... classes)
@@ -99,6 +103,7 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
                 case 'white'
                     % This is the amplitude of the white noise, the goal is to
                     % scale it so that it h
+                    noise.PM.computeBOLD;
                     signal       = noise.PM.BOLD; % Retrieved from the parent model
                     n            = noise.params.noise2signal * (max(signal) - min(signal));
                     noise.values = n * randn([1,noise.PM.timePointsN]);

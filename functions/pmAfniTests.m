@@ -9,9 +9,9 @@ COMBINE_PARAMETERS.RF.Centery0   = [0,6];
 COMBINE_PARAMETERS.RF.Theta      = [0]; %, deg2rad(45)];
 COMBINE_PARAMETERS.RF.sigmaMinor = [2];
 COMBINE_PARAMETERS.RF.sigmaMajor = [2];
-COMBINE_PARAMETERS.TR            = [1];
-    HRF(1).Type                  = 'friston';
-    HRF(2).Type                  = 'canonical';
+COMBINE_PARAMETERS.TR            = [2];
+    HRF(1).Type                  = 'afni_gam';
+    HRF(2).Type                  = 'afni_spm';
 COMBINE_PARAMETERS.HRF           = HRF;
 synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS);
 synthDT = pmForwardModelCalculate(synthDT);
@@ -40,9 +40,9 @@ stimulus   = squeeze(NIstimulus.data);
 % Analyze it with analyzePRF
 options  = struct('seedmode',[0,1], 'display','off', 'maxpolydeg',0);
 results_analyzePRF = pmModelFit(synthDT,'analyzePRF','options',options);
-
-% Analyze it with mrVista (or vistasoft, it takes both)
-% 'one gaussian', 'one oval gaussian', 'difference of gaussians'
+% 
+% % Analyze it with mrVista (or vistasoft, it takes both)
+% % 'one gaussian', 'one oval gaussian', 'difference of gaussians'
 results_vista      = pmModelFit(synthDT,'vistasoft', ...
                                         'model','one gaussian', ...
                                         'grid', false, ... % if true, returns gFit
@@ -52,9 +52,26 @@ results_vista      = pmModelFit(synthDT,'vistasoft', ...
 %   - 'afni_4': the simple 4 parameter model
 %   - 'afni_6': the elliptical model,  adding sigmaMinor and theta
 %   - 'afni_dog': difference of gaussians
-results_AFNI       = pmModelFit(synthDT,'afni_6');
+results_AFNI    = pmModelFit(synthDT,'afni_6');
+
+% Popeye implementation
+% We have 3 models implemented:
+%   - 'popeye_onegaussian': the simple 4 parameter model
+%   - 'popeye_CSS': the elliptical model,  adding sigmaMinor and theta
+%   - 'popeye_dog': difference of gaussians
+results_popeye  = pmModelFit(synthDT,'popeye_onegaussian');
+% [compTable, tSeries] = pmResultsCompare(synthDT, ... % Defines the input params
+%                             {'popeye'}, ... % Analysis names we want to see: 'aPRF','vista',
+%                             {results_popeye}, ... % results_analyzePRF,results_vista,
+%                             'shorten names',true); 
 
 
+% mrTools implementation (Justin Gardner)
+% results_mrtool  = pmModelFit(synthDT,'mrtool');
+% [compTable, tSeries] = pmResultsCompare(synthDT, ... % Defines the input params
+%                             {'popeye'}, ... % Analysis names we want to see: 'aPRF','vista',
+%                             {results_popeye}, ... % results_analyzePRF,results_vista,
+%                             'shorten names',true); 
 
 
 
@@ -64,8 +81,8 @@ results_AFNI       = pmModelFit(synthDT,'afni_6');
 % Params list for the table. The defaults are
 paramDefaults = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
 [compTable, tSeries] = pmResultsCompare(synthDT, ... % Defines the input params
-                            {'aPRF','vista','afni'}, ... % Analysis names we want to see
-                            {results_analyzePRF,results_vista,results_AFNI}, ...
+                            {'aprf','vista','afni','pop'}, ... % Analysis names we want to see: 'aPRF','vista',
+                            {results_analyzePRF,results_vista,results_AFNI, results_popeye}, ... % results_analyzePRF,results_vista,
                             'params', paramDefaults, ...
                             'shorten names',true); 
 % Visualize with 2 digits after comma
@@ -85,7 +102,7 @@ pmResultsPlot(compTable, ...
 %}
 % {
 pmTseriesPlot(tSeries, COMBINE_PARAMETERS.TR, ...
-    'to compare', {'synth','aPRF','vista','afni'}, ...
+    'to compare', {'synth','aprf','vista','afni','pop'}, ...
     'voxel',[1:8], ... % 'metric','RMSE', ...
     'newWin',true)
 %}

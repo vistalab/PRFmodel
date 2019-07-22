@@ -41,9 +41,12 @@ if shortenNames && isequal(params,paramDefaults)
     newDT.synth.Properties.VariableNames = shortDefaults;
 end
 % Add the HRF type
-newDT.HRFtype = synthDT.HRF.Type;
+newDT.HRFtype   = synthDT.HRF.Type;
 % Add the TR type
-newDT.TR      = synthDT.TR;
+newDT.TR        = synthDT.TR;
+% Add the White Noise param
+newDT.noise2sig = synthDT.Noise.noise2signal;
+
 
 
 for ii=1:length(resNames)
@@ -68,7 +71,7 @@ for ii=1:height(tSeries); tSeries.synth{ii,'BOLDnoise'}=PMs(ii).BOLDnoise;end
 
 for ii=1:length(resNames)
     tSeries.(resNames{ii}) = resDT{ii}(:,{'testdata','modelpred'});
-    if contains(resNames{ii}, {'aPRF', 'analyzePRF'})
+    if contains(resNames{ii}, {'aprf','aPRF', 'analyzePRF'})
         tSeries.(resNames{ii}).testdata  = tSeries.(resNames{ii}).testdata  + pm1.BOLDmeanValue;
         tSeries.(resNames{ii}).modelpred = tSeries.(resNames{ii}).modelpred + pm1.BOLDmeanValue;
     end

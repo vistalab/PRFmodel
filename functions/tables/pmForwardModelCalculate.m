@@ -54,10 +54,10 @@ for ii=1:height(DT)
     
     
     %% Noise
+    % In this version we are only going to change the values for white noise
     % Read values from table
-    % pm.Noise.Type    = dt.Noise.Type(ii);
-    % pm.noise.white_k = dt.Noise.white_k(ii);
-    % pm.Noise.compute;
+    pm.Noise{1}.params.noise2signal    = dt.Noise.noise2signal;
+    pm.Noise{1}.compute;
     
     
     %% Compute the synthetic signal
