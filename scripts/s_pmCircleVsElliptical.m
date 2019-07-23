@@ -16,12 +16,11 @@ the new, we'll have learned something.
 
 
 %% Create dataset for testing circular versus elliptical in Afni
-
 clear all;
-COMBINE_PARAMETERS.RF.Centerx0        = [-6 5 4 3 2 1 0 1 2 3 4 5 6];
-COMBINE_PARAMETERS.RF.Centery0        = [-6 5 4 3 2 1 0 1 2 3 4 5 6];
+COMBINE_PARAMETERS.RF.Centerx0        = [3];  % [-6 5 4 3 2 1 0 1 2 3 4 5 6];
+COMBINE_PARAMETERS.RF.Centery0        = [3];  % [-6 5 4 3 2 1 0 1 2 3 4 5 6];
 COMBINE_PARAMETERS.RF.Theta           = [0]; %, deg2rad(45)];
-COMBINE_PARAMETERS.RF.sigmaMajor      = [1,2,3,4];
+COMBINE_PARAMETERS.RF.sigmaMajor      = [0.5,1,2,4,8]  % [1,2,3,4];
 COMBINE_PARAMETERS.RF.sigmaMinor      = 'same'; % 'same' for making it the same to Major
 COMBINE_PARAMETERS.TR                 = [2];
     HRF(1).Type                       = 'afni_GAM';
@@ -30,7 +29,7 @@ COMBINE_PARAMETERS.HRF                = HRF;
 % TODO: implement a more complex noise addition system. 
 % Right now only the parameter for white noise can be edited. 
 COMBINE_PARAMETERS.Noise.noise2signal = [0, 0.05, 0.1, 0.2];
-synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS) %, 'mult',100);
+synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'mult',100);
 synthDT = pmForwardModelCalculate(synthDT);
 % Visually check that all the combinations we specified are there
 % [synthDT.RF(:,{'Centerx0','Centery0','Theta','sigmaMajor','sigmaMinor'}), ...
@@ -45,14 +44,14 @@ results_AFNI    = pmModelFit(synthDT,'afni_6');
 
 % save('resultsAFNI_multipleCenters.mat', 'results_AFNI')
 % save('synthDT_multipleCenters.mat', 'synthDT')
-save('resultsAFNI_oneCenter.mat', 'results_AFNI')
-save('synthDT_oneCenter.mat', 'synthDT')
+save(fullfile(pmRootPath,'local','resultsAFNI_oneCenter.mat'), 'results_AFNI')
+save(fullfile(pmRootPath,'local','synthDT_oneCenter.mat'), 'synthDT')
 
 %% Plot the results
 % load('resultsAFNI_multipleCenters.mat');
 % load('synthDT_multipleCenters.mat');
-load('resultsAFNI_oneCenter.mat');
-load('synthDT_oneCenter.mat');
+load(fullfile(pmRootPath,'local','resultsAFNI_oneCenter.mat'));
+load(fullfile(pmRootPath,'local','synthDT_oneCenter.mat'));
 
 
 paramDefaults = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
@@ -280,7 +279,7 @@ text(-9.5,9,'THIN DASHED if sigRat < 1.5, THICK SOLID is sigRat >= 1.5')
 % Now plot theta versus sigrat
 noise2sigs = unique(compTable.noise2sig);
 prfsizes   = unique(compTable.synth.sMaj);
-mrvNewGraphWin('AFNI comparisons');
+mrvNewGraphWin('AFNI theta vs sigrat');
 plotIndex = 0;
 for ns=1:length(noise2sigs)
     noise2sig = noise2sigs(ns);
