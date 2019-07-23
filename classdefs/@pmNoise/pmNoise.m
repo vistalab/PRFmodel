@@ -100,7 +100,14 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
         function compute(noise)
             % TODO: move the code to the .m functions of the same name
             switch noise.Type
-                case 'white'
+                case 'white'  % Indstrumen
+                    % This is the amplitude of the white noise, the goal is to
+                    % scale it so that it h
+                    noise.PM.computeBOLD;
+                    signal       = noise.PM.BOLD; % Retrieved from the parent model
+                    n            = noise.params.noise2signal * (max(signal) - min(signal));
+                    noise.values = n * randn([1,noise.PM.timePointsN]);
+                case 'pink'  % fisiological
                     % This is the amplitude of the white noise, the goal is to
                     % scale it so that it h
                     noise.PM.computeBOLD;

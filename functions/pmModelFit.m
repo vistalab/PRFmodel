@@ -427,7 +427,8 @@ switch prfimplementation
         %% RUN THE ANALYSIS
         % Create the command line for the fit
         % Apply it to every voxel
-        c = parcluster('local');
+        % c = parcluster('local');
+        c.NumWorkers = 0;
         % Adding the absolute path is throwing an error. Not Matlab related, same in CLI
         % Use cd() and then launch the command
         cd(fullfile(tmpName))

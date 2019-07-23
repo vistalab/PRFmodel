@@ -1,4 +1,4 @@
-function synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS)
+function synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS,varargin)
 % Creates default format for a PRF model table
 %
 % Syntax
@@ -16,11 +16,17 @@ function synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS)
 %
 %
 
-%%
-% p = inputParser;
+%% Read the inputs
+varargin = mrvParamFormat(varargin);
+p = inputParser;
+p.addRequired('COMBINE_PARAMETERS' ,    @(x)(isa(x,'struct')));
+% By default do not create multiple copies
+p.addParameter('mult'              , 1, @isnumeric); 
+p.parse(COMBINE_PARAMETERS, varargin{:});
+% Assign it
+mult = p.Results.mult;
 
-
-%%
+%% Do the thing
 
 
 % Create the main table with one row and default values
@@ -161,4 +167,10 @@ for ii=1:length(fieldsToCombine)
             end
     end
 end
+
+% Now create multiple copies. 
+if mult > 1
+    synthDT = repmat(synthDT,[mult,1]);
+end
+
 
