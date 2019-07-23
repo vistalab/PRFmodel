@@ -277,7 +277,40 @@ text(-9.5,9,'THIN DASHED if sigRat < 1.5, THICK SOLID is sigRat >= 1.5')
 
 
 
-
+% Now plot theta versus sigrat
+noise2sigs = unique(compTable.noise2sig);
+prfsizes   = unique(compTable.synth.sMaj);
+mrvNewGraphWin('AFNI comparisons');
+plotIndex = 0;
+for ns=1:length(noise2sigs)
+    noise2sig = noise2sigs(ns);
+    for np=1:length(prfsizes)
+        prfsize = prfsizes(np);
+        % Now we can create the subplots
+        plotIndex = plotIndex + 1;
+        subplot(length(prfsizes),length(noise2sigs),plotIndex);
+        
+        Th   = compTable.afni.Th(compTable.noise2sig==noise2sig & compTable.synth.sMaj==prfsize);
+        Th(Th>0) = rad2deg(Th(Th>0));
+        Th(Th<0) = rad2deg(Th(Th<0))-360;
+        sMaj = compTable.afni.sMaj(compTable.noise2sig==noise2sig & compTable.synth.sMaj==prfsize);
+        sMin = compTable.afni.sMin(compTable.noise2sig==noise2sig & compTable.synth.sMaj==prfsize);
+        sigRat = sMaj ./ sMin;
+        
+        scatter(Th,sigRat)
+        xlabel('Theta in Degrees'); 
+        ylabel('sigRat (unitless)')
+        title(sprintf('rfsize:%i | noise2sig:%0.2f',prfsize,noise2sig))
+        % grid on; 
+%         xlim([-10,10]); xticks(-10:2:10);
+%         ylim([-10,10]); yticks(-10:2:10);
+        xlim([-90,90]); xticks(-80:20:80);
+        ylim([1,6]); yticks(1:1:6);
+        hold on;
+        ls = lsline;
+        ls.Color = 'r';
+    end
+end
 
 
 
