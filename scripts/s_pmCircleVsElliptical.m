@@ -13,7 +13,7 @@ In all of them, ideally, the sigma ratio (sigmaMajor/sigmaMinor) should
 be 1+- epsilon. If it is not, or if it is for the old software and not for 
 the new, we'll have learned something. 
 %}
-
+addpath(genpath('/home/glerma/soft/afni_matlab'));
 
 %% Create dataset for testing circular versus elliptical in Afni
 clear all;
@@ -71,13 +71,13 @@ for ns=1:length(noise2sigs)
         prfsize = prfsizes(np);
         % Now we can create the subplots
         plotIndex = plotIndex + 1;
-        subplot(length(prfsizes),length(noise2sigs),plotIndex);
+        subplot(length(noise2sigs),length(prfsizes),plotIndex);
         X = compTable.afni.sMin(compTable.noise2sig==noise2sig & compTable.synth.sMaj==prfsize);
         Y = compTable.afni.sMaj(compTable.noise2sig==noise2sig & compTable.synth.sMaj==prfsize);
         scatter(X,Y)
         axis equal;
         xlabel('sMin'); ylabel('sMaj')
-        title(sprintf('rfsize:%i | noise2sig:%0.2f',prfsize,noise2sig))
+        title(sprintf('rfsize:%1.1f | noise2sig:%0.2f',prfsize,noise2sig))
         grid on; 
         xlim([-0,8]); ylim([-0,8])
         xticks([0:1:8]);yticks([0:1:8])
@@ -106,7 +106,7 @@ for ns=1:length(noise2sigs)
         prfsize = prfsizes(np);
         % Now we can create the subplots
         plotIndex = plotIndex + 1;
-        subplot(length(prfsizes),length(noise2sigs),plotIndex);
+        subplot(length(noise2sigs),length(prfsizes),plotIndex);
         % X = rad2deg(compTable.afni.Th(compTable.noise2sig==noise2sig & compTable.synth.sMaj==prfsize));
         X = (compTable.afni.Th(compTable.noise2sig==noise2sig & compTable.synth.sMaj==prfsize));
         X(X>0) = rad2deg(X(X>0));
@@ -116,7 +116,7 @@ for ns=1:length(noise2sigs)
         axis equal;
         xlabel('Theta in deg'); 
         % ylabel('sMaj')
-        title(sprintf('rfsize:%i | noise2sig:%0.2f',prfsize,noise2sig))
+        title(sprintf('rfsize:%1.1f | noise2sig:%0.2f',prfsize,noise2sig))
         % grid on; 
         % xlim([-0,8]); ylim([-0,8])
         xlim([-90,90]); ylim([0,40]);
@@ -170,7 +170,7 @@ for ns=1:length(noise2sigs)
         prfsize = prfsizes(np);
         % Now we can create the subplots
         plotIndex = plotIndex + 1;
-        subplot(length(prfsizes),length(noise2sigs),plotIndex);
+        subplot(length(noise2sigs),length(prfsizes),plotIndex);
         
         Th   = compTable.afni.Th(compTable.noise2sig==noise2sig & compTable.synth.sMaj==prfsize);
         x0   = compTable.afni.x0(compTable.noise2sig==noise2sig & compTable.synth.sMaj==prfsize);
@@ -196,12 +196,15 @@ for ns=1:length(noise2sigs)
         
         xlabel('Degrees'); 
         ylabel('Degrees')
-        title(sprintf('rfsize:%i | noise2sig:%0.2f',prfsize,noise2sig))
+        title(sprintf('rfsize:%1.1f | noise2sig:%0.2f',prfsize,noise2sig))
         % grid on; 
 %         xlim([-10,10]); xticks(-10:2:10);
 %         ylim([-10,10]); yticks(-10:2:10);
-        xlim([-15,15]); xticks(-14:2:14);
-        ylim([-15,15]); yticks(-14:2:14);
+        % xlim([-15,15]); xticks(-14:2:14);
+        % ylim([-15,15]); yticks(-14:2:14);
+        xlim([1,5]); xticks(1:1:5);
+        ylim([1,5]); yticks(1:1:5);
+        
     end
 end
 
@@ -265,14 +268,14 @@ for ii=1:1:length(sMin)
 end
 xlabel('Degrees');
 ylabel('Degrees')
-title(sprintf('rfsize:%i | noise2sig:%0.2f',prfsize,noise2sig))
+title(sprintf('rfsize:%1.1f | noise2sig:%0.2f',prfsize,noise2sig))
 % grid on;
 %         xlim([-10,10]); xticks(-10:2:10);
 %         ylim([-10,10]); yticks(-10:2:10);
-xlim([-10,10]); xticks(-10:2:10);
-ylim([-10,10]); yticks(-10:2:10);
-text(-9.5,9.5,'RED(-90>-45), lightRED(-45>-5), BLACK(+-5deg), lightBLUE(4>45), BLUE(45>90)')
-text(-9.5,9,'THIN DASHED if sigRat < 1.5, THICK SOLID is sigRat >= 1.5')
+xlim([1,5]); xticks(1:1:5);
+ylim([1,5]); yticks(1:1:5);
+text(1.5,4.5,'RED(-90>-45), lightRED(-45>-5), BLACK(+-5deg), lightBLUE(4>45), BLUE(45>90)')
+text(1.5,4,'THIN DASHED if sigRat < 1.5, THICK SOLID is sigRat >= 1.5')
 
 
 
@@ -287,7 +290,7 @@ for ns=1:length(noise2sigs)
         prfsize = prfsizes(np);
         % Now we can create the subplots
         plotIndex = plotIndex + 1;
-        subplot(length(prfsizes),length(noise2sigs),plotIndex);
+        subplot(length(noise2sigs),length(prfsizes),plotIndex);
         
         Th   = compTable.afni.Th(compTable.noise2sig==noise2sig & compTable.synth.sMaj==prfsize);
         Th(Th>0) = rad2deg(Th(Th>0));
@@ -299,7 +302,7 @@ for ns=1:length(noise2sigs)
         scatter(Th,sigRat)
         xlabel('Theta in Degrees'); 
         ylabel('sigRat (unitless)')
-        title(sprintf('rfsize:%i | noise2sig:%0.2f',prfsize,noise2sig))
+        title(sprintf('rfsize:%1.1f | noise2sig:%0.2f',prfsize,noise2sig))
         % grid on; 
 %         xlim([-10,10]); xticks(-10:2:10);
 %         ylim([-10,10]); yticks(-10:2:10);
