@@ -28,8 +28,6 @@ function [pmEstimates, results] = pmModelFit(input, prfimplementation, varargin)
 %     pmXXX
 %
 
-%  TODO: Make all the outputs the same so that we can use the same function to
-%        compare them to the synthetic data. 
 % 
 
 % Examples:
@@ -44,27 +42,40 @@ varargin = mrvParamFormat(varargin);
 p = inputParser;
 p.addRequired('input');
 p.addRequired('prfimplementation',@ischar);
+p.addParameter('useParallel'    ,  false        , @islogical);
+
 % This options structs are defaults for analyzePRF
 options  = struct('seedmode', [0 1], 'display' , 'off');
 % Implementation specifics
 % AnalyzePRF
 p.addParameter('options'    ,  options        , @isstruct);
 % Vistasoft
-p.addParameter('model'      ,  'one gaussian' , @ischar);
-p.addParameter('grid'       , false           , @islogical);
-p.addParameter('wsearch'    , 'coarse to fine', @ischar);
+p.addParameter('model'        , 'one gaussian'  , @ischar);
+p.addParameter('grid'         , false           , @islogical);
+p.addParameter('wsearch'      , 'coarse to fine', @ischar);
+p.addParameter('detrend'      , true            , @islogical);
+p.addParameter('keepAllPoints', false           , @islogical);
+p.addParameter('numberStimulusGridPoints', 50   , @isnumeric);
+
 % AFNI
-% p.addParameter('wsearch'    , 'coarse to fine', @ischar);
+p.addParameter('afni_hrf'   , 'SPM'           , @ischar);
+% Popeye
+% p.addParameter('afni_hrf'   , 'SPM'           , @ischar);
+
+
 
 % Parse. Assign result inside each case
 p.parse(input,prfimplementation,varargin{:});
+% Read here only the generic ones
+useParallel = p.Results.useParallel;
+
 
 
 %% Choose the analysis case
 prfimplementation = mrvParamFormat(prfimplementation);
 
 switch prfimplementation
-    case {'analyzeprf'}
+    case {'aprf','analyzeprf'}
         %% Create and check tables
         % TODO: Let's define the format for the estimates so that this is
         %       the same for all the methods.
@@ -78,21 +89,65 @@ switch prfimplementation
             input = temp;
         end
         
-        %% Calculate values voxel to voxel
-        for ii=1:height(input)
-            % TODO: use parfor if the number of rows if the table is larger than XX
-            pm       = input.pm(ii);
-            stimulus = double(pm.Stimulus.getStimValues);
-            data     = pm.BOLDnoise;
-            TR       = pm.TR;
+        if useParallel
+            % Check if the TR is the same
+            if length(unique(input.TR)) > 1
+                error('TR has to be the same for all synthetic BOLD series')
+            end
+            % Add the time series as well
+            pm1        = input.pm(1);
+            BOLDdata   = repmat(ones([1,pm1.timePointsN]), [height(input),1]);
+            PMs        = input.pm;
+            for ii=1:height(input); pmEstimates{ii,'testdata'}=PMs(ii).BOLDnoise;end
+            
+            % Create variables and function call
+            stimulus = double(pm1.Stimulus.getStimValues);
+            data     = pmEstimates.testdata;
+            TR       = pm1.TR;
             options  = p.Results.options;
             
             % Calculate PRF
             results  = analyzePRF({stimulus}, {data}, TR, options);
-            % This is the explanation of the results
-            % Select only those parameters we need to use to compare to the
-            % input RF variables we manipulated.
-            %{
+            
+            % Prepare output
+            Centerx0         = squeeze(results.params(1,2,:));
+            Centery0         = squeeze(results.params(1,1,:));
+            % Change to the center of the fov
+            if all(iseven(pm1.Stimulus.ResizedHorz))
+                Centerx0 = Centerx0 - pm1.Stimulus.ResizedHorz/2;
+            else
+                Centerx0 = Centerx0 - ((pm1.Stimulus.ResizedHorz-1)/2 + 1);
+            end
+            if iseven(pm1.Stimulus.ResizedVert)
+                Centery0 = Centery0 - pm1.Stimulus.ResizedVert/2;
+            else
+                Centery0 = Centery0 - ((pm1.Stimulus.ResizedVert-1)/2 + 1);
+            end
+            pmEstimates.Centerx0   = (pm1.Stimulus.spatialSampleHorz * Centerx0);
+            pmEstimates.Centery0   = (pm1.Stimulus.spatialSampleVert * Centery0);
+            pmEstimates.Theta      = zeros(size(Centery0));
+            pmEstimates.sigmaMinor = pm1.Stimulus.spatialSampleHorz * results.rfsize;
+            pmEstimates.sigmaMajor = pmEstimates.sigmaMinor;
+            pmEstimates.modelpred  = results.modelpred;
+            % Scale it back
+            pmEstimates.modelpred  = pmEstimates.modelpred + pm1.BOLDmeanValue;
+            
+        else
+            %% Calculate values voxel to voxel
+            for ii=1:height(input)
+                % TODO: use parfor if the number of rows if the table is larger than XX
+                pm       = input.pm(ii);
+                stimulus = double(pm.Stimulus.getStimValues);
+                data     = pm.BOLDnoise;
+                TR       = pm.TR;
+                options  = p.Results.options;
+                
+                % Calculate PRF
+                results  = analyzePRF({stimulus}, {data}, TR, options);
+                % This is the explanation of the results
+                % Select only those parameters we need to use to compare to the
+                % input RF variables we manipulated.
+                %{
             % The results structure contains the following fields:
             % <ang> contains pRF angle estimates.  Values range between 0 and 360 degrees.
             %   0 corresponds to the right horizontal meridian, 90 corresponds to the upper vertical
@@ -119,100 +174,117 @@ switch prfimplementation
             %   in the code.  These raw parameters are transformed to a more palatable format for
             %   the user (as described above).
             % <options> contains a record of the options used in the call to analyzePRF.m.
-            %}
-            
-            % Add a new row of results
-            % (Here we need to select what results go to the table and adecuate them to be comparable to the vakues we put into)
-            % We will use this to interpret and modify the parameters.
-            %{
+                %}
+                
+                % Add a new row of results
+                % (Here we need to select what results go to the table and adecuate them to be comparable to the vakues we put into)
+                % We will use this to interpret and modify the parameters.
+                %{
                The first seed is a generic large pRF that is centered with
                respect to the stimulus, has a pRF size equal to 1/4th of the
                stimulus extent (thus, +/- 2 pRF sizes matches
                the stimulus extent), and has an exponent of 0.5.
                resmx is the res in pixels of the biggest side
               (1+res(1))/2 (1+res(2)()/2 resmx/4*sqrt(0.5)   options.typicalgain 0.5
-            %}
-            % Check if the results make sense considering the inputs we used
-            % Note: for him x and y are row and cols, so y is cols and x is rows
-            % Flip it here
-            Centerx0         = results.params(2);
-            Centery0         = results.params(1);
-            if (Centerx0 < 0 || Centerx0 > size(pm.RF.values,1) || ...
-                    Centery0 < 0 || Centery0 > size(pm.RF.values,2))
-                error('The parameter estimate cannot be outside RF size limits')
+                %}
+                % Check if the results make sense considering the inputs we used
+                % Note: for him x and y are row and cols, so y is cols and x is rows
+                % Flip it here
+                Centerx0         = results.params(2);
+                Centery0         = results.params(1);
+                %             if (Centerx0 < 0 || Centerx0 > size(pm.RF.values,1) || ...
+                %                     Centery0 < 0 || Centery0 > size(pm.RF.values,2))
+                %                 error('The parameter estimate cannot be outside RF size limits')
+                %             end
+                
+                % Change to the center of the fov
+                if iseven(pm.Stimulus.ResizedHorz)
+                    Centerx0 = Centerx0 - pm.Stimulus.ResizedHorz/2;
+                else
+                    Centerx0 = Centerx0 - ((pm.Stimulus.ResizedHorz-1)/2 + 1);
+                end
+                if iseven(pm.Stimulus.ResizedVert)
+                    Centery0 = Centery0 - pm.Stimulus.ResizedVert/2;
+                else
+                    Centery0 = Centery0 - ((pm.Stimulus.ResizedVert-1)/2 + 1);
+                end
+                
+                %% Convert the inputs to the same units we used
+                Centerx0 = (pm.Stimulus.spatialSampleHorz * Centerx0);
+                Centery0 = (pm.Stimulus.spatialSampleVert * Centery0);
+                
+                % Calculate RMSE
+                RMSE     = sqrt(mse(results.testdata, results.modelpred));
+                
+                %{
+                % This is the formula he uses to create the gaussian:
+                % makegaussian2d(resmx,p1,p2,p3,p3) /(2*pi*p3^2)
+                % p3 is the standard deviation in the vertical/horizontal direction
+                % if you want an L1-normalized image, divide the image by 2*pi*p3^2
+                % note that this is in reference to the ideal case where the Gaussian has
+                % enough room to extend out.  so, if you are constructing a Gaussian that
+                % does not fit very well within the image, the actual L1 length of the image
+                % that is constructed will not be exactly 1.
+                %
+                % note that it doesn't matter if <sr> or <sc> are negative, since they
+                % are always squared in function evaluation.
+
+                % In his RF function he is normalizing it, then the sigma has not
+                % the same meaning...
+                % He does this:
+                % r = (-1/res) * r + (.5 + .5/res);  % this is faster
+                % c = (1/res) * c + (-.5 - .5/res);  % this is faster
+                % sr = sr/res;
+                % sc = sc/res;
+                % In any case, he is providing the rfsize in pixel units, like this:
+                % <rfsize> contains pRF size estimates.  pRF size is defined as sigma/sqrt(n) where
+                %   sigma is the standard of the 2D Gaussian and n is the exponent of the power-law
+                %   function.  Values are in pixel units with a lower bound of 0 pixels.
+                % It is calculated in analyzePRF in this line:
+                % results.rfsize(options.vxs,:) = permute(abs(paramsA(:,3,:)) ./ sqrt(posrect(paramsA(:,5,:))),[3 1 2]);
+                % This means that we can go back to the sigma in pixels, and then
+                % convert it to sigma in deg, as we inputed it.
+                %
+                % After conversation with Jon, adding the /sqrt(n)
+                % As the result is always circular, we want to check that rfsize is
+                % always the same as sigmaMinor and sigmaMajor.
+                % It is, so we are removing the rfsize column from the table and
+                % assigning it to sigmaMinor and sigmaMajor withouth the calculation
+                % Leave the code here comented to undertand it better in the future
+                % sigmaMinor = (pm.Stimulus.spatialSampleVert * abs(results.params(3))/sqrt(posrect(results.params(5))));
+                % sigmaMajor = (pm.Stimulus.spatialSampleHorz * abs(results.params(3))/sqrt(posrect(results.params(5))));
+                % tmpTable.rfsize = pm.Stimulus.spatialSampleHorz * results.rfsize;
+                %}
+                
+                tmpTable            = struct2table(results,'AsArray',true);
+                tmpTable.Centerx0   = Centerx0;
+                tmpTable.Centery0   = Centery0;
+                tmpTable.Theta      = 0; % Is circular, we can't model it
+                % sigmaMajor and sigmaMinor will have same value, is circular RF
+                % Convert it to degrees
+                tmpTable.sigmaMajor = pm.Stimulus.spatialSampleHorz * results.rfsize;  %  * sqrt(posrect(results.params(5)));
+                tmpTable.sigmaMinor = pm.Stimulus.spatialSampleHorz * results.rfsize;  %  * sqrt(posrect(results.params(5)));
+                tmpTable.RMSE       = RMSE;
+                % Make results table smaller (this was done for Brian The Substractor :) )
+                
+                % Leave the testdata and modelpred so that we have the fit.
+                % Testdata is not exactly the same to the data (=pm.BOLDnoise), he
+                % removes I think part of the low frew noise, check later. If we
+                % cannot get testdata in other tools, we will just obtain modelpred.
+                % We'll need to add pm.BOLDmeanValue to modelpred to have it in the
+                % same range as the data (=pm.BOLDnoise)
+                tmpTable            = tmpTable(:,{'Centerx0','Centery0', 'Theta' ,...
+                                                  'sigmaMinor', 'sigmaMajor' ,...
+                                                  'testdata','modelpred','R2','RMSE'});
+       
+                % tmpTable.testdata  = tmpTable.testdata  + pm.BOLDmeanValue;
+                tmpTable.modelpred = tmpTable.modelpred + pm.BOLDmeanValue;
+
+                pmEstimates = [pmEstimates; tmpTable];
             end
-            
-            %% Convert the inputs to the same units we used
-            Centerx0 = (pm.Stimulus.spatialSampleHorz * Centerx0) - (pm.Stimulus.fieldofviewHorz/2);
-            Centery0 = (pm.Stimulus.spatialSampleVert * Centery0) - (pm.Stimulus.fieldofviewVert/2);
-            
-            % Calculate RMSE
-            RMSE     = sqrt(mse(results.testdata, results.modelpred));
-            
-            %{
-            % This is the formula he uses to create the gaussian:
-            % makegaussian2d(resmx,p1,p2,p3,p3) /(2*pi*p3^2)
-            % p3 is the standard deviation in the vertical/horizontal direction
-            % if you want an L1-normalized image, divide the image by 2*pi*p3^2
-            % note that this is in reference to the ideal case where the Gaussian has
-            % enough room to extend out.  so, if you are constructing a Gaussian that
-            % does not fit very well within the image, the actual L1 length of the image
-            % that is constructed will not be exactly 1.
-            %
-            % note that it doesn't matter if <sr> or <sc> are negative, since they
-            % are always squared in function evaluation.
-            
-            % In his RF function he is normalizing it, then the sigma has not
-            % the same meaning...
-            % He does this:
-            % r = (-1/res) * r + (.5 + .5/res);  % this is faster
-            % c = (1/res) * c + (-.5 - .5/res);  % this is faster
-            % sr = sr/res;
-            % sc = sc/res;
-            % In any case, he is providing the rfsize in pixel units, like this:
-            % <rfsize> contains pRF size estimates.  pRF size is defined as sigma/sqrt(n) where
-            %   sigma is the standard of the 2D Gaussian and n is the exponent of the power-law
-            %   function.  Values are in pixel units with a lower bound of 0 pixels.
-            % It is calculated in analyzePRF in this line:
-            % results.rfsize(options.vxs,:) = permute(abs(paramsA(:,3,:)) ./ sqrt(posrect(paramsA(:,5,:))),[3 1 2]);
-            % This means that we can go back to the sigma in pixels, and then
-            % convert it to sigma in deg, as we inputed it.
-            % 
-            % After conversation with Jon, adding the /sqrt(n)
-            % As the result is always circular, we want to check that rfsize is
-            % always the same as sigmaMinor and sigmaMajor. 
-            % It is, so we are removing the rfsize column from the table and
-            % assigning it to sigmaMinor and sigmaMajor withouth the calculation
-            % Leave the code here comented to undertand it better in the future
-            % sigmaMinor = (pm.Stimulus.spatialSampleVert * abs(results.params(3))/sqrt(posrect(results.params(5))));
-            % sigmaMajor = (pm.Stimulus.spatialSampleHorz * abs(results.params(3))/sqrt(posrect(results.params(5))));
-            % tmpTable.rfsize = pm.Stimulus.spatialSampleHorz * results.rfsize;
-            %}
-            
-            tmpTable            = struct2table(results,'AsArray',true);
-            tmpTable.Centerx0   = Centerx0;
-            tmpTable.Centery0   = Centery0;
-            tmpTable.Theta      = 0; % Is circular, we can't model it
-            % sigmaMajor and sigmaMinor will have same value, is circular RF
-            % Convert it to degrees
-            tmpTable.sigmaMajor = pm.Stimulus.spatialSampleHorz * results.rfsize;  %  * sqrt(posrect(results.params(5))); 
-            tmpTable.sigmaMinor = pm.Stimulus.spatialSampleHorz * results.rfsize;  %  * sqrt(posrect(results.params(5))); 
-            tmpTable.RMSE       = RMSE;
-            % Make results table smaller (this is for Brian The Substractor :) )
-            
-            % Leave the testdata and modelpred so that we have the fit.
-            % Testdata is not exactly the same to the data (=pm.BOLDnoise), he
-            % removes I think part of the low frew noise, check later. If we
-            % cannot get testdata in other tools, we will just obtain modelpred.
-            % We'll need to add pm.BOLDmeanValue to modelpred to have it in the
-            % same range as the data (=pm.BOLDnoise)
-            tmpTable            = tmpTable(:,{'Centerx0','Centery0', 'Theta' ,...
-                'sigmaMinor', 'sigmaMajor' ,...
-                'testdata','modelpred','R2','RMSE'});
-            pmEstimates = [pmEstimates; tmpTable];
         end
         
-    case {'mrvista','vistasoft'}
+    case {'vista','mrvista','vistasoft'}
         %% Create temp folders
         tmpName = tempname(fullfile(pmRootPath,'local'));
         mkdir(tmpName);
@@ -227,20 +299,26 @@ switch prfimplementation
             fullfile(tmpName,'tmp.nii.gz'));
         
         %% Prepare the function call
-        homedir    = tmpName;
-        stimfile   = stimNiftiFname;
-        datafile   = niftiBOLDfile;
+        homedir       = tmpName;
+        stimfile      = stimNiftiFname;
+        datafile      = niftiBOLDfile;
         warning('mrvista is assuming all stimuli with same radius. Fix this')
-        stimradius = pm1.Stimulus.fieldofviewHorz/2;
-        model      = p.Results.model;
-        grid       = p.Results.grid;
-        wSearch    = p.Results.wsearch;
+        stimradius    = pm1.Stimulus.fieldofviewHorz/2;
+        model         = p.Results.model;
+        grid          = p.Results.grid;
+        wSearch       = p.Results.wsearch;
+        detrend       = p.Results.detrend;
+        keepAllPoints = p.Results.keepAllPoints;
+        numberStimulusGridPoints = p.Results.numberStimulusGridPoints;
         
         % Make the call to the function based on Jon's script
         results = pmVistasoft(homedir, stimfile, datafile, stimradius,...
             'model'  , model, ...
             'grid'   , grid, ...
-            'wSearch', wSearch);
+            'wSearch', wSearch, ...
+            'detrend', detrend, ...
+            'keepAllPoints', keepAllPoints, ...
+            'numberStimulusGridPoints', numberStimulusGridPoints);
         
         %% Prepare the outputs in a table format
         pmEstimates = table();
@@ -251,7 +329,7 @@ switch prfimplementation
         pmEstimates.sigmaMinor = results.model{1}.sigma.minor';
         % Add the time series as well
         pmEstimates.testdata   = repmat(ones([1,pm1.timePointsN]), ...
-            [height(pmEstimates),1]);
+                                                       [height(pmEstimates),1]);
         PMs                    = input.pm;
         for ii=1:height(pmEstimates); pmEstimates{ii,'testdata'}=PMs(ii).BOLDnoise;end
         
@@ -364,7 +442,7 @@ switch prfimplementation
         %% HRF
         % Obtain the HRF: follow the steps on the 3dNLfim.help file
         % TODO: add to options what HRF to use
-        afni_hrf = 'SPM';
+        afni_hrf = p.Results.afni_hrf;
         switch afni_hrf
             % TODO: synch it with the HRF creation process in pmHRF.m 
             case {'GAM'}
@@ -583,6 +661,7 @@ switch prfimplementation
         params.screen_distance   = 50;
         params.screen_width      = 28.67;
         params.pixels_per_degree = pm1.Stimulus.ResizedHorz / pm1.Stimulus.fieldofviewHorz;
+        params.invert_y          = true;
         % Encode into json file 
         jsonStr = jsonencode(params);
         fid = fopen(fullfile(tmpName,'params.json'), 'w');
@@ -598,12 +677,13 @@ switch prfimplementation
         x0    = niftiRead(fullfile(tmpName,'out_x.nii.gz'));
         x0    = x0.data(:,1,1,1);
         y0    = niftiRead(fullfile(tmpName,'out_y.nii.gz'));
-        y0    = -y0.data(:,1,1,1);
+        y0    = y0.data(:,1,1,1);
         gain  = niftiRead(fullfile(tmpName,'out_gain.nii.gz'));
         gain  = gain.data(:,1,1,1);
         sigma = niftiRead(fullfile(tmpName,'out_sigma.nii.gz'));
         sigma = sigma.data(:,1,1,1);
-        
+        modelpred = niftiRead(fullfile(tmpName,'out_modelpred.nii.gz'));
+        modelpred = modelpred.data;
         
         % Write results common to all of them
         % Params
@@ -621,12 +701,12 @@ switch prfimplementation
         PMs                    = input.pm;
         for ii=1:height(pmEstimates); pmEstimates{ii,'testdata'}=PMs(ii).BOLDnoise;end
         
-        %   - modelpred: the fits comming out from AFNI
+        pmEstimates.modelpred  = squeeze(modelpred);
         % restore back the demeaning
-        % fitsScaledBack = (pm1.BOLDmeanValue * fits) + pm1.BOLDmeanValue;
-        % TODO
-        pmEstimates.modelpred  = pmEstimates.testdata;
-        
+        for ii=1:size(modelpred,1)
+            pmEstimates.modelpred(ii,:) = pm1.BOLDmeanValue * (pmEstimates.modelpred(ii,:) + 1);
+        end
+              
     otherwise
         error('Method %s not implemented yet.', prfimplementation)
 end

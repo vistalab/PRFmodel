@@ -23,15 +23,18 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
     %}
     
     properties
-        Type;          % Firston, Boyton, canonical...
+        Type;          % Friston, Boyton, canonical...
         PM;            % prfModel that has some of the variables we need, such as TR
         Duration;      % Seconds
         params;        % Different values depending on the type of HRF
         values;
     end
-    
     properties (Dependent = true, Access = public)
         tSteps;
+    end
+    properties(Dependent = true, SetAccess = private, GetAccess = public)
+        % List of all possible options
+        Types;         
     end
     properties(Dependent= true, SetAccess = private, GetAccess = public)
         TR;            % Seconds, it will be read from the parent class pm
@@ -87,10 +90,18 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
             % Check if only some of the fields in params where set
             hrf.params   = pmParamsCompletenessCheck(p.Results.params,d.params);
         end
-        
+        function v = get.Types(hrf)
+            v = {'friston','boynton','canonical', 'vista_twogammas', ...
+                         'popeye_twogammas', 'afni_gam','afni_spm'};
+        end
         function compute(hrf)
             switch hrf.Type
-                case 'friston'
+                case {'random','rand','rnd'}
+                    hrf.Type = hrf.Types{randi(length(hrf.Types))};
+            end
+            % Now with the new type, do the calculations. 
+            switch hrf.Type
+                case {'friston'}
                     % TODO: use a function under @HRF again, remove code from here.
                     a = hrf.params.a;
                     b = hrf.params.b;
@@ -104,7 +115,7 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     % Calculate actual values
                     hrf.values = (t/d(1)).^a(1)   .* exp(-(t - d(1))/b(1)) ...
                         - c*(t/d(2)).^a(2) .* exp(-(t-d(2))/b(2));
-                case 'boynton'
+                case {'boynton'}
                     % TODO: use a function under @HRF again, remove code from here.
                     params = hrf.params;
                     % Make sure that when boynton is selected, params comes with
@@ -181,7 +192,7 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     thrf(end-length(tmpHrf)+1:end) = tmpHrf;
                     % Assign it to the output of our object
                     hrf.values = thrf;
-                case 'canonical'
+                case {'canonical'}
                     % average empirical HRFs from various datasets (where the HRFs were
                     % in response to a 3-s stimulus) and then do the requisite
                     % deconvolution and convolution to obtain a predicted HRF to a
@@ -200,7 +211,14 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     % Inside analyzePRF it knows the TR, but for mrVista we need
                     % to provide the HRF in seconds.
                     % I had the code copied here, now use their function.
+                    
+                    
+                    % Be careful here. getcanonicalhrf has the following params:
+                    % thrf = getcanonicalhrf(hrf.params.stimDuration, hrf.TR);
+                    % But when solving the 
                     thrf = getcanonicalhrf(hrf.TR, hrf.TR);
+                    
+                    
                     
                     % To be decided:
                     %   - do we want to be a fixed number of points?
@@ -209,7 +227,31 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     
                     % Add it to the output
                     hrf.values = thrf;
-                case {'afni_gam','afni_GAM'}
+                    
+                case {'vista_twogammas'}
+                    % This is the default inside the function
+                    vistaParams     = [5.4 5.2 10.8 7.35 0.35];
+                    hrf.values      = rmHrfTwogammas(hrf.tSteps, vistaParams);
+                case {'popeye_twogammas'}
+                    % We obtain the values from python
+                    hrf.values = double(py.popeye.utilities.double_gamma_hrf(0,hrf.TR));
+                    % Check what is this function returning
+                    %{
+                    % I don't think this is right, I need to ask the developer
+                    % if this is the expected behavior. 
+                    % The shape of the hrf is very different just changing the
+                    % TR
+                    
+                    HRF1 = double(py.popeye.utilities.double_gamma_hrf(0,1));
+                    HRF2 = double(py.popeye.utilities.double_gamma_hrf(0,2));
+                    figure(1); plot(HRF1); hold on; plot(HRF2);
+                    
+                    timeS1 = 0: 1: 1*(length(HRF1)-1)
+                    timeS2 = 0: 2: 2*(length(HRF2)-1)
+                    figure(2); plot(timeS1,HRF1); hold on; plot(timeS2,HRF2);
+                    %}
+                    
+                case {'afni_gam'}
                     hrfFileName = fullfile(pmRootPath,...
                         'data',['TR' num2str(hrf.TR) '_conv.ref.GAM.1D']);
                     if ~exist(hrfFileName,'file')
@@ -222,7 +264,7 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                             '-x1D ' hrfFileName]);
                     end
                     [~, hrf.values, ~, ~] = Read_1D (hrfFileName);
-                case {'afni_spm','afni_SPM'}
+                case {'afni_spm'}
                     hrfFileName = fullfile(pmRootPath,...
                               'data',['TR' num2str(hrf.TR) 'sisar.conv.ref.SPMG1.1D']);
                     if ~exist(hrfFileName,'file')
@@ -248,18 +290,29 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
             % Calculate it and return every time we need it.
             % TODO: Does it need to be in TR intervals?
             switch hrf.Type
-                case {'friston','boynton'}
+                case {'random','rand','rnd'}
+                    hrf.Type = hrf.Types{randi(length(hrf.Types))};
+            end
+            % I think the biggest difference here is the interaction between
+            % compute and tSteps:
+            % --- some require to know tSteps to calculate hrf.values in compute
+            % --- some require to know the number of values in hrf.values to be
+            %     able to provide the correct tSteps. 
+            % NOTE: if the Type is rand, it will set up one of the options
+            % either the function get.tSteps or hrf.compute, the one that is
+            % called first. 
+            switch hrf.Type
+                case {'1','friston','2','boynton','4','vista_twogammas'}
                     tSteps  = 0: hrf.TR: hrf.Duration;
-                case {'canonical', 'afni_gam','afni_spm'}
+                case {'3','canonical','5','afni_gam','6','afni_spm','7','popeye_twogammas'}
+                    % We need to compute it first in order to know the length
+                    hrf.compute;
                     tSteps  = 0: hrf.TR: hrf.TR*(length(hrf.values)-1);
                 otherwise
                     error('HRF method %s not implemented or valid.',hrf.Type);
             end
             
         end
-        
-        
-        
         
         % Plot it
         function plot(hrf)

@@ -2,6 +2,7 @@
 # #Initialization
 # %
 import os, sys, six, h5py, pint, warnings, time, pandas, copy
+os.getcwd()
 import numpy       as np
 import scipy       as sp
 import scipy.stats as stats

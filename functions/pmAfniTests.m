@@ -4,13 +4,13 @@
 % NOTE: for analyzePRF, any TR and Stimulus can be used, but for AFNI and
 % mrVista, they need to be the same, as they will be written into a nifti
 clear all;
-COMBINE_PARAMETERS.RF.Centerx0   = [0,6]; % [-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
-COMBINE_PARAMETERS.RF.Centery0   = [0,6];
+COMBINE_PARAMETERS.RF.Centerx0   = [0]; % [-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
+COMBINE_PARAMETERS.RF.Centery0   = [0];
 COMBINE_PARAMETERS.RF.Theta      = [0]; %, deg2rad(45)];
-COMBINE_PARAMETERS.RF.sigmaMinor = [2];
-COMBINE_PARAMETERS.RF.sigmaMajor = [2];
+COMBINE_PARAMETERS.RF.sigmaMajor = [0.5,2,5];
+COMBINE_PARAMETERS.RF.sigmaMinor = 'same';
 COMBINE_PARAMETERS.TR            = [2];
-    HRF(1).Type                  = 'canonical';
+    HRF(1).Type                  = 'popeye_twogammas';
     % HRF(2).Type                  = 'afni_spm';
 COMBINE_PARAMETERS.HRF           = HRF;
 synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS);
@@ -38,8 +38,22 @@ stimulus   = squeeze(NIstimulus.data);
 %}
 
 % Analyze it with analyzePRF
-options  = struct('seedmode',[0,1], 'display','off', 'maxpolydeg',0);
-results_analyzePRF = pmModelFit(synthDT,'analyzePRF','options',options);
+options             = struct('seedmode',[0,1], 'display','off', 'maxpolydeg',0);
+results_aPRF        = pmModelFit(synthDT,'analyzePRF','options',options,'useParallel',true);
+% VISUALIZE JUST THIS 
+%{
+[compTable,tSeries] = pmResultsCompare(synthDT, ... % Defines the input params
+                            {'aPRF'}, ... % Analysis names we want to see: 'aPRF','vista',
+                            {results_aPRF}, ... % results_analyzePRF,results_vista,
+                            'shorten names',true);
+% Visualize with 2 digits after comma
+format bank; disp(compTable); format
+pmTseriesPlot(tSeries, synthDT(:,'TR'), ...
+              'to compare', {'synth','aPRF'}, ...
+              'voxel',[1:3], ... % 'metric','RMSE', ...
+              'newWin',true)
+%}
+
 % 
 % % Analyze it with mrVista (or vistasoft, it takes both)
 % % 'one gaussian', 'one oval gaussian', 'difference of gaussians'
@@ -60,11 +74,19 @@ results_AFNI    = pmModelFit(synthDT,'afni_6');
 %   - 'popeye_CSS': the elliptical model,  adding sigmaMinor and theta
 %   - 'popeye_dog': difference of gaussians
 results_popeye  = pmModelFit(synthDT,'popeye_onegaussian');
-% [compTable, tSeries] = pmResultsCompare(synthDT, ... % Defines the input params
-%                             {'popeye'}, ... % Analysis names we want to see: 'aPRF','vista',
-%                             {results_popeye}, ... % results_analyzePRF,results_vista,
-%                             'shorten names',true); 
-
+% VISUALIZE JUST THIS 
+% {
+[compTable,tSeries] = pmResultsCompare(synthDT, ... % Defines the input params
+                            {'pop'}, ... % Analysis names we want to see: 'aPRF','vista',
+                            {results_popeye}, ... % results_analyzePRF,results_vista,
+                            'shorten names',true);
+% Visualize with 2 digits after comma
+format bank; disp(compTable); format
+pmTseriesPlot(tSeries, synthDT(:,'TR'), ...
+              'to compare', {'synth','pop'}, ...
+              'voxel',[1:3], ... % 'metric','RMSE', ...
+              'newWin',true)
+%}
 
 % mrTools implementation (Justin Gardner)
 % results_mrtool  = pmModelFit(synthDT,'mrtool');
