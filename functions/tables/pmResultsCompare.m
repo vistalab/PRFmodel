@@ -21,11 +21,15 @@ p.addRequired ('resDT'          , @iscell);
 paramDefaults = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
 shortDefaults = {'x0','y0','Th','sMin','sMaj'};
 p.addParameter('params', paramDefaults, @iscell);
-p.addParameter('shortennames', false, @islogical);
+p.addParameter('shortennames' , false, @islogical);
+p.addParameter('addisclosecol', false, @islogical);
+p.addParameter('tolerance'    , 0.0001, @isnumeric);
 p.parse(synthDT, resNames, resDT, varargin{:});
 
 params       = p.Results.params;
 shortenNames = p.Results.shortennames;
+addIscloseCol= p.Results.addisclosecol;
+tolerance    = p.Results.tolerance;
 
 
 %% Calculate
@@ -54,6 +58,22 @@ for ii=1:length(resNames)
     newDT.(resNames{ii}).Properties.VariableNames = shortDefaults;
 end
 
+% Add the isclose col for the perfect prediction case if required.
+if addIscloseCol
+    newDT.([resNames{ii} '_test']) = newDT.(resNames{ii});
+    varNames = newDT.([resNames{ii} '_test']).Properties.VariableNames;
+    for nn=1:length(varNames)
+        X = newDT.synth.(varNames{nn});
+        Y = newDT.(resNames{ii}).(varNames{nn});
+        newDT.([resNames{ii} '_test']).(varNames{nn}) = isclose(X,Y, ...
+                                                            'tolerance',0.001, ...
+                                                            'returnvector',true);
+    end
+end
+
+
+
+
 %% Create the tSeries table
 tSeries           = table();
 % Extract first pm for information
@@ -68,13 +88,8 @@ for ii=1:height(tSeries); tSeries.synth{ii,'BOLDnoise'}=PMs(ii).BOLDnoise;end
 
 
 % Now add the analysis results that we have
-
 for ii=1:length(resNames)
     tSeries.(resNames{ii}) = resDT{ii}(:,{'testdata','modelpred'});
-    if contains(resNames{ii}, {'aprf','aPRF', 'analyzePRF'})
-        tSeries.(resNames{ii}).testdata  = tSeries.(resNames{ii}).testdata  + pm1.BOLDmeanValue;
-        tSeries.(resNames{ii}).modelpred = tSeries.(resNames{ii}).modelpred + pm1.BOLDmeanValue;
-    end
 end
 
 

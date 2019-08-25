@@ -24,20 +24,26 @@ mrvCleanWorkspace
 % Read the inputs
 varargin = mrvParamFormat(varargin);
 p = inputParser;
-p.addRequired('homedir'                       , @ischar);
-p.addRequired('stimfile'                      , @ischar);
-p.addRequired('datafile'                      , @ischar);
-p.addRequired('stimradius'                    , @isnumeric);
-p.addParameter('sessioncode', 'pRFsynthetic01', @ischar);
-p.addParameter('model'      , 'one gaussian'  , @ischar);
-p.addParameter('grid'       , false           , @islogical);
-p.addParameter('wsearch'    , 'coarse to fine', @ischar);
+p.addRequired('homedir'                         , @ischar);
+p.addRequired('stimfile'                        , @ischar);
+p.addRequired('datafile'                        , @ischar);
+p.addRequired('stimradius'                      , @isnumeric);
+p.addParameter('sessioncode'  , 'pRFsynthetic01', @ischar);
+p.addParameter('model'        , 'one gaussian'  , @ischar);
+p.addParameter('grid'         , false           , @islogical);
+p.addParameter('wsearch'      , 'coarse to fine', @ischar);
+p.addParameter('detrend'      , true            , @islogical);
+p.addParameter('keepAllPoints', false           , @islogical);
+p.addParameter('numberStimulusGridPoints', 50   , @isnumeric);
 p.parse(homedir, stimfile, datafile, stimradius, varargin{:});
 % Assign it
-sessioncode = p.Results.sessioncode;
-model       = p.Results.model;
-grid        = p.Results.grid;
-wSearch     = p.Results.wsearch;
+sessioncode   = p.Results.sessioncode;
+model         = p.Results.model;
+grid          = p.Results.grid;
+wSearch       = p.Results.wsearch;
+detrend       = p.Results.detrend;
+keepAllPoints = p.Results.keepAllPoints;
+numberStimulusGridPoints = p.Results.numberStimulusGridPoints;
 
 % TODO: write all options for wSearch and model
 
@@ -127,7 +133,7 @@ sParams = rmCreateStim(vw);
 sParams.stimType   = 'StimFromScan'; % This means the stimulus images will
                                      % be read from a file.
 sParams.stimSize   = stimradius;     % stimulus radius (deg visual angle)
-sParams.nDCT       = 1;              % detrending frequeny maximum (cycles
+sParams.nDCT       = detrend;        % detrending frequeny maximum (cycles
                                      % per scan): 1 means 3 detrending
                                      % terms, DC (0 cps), 0.5, and 1 cps
 sParams.imFile     = stimfileMat;    % file containing stimulus images
@@ -160,7 +166,9 @@ vw = initHiddenInplane();
 
 vw = rmMain(vw, [], wSearch, ...
             'model', {model}, ...
-            'matFileName', 'tmpResults');
+            'matFileName', 'tmpResults', ...
+            'keepAllPoints', keepAllPoints, ...
+            'numberStimulusGridPoints', numberStimulusGridPoints);
 
 % Load the results        
 
