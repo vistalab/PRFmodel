@@ -234,7 +234,24 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     hrf.values      = rmHrfTwogammas(hrf.tSteps, vistaParams);
                 case {'popeye_twogammas'}
                     % We obtain the values from python
-                    hrf.values = double(py.popeye.utilities.double_gamma_hrf(0,hrf.TR));
+                    
+                    % I cannot make this work in GCP, so going back to hardocded
+                    % TR
+                    HRF1   = double(py.popeye.utilities.double_gamma_hrf(0,1));
+                    HRF15  = double(py.popeye.utilities.double_gamma_hrf(0,1.5));
+                    HRF2   = double(py.popeye.utilities.double_gamma_hrf(0,2));
+                    
+                    switch hrf.TR
+                        case 1
+                            hrf.values = HRF1;
+                        case 1.5
+                            hrf.values = HRF15;
+                        case 2
+                            hrf.values = HRF2;
+                        otherwise
+                            error('the HRF for this TR has not been generated')
+                    end
+                    % hrf.values = double(py.popeye.utilities.double_gamma_hrf(0,hrf.TR));
                     % Check what is this function returning
                     %{
                     % I don't think this is right, I need to ask the developer
