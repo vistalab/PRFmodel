@@ -360,6 +360,19 @@ save(fullfile(pmRootPath,'local',afniresultfName), 'results');
 
 
 
+%% TODO
+% Averiguar que le pasa a popeye
+% Conseguir correr todo en black
+% Hacer los plots independientemente como antes, o sea, dos.
+% Ver la diferencia entre los tools entre usar ideal HRF o random.
+% Kendrick:
+%    pedir HRFs
+%    comentarle lo de los malos resultados para big RFs
+% Write
+% Noah: OSF and Dockers
+% Noise models: more tests
+% Location tests?
+% HRF: test with params? enough if we test with DDBB and randoms
 
 
 
