@@ -20,10 +20,9 @@ the new, we'll have learned something.
 %}
 
 
-%% Create dataset for testing noiseless and noise values in all datasets. 
-% USE IDEAL HRF FOR EACH OF ONE
-clear all;
+%% IDEAL HRF: Create dataset for testing noiseless and noise values in all datasets. 
 
+%{
 % DO aPRF
 COMBINE_PARAMETERS                    = struct();
 COMBINE_PARAMETERS.RF.Centerx0        = [0];  % [-6 5 4 3 2 1 0 1 2 3 4 5 6];
@@ -171,9 +170,9 @@ afniresultfName = ['results_afni4_oneCenter_' datestr(datetime,'yyyymmddTHHMMSS'
 
 
 
-% {
+%}
 
-%% Identify the results we want to use manually
+% Identify the results we want to use manually
 prfSynth   = load(fullfile(pmRootPath,'local','synthDT_aprf_oneCenter_20190825T212722.mat'));
 prfRes     = load(fullfile(pmRootPath,'local','result_aprf_oneCenter_20190825T221545.mat'));
 
@@ -187,51 +186,7 @@ popSynth   = load(fullfile(pmRootPath,'local','synthDT_pop_oneCenter_20190825T22
 popRes     = load(fullfile(pmRootPath,'local','results_pop_oneCenter_20190826T012732.mat'));
 
 
-%% (single tool) Plot the results
-
-paramDefaults = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
-[compTable, tSeries] = pmResultsCompare(popSynth.synthDT, ... % Defines the input params
-                            {'tool'}, ... % Analysis names we want to see: 'aPRF','vista',
-                            {popRes.results}, ... % results_analyzePRF,results_vista,
-                            'params', paramDefaults, ...
-                            'shorten names',true); 
-                        
-pmTseriesPlot(tSeries, prfSynth.synthDT(:,'TR'), ...
-                            'to compare', {'synth','tool'}, ...
-                            'voxel',[1], ... 
-                            'newWin',true)
-
-% 2 rows, top row accuracy, bottom precision
-% each col will be different rf sizes
-% each plot will have noise in the x
-
-%% (single tool) ACCURACY AND PRECISION PLOT: by noise levels
-prfsizes   = unique(compTable.synth.sMaj);
-mrvNewGraphWin([useTool ' accuracy and precision']);
-
-for np=1:length(prfsizes)
-    subplot(length(prfsizes), 1, np);
-    prfsize      = prfsizes(np);
-    % Reduce the table for only the RF size-s we want
-    DT           = compTable(compTable.synth.sMaj==prfsize,:);
-    % Call the function for the distribution plot
-    % subplot(length(prfsizes), 1, np);
-    [result,noiseVals,sds] = pmNoise2AccPrec(DT, 'both','plotIt',false);
-    % errorbar(noiseVals,result, sds,'Color','b','LineStyle','-','LineWidth',2);hold on;
-    plot(noiseVals,result,'Color','b','LineStyle','-','LineWidth',2);hold on;
-    jbfill(noiseVals,result+sds,result-sds,'b','b',1,.5);hold on;
-    h1 = plot([noiseVals(1),noiseVals(end)],prfsize*[1,1],'Color','k','LineStyle','-.','LineWidth',2);
-    xticks([])
-    set(gca,'box','off','color','none')
-    ylabel('Acc. & prec. (deg)','FontSize',14,'FontWeight','bold','Color','k');
-    % title(['ACCURACY AND PRECISION (vs noise and RF size)']);
-    % legend(num2str(prfsizes),'Location','northwest');
-end
-xticks(noiseVals)
-xlabel('Noise levels','FontSize',18,'FontWeight','bold','Color','k');
-
-%% (multiple tool) Plot the results
-%{
+% Plot the results ACCURACY AND PRECISION PLOT: by noise levels
 paramDefaults        = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
 [compTable, tSeries] = pmResultsCompare(prfSynth.synthDT, ... % Defines the input params
                             {'aprf','vista','afni4','pop'}, ... % Analysis names we want to see: 'aPRF','vista',
@@ -239,82 +194,27 @@ paramDefaults        = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'}
                             'params', paramDefaults, ...
                             'shorten names',true); 
                         
-pmTseriesPlot(tSeries, prfSynth.synthDT(:,'TR'), ...
-                            'to compare', {'synth','aprf','vista','afni4','pop'}, ...
-                            'voxel',[1:9], ... 
-                            'newWin',true);
-%}
-
-% NO POPEYE
-paramDefaults        = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
-[compTable, tSeries] = pmResultsCompare(prfSynth.synthDT, ... % Defines the input params
-                            {'aprf','vista','afni4'}, ... % Analysis names we want to see: 'aPRF','vista',
-                            {prfRes.results, vistaRes.results, afni4Res.results, popRes.results}, ... % results_analyzePRF,results_vista,
-                            'params', paramDefaults, ...
-                            'shorten names',true); 
-                        
-pmTseriesPlot(tSeries, prfSynth.synthDT(:,'TR'), ...
-                            'to compare', {'synth','aprf','vista','afni4'}, ...
-                            'voxel',[1:9], ... 
-                            'newWin',true);
-
-% 2 rows, top row accuracy, bottom precision
-% each col will be different rf sizes
-% each plot will have noise in the x
-
-%% (multiple tool) ACCURACY AND PRECISION PLOT: by noise levels
-prfsizes = unique(compTable.synth.sMaj);
-% tools    = {'aprf','vista','afni4','pop'};
-tools    = {'aprf','vista','afni4'};
-colors   = distinguishable_colors(length(tools),'w');
-
-mrvNewGraphWin(['Accuracy and precision']);
-
-for np=1:length(prfsizes)
-    subplot(length(prfsizes), 1, np);
-    prfsize      = prfsizes(np);
-   a = [];b = [];
-   for nt=1:length(tools)
-       tool = tools{nt};
-       % Reduce the table for only the RF size-s we want, and the tool we want
-       DT           = compTable(compTable.synth.sMaj==prfsize,:);
-       % Call the function for the distribution plot
-       % subplot(length(prfsizes), 1, np);
-       [result,noiseVals,sds] = pmNoise2AccPrec(DT, 'both','plotIt',false,'tool',tool);
-       % errorbar(noiseVals,result, sds,'Color','b','LineStyle','-','LineWidth',2);hold on;
-       % a = [a;plot(noiseVals,result,'Color',colors(nt,:),'LineStyle',':','LineWidth',.5)];
-       a = [a;plot(noiseVals,result+sds,'Color',colors(nt,:),'LineStyle','-','LineWidth',2)];hold on;
-       b = [b;plot(noiseVals,result-sds,'Color',colors(nt,:),'LineStyle','-','LineWidth',2)];
-       
-       jbfill(noiseVals,result+sds,result-sds,colors(nt,:),colors(nt,:),1,.05); hold on;
-    end
-    h1 = plot([noiseVals(1),noiseVals(end)],prfsize*[1,1],'Color','k','LineStyle','-.','LineWidth',1);
-    grid
-    xticks([])
-    set(gca,'box','off','color','none')
-    ylabel('Acc. & prec. (deg)','FontSize',14,'FontWeight','bold','Color','k');
-    % title(['ACCURACY AND PRECISION (vs noise and RF size)']);
-    legend([h1;a],['synth',tools],'Location','southwest');
-    
-end
-xticks(noiseVals)
-% set(gca,'TickLength',[0 0])
-ax = gca;
-ax.XGrid = 'off';
-xlabel('Noise levels','FontSize',18,'FontWeight','bold','Color','k');
-x0    = unique(compTable.synth.x0);
-y0    = unique(compTable.synth.x0);
-Theta = unique(compTable.synth.Th);
-TR    = unique(compTable.TR);
-dr_suptitle(sprintf('Ideal HRF | Location=[%i,%i] | Theta=%i | TR=%1.2f | Band= 1 SD', x0, y0, Theta, TR));
+% pmTseriesPlot(tSeries, prfSynth.synthDT(:,'TR'), 'voxel',[1:9], 'newWin',true, ...
+%                             'to compare', {'synth','aprf','vista','afni4','pop'});
 
 
-%
+% Plot the tool comparison plots for noise and rfSize ACCURACY AND PRECISION PLOT: by noise levels
+pmNoiseSizePlots(compTable, {'aprf','vista','afni4','pop'})
 
+% CHECK the results, CLEAN, and PLOT again
+% Well, the thing is that at least aPRF and popeye have several outliers that should be cleaned. 
+% So, this is now a outlier cleaning tool, that will output:
+%   - Cleaned result table. 
+%   - A table with outlier counts, that will evaluate quality of analysis 
+[newDT,outlierReport] = pmResultsCleanOutliers(compTable,'outlierLevel',20);
+
+% Plot again, cleaned dataset
+pmNoiseSizePlots(newDT, {'aprf','vista','afni4','pop'},'randomHRF',false)
 
 %}
 
 %% RANDOM HRFs
+%{
 % DO RANDOM HRF
 COMBINE_PARAMETERS                    = struct();
 COMBINE_PARAMETERS.RF.Centerx0        = [0];  % [-6 5 4 3 2 1 0 1 2 3 4 5 6];
@@ -337,6 +237,7 @@ save(fullfile(pmRootPath,'local',randomSynthDTfName), 'synthDT');
 
 
 
+%RUN
 
 % AnalyzePRF
 results    = pmModelFit(synthDT, 'aprf', 'useParallel', true);
@@ -356,23 +257,66 @@ save(fullfile(pmRootPath,'local',vistaresultfName), 'results');
 results    = pmModelFit(synthDT, 'afni_4');
 afniresultfName = ['results_rnd_afni_oneCenter_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
 save(fullfile(pmRootPath,'local',afniresultfName), 'results');
+%}
+
+% Identify and read the results we want to use manually
+%  TODO: Backup them in FW, run in the server and read them here
+rand_Synth      = load(fullfile(pmRootPath,'local','synthDT_RANDOM_HRF_oneCenter_20190826T100808.mat'));
+
+rand_prfRes     = load(fullfile(pmRootPath,'local','result_rnd_aprf_oneCenter_20190826T110119.mat'));
+rand_vistaRes   = load(fullfile(pmRootPath,'local','results_rnd_vista_oneCenter_20190826T124614.mat'));
+rand_afni4Res   = load(fullfile(pmRootPath,'local','results_rnd_afni_oneCenter_20190826T185712.mat'));
+rand_popRes     = load(fullfile(pmRootPath,'local','result_rnd_pop_oneCenter_20190826T123508.mat'));
+
+% Plot the results
+paramDefaults                  = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
+[rand_compTable, rand_tSeries] = pmResultsCompare(rand_Synth.synthDT, ... % Defines the input params
+                            {'aprf','vista','afni4','pop'}, ... % Analysis names we want to see: 'aPRF','vista',
+                            {rand_prfRes.results, rand_vistaRes.results, rand_afni4Res.results, rand_popRes.results}, ... % results_analyzePRF,results_vista,
+                            'params', paramDefaults, ...
+                            'shorten names',true); 
+% Plot some example voxels to see time series                        
+%pmTseriesPlot(tSeries, rand_Synth.synthDT(:,'TR'), 'voxel',[1:9], 'newWin',true, ...
+%                            'to compare', {'synth','aprf','vista','afni4','pop'});
+% Plot the tool comparison plots for noise and rfSize ACCURACY AND PRECISION PLOT: by noise levels
+pmNoiseSizePlots(rand_compTable, {'aprf','vista','afni4','pop'},'randomHRF',true)
 
 
+% CHECK the results, CLEAN, and PLOT again
+% Well, the thing is that at least aPRF and popeye have several outliers that should be cleaned. 
+% So, this is now a outlier cleaning tool, that will output:
+%   - Cleaned result table. 
+%   - A table with outlier counts, that will evaluate quality of analysis 
+[rand_newDT,rand_outlierReport] = pmResultsCleanOutliers(rand_compTable,'outlierLevel',20);
 
+% Plot again, cleaned dataset
+pmNoiseSizePlots(rand_newDT, {'aprf','vista','afni4','pop'},'randomHRF',true)
+
+
+%% Difference between ideal and HRF
+% meterlo en pmNoiseSizePlots, DT sera cell, if cell comparalos, si no hazlo uno a uno
+%     comparacion 
+
+pmNoiseSizePlots({newDT,rand_newDT}, {'aprf','vista','afni4','pop'})
 
 %% TODO
-% Averiguar que le pasa a popeye
-% Conseguir correr todo en black
-% Hacer los plots independientemente como antes, o sea, dos.
-% Ver la diferencia entre los tools entre usar ideal HRF o random.
-% Kendrick:
-%    pedir HRFs
-%    comentarle lo de los malos resultados para big RFs
-% Write
-% Noah: OSF and Dockers
-% Noise models: more tests
-% Location tests?
-% HRF: test with params? enough if we test with DDBB and randoms
+% (done) Investigate what happens to popeye and aPRF
+%    --- Outliers!
+% Run everything in black (or GCP)
+%     (done) Docker is still failing after the reboot: reinstalled and rebooted
+%     (done) Matlab with python crashes, segfault as Ariel said: hardcode the
+%            popeye HRFs in Linux
+%     ()     Actually run it
+% (done) Plot the ideal and random hrf plots
+% (ongoing) Plot difference between tools when using ideal HRF or random.
+% () Kendrick:
+%    () ask for HRF database?
+%    () comment bad results big HRFs
+% () Write manuscript
+% () Noah: OSF and Dockers
+% () Noise models: more tests
+% () Location tests?
+% () HRF: test with params? enough if we test with DDBB and randoms
 
 
 
@@ -403,6 +347,7 @@ save(fullfile(pmRootPath,'local',afniresultfName), 'results');
 
 
 
+%% OLD CODE
 %{
 
 
