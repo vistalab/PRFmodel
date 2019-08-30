@@ -227,7 +227,6 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     
                     % Add it to the output
                     hrf.values = thrf;
-                    
                 case {'vista_twogammas'}
                     % This is the default inside the function
                     vistaParams     = [5.4 5.2 10.8 7.35 0.35];
@@ -241,29 +240,29 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     % HRF15  = double(py.popeye.utilities.double_gamma_hrf(0,1.5));
                     % HRF2   = double(py.popeye.utilities.double_gamma_hrf(0,2));
 %                     
-%                     HRF1 = [0,0.0044,0.0515,0.1440,0.2232,0.2505,0.2290,0.1809,0.1269,...
-%                             0.0784,0.0391,0.0092,-0.0128,-0.0279,-0.0371,-0.0411,...
-%                             -0.0411,-0.0381,-0.0333,-0.0277,-0.0220,-0.0169,-0.0125,...
-%                             -0.0090,-0.0062,-0.0042,-0.0028,-0.0018,-0.0012,-0.0007,...
-%                             -0.0004,-0.0003];
-%                     HRF15 = [0, 0.1985,0.4459,0.3782,0.1976,0.0503,-0.0328,...
-%                              -0.0630,-0.0615,-0.0467,-0.0305,-0.0178,-0.0095,...
-%                              -0.0047,-0.0022,-0.0010,-0.0004,-0.0002,-0.0001,...
-%                              -0.0000,-0.0000,-0.0000];
-%                     HRF2  = [0,0.6638,0.4723,0.0850,-0.0701,-0.0762,-0.0444,-0.0197,...
-%                              -0.0074,-0.0024,-0.0007,-0.0002,-0.0001,-0.0000,-0.0000,-0.0000];
-%                     switch hrf.TR
-%                         case 1
-%                             hrf.values = HRF1;
-%                         case 1.5
-%                             hrf.values = HRF15;
-%                         case 2
-%                             hrf.values = HRF2;
-%                         otherwise
-%                             error('the HRF for this TR has not been generated')
-%                     end
+                    HRF1 = [0,0.0044,0.0515,0.1440,0.2232,0.2505,0.2290,0.1809,0.1269,...
+                            0.0784,0.0391,0.0092,-0.0128,-0.0279,-0.0371,-0.0411,...
+                            -0.0411,-0.0381,-0.0333,-0.0277,-0.0220,-0.0169,-0.0125,...
+                            -0.0090,-0.0062,-0.0042,-0.0028,-0.0018,-0.0012,-0.0007,...
+                            -0.0004,-0.0003];
+                    HRF15 = [0, 0.1985,0.4459,0.3782,0.1976,0.0503,-0.0328,...
+                             -0.0630,-0.0615,-0.0467,-0.0305,-0.0178,-0.0095,...
+                             -0.0047,-0.0022,-0.0010,-0.0004,-0.0002,-0.0001,...
+                             -0.0000,-0.0000,-0.0000];
+                    HRF2  = [0,0.6638,0.4723,0.0850,-0.0701,-0.0762,-0.0444,-0.0197,...
+                             -0.0074,-0.0024,-0.0007,-0.0002,-0.0001,-0.0000,-0.0000,-0.0000];
+                    switch hrf.TR
+                        case 1
+                            hrf.values = HRF1;
+                        case 1.5
+                            hrf.values = HRF15;
+                        case 2
+                            hrf.values = HRF2;
+                        otherwise
+                            error('the HRF for this TR has not been generated')
+                    end
                     
-                    hrf.values = double(py.popeye.utilities.double_gamma_hrf(0,hrf.TR));
+                    % hrf.values = double(py.popeye.utilities.double_gamma_hrf(0,hrf.TR));
                     % Check what is this function returning
                     %{
                     % I don't think this is right, I need to ask the developer
@@ -279,7 +278,6 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     timeS2 = 0: 2: 2*(length(HRF2)-1)
                     figure(2); plot(timeS1,HRF1); hold on; plot(timeS2,HRF2);
                     %}
-                    
                 case {'afni_gam'}
                     hrfFileName = fullfile(pmRootPath,...
                         'data',['TR' num2str(hrf.TR) '_conv.ref.GAM.1D']);

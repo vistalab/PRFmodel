@@ -166,31 +166,76 @@ afniresultfName = ['results_afni4_oneCenter_' datestr(datetime,'yyyymmddTHHMMSS'
 % else
     save(fullfile(pmRootPath,'local',afniresultfName), 'results');
 % end
-
-
-
-
 %}
 
+% Now that they have been generated, and saved locally, load them to FW. 
+% Next, we will check if they exist locally, otherwise download from FW.
+%  ...and upload it to the collection
+
+
+% THESE WILL BE 
+allFileNames = {
+fullfile(pmRootPath,'local','synthDT_aprf_oneCenter_20190825T212722.mat')
+fullfile(pmRootPath,'local','result_aprf_oneCenter_20190825T221545.mat')
+fullfile(pmRootPath,'local','synthDT_vista_oneCenter_20190826T015219.mat')
+fullfile(pmRootPath,'local','results_vista_oneCenter_20190826T020241.mat')
+fullfile(pmRootPath,'local','synthDT_afnispm_oneCenter_20190826T023028.mat')
+fullfile(pmRootPath,'local','results_afni4_oneCenter_20190826T094209.mat')
+fullfile(pmRootPath,'local','synthDT_pop_oneCenter_20190825T224055.mat')
+fullfile(pmRootPath,'local','results_pop_oneCenter_20190826T012732.mat')
+};
+
+
+st   = scitran('stanfordlabs'); st.verify;
+cc   = st.search('collection','collection label exact','PRF_StimDependence');
+
+for nf=1:length(allFileNames)
+    localfname = allFileNames{nf};
+    stts = st.fileUpload(localfname, cc{1}.collection.id, 'collection');
+    % Check that the data is there
+    [~,fname,ext] = fileparts(localfname);
+    data          = load(st.fw.downloadFileFromCollection(cc{1}.collection.id,...
+        [fname ext],localfname));
+end
+
+
+
+
+
+
 % Identify the results we want to use manually
-prfSynth   = load(fullfile(pmRootPath,'local','synthDT_aprf_oneCenter_20190825T212722.mat'));
-prfRes     = load(fullfile(pmRootPath,'local','result_aprf_oneCenter_20190825T221545.mat'));
+% If the file exists locally, read it, otherwise download from the server locally
+data = {};
+for nf=1:length(allFileNames)
+    localfname = allFileNames{nf};
+    if exist(localfname,'file')
+        data{nf}          = load(localfname);
+    else
+        % Read the data
+        [~,fname,ext] = fileparts(localfname);
+        data{nf}          = load(st.fw.downloadFileFromCollection(cc{1}.collection.id,...
+            [fname ext],localfname));
+    end
+end
 
-vistaSynth = load(fullfile(pmRootPath,'local','synthDT_vista_oneCenter_20190826T015219.mat'));
-vistaRes   = load(fullfile(pmRootPath,'local','results_vista_oneCenter_20190826T020241.mat'));
+prfSynth   = load(fullfile(pmRootPath,'local','synthDT_aprf_oneCenter_20190825T212722.mat'));    % 1
+prfRes     = load(fullfile(pmRootPath,'local','result_aprf_oneCenter_20190825T221545.mat'));     % 2 
 
-afni4Synth = load(fullfile(pmRootPath,'local','synthDT_afnispm_oneCenter_20190826T023028.mat'));
-afni4Res   = load(fullfile(pmRootPath,'local','results_afni4_oneCenter_20190826T094209.mat'));
+vistaSynth = load(fullfile(pmRootPath,'local','synthDT_vista_oneCenter_20190826T015219.mat'));   % 3
+vistaRes   = load(fullfile(pmRootPath,'local','results_vista_oneCenter_20190826T020241.mat'));   % 4
 
-popSynth   = load(fullfile(pmRootPath,'local','synthDT_pop_oneCenter_20190825T224055.mat'));
-popRes     = load(fullfile(pmRootPath,'local','results_pop_oneCenter_20190826T012732.mat'));
+afni4Synth = load(fullfile(pmRootPath,'local','synthDT_afnispm_oneCenter_20190826T023028.mat')); % 5
+afni4Res   = load(fullfile(pmRootPath,'local','results_afni4_oneCenter_20190826T094209.mat'));   % 6
+
+popSynth   = load(fullfile(pmRootPath,'local','synthDT_pop_oneCenter_20190825T224055.mat'));     % 7
+popRes     = load(fullfile(pmRootPath,'local','results_pop_oneCenter_20190826T012732.mat'));     % 8
 
 
 % Plot the results ACCURACY AND PRECISION PLOT: by noise levels
 paramDefaults        = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
-[compTable, tSeries] = pmResultsCompare(prfSynth.synthDT, ... % Defines the input params
+[compTable, tSeries] = pmResultsCompare(data{1}.synthDT, ... % Defines the input params
                             {'aprf','vista','afni4','pop'}, ... % Analysis names we want to see: 'aPRF','vista',
-                            {prfRes.results, vistaRes.results, afni4Res.results, popRes.results}, ... % results_analyzePRF,results_vista,
+                            {data{2}.results, data{4}.results, data{6}.results, data{8}.results}, ... % results_analyzePRF,results_vista,
                             'params', paramDefaults, ...
                             'shorten names',true); 
                         
@@ -259,6 +304,48 @@ afniresultfName = ['results_rnd_afni_oneCenter_' datestr(datetime,'yyyymmddTHHMM
 save(fullfile(pmRootPath,'local',afniresultfName), 'results');
 %}
 
+
+
+
+allFileNames = {
+fullfile(pmRootPath,'local','synthDT_RANDOM_HRF_oneCenter_20190826T100808.mat')
+fullfile(pmRootPath,'local','result_rnd_aprf_oneCenter_20190826T110119.mat')
+fullfile(pmRootPath,'local','results_rnd_vista_oneCenter_20190826T124614.mat')
+fullfile(pmRootPath,'local','results_rnd_afni_oneCenter_20190826T185712.mat')
+fullfile(pmRootPath,'local','result_rnd_pop_oneCenter_20190826T123508.mat')
+};
+
+st   = scitran('stanfordlabs'); st.verify;
+cc   = st.search('collection','collection label exact','PRF_StimDependence');
+
+for nf=1:length(allFileNames)
+    localfname = allFileNames{nf};
+    stts = st.fileUpload(localfname, cc{1}.collection.id, 'collection');
+    % Check that the data is there
+    [~,fname,ext] = fileparts(localfname);
+    data          = load(st.fw.downloadFileFromCollection(cc{1}.collection.id,...
+        [fname ext],localfname));
+end
+
+
+
+% Identify the results we want to use manually
+% If the file exists locally, read it, otherwise download from the server locally
+data = {};
+for nf=1:length(allFileNames)
+    localfname = allFileNames{nf};
+    if exist(localfname,'file')
+        data{nf}          = load(localfname);
+    else
+        % Read the data
+        [~,fname,ext] = fileparts(localfname);
+        data{nf}          = load(st.fw.downloadFileFromCollection(cc{1}.collection.id,...
+            [fname ext],localfname));
+    end
+end
+
+
+
 % Identify and read the results we want to use manually
 %  TODO: Backup them in FW, run in the server and read them here
 rand_Synth      = load(fullfile(pmRootPath,'local','synthDT_RANDOM_HRF_oneCenter_20190826T100808.mat'));
@@ -270,9 +357,9 @@ rand_popRes     = load(fullfile(pmRootPath,'local','result_rnd_pop_oneCenter_201
 
 % Plot the results
 paramDefaults                  = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
-[rand_compTable, rand_tSeries] = pmResultsCompare(rand_Synth.synthDT, ... % Defines the input params
+[rand_compTable, rand_tSeries] = pmResultsCompare(data{1}.synthDT, ... % Defines the input params
                             {'aprf','vista','afni4','pop'}, ... % Analysis names we want to see: 'aPRF','vista',
-                            {rand_prfRes.results, rand_vistaRes.results, rand_afni4Res.results, rand_popRes.results}, ... % results_analyzePRF,results_vista,
+                            {data{2}.results, data{3}.results, data{4}.results, data{5}.results}, ... % results_analyzePRF,results_vista,
                             'params', paramDefaults, ...
                             'shorten names',true); 
 % Plot some example voxels to see time series                        
