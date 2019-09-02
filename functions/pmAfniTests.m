@@ -66,14 +66,14 @@ results_vista      = pmModelFit(synthDT,'vistasoft', ...
 %   - 'afni_4': the simple 4 parameter model
 %   - 'afni_6': the elliptical model,  adding sigmaMinor and theta
 %   - 'afni_dog': difference of gaussians
-results_AFNI    = pmModelFit(synthDT,'afni_6');
+results_AFNI    = pmModelFit(synthDT,'afni_4');
 
 % Popeye implementation
 % We have 3 models implemented:
 %   - 'popeye_onegaussian': the simple 4 parameter model
 %   - 'popeye_CSS': the elliptical model,  adding sigmaMinor and theta
 %   - 'popeye_dog': difference of gaussians
-results_popeye  = pmModelFit(synthDT,'popeye_onegaussian');
+tic;results_popeye  = pmModelFit(synthDT,'popeye_onegaussian');toc;
 % VISUALIZE JUST THIS 
 % {
 [compTable,tSeries] = pmResultsCompare(synthDT, ... % Defines the input params

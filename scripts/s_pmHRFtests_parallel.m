@@ -1,4 +1,86 @@
-%% s_pmAccVsprec.m
+%% s_pmHRFtests_parallel.m
+
+
+HRFTypes = {'friston','boynton','canonical','vista_twogammas','popeye_twogammas',...
+            'afni_gam','afni_spm'};
+
+synthDTsep = {};
+parfor nh=1:length(HRFTypes)
+    COMBINE_PARAMETERS                    = struct();
+    COMBINE_PARAMETERS.RF.Centerx0        = [0,5,-5];
+    COMBINE_PARAMETERS.RF.Centery0        = [0,5,-5];  % [-6 5 4 3 2 1 0 1 2 3 4 5 6];
+    COMBINE_PARAMETERS.RF.Theta           = [0]; %, deg2rad(45)];
+    COMBINE_PARAMETERS.RF.sigmaMajor      = [0.5,1,2,4,8];  % [1,2,3,4];
+    COMBINE_PARAMETERS.RF.sigmaMinor      = 'same'; % 'same' for making it the same to Major
+    COMBINE_PARAMETERS.TR                 = [1.5];
+    HRF                                   = struct();
+    HRF(1).Type                           = HRFTypes{nh};
+    COMBINE_PARAMETERS.HRF                = HRF;
+    % Right now only the parameter for white noise can be edited.
+    COMBINE_PARAMETERS.Noise.noise2signal = [0:0.1:0.5];
+    synthDTsep{nh} = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'mult',100);
+    synthDTsep{nh} = pmForwardModelCalculate(synthDTsep{nh});
+end
+
+% Concatenate it
+synthDT = synthDTsep{1};
+for nh=2:length(HRFTypes)
+    synthDT = [synthDT; synthDTsep{nh}];
+end
+
+% It cannot save a file that big
+for nh=1:length(HRFTypes)
+    hrftype     = HRFTypes{nh};
+    synth2Write = synthDTsep{nh};
+    parALLsynthDTfName = [hrftype '_synthDT_parALL_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat']
+    save(fullfile(pmRootPath,'local',parALLsynthDTfName), 'synth2Write');
+end
+
+
+% Save it locally and in FW
+parALLsynthDTfName = ['synthDT_parALL_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
+save(fullfile(pmRootPath,'local',parALLsynthDTfName), 'synthDT');
+% Upload it to fw
+st   = scitran('stanfordlabs'); st.verify;
+cc   = st.search('collection','collection label exact','PRF_StimDependence');
+stts = st.fileUpload(parALLsynthDTfName, cc{1}.collection.id, 'collection');
+
+
+% Solve per each tool
+% AnalyzePRF
+aprfresults         = pmModelFit(synthDT, 'aprf', 'useParallel', true);
+aprfresultfName = ['result_ALL_aprf_oneCenter_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
+save(fullfile(pmRootPath,'local',aprfresultfName), 'aprfresults');
+% mrvista
+vistaresults    = pmModelFit(synthDT, 'mrvista','model','one gaussian', ...
+                                        'grid', false, ... % if true, returns gFit
+                                        'wSearch', 'coarse to fine');
+vistaresultfName = ['results_ALL_vista_oneCenter_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
+save(fullfile(pmRootPath,'local',vistaresultfName), 'vistaresults');
+% Afni
+results    = pmModelFit(synthDT, 'afni_4');
+afniresultfName = ['results_ALL_afni_oneCenter_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
+save(fullfile(pmRootPath,'local',afniresultfName), 'results');
+% popeye
+results    = pmModelFit(synthDT, 'popeye_onegaussian');
+popresultfName = ['result_ALL_pop_oneCenter_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
+save(fullfile(pmRootPath,'local',popresultfName), 'results');
+
+
+
+
+
+
+
+% 
+
+
+
+
+
+
+
+%% Copy from below if needed, delete all at the end
 %{
 
 
@@ -17,7 +99,7 @@ This is 4 (noise) x 4 (sigma size) x 2 (oldAfni,newAfni) groups.
 In all of them, ideally, the sigma ratio (sigmaMajor/sigmaMinor) should 
 be 1+- epsilon. If it is not, or if it is for the old software and not for 
 the new, we'll have learned something. 
-%}
+
 
 
 %% IDEAL HRF: Create dataset for testing noiseless and noise values in all datasets. 
@@ -257,7 +339,7 @@ pmNoiseSizePlots(compTable, {'aprf','vista','afni4','pop'})
 % Plot again, cleaned dataset
 pmNoiseSizePlots(newDT, {'aprf','vista','afni4','pop'},'randomHRF',false)
 
-%}
+
 
 %% RANDOM HRFs
 %{
@@ -556,5 +638,9 @@ legend(num2str(prfsizes),'Location','northwest');
 %         text(2,0.5,sprintf('Median:[%1.2f(%1.2f),%1.2f(%1.2f)], ratio:%1.2f',x0,sdx,y0,sdy,y0/x0));
 %     end
 % end
+
+%}
+
+
 
 %}
