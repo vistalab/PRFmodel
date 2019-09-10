@@ -252,12 +252,11 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                             -0.0411,-0.0381,-0.0333,-0.0277,-0.0220,-0.0169,-0.0125,...
                             -0.0090,-0.0062,-0.0042,-0.0028,-0.0018,-0.0012,-0.0007,...
                             -0.0004,-0.0003];
-                    HRF15 = [0, 0.1985,0.4459,0.3782,0.1976,0.0503,-0.0328,...
-                             -0.0630,-0.0615,-0.0467,-0.0305,-0.0178,-0.0095,...
-                             -0.0047,-0.0022,-0.0010,-0.0004,-0.0002,-0.0001,...
-                             -0.0000,-0.0000,-0.0000];
-                    HRF2  = [0,0.6638,0.4723,0.0850,-0.0701,-0.0762,-0.0444,-0.0197,...
-                             -0.0074,-0.0024,-0.0007,-0.0002,-0.0001,-0.0000,-0.0000,-0.0000];
+                    HRF15 = [0    0.0302    0.2160    0.3659    0.3435    0.2307    0.1176    0.0346 ...
+                             -0.0192   -0.0498   -0.0617   -0.0599   -0.0500   -0.0373   -0.0253   -0.0159 ...
+                             -0.0094   -0.0052   -0.0027   -0.0014   -0.0007   -0.0003];
+                    HRF2  = [ 0    0.1030    0.4459    0.4575    0.2536    0.0782   -0.0256   -0.0740 ...
+                             -0.0821   -0.0666   -0.0440   -0.0250   -0.0125   -0.0056   -0.0023   -0.0009];
                     switch hrf.TR
                         case 1
                             hrf.values = HRF1;
@@ -277,13 +276,13 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     % The shape of the hrf is very different just changing the
                     % TR
                     
-HRF1  = double(py.popeye.utilities.double_gamma_hrf(0,1));
-HRF15 = double(py.popeye.utilities.double_gamma_hrf(0,1.5));
-HRF2  = double(py.popeye.utilities.double_gamma_hrf(0,2));                    
-timeS1  = 0: 1  : 1  *(length(HRF1 )-1);
-timeS15 = 0: 1.5: 1.5*(length(HRF15)-1);
-timeS2  = 0: 2  : 2  *(length(HRF2 )-1);
-figure(99); plot(timeS1,HRF1); hold on; plot(timeS15,HRF15);plot(timeS2,HRF2);
+                    HRF1  = double(py.popeye.utilities.double_gamma_hrf(0,1));
+                    HRF15 = double(py.popeye.utilities.double_gamma_hrf(0,1.5));
+                    HRF2  = double(py.popeye.utilities.double_gamma_hrf(0,2));
+                    timeS1  = 0: 1  : 1  *(length(HRF1 )-1);
+                    timeS15 = 0: 1.5: 1.5*(length(HRF15)-1);
+                    timeS2  = 0: 2  : 2  *(length(HRF2 )-1);
+                    figure(99); plot(timeS1,HRF1); hold on; plot(timeS15,HRF15);plot(timeS2,HRF2);
                     %}
                 case {'afni_gam'}
                     hrfFileName = fullfile(pmRootPath,...
