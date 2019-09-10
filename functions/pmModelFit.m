@@ -53,7 +53,7 @@ p.addParameter('options'    ,  options        , @isstruct);
 p.addParameter('model'        , 'one gaussian'  , @ischar);
 p.addParameter('grid'         , false           , @islogical);
 p.addParameter('wsearch'      , 'coarse to fine', @ischar);
-p.addParameter('detrend'      , true            , @islogical);
+p.addParameter('detrend'      , 1               , @isnumeric);
 p.addParameter('keepAllPoints', false           , @islogical);
 p.addParameter('numberStimulusGridPoints', 50   , @isnumeric);
 
@@ -70,41 +70,79 @@ p.parse(input,prfimplementation,varargin{:});
 useParallel = p.Results.useParallel;
 
 
+%% Convert the input
+% Check if the pm-s come in a table or alone
+
+if iscell(input)
+    niftiInputs = true;
+else
+    niftiInputs = false;
+    if ~istable(input)
+        temp = table();
+        temp.pm = input;
+        input = temp;
+    end
+end
 
 %% Choose the analysis case
 prfimplementation = mrvParamFormat(prfimplementation);
 
 switch prfimplementation
     case {'aprf','analyzeprf'}
+
         %% Create and check tables
         % TODO: Let's define the format for the estimates so that this is
         %       the same for all the methods.
         pmEstimates = table();
-        
-        
-        % Check if the pm-s come in a table or alone
-        if ~istable(input)
-            temp = table();
-            temp.pm = input;
-            input = temp;
-        end
-        
+                
         if useParallel
-            % Check if the TR is the same
-            if length(unique(input.TR)) > 1
-                error('TR has to be the same for all synthetic BOLD series')
+            if niftiInputs
+                BOLDname = input{1};
+                STIMname = input{2};
+                data     = niftiRead(BOLDname);
+                TRdata   = data.pixdim(4);
+                data     = squeeze(data.data);
+                stimulus = niftiRead(STIMname);
+                TRstim   = stimulus.pixdim(4);
+                stimulus = squeeze(stimulus.data);
+                % Check dimensions
+                if ~isequal(size(data,2), size(stimulus,3))
+                    error('Data and stimulus have different time points')
+                end
+                if TRdata==TRstim
+                    TR = TRdata;
+                else
+                    error('Data and stimulus have different TR')
+                end
+                
+                Stimulus.ResizedHorz = size(stimulus,2);
+                Stimulus.ResizedVert = size(stimulus,1);
+                
+                Stimulus.spatialSampleHorz = 20 / Stimulus.ResizedHorz;
+                Stimulus.spatialSampleVert = 20 / Stimulus.ResizedVert;
+                BOLDmeanValue = 10000;
+            else
+                % Check if the TR is the same
+                if length(unique(input.TR)) > 1
+                    error('TR has to be the same for all synthetic BOLD series')
+                end
+                % Add the time series as well
+                pm1        = input.pm(1);
+                BOLDdata   = repmat(ones([1,pm1.timePointsN]), [height(input),1]);
+                PMs        = input.pm;
+                for ii=1:height(input); pmEstimates{ii,'testdata'}=PMs(ii).BOLDnoise;end
+                
+                % Create variables and function call
+                stimulus = double(pm1.Stimulus.getStimValues);
+                data     = pmEstimates.testdata;
+                TR       = pm1.TR;
+                options  = p.Results.options;
+                Stimulus.ResizedHorz = pm1.Stimulus.ResizedHorz;
+                Stimulus.ResizedVert = pm1.Stimulus.ResizedVert; 
+                Stimulus.spatialSampleHorz = pm1.Stimulus.spatialSampleHorz;
+                Stimulus.spatialSampleVert = pm1.Stimulus.spatialSampleVert;
+                BOLDmeanValue = pm1.BOLDmeanValue;
             end
-            % Add the time series as well
-            pm1        = input.pm(1);
-            BOLDdata   = repmat(ones([1,pm1.timePointsN]), [height(input),1]);
-            PMs        = input.pm;
-            for ii=1:height(input); pmEstimates{ii,'testdata'}=PMs(ii).BOLDnoise;end
-            
-            % Create variables and function call
-            stimulus = double(pm1.Stimulus.getStimValues);
-            data     = pmEstimates.testdata;
-            TR       = pm1.TR;
-            options  = p.Results.options;
             
             % Calculate PRF
             results  = analyzePRF({stimulus}, {data}, TR, options);
@@ -113,26 +151,29 @@ switch prfimplementation
             Centerx0         = squeeze(results.params(1,2,:));
             Centery0         = squeeze(results.params(1,1,:));
             % Change to the center of the fov
-            if all(iseven(pm1.Stimulus.ResizedHorz))
-                Centerx0 = Centerx0 - pm1.Stimulus.ResizedHorz/2;
+            if all(iseven(Stimulus.ResizedHorz))
+                Centerx0 = Centerx0 - Stimulus.ResizedHorz/2;
             else
-                Centerx0 = Centerx0 - ((pm1.Stimulus.ResizedHorz-1)/2 + 1);
+                Centerx0 = Centerx0 - ((Stimulus.ResizedHorz-1)/2 + 1);
             end
-            if iseven(pm1.Stimulus.ResizedVert)
-                Centery0 = Centery0 - pm1.Stimulus.ResizedVert/2;
+            if iseven(Stimulus.ResizedVert)
+                Centery0 = Centery0 - Stimulus.ResizedVert/2;
             else
-                Centery0 = Centery0 - ((pm1.Stimulus.ResizedVert-1)/2 + 1);
+                Centery0 = Centery0 - ((Stimulus.ResizedVert-1)/2 + 1);
             end
-            pmEstimates.Centerx0   = (pm1.Stimulus.spatialSampleHorz * Centerx0);
-            pmEstimates.Centery0   = (pm1.Stimulus.spatialSampleVert * Centery0);
+            pmEstimates.Centerx0   = (Stimulus.spatialSampleHorz * Centerx0);
+            pmEstimates.Centery0   = (Stimulus.spatialSampleVert * Centery0);
             pmEstimates.Theta      = zeros(size(Centery0));
-            pmEstimates.sigmaMinor = pm1.Stimulus.spatialSampleHorz * results.rfsize;
+            pmEstimates.sigmaMinor = Stimulus.spatialSampleHorz * results.rfsize;
             pmEstimates.sigmaMajor = pmEstimates.sigmaMinor;
             pmEstimates.modelpred  = results.modelpred;
             % Scale it back
-            pmEstimates.modelpred  = pmEstimates.modelpred + pm1.BOLDmeanValue;
+            pmEstimates.modelpred  = pmEstimates.modelpred + BOLDmeanValue;
             
         else
+            if niftiInputs
+                error('aPRF when using not parallel need a table or a pm, not niftis')
+            end
             %% Calculate values voxel to voxel
             for ii=1:height(input)
                 % TODO: use parfor if the number of rows if the table is larger than XX
@@ -285,25 +326,40 @@ switch prfimplementation
         end
         
     case {'vista','mrvista','vistasoft'}
+
         %% Create temp folders
         tmpName = tempname(fullfile(pmRootPath,'local'));
         mkdir(tmpName);
-        
-        %% Write the stimuli as a nifti
-        pm1            = input.pm(1);
-        stimNiftiFname = fullfile(tmpName, 'tmpstim.nii.gz');
-        stimNiftiFname = pm1.Stimulus.toNifti('fname',stimNiftiFname);
-        
-        %% Create a tmp nifti file
-        niftiBOLDfile  = pmForwardModelToNifti(input, 'fname', ...
-            fullfile(tmpName,'tmp.nii.gz'));
+        %% Change the inputs
+        if niftiInputs
+            BOLDname       = input{1};
+            STIMname       = input{2};
+            niftiBOLDfile  = fullfile(tmpName, 'tmp.nii.gz')
+            stimNiftiFname = fullfile(tmpName, 'tmpstim.nii.gz');
+            
+            copyfile(BOLDname,niftiBOLDfile)
+            copyfile(STIMname,stimNiftiFname)
+            %% Select the stim radius
+            % TODO: HARDCODED RIGHT NOW
+            stimradius    = 10;
+        else
+            %% Write the stimuli as a nifti
+            pm1            = input.pm(1);
+            stimNiftiFname = fullfile(tmpName, 'tmpstim.nii.gz');
+            stimNiftiFname = pm1.Stimulus.toNifti('fname',stimNiftiFname);
+
+            %% Create a tmp nifti file
+            niftiBOLDfile  = pmForwardModelToNifti(input, 'fname', ...
+                fullfile(tmpName,'tmp.nii.gz'));
+            %% Select the stim radius
+            stimradius    = pm1.Stimulus.fieldofviewHorz/2;
+        end
         
         %% Prepare the function call
         homedir       = tmpName;
         stimfile      = stimNiftiFname;
         datafile      = niftiBOLDfile;
         warning('mrvista is assuming all stimuli with same radius. Fix this')
-        stimradius    = pm1.Stimulus.fieldofviewHorz/2;
         model         = p.Results.model;
         grid          = p.Results.grid;
         wSearch       = p.Results.wsearch;
@@ -328,13 +384,20 @@ switch prfimplementation
         pmEstimates.sigmaMajor = results.model{1}.sigma.major';
         pmEstimates.sigmaMinor = results.model{1}.sigma.minor';
         % Add the time series as well
-        pmEstimates.testdata   = repmat(ones([1,pm1.timePointsN]), ...
-                                                       [height(pmEstimates),1]);
-        PMs                    = input.pm;
-        for ii=1:height(pmEstimates); pmEstimates{ii,'testdata'}=PMs(ii).BOLDnoise;end
-        
+
+        if niftiInputs
+            data     = niftiRead(BOLDname);
+            pmEstimates.testdata = squeeze(data.data);
+        else
+            pmEstimates.testdata   = repmat(ones([1,pm1.timePointsN]), ...
+                [height(pmEstimates),1]);
+            PMs                    = input.pm;
+            for ii=1:height(pmEstimates); pmEstimates{ii,'testdata'}=PMs(ii).BOLDnoise;end
+        end
+                
+                
         % Obtain the modelfit,
-        pmEstimates = pmVistaObtainPrediction(pmEstimates, input, results);
+        pmEstimates = pmVistaObtainPrediction(pmEstimates, results);
         
         pmEstimates.R2         = calccod(pmEstimates.testdata,  pmEstimates.modelpred,2);
         pmEstimates.rss        = results.model{1}.rss';
@@ -342,9 +405,10 @@ switch prfimplementation
         % errperf(T,P,'mae')
         
     case {'afni', 'simpleafni', 'basicafni', 'afni_4', 'afni4', ...
-          'afni6', 'afni_6','withsigmaratio', ...
-          'afni_dog', 'afnidog', 'dog'}
+            'afni6', 'afni_6','withsigmaratio', ...
+            'afni_dog', 'afnidog', 'dog'}
         %% AFNI doc: algorithm options (TODO: add other implementations)
+        % Afni help commented below
         %{
           Conv_PRF         : 4-param Population Receptive Field Model
                              (A, X, Y, sigma)
@@ -393,30 +457,53 @@ switch prfimplementation
                   for help : setenv AFNI_MODEL_HELP_CONV_PRF_DOG YES
                              3dNLfim -signal bunnies
         %}
-        
-        warning('For AFNI analysis, be sure that all options have the same TR and the same stimulus')
+                
+        %% Change the inputs
         tmpName = tempname(fullfile(pmRootPath,'local'));
         mkdir(tmpName);
-        % Create a tmp nifti file and convert it to a tmp AFNI format
-        pm1            = input.pm(1);
-        niftiBOLDfile  = pmForwardModelToNifti(input, ...
-                                               'fname',fullfile(tmpName,'tmp.nii.gz'), ...
-                                               'demean',true);
+        if niftiInputs
+            BOLDname       = input{1};
+            STIMname       = input{2};
+            niftiBOLDfile  = fullfile(tmpName, 'tmp.nii.gz');         
+            copyfile(BOLDname,niftiBOLDfile)
+            stimulus = niftiRead(STIMname);
+            TR       = stimulus.pixdim(4);
+            stimulus = squeeze(stimulus.data);   
+            timePointsN = size(stimulus,3);
+            % Change names, lower case is data, upper case is params
+            Stimulus.fieldofviewHorz = 20;
+            Stimulus.fieldofviewVert = 20;
+            BOLDmeanValue            = 10000;
+        else
+            warning('For AFNI analysis, be sure that all options have the same TR and the same stimulus')
+            % Create a tmp nifti file and convert it to a tmp AFNI format
+            pm1            = input.pm(1);
+            niftiBOLDfile  = pmForwardModelToNifti(input, ...
+                'fname',fullfile(tmpName,'tmp.nii.gz'), ...
+                'demean',true);
+            % Stimuli
+            pm1      = input.pm(1);
+            stimulus = pm1.Stimulus.getStimValues;
+            TR       = pm1.TR;
+            timePointsN = pm1.timePointsN;
+            Stimulus.fieldofviewHorz = pm1.Stimulus.fieldofviewHorz;
+            Stimulus.fieldofviewVert = pm1.Stimulus.fieldofviewVert;
+            BOLDmeanValue            = pm1.BOLDmeanValue;
+        end
+        
         % Create an AFNI file
         setenv('AFNI_NIFTI_TYPE_WARN','YES');
         if exist(fullfile(tmpName,'tmp.nii.gz'), 'file')
-            system(['3dcopy ' fullfile(tmpName,'tmp.nii.gz') ' ' fullfile(tmpName,'tmp')]);
+            system(['3dcopy ' niftiBOLDfile ' ' fullfile(tmpName,'tmp')]);
         end
         % We need to add this info fields
         % Now that it has been converted to 1D, it doesn't need or accept the
         % -space orig instruction anymore
-        system(['3drefit -TR ' num2str(pm1.TR) ' ' fullfile(tmpName,'tmp.1D')])
+        system(['3drefit -TR ' num2str(TR) ' ' fullfile(tmpName,'tmp.1D')])
         % system(['3drefit -space orig ' fullfile(tmpName, 'tmp+orig')])
         
         %% STIMULI
         % Prepare stimuli for AFNI
-        pm1      = input.pm(1);
-        stimulus = pm1.Stimulus.getStimValues;
         mkdir(fullfile(tmpName,'images'));
         for ii=1:size(stimulus,3)
             thisImage = stimulus(:,:,ii);
@@ -436,7 +523,7 @@ switch prfimplementation
         setenv('AFNI_MODEL_PRF_STIM_DSET', fullfile(tmpName, 'images','DSIMAGE_MOVIE+orig'));
         
         % We need to add this info fields
-        system(['3drefit -TR ' num2str(pm1.TR) ' ' fullfile(tmpName,'images','DSIMAGE_MOVIE+orig')])
+        system(['3drefit -TR ' num2str(TR) ' ' fullfile(tmpName,'images','DSIMAGE_MOVIE+orig')])
         system(['3drefit -space orig ' fullfile(tmpName, 'images','DSIMAGE_MOVIE+orig')])
         
         %% HRF
@@ -448,7 +535,7 @@ switch prfimplementation
             case {'GAM'}
                 % Default GAM normalized to 1
                 system(['3dDeconvolve ' ...
-                          '-nodata 50 ' num2str(pm1.TR) ' ' ...
+                          '-nodata 50 ' num2str(TR) ' ' ...
                           '-polort -1 ' ... % Do not calculate detrending polinomials
                           '-num_stimts 1 ' ...
                           '-stim_times 1 "1D:0" GAM ' ... % k, tname, Rmodel
@@ -457,7 +544,7 @@ switch prfimplementation
                 setenv('AFNI_CONVMODEL_REF', fullfile(tmpName, 'conv.ref.GAM.1D'));
             case {'SPM'}
                 system(['3dDeconvolve ' ...
-                          '-nodata 50 ' num2str(pm1.TR) ' ' ...
+                          '-nodata 50 ' num2str(TR) ' ' ...
                           '-polort -1 ' ...
                           '-num_stimts 1 ' ...
                           '-stim_times 1 "1D:0" SPMG1\(0\) ' ...
@@ -564,8 +651,8 @@ switch prfimplementation
             '-nbest 5 ' ...
             '-bucket 0 buck_tmp.PRF ' ...
             '-snfit snfit_tmp.PRF ' ...
-            '-TR ' num2str(pm1.TR) ' ' ...
-            '-jobs ' num2str(c.NumWorkers)...
+            '-TR ' num2str(TR) ' ' ...
+            '-jobs 36' ... % num2str(c.NumWorkers)...
             ]);
         toc
         %% Read the results back to Matlab
@@ -581,7 +668,7 @@ switch prfimplementation
         cd(fullfile(pmRootPath,'local'));
         rmdir(fullfile(tmpName),'s');
         %% Prepare data, return as results
-        fitSeries = reshape(V,  [height(input), pm1.timePointsN]);
+        % fitSeries = reshape(V,  [height(input), timePointsN]);
         % results   = reshape(bV, [height(input), size(bV,4)]); % Two more params
         results   = bV;
         fits      = V;
@@ -601,18 +688,28 @@ switch prfimplementation
         % Params
         pmEstimates = table();
         pmEstimates.A          = results(:,1);
-        pmEstimates.Centerx0   = results(:,2) * pm1.Stimulus.fieldofviewHorz/2;
-        pmEstimates.Centery0   = results(:,3) * pm1.Stimulus.fieldofviewVert/2;
+        pmEstimates.Centerx0   = results(:,2) * Stimulus.fieldofviewHorz/2;
+        pmEstimates.Centery0   = results(:,3) * Stimulus.fieldofviewVert/2;
+        
+          
+        
         % Fits
         %   - Testdata: same as input in the nifti
-        pmEstimates.testdata   = repmat(ones([1,pm1.timePointsN]), ...
-            [height(pmEstimates),1]);
-        PMs                    = input.pm;
-        for ii=1:height(pmEstimates); pmEstimates{ii,'testdata'}=PMs(ii).BOLDnoise;end
+        if niftiInputs
+            data     = niftiRead(BOLDname);
+            pmEstimates.testdata = squeeze(data.data);
+        else
+            pmEstimates.testdata   = repmat(ones([1,timePointsN]), ...
+                [height(pmEstimates),1]);
+            PMs                    = input.pm;
+            for ii=1:height(pmEstimates); pmEstimates{ii,'testdata'}=PMs(ii).BOLDnoise;end
+        end
+        
+        
         
         %   - modelpred: the fits comming out from AFNI
         % restore back the demeaning
-        fitsScaledBack = (pm1.BOLDmeanValue * fits) + pm1.BOLDmeanValue;
+        fitsScaledBack = (BOLDmeanValue * fits) + BOLDmeanValue;
         pmEstimates.modelpred  = fitsScaledBack;
         
         
@@ -621,40 +718,73 @@ switch prfimplementation
                 % 4-param pRF Field Model
                 % (A, X, Y, sigma)
                 pmEstimates.Theta      = zeros(size(results(:,3)));
-                pmEstimates.sigmaMajor = results(:,4) * pm1.Stimulus.fieldofviewHorz/2;
-                pmEstimates.sigmaMinor = results(:,4) * pm1.Stimulus.fieldofviewVert/2;
+                pmEstimates.sigmaMajor = results(:,4) * Stimulus.fieldofviewHorz/2;
+                pmEstimates.sigmaMinor = results(:,4) * Stimulus.fieldofviewVert/2;
             case {'afni6', 'afni_6','withsigmaratio'}
                 % 6-param pRF Field Model
                 % (A, X, Y, sigma, sigrat, theta)
                 % Theta in radiansm, constraints from -90 to +90
-                pmEstimates.sigmaMajor = (results(:,4) .* results(:,5)) * pm1.Stimulus.fieldofviewHorz/2;
-                pmEstimates.sigmaMinor = results(:,4) * pm1.Stimulus.fieldofviewHorz/2;
+                pmEstimates.sigmaMajor = (results(:,4) .* results(:,5)) * Stimulus.fieldofviewHorz/2;
+                pmEstimates.sigmaMinor = results(:,4) * Stimulus.fieldofviewHorz/2;
                 pmEstimates.Theta      = results(:,6);
             case {'afni_dog', 'afnidog', 'dog'}
                 % 6-param 'Difference of Gaussians' PRF Model
                 % As Conv_PRF, but with second A and sigma
                 % (A, X, Y, sig, A2, sig2)
                 pmEstimates.A2         = results(:,5);
-                pmEstimates.sigmaMajor = results(:,4) * pm1.Stimulus.fieldofviewHorz/2;
-                pmEstimates.sigmaMinor = results(:,6) * pm1.Stimulus.fieldofviewVert/2;
+                pmEstimates.sigmaMajor = results(:,4) * Stimulus.fieldofviewHorz/2;
+                pmEstimates.sigmaMinor = results(:,6) * Stimulus.fieldofviewVert/2;
             otherwise
                 error('%s not implemented yet',prfimplementation)
         end
         
     case {'popeye','popeye_onegaussian','popeye_CSS','popeye_dog'}
-        %% Create time series file
-        warning('For popeye analysis, be sure that all options have the same TR and the same stimulus')
+        %% Create temp folders
         tmpName = tempname(fullfile(pmRootPath,'local'));
         mkdir(tmpName);
-        % Create a tmp nifti file and convert it to a tmp AFNI format
-        pm1            = input.pm(1);
-        niftiBOLDfile  = pmForwardModelToNifti(input, ...
-            'fname',fullfile(tmpName,'tmp.nii.gz'), ...
-            'demean',true);
-        %% Create stimulus file in nifti
-        pm1            = input.pm(1);
-        stimNiftiFname = fullfile(tmpName, 'tmpstim.nii.gz');
-        stimNiftiFname = pm1.Stimulus.toNifti('fname',stimNiftiFname);
+        %% Change the inputs
+        if niftiInputs
+            BOLDname       = input{1};
+            STIMname       = input{2};
+            niftiBOLDfile  = fullfile(tmpName, 'tmp.nii.gz')
+            stimNiftiFname = fullfile(tmpName, 'tmpstim.nii.gz');
+            
+            copyfile(BOLDname,niftiBOLDfile)
+            copyfile(STIMname,stimNiftiFname)
+            %% Select the pixels per degree
+            % TODO: HARDCODED RIGHT NOW
+            stimulus = niftiRead(STIMname);
+            TR       = stimulus.pixdim(4);
+            stimulus = squeeze(stimulus.data);
+            fovHorz = 20;
+            params.pixels_per_degree = size(stimulus,2) / fovHorz;
+            BOLDmeanValue = 10000;
+            timePointsN = size(stimulus,3);
+        else
+            warning('For popeye analysis, be sure that all options have the same TR and the same stimulus')
+            % Create a tmp nifti file
+            pm1            = input.pm(1);
+            niftiBOLDfile  = pmForwardModelToNifti(input, ...
+                'fname',fullfile(tmpName,'tmp.nii.gz'), ...
+                'demean',true);
+            %% Create stimulus file in nifti
+            pm1            = input.pm(1);
+            stimNiftiFname = fullfile(tmpName, 'tmpstim.nii.gz');
+            stimNiftiFname = pm1.Stimulus.toNifti('fname',stimNiftiFname);
+            %Params
+            params.pixels_per_degree = pm1.Stimulus.ResizedHorz / pm1.Stimulus.fieldofviewHorz;
+            BOLDmeanValue = pm1.BOLDmeanValue;
+            timePointsN = pm1.timePointsN;
+        end
+        
+        
+        
+        
+        
+        
+          
+        
+
         
         %% Prepare the json and function call
         % Create struct  with variables for params.json
@@ -662,7 +792,6 @@ switch prfimplementation
         params.data_file         = 'tmp.nii.gz';
         params.screen_distance   = 50;
         params.screen_width      = 28.67;
-        params.pixels_per_degree = pm1.Stimulus.ResizedHorz / pm1.Stimulus.fieldofviewHorz;
         params.invert_y          = true;
         % Encode into json file 
         jsonStr = jsonencode(params);
@@ -698,15 +827,20 @@ switch prfimplementation
         pmEstimates.Theta      = zeros(size(sigma));
         % Fits
         %   - Testdata: same as input in the nifti
-        pmEstimates.testdata   = repmat(ones([1,pm1.timePointsN]), ...
-            [height(pmEstimates),1]);
-        PMs                    = input.pm;
-        for ii=1:height(pmEstimates); pmEstimates{ii,'testdata'}=PMs(ii).BOLDnoise;end
+        if niftiInputs
+            data     = niftiRead(BOLDname);
+            pmEstimates.testdata = squeeze(data.data);
+        else
+            pmEstimates.testdata   = repmat(ones([1,timePointsN]), ...
+                [height(pmEstimates),1]);
+            PMs                    = input.pm;
+            for ii=1:height(pmEstimates); pmEstimates{ii,'testdata'}=PMs(ii).BOLDnoise;end
+        end
         
         pmEstimates.modelpred  = squeeze(modelpred);
         % restore back the demeaning
         for ii=1:size(modelpred,1)
-            pmEstimates.modelpred(ii,:) = pm1.BOLDmeanValue * (pmEstimates.modelpred(ii,:) + 1);
+            pmEstimates.modelpred(ii,:) = BOLDmeanValue * (pmEstimates.modelpred(ii,:) + 1);
         end
               
     otherwise
@@ -719,7 +853,7 @@ end
 
 
 
-function pmEstimates = pmVistaObtainPrediction(pmEstimates, input, results)
+function pmEstimates = pmVistaObtainPrediction(pmEstimates, results)
     % Initialize the results
     pmEstimates.modelpred = pmEstimates.testdata;
 
@@ -733,7 +867,7 @@ function pmEstimates = pmVistaObtainPrediction(pmEstimates, input, results)
     % rfParams(4) is not used, at least in this function
     % I need to create rfParams = []; per every voxel it seems
     
-    for voxel=1:height(input) 
+    for voxel=1:height(pmEstimates) 
         rfParams = zeros([1,6]);
         rfParams(1) = results.model{1}.x0(voxel);
         rfParams(2) = results.model{1}.y0(voxel);
@@ -941,8 +1075,3 @@ function pmEstimates = pmVistaObtainPrediction(pmEstimates, input, results)
     
     
 end
-
-
-
-
-
