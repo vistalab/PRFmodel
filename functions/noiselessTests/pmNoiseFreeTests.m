@@ -74,7 +74,7 @@ switch prfimplementation
         HRF(1).Type = 'vista_twogammas';
         % COMBINE_PARAMETERS.Stimulus.ResizedHorz = [100];
         % COMBINE_PARAMETERS.Stimulus.ResizedVert = [100];
-    case {'popeye'}
+    case {'popeye','pop'}
         COMBINE_PARAMETERS.TR                   = [2]; % before it had to be one because the hrf was hardcoded
         % amazing, TR:1 and 3, all ok, for TR:2, the last test fails and it is
         % not capable of predicting anything. 
@@ -110,7 +110,7 @@ switch prfimplementation
             'detrend', false, ...
             'keepAllPoints', true, ...
             'numberStimulusGridPoints', 50);  %  We need to remove it otherwise it will find an average HRF for all of them
-    case {'popeye'}
+    case {'popeye','pop'}
         results  = pmModelFit(synthDT,'popeye_onegaussian');
     otherwise
         error('%s not yet implemented',prfimplementation);
