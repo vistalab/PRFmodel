@@ -312,8 +312,8 @@ end
 % Now create the new plots
 sortHRFlike = {'friston','vista_twogammas','afni_gam','boynton','afni_spm',...
                'canonical','popeye_twogammas'};  % sorted according noise=0, RFsize=2
-pmNoisePlotsByHRF(compTable, {'aprf','vista','vistahrf'},'x0y0',[0,0],...
-                  'sortHRF',sortHRFlike,'usemetric','polarangle')
+pmNoisePlotsByHRF(compTable, {'aprf','vista','vistahrf'}, ... % 'x0y0',[0,0],...
+                  'sortHRF',sortHRFlike,'usemetric','eccentricity')
 
 
 pmNoisePlotsByHRF(compTable, {'aprf','vista','vistahrf'},'x0y0',[5,5],'sortHRF',sortHRFlike)
