@@ -32,7 +32,7 @@ p.addParameter('sessioncode'  , 'pRFsynthetic01', @ischar);
 p.addParameter('model'        , 'one gaussian'  , @ischar);
 p.addParameter('grid'         , false           , @islogical);
 p.addParameter('wsearch'      , 'coarse to fine', @ischar);
-p.addParameter('detrend'      , true            , @islogical);
+p.addParameter('detrend'      , 1               , @isnumeric);
 p.addParameter('keepAllPoints', false           , @islogical);
 p.addParameter('numberStimulusGridPoints', 50   , @isnumeric);
 p.parse(homedir, stimfile, datafile, stimradius, varargin{:});

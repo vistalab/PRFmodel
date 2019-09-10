@@ -1,9 +1,10 @@
 %% s_pmHRFtests_parallel.m
 
-
+%% Generate the big synthDT file
+% It cannot be stored.
 HRFTypes = {'friston','boynton','canonical','vista_twogammas','popeye_twogammas',...
             'afni_gam','afni_spm'};
-
+%{
 synthDTsep = {};
 parfor nh=1:length(HRFTypes)
     COMBINE_PARAMETERS                    = struct();
@@ -22,58 +23,181 @@ parfor nh=1:length(HRFTypes)
     synthDTsep{nh} = pmForwardModelCalculate(synthDTsep{nh});
 end
 
-% Concatenate it
-synthDT = synthDTsep{1};
-for nh=2:length(HRFTypes)
-    synthDT = [synthDT; synthDTsep{nh}];
-end
-
 % It cannot save a file that big
 for nh=1:length(HRFTypes)
     hrftype     = HRFTypes{nh};
     synth2Write = synthDTsep{nh};
-    parALLsynthDTfName = [hrftype '_synthDT_parALL_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat']
-    save(fullfile(pmRootPath,'local',parALLsynthDTfName), 'synth2Write');
+    % The files are to big to be written but we want to have some backup
+    trozo1 = synth2Write(1:9000,:);
+    trozo2 = synth2Write(9001:18000,:);
+    trozo3 = synth2Write(18001:27000,:);
+    
+    % Save it 
+    parALLsynthDTfName = [hrftype '_1_synthDT_parALL_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat']
+    save(fullfile(pmRootPath,'local',parALLsynthDTfName), 'trozo1');
+
+    parALLsynthDTfName = [hrftype '_2_synthDT_parALL_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat']
+    psave(fullfile(pmRootPath,'local',parALLsynthDTfName), 'trozo2');
+
+    parALLsynthDTfName = [hrftype '_3_synthDT_parALL_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat']
+    save(fullfile(pmRootPath,'local',parALLsynthDTfName), 'trozo3');
 end
+%}
 
 
-% Save it locally and in FW
-parALLsynthDTfName = ['synthDT_parALL_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
-save(fullfile(pmRootPath,'local',parALLsynthDTfName), 'synthDT');
+% Read the files (black was rebooted and we need the files back)
+%{
+cd(fullfile(pmRootPath,'local'));
+dateSelect = '20190902';
+allFiles   = [];
+for nh=1:length(HRFTypes)
+    tmp       = dir([HRFTypes{nh} '*_synthDT_parALL_' dateSelect '*']);
+    allFiles = [allFiles, tmp];
+end
+%}
+
+% Load and concatenate it
+%{
+res1    = load(allFiles(1).name);
+synthDT = res1.trozo1;
+for nh=2:(length(allFiles)*3)
+    res       = load(allFiles(nh).name);
+    trozoName = fieldnames(res);
+    synthDT = [synthDT; res.(trozoName{:})];
+end
+%}
+
+% Create nifti-s
+% The table is too big...
+%{
+for nh=1:length(HRFTypes)
+    subTable  = synthDT(synthDT.HRF.Type==string(HRFTypes{nh}),:);
+   
+    %% Create a tmp nifti file
+    niftiBOLDfile  = pmForwardModelToNifti(subTable, 'fname', ...
+                      fullfile(pmRootPath,'local',[char(HRFTypes{nh}) '_HRF_synthBOLD.nii.gz']));
+end
+%}
+
+% Write the stimuli as a nifti
+% pm1            = subTable.pm(1);
+stimNiftiFname = fullfile(pmRootPath,'local', 'defaultStim.nii.gz');
+% stimNiftiFname = pm1.Stimulus.toNifti('fname',stimNiftiFname);
+
 % Upload it to fw
-st   = scitran('stanfordlabs'); st.verify;
-cc   = st.search('collection','collection label exact','PRF_StimDependence');
-stts = st.fileUpload(parALLsynthDTfName, cc{1}.collection.id, 'collection');
+% st   = scitran('stanfordlabs'); st.verify;
+% cc   = st.search('collection','collection label exact','PRF_StimDependence');
+% stts = st.fileUpload(parALLsynthDTfName, cc{1}.collection.id, 'collection');
 
 
 % Solve per each tool
-% AnalyzePRF
-aprfresults         = pmModelFit(synthDT, 'aprf', 'useParallel', true);
-aprfresultfName = ['result_ALL_aprf_oneCenter_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
-save(fullfile(pmRootPath,'local',aprfresultfName), 'aprfresults');
-% mrvista
-vistaresults    = pmModelFit(synthDT, 'mrvista','model','one gaussian', ...
-                                        'grid', false, ... % if true, returns gFit
-                                        'wSearch', 'coarse to fine');
-vistaresultfName = ['results_ALL_vista_oneCenter_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
-save(fullfile(pmRootPath,'local',vistaresultfName), 'vistaresults');
-% Afni
-results    = pmModelFit(synthDT, 'afni_4');
-afniresultfName = ['results_ALL_afni_oneCenter_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
-save(fullfile(pmRootPath,'local',afniresultfName), 'results');
+% and per each hrf
+
+% aPRF
+for nh=2:length(HRFTypes)
+    % Obtain path to niftis
+    HRFType = HRFTypes{nh};
+    niftis = {fullfile(pmRootPath,'local',[char(HRFTypes{nh}) '_HRF_synthBOLD.nii.gz']), ...
+               stimNiftiFname};    
+    
+           
+    % Solve with AnalyzePRF
+    aprfresults         = pmModelFit(niftis, 'aprf', 'useParallel', true);
+    % Save it locally
+    aprfresultfName = [HRFType '_result_aprf_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
+    save(fullfile(pmRootPath,'local',aprfresultfName), 'aprfresults');
+end
+
+% mrVista
+for nh=1:length(HRFTypes)
+    % Obtain path to niftis
+    HRFType = HRFTypes{nh};
+    niftis = {fullfile(pmRootPath,'local',[char(HRFTypes{nh}) '_HRF_synthBOLD.nii.gz']), ...
+               stimNiftiFname};    
+    
+           
+    % Solve with mrvista
+    vistaresults    = pmModelFit(niftis, 'mrvista','model','one gaussian', ...
+        'grid', false, ... % if true, returns gFit
+        'wSearch', 'coarse to fine');
+    vistaresultfName = [HRFType '_result_vista_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
+    save(fullfile(pmRootPath,'local',vistaresultfName), 'vistaresults');
+end
+% mrVista and hrf
+for nh=1:length(HRFTypes)
+    % Obtain path to niftis
+    HRFType = HRFTypes{nh};
+    niftis = {fullfile(pmRootPath,'local',[char(HRFTypes{nh}) '_HRF_synthBOLD.nii.gz']), ...
+               stimNiftiFname};    
+    
+           
+    % Solve with mrvista
+    vistaresults    = pmModelFit(niftis, 'mrvista','model','one gaussian', ...
+        'grid', false, ... % if true, returns gFit
+        'wSearch', 'coarse to fine and hrf');
+    vistaresultfName = [HRFType '_result_vista_andhrf_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
+    save(fullfile(pmRootPath,'local',vistaresultfName), 'vistaresults');
+end
+
 % popeye
-results    = pmModelFit(synthDT, 'popeye_onegaussian');
-popresultfName = ['result_ALL_pop_oneCenter_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
-save(fullfile(pmRootPath,'local',popresultfName), 'results');
+for nh=1:length(HRFTypes) 
+    % Obtain path to niftis
+    HRFType = HRFTypes{nh};
+    niftis = {fullfile(pmRootPath,'local',[char(HRFTypes{nh}) '_HRF_synthBOLD.nii.gz']), ...
+               stimNiftiFname};    
+    % Solve
+    results        = pmModelFit(niftis, 'popeye_onegaussian');
+    
+    % Save the results
+    popresultfName = [HRFType '_result_pop_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
+    save(fullfile(pmRootPath,'local',popresultfName), 'results');
+end
 
-
-
-
-
-
+% Afni
+results = {};
+afniresultfName = {};
+for nh=1:length(HRFTypes)
+    % Obtain path to niftis
+    HRFType = HRFTypes{nh};
+    niftis = {fullfile(pmRootPath,'local',[char(HRFTypes{nh}) '_HRF_synthBOLD.nii.gz']), ...
+               stimNiftiFname};    
+    
+    results{nh}         = pmModelFit(niftis, 'afni_4');
+    afniresultfName{nh} = [HRFType '_result_afni4_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
+    
+    
+    % Save it
+    tmpRes = results{nh};
+    save(fullfile(pmRootPath,'local',afniresultfName{nh}), 'tmpRes');
+    
+    
+end
+% for parfor
+% for nh=1:length(HRFTypes)
+%     tmpRes = results{nh};
+%     save(fullfile(pmRootPath,'local',afniresultfName{nh}), 'tmpRes');
+% end
 
 % 
-
+% Afni
+results = {};
+afniresultfName = {};
+for nh=1:length(HRFTypes)
+    % Obtain path to niftis
+    HRFType = HRFTypes{nh};
+    niftis = {fullfile(pmRootPath,'local',[char(HRFTypes{nh}) '_HRF_synthBOLD.nii.gz']), ...
+               stimNiftiFname};    
+    
+    results{nh}         = pmModelFit(niftis, 'afni_6');
+    afniresultfName{nh} = [HRFType '_result_afni6_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
+    
+    
+    % Save it
+    tmpRes = results{nh};
+    save(fullfile(pmRootPath,'local',afniresultfName{nh}), 'tmpRes');
+    
+    
+end
 
 
 
