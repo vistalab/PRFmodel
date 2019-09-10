@@ -231,6 +231,13 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     % This is the default inside the function
                     vistaParams     = [5.4 5.2 10.8 7.35 0.35];
                     hrf.values      = rmHrfTwogammas(hrf.tSteps, vistaParams);
+                    pm = prfModel;
+% plot examples
+                    %                     pm.HRF.Type = 'vista_twogammas';
+%                     figure(1);
+%                     pm.TR = 1  ; subplot(3,1,1);pm.HRF.plot('window',false);
+%                     pm.TR = 1.5; subplot(3,1,2);pm.HRF.plot('window',false);
+%                     pm.TR = 2  ; subplot(3,1,3);pm.HRF.plot('window',false);
                 case {'popeye_twogammas'}
                     % We obtain the values from python
                     
@@ -270,13 +277,13 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     % The shape of the hrf is very different just changing the
                     % TR
                     
-                    HRF1 = double(py.popeye.utilities.double_gamma_hrf(0,1));
-                    HRF2 = double(py.popeye.utilities.double_gamma_hrf(0,2));
-                    figure(1); plot(HRF1); hold on; plot(HRF2);
-                    
-                    timeS1 = 0: 1: 1*(length(HRF1)-1)
-                    timeS2 = 0: 2: 2*(length(HRF2)-1)
-                    figure(2); plot(timeS1,HRF1); hold on; plot(timeS2,HRF2);
+HRF1  = double(py.popeye.utilities.double_gamma_hrf(0,1));
+HRF15 = double(py.popeye.utilities.double_gamma_hrf(0,1.5));
+HRF2  = double(py.popeye.utilities.double_gamma_hrf(0,2));                    
+timeS1  = 0: 1  : 1  *(length(HRF1 )-1);
+timeS15 = 0: 1.5: 1.5*(length(HRF15)-1);
+timeS2  = 0: 2  : 2  *(length(HRF2 )-1);
+figure(99); plot(timeS1,HRF1); hold on; plot(timeS15,HRF15);plot(timeS2,HRF2);
                     %}
                 case {'afni_gam'}
                     hrfFileName = fullfile(pmRootPath,...
@@ -342,13 +349,20 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
         end
         
         % Plot it
-        function plot(hrf)
+        function plot(hrf,varargin)
+            % Read the inputs
+            varargin = mrvParamFormat(varargin);
+            p = inputParser;
+            p.addRequired ('hrf'  ,  @(x)(isa(x,'pmHRF')));
+            p.addParameter('window', true, @islogical);
+            p.parse(hrf,varargin{:});
+            w  = p.Results.window;
             % Calculate it and return every time we need it.
             % Compute it just in case, to have the latest version
             hrf.compute;
             % Plot it
-            mrvNewGraphWin([hrf.Type ' HRF']);
-            plot(hrf.tSteps, hrf.values);
+            if w; mrvNewGraphWin([hrf.Type ' HRF']);end;
+            plot(hrf.tSteps, hrf.values,'-o');
             grid on; xlabel('Time (sec)'); ylabel('Relative amplitude');
         end
         

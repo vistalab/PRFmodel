@@ -199,9 +199,267 @@ for nh=1:length(HRFTypes)
     
 end
 
+%% Plot the files locally, for that we need to locate the files and download them. 
+% If they are in the local folder, take from there instead of downloading them. 
+st          = scitran('stanfordlabs'); st.verify;
+cc          = st.search('collection','collection label exact','PRF_StimDependence');
+% Check the file names and select the ones we want
+allFs       = st.search('file','collectionid',cc{1}.collection.id,'filetype','MATLAB data');
 
 
 
+
+
+% First the synthDT files, wich are the same for all of them
+synthDTcell = allFs(cellfun(@(s) (contains(s.file.name, '_synthDT_parALL_20190902')), allFs));
+% Load it (download or from local)
+synthDT = table();
+for nf=1:length(synthDTcell)
+    localfname = fullfile(pmRootPath,'local',synthDTcell{nf}.file.name);
+    if exist(localfname,'file')
+        % data{nf} = load(localfname);
+    else
+        % Download and read the data from FW
+        [~,fname,ext] = fileparts(localfname);
+        tmp           = load(st.fw.downloadFileFromCollection(cc{1}.collection.id,...
+                             [fname ext],localfname));
+        % Populate the table to know what is everything                 
+    end
+end
+
+
+% Now do aprf 
+aprfResCell = allFs(cellfun(@(s) (contains(s.file.name,'_result_aprf_2019090')),allFs));
+% Load it (download or from local)
+for nf=1:length(aprfResCell)
+    localfname = fullfile(pmRootPath,'local',aprfResCell{nf}.file.name);
+    if exist(localfname,'file')
+        % data{nf} = load(localfname);
+    else
+        % Download and read the data from FW
+        [~,fname,ext] = fileparts(localfname);
+        tmp           = load(st.fw.downloadFileFromCollection(cc{1}.collection.id,...
+                             [fname ext],localfname));
+        % Populate the table to know what is everything                 
+    end
+end
+
+% Now do pop 
+aprfResCell = allFs(cellfun(@(s) (contains(s.file.name,'_result_pop_2019090')),allFs));
+% Load it (download or from local)
+for nf=1:length(aprfResCell)
+    localfname = fullfile(pmRootPath,'local',aprfResCell{nf}.file.name);
+    if exist(localfname,'file')
+        % data{nf} = load(localfname);
+    else
+        % Download and read the data from FW
+        [~,fname,ext] = fileparts(localfname);
+        tmp           = load(st.fw.downloadFileFromCollection(cc{1}.collection.id,...
+                             [fname ext],localfname));
+        % Populate the table to know what is everything                 
+    end
+end
+
+
+% Now do vista 
+aprfResCell = allFs(cellfun(@(s) (contains(s.file.name,'_result_vista_2019090')),allFs));
+% Load it (download or from local)
+for nf=1:length(aprfResCell)
+    localfname = fullfile(pmRootPath,'local',aprfResCell{nf}.file.name);
+    if exist(localfname,'file')
+        % data{nf} = load(localfname);
+    else
+        % Download and read the data from FW
+        [~,fname,ext] = fileparts(localfname);
+        tmp           = load(st.fw.downloadFileFromCollection(cc{1}.collection.id,...
+                             [fname ext],localfname));
+        % Populate the table to know what is everything                 
+    end
+end
+
+
+% Now do vista_hrf 
+aprfResCell = allFs(cellfun(@(s) (contains(s.file.name,'_result_vista_andhrf_2019090')),allFs));
+% Load it (download or from local)
+for nf=1:length(aprfResCell)
+    localfname = fullfile(pmRootPath,'local',aprfResCell{nf}.file.name);
+    if exist(localfname,'file')
+        % data{nf} = load(localfname);
+    else
+        % Download and read the data from FW
+        [~,fname,ext] = fileparts(localfname);
+        tmp           = load(st.fw.downloadFileFromCollection(cc{1}.collection.id,...
+                             [fname ext],localfname));
+        % Populate the table to know what is everything                 
+    end
+end
+
+
+% Now do afni_4 
+aprfResCell = allFs(cellfun(@(s) (contains(s.file.name,'_result_afni4_2019090')),allFs));
+% Load it (download or from local)
+for nf=1:length(aprfResCell)
+    localfname = fullfile(pmRootPath,'local',aprfResCell{nf}.file.name);
+    if exist(localfname,'file')
+        % data{nf} = load(localfname);
+    else
+        % Download and read the data from FW
+        [~,fname,ext] = fileparts(localfname);
+        tmp           = load(st.fw.downloadFileFromCollection(cc{1}.collection.id,...
+                             [fname ext],localfname));
+        % Populate the table to know what is everything                 
+    end
+end
+
+% Now do afni_6
+aprfResCell = allFs(cellfun(@(s) (contains(s.file.name,'_result_afni6_2019090')),allFs));
+% Load it (download or from local)
+for nf=1:length(aprfResCell)
+    localfname = fullfile(pmRootPath,'local',aprfResCell{nf}.file.name);
+    if exist(localfname,'file')
+        % data{nf} = load(localfname);
+    else
+        % Download and read the data from FW
+        [~,fname,ext] = fileparts(localfname);
+        tmp           = load(st.fw.downloadFileFromCollection(cc{1}.collection.id,...
+                             [fname ext],localfname));
+        % Populate the table to know what is everything                 
+    end
+end
+
+
+
+
+
+% Plot the old and new plots. 
+% Make the concatenated table
+paramDefaults = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
+compTable = table();
+% Concatenate several HRFs
+for nh=1:length(HRFTypes)
+    hrftype       = HRFTypes{nh};
+    % Reconstruct the synthDT table back
+    trozo1nm = allFs(cellfun(@(s) (contains(s.file.name, [hrftype '_1_synthDT_parALL_20190902'])), allFs));
+    trozo2nm = allFs(cellfun(@(s) (contains(s.file.name, [hrftype '_2_synthDT_parALL_20190902'])), allFs));
+    trozo3nm = allFs(cellfun(@(s) (contains(s.file.name, [hrftype '_3_synthDT_parALL_20190902'])), allFs));
+    if length(trozo1nm)~=1 | length(trozo2nm)~=1 | length(trozo3nm)~=1
+        error('There is more than one element after filtering.')
+    end
+    load(fullfile(pmRootPath,'local',trozo1nm{1}.file.name));
+    load(fullfile(pmRootPath,'local',trozo2nm{1}.file.name));
+    load(fullfile(pmRootPath,'local',trozo3nm{1}.file.name));
+    tmpSynthDT = [trozo1; trozo2; trozo3];
+    
+    
+    % Retrieve the aprf result for this HRF back
+    fName = allFs(cellfun(@(s) (contains(s.file.name, [hrftype '_result_aprf_2019090'])), allFs));
+    if size(fName,1) ~= 1
+        error('Filter the the results so that it returns only one')
+    else
+        load(fullfile(pmRootPath,'local',fName{1}.file.name));    
+    end
+    if height(aprfresults) ~= height(tmpSynthDT)
+        error('Height of synthetic and resutls for aprf is different')
+    end
+    % Retrieve the vista result for this HRF back
+    fName = allFs(cellfun(@(s) (contains(s.file.name, [hrftype '_result_vista_2019090'])), allFs));
+    if size(fName,1) ~= 1
+        error('Filter the the results so that it returns only one')
+    else
+        load(fullfile(pmRootPath,'local',fName{1}.file.name));    
+    end
+    if height(vistaresults) ~= height(tmpSynthDT)
+        error('Height of synthetic and resutls for aprf is different')
+    end
+    % Retrieve the vistahrf result for this HRF back
+    fName = allFs(cellfun(@(s) (contains(s.file.name, [hrftype '_result_vista_andhrf_2019090'])), allFs));
+    if size(fName,1) ~= 1
+        error('Filter the the results so that it returns only one')
+    else
+        andhrf = load(fullfile(pmRootPath,'local',fName{1}.file.name));    
+    end
+    if height(andhrf.vistaresults) ~= height(tmpSynthDT)
+        error('Height of synthetic and resutls for aprf is different')
+    end    
+    % Retrieve the afni result for this HRF back
+    
+    % Retrieve the popeye result for this HRF back
+    fName = allFs(cellfun(@(s) (contains(s.file.name, [hrftype '_result_pop_2019090'])), allFs));
+    if size(fName,1) ~= 1
+        error('Filter the the results so that it returns only one')
+    else
+        pop = load(fullfile(pmRootPath,'local',fName{1}.file.name));    
+    end
+    if height(pop.results) ~= height(tmpSynthDT)
+        error('Height of synthetic and resutls for aprf is different')
+    end
+    
+    % Retrieve the afni4 result for this HRF back
+    fName = allFs(cellfun(@(s) (contains(s.file.name, [hrftype '_result_afni4_2019090'])), allFs));
+    if size(fName,1) ~= 1
+        error('Filter the the results so that it returns only one')
+    else
+        afni4 = load(fullfile(pmRootPath,'local',fName{1}.file.name));    
+    end
+    if height(afni4.tmpRes) ~= height(tmpSynthDT)
+        error('Height of synthetic and resutls for aprf is different')
+    end
+    
+    % Retrieve the afni6 result for this HRF back
+    fName = allFs(cellfun(@(s) (contains(s.file.name, [hrftype '_result_afni6_2019090'])), allFs));
+    if size(fName,1) ~= 1
+        error('Filter the the results so that it returns only one')
+    else
+        afni6 = load(fullfile(pmRootPath,'local',fName{1}.file.name));    
+    end
+    if height(afni6.tmpRes) ~= height(tmpSynthDT)
+        error('Height of synthetic and resutls for aprf is different')
+    end
+            
+    
+    % Create tables
+    tmp  = pmResultsCompare(tmpSynthDT, ... % Defines the input params
+                            {'aprf','vista','vistahrf','afni4','afni6','pop'}, ... % Analysis names we want to see: 'aPRF','vista',
+                            {aprfresults,vistaresults,andhrf.vistaresults,pop.results,afni4.tmpRes,afni6.tmpRes}, ... 
+                            'params', paramDefaults, ...
+                            'shorten names',true, ...
+                            'dotSeries', false); 
+     compTable = [compTable; tmp];                   
+end
+
+% Save all the data locally, so we don't need to go to all the generation
+% process.
+% save(fullfile(pmRootPath,'local','allData_v01.mat'), 'compTable')
+% load(fullfile(pmRootPath,'local','allData_v01.mat'))
+
+
+% Now create the new plots
+sortHRFlike = {'friston','vista_twogammas','afni_gam','boynton','afni_spm',...
+               'canonical','popeye_twogammas'};  % sorted according noise=0, RFsize=2
+pmNoisePlotsByHRF(compTable, {'aprf','vista','vistahrf'},'x0y0',[0,0],...
+                  'sortHRF',sortHRFlike,'usemetric','polarangle')
+
+
+pmNoisePlotsByHRF(compTable, {'aprf','vista','vistahrf'},'x0y0',[5,5],'sortHRF',sortHRFlike)
+
+pmNoisePlotsByHRF(compTable, {'aprf','vista','vistahrf'},'x0y0',[0,-5],'sortHRF',sortHRFlike)
+
+% Plot the HRF in the same plot with hold
+pm    = prfModel;
+pm.TR = 1.5;
+
+mrvNewGraphWin(['ALL HRFs']);
+for nh=1:length(sortHRFlike)
+    pm.HRF.Type = sortHRFlike{nh};
+    pm.HRF.compute;
+    x = pm.HRF.tSteps;
+    y = pm.HRF.values;
+    plot(x,y);hold on;
+    xlim([0,40])
+    grid on;
+    xlabel('time (sec)');
+    legend(strrep(sortHRFlike,'_','\_'))
+end
 
 
 %% Copy from below if needed, delete all at the end

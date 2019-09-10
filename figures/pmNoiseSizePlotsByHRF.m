@@ -1,5 +1,5 @@
-function [result,sliceVals,sds] = pmNoise2AccPrec(DT, accorprec, varargin)
-%pmAccPrecDistributions Return a distribution plot for several noise values
+function pmNoiseSizePlotsByHRF(compTable, tools,varargin)
+%pmNoiseSizePlots Return a distribution plot for several noise values
 %   Return a distribution plot for several noise values
 
 %% Read the inputs
@@ -7,148 +7,138 @@ function [result,sliceVals,sds] = pmNoise2AccPrec(DT, accorprec, varargin)
 varargin = mrvParamFormat(varargin);
 % Parse
 p = inputParser;
-p.addRequired('DT'                               , @istable);
-p.addRequired('accorprec'                        , @ischar);
-p.addParameter('fnameroot'  , 'defaultFigNameRoot' , @ischar);
-p.addParameter('plotit'     , true                 , @islogical);
-p.addParameter('tool'       , 'first'              , @ischar);
-p.addParameter('separatehrf', false                , @islogical);
-p.addParameter('medianci'   , false                , @islogical);
+p.addRequired('compTable');
+p.addRequired('tools'                            , @iscell);
+p.addParameter('fnameroot', 'defaultFigNameRoot' , @ischar);
+p.addParameter('randomhrf', false                , @islogical);
+p.addParameter('x0y0'     , [0,0]                , @isnumeric);
 p.addParameter('sorthrf'  , {'same'}             , @iscell);
-p.addParameter('usemetric', 'rfsize'             , @ischar);
-
-
 
 % Parse. Assign result inside each case
-p.parse(DT, accorprec, varargin{:});
+p.parse(compTable, tools, varargin{:});
 % Read here only the generic ones
-fnameRoot   = p.Results.fnameroot;
-plotIt      = p.Results.plotit;
-tool        = p.Results.tool;
-separatehrf = p.Results.separatehrf;
-medianCI    = p.Results.medianci;
-sortHRF     = p.Results.sorthrf;
-usemetric   = p.Results.usemetric;
-
-
+fnameRoot = p.Results.fnameroot;
+randomhrf = p.Results.randomhrf;
+x0y0      = p.Results.x0y0;
+sortHRF   = p.Results.sorthrf;
 
 %% Do the thing
-% Select the values/categories we are going to filter to generate the different distributions
-noiseVals = unique(DT.noise2sig)';
-
-if length(sortHRF)==1 && strcmp(sortHRF{1},'same')
-    HRFs      = unique(DT.HRFtype)';
+if istable(compTable)
+    doDiff   = false;
+    prfsizes = unique(compTable.synth.sMaj);
+    noises   = unique(compTable.noise2sig);
+    % Reduce the table removing the locations
+    compTable = compTable(compTable.synth.x0 == x0y0(1) & ...
+                          compTable.synth.y0 == x0y0(2), :); 
+elseif iscell(compTable) && length(compTable)==2
+    doDiff   = true;
+    prfsizes = unique(compTable{1}.synth.sMaj);
 else
-    % TODO: compare that we are passing exactly the same HRF names, none missing
-    HRFs      = sortHRF;
+    error('Input compTable is not right, it needs to be a table or a cell with two tables')
 end
 
-if separatehrf
-    sliceVals = HRFs;
-else
-    sliceVals = noiseVals;
-end
 
-% Select what variable we are using, the rest will come removed
-switch usemetric
-    case {'rfsize'}
-        usemetriccol = 'sMaj';
-    case {'polarangle'}
-        usemetriccol = 'angle';
-    case {'eccentricity'}
-        usemetriccol = 'eccentricity';
-    otherwise
-        error('Metric %s not defined', usemetric)
-end
+colors   = distinguishable_colors(length(tools),'w');
 
- 
-% What is the value it should be? Create a horiz line
-objectiveValue = unique(DT.synth.(usemetriccol));
-
-% There should be only one
-if length(objectiveValue) > 1
-    error('There should only one value, check the filtering of the table')
-end
-
-% Select the tool
-if strcmp(tool,'first')
-    DT.Properties.VariableNames{5} = 'tool';
-elseif ismember(tool, DT.Properties.VariableNames)
-    loc = find(ismember(DT.Properties.VariableNames, tool), 1);
-    DT.Properties.VariableNames{loc} = 'tool';
-else
-    error('%s tool not found',tool)
-end
-
-% Loop over the noise values
-result = [];
-sds    = [];
-for sc=1:length(sliceVals)
-    % This is what it should be:
-    objectiveValue = unique(DT.synth.(usemetriccol));
-    
-    % Create the x value and the distributions
-    if separatehrf
-        x = DT.tool.(usemetriccol)(strcmp(DT.HRFtype,sliceVals{sc}));
-    else
-        x = DT.tool.(usemetriccol)(DT.noise2sig == sliceVals(sc));
+mrvNewGraphWin(['Accuracy and precision']);
+plotNum = 0;
+for np=1:length(prfsizes)
+    for nn=1:length(noises)
+        plotNum = plotNum +1;
+        subplot(length(prfsizes), length(noises), plotNum);
+        prfsize     = prfsizes(np);
+        noiselvl    = noises(nn);
+        a = [];b = [];
+        for nt=1:length(tools)
+            tool = tools{nt};
+            % Reduce the table for only the RF size-s we want, and the tool we want
+            if doDiff
+                DT1           = compTable{1}(compTable{1}.synth.sMaj==prfsize,:);
+                DT2           = compTable{2}(compTable{2}.synth.sMaj==prfsize,:);
+                [result1,noiseVals1,sds1] = pmNoise2AccPrec(DT1, 'both','plotIt',false,'tool',tool);
+                [result2,noiseVals2,sds2] = pmNoise2AccPrec(DT2, 'both','plotIt',false,'tool',tool);
+                result        = result1 - result2;
+                sds           = abs(sds1    - sds2);
+                if isequal(noiseVals1, noiseVals2)
+                    noiseVals     = noiseVals1;
+                else
+                    error('Difference amount of noise values in each table')
+                end
+                
+            else
+                DT = compTable(compTable.synth.sMaj==prfsize & ...
+                               compTable.noise2sig==noiselvl & ... 
+                               compTable.synth.x0==x0y0(1) & ...
+                               compTable.synth.y0==x0y0(2) ,:);
+                [result,HRFs,sds] = pmNoise2AccPrec(DT, 'both', ...
+                                                  'plotIt',false,'tool',tool, ...
+                                                  'separatehrf',true, ...
+                                                  'medianCI', true, ...
+                                                  'sortHRF',sortHRF);
+            end
+            a = [a;scatter(1:length(HRFs), result, 30, colors(nt,:), 'filled')];hold on;
+            % Add the confidence intervals in every point now
+            xxx = [1:length(HRFs);1:length(HRFs)]';
+            for ns=1:length(sds)
+                plot(xxx(ns,:),sds(ns,:),'Color',colors(nt,:),'LineStyle','-','LineWidth',1);
+            end
+            % a = [a;plot(noiseVals,result+sds,'Color',colors(nt,:),'LineStyle','-','LineWidth',2)];hold on;
+            % b = [b;plot(noiseVals,result-sds,'Color',colors(nt,:),'LineStyle','-','LineWidth',2)];
+            % jbfill(noiseVals,result+sds,result-sds,colors(nt,:),colors(nt,:),1,.05); hold on;
+        end
+        if doDiff
+            h1 = plot([noiseVals(1),noiseVals(end)],[0,0],'Color','k','LineStyle','-.','LineWidth',1);
+        else
+            h1 = plot([1,length(HRFs)],prfsize*[1,1],'Color','k','LineStyle','-.','LineWidth',1);
+        end
+        
+        grid
+        xticks([])
+        set(gca,'box','off','color','none')
+        ylabel('Acc. & prec. (deg)','FontSize',14,'FontWeight','bold','Color','k');
+        if (prfsize==2 && noiselvl==0)
+            title(sprintf('(HRF SORT) Size: %1.1f | Noise: %0.1f',prfsize,noiselvl));
+        else
+            title(sprintf('Size: %1.1f | Noise: %0.1f',prfsize,noiselvl));
+        end
+        if plotNum == 1
+            legend([h1;a],['synth',tools],'Location','bestoutside');
+        end
+        
+        % In the bottom row, add the HRF names
+        if np==length(prfsizes)
+            xticks(1:length(HRFs))
+            xticklabels(strrep(HRFs,'_','\_'));xtickangle(45)
+            % set(gca,'TickLength',[0 0])
+            ax = gca;
+            ax.XGrid = 'off';
+            xlabel('HRFs','FontSize',18,'FontWeight','bold','Color','k');
+        end
+        
     end
     
-    % Calculate the summary stats
-    [x_values, mu, sigma, mn, mx, med, ci] = dr_distPlottingVals(x);
-    
-    % Obtain precision or accuracy
-    accorprec = mrvParamFormat(accorprec);
-    switch accorprec
-        case {'both'}
-            % Create the results    
-            if medianCI
-                % Create the vector of results
-                result    = [result, med];
-                % Create the vector of SDs
-                sds       = [sds   ; ci];
-            else
-                % Create the vector of results
-                result    = [result, mu];
-                % Create the vector of SDs
-                sds       = [sds   , sigma];
-            end
-            
-            % Create strings for the plot
-            xTitle    = 'Noise levels';
-            yTitle    = 'Abs difference from the mean (deg)';
-            plotTitle = ['ACCURACY (rfSize:' num2str(objectiveValue) ')'];
 
-        case {'accuracy','acc'}
-            % Obtain the difference from the mean
-            meanDiff  = abs(objectiveValue - mu);
-            % Create the vector of results
-            result    = [result, meanDiff];
-            % Create strings for the plot
-            xTitle    = 'Noise levels';
-            yTitle    = 'Abs difference from the mean (deg)';
-            plotTitle = ['ACCURACY (rfSize:' num2str(objectiveValue) ')'];
-        case {'precision','prec'}
-            % Create the vector of results
-            result = [result, sigma];
-            % Create strings for the plot
-            xTitle    = 'Noise levels';
-            yTitle    = 'SD of the results (deg)';
-            plotTitle = ['PRECISION (rfSize:' num2str(objectiveValue) ')'];
-        otherwise
-            error('%s not recognized',accorprec)
-    end 
+
 end
 
-
-if plotIt
-    % Create the plot
-    plot(sliceVals, result, 'k');
-    xlabel(xTitle); ylabel(yTitle); title(plotTitle);
-    % xlim(myXlim); ylim(myYlim);
-end
+% Add title to the whole thing
+% if doDiff;compTable = compTable{1};
+Theta = unique(compTable.synth.Th);
+TR    = unique(compTable.TR);
+dr_suptitle(sprintf('HRF Comparison | Location=[%i,%i] | Theta=%i | TR=%1.2f | CI = 50%', x0y0(1), x0y0(2), Theta, TR));
 
 
+
+
+
+
+
+
+
+
+
+
+%% Review and delete
 %{
 
 % Plot the vertical line with the correct RFsize
@@ -156,7 +146,7 @@ h1 = plot(objectiveValue*[1,1],[0 1],'Color','k','LineStyle','-.','LineWidth',3)
 hold on;
 
 % Plot the noiseless case, it will need to be another vertical line
-x = DT.tool.(usemetriccol)(DT.(varToCompare)==cats(1));
+x = DT.tool.sMaj(DT.(varToCompare)==cats(1));
 [x_values, mu, sigma, mn, mx] = dr_distPlottingVals(x);
 h1 = plot(objectiveValue*[1,1],[0 1],'Color','b','LineStyle','-.','LineWidth',2);
 
@@ -164,7 +154,7 @@ h1 = plot(objectiveValue*[1,1],[0 1],'Color','b','LineStyle','-.','LineWidth',2)
 a = [];
 for sc=2:length(cats)
     % Create the x value and the distributions
-    x = DT.tool.(usemetriccol)(DT.(varToCompare)==cats(sc));
+    x = DT.tool.sMaj(DT.(varToCompare)==cats(sc));
     [x_values, mu, sigma, mn, mx] = dr_distPlottingVals(x);
 
     % Plot the distributions, normal or ksdensity
@@ -181,9 +171,7 @@ for sc=2:length(cats)
 
 end
 
-%}
 
-%{
     xlabel('\DeltaFA', 'FontWeight','bold');
     % ylim([0.1, 0.75]); yticks([0.2,.4,.6])
     set(gca,'FontSize',18);
@@ -302,4 +290,9 @@ end
 %}
 
 end
+
+
+
+
+
 
