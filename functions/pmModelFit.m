@@ -498,6 +498,16 @@ switch prfimplementation
         if niftiInputs
             niftiBOLDfile  = fullfile(tmpName, 'tmp.nii.gz');         
             copyfile(BOLDname,niftiBOLDfile)
+            % Demean it as in the other case
+            demeanData = data;
+            for ii=1:size(data,1)
+                tmp = data(ii,:);
+                demeanData(ii,:) = (tmp-mean(tmp)) / mean(tmp);
+            end
+            demeanData = reshape(demeanData,[size(demeanData,1),1,1,size(demeanData,2)]);
+            TMP = niftiRead(niftiBOLDfile);
+            TMP.data = demeanData;
+            niftiWrite(TMP);
         else
             warning('For AFNI analysis, be sure that all options have the same TR and the same stimulus')
             % Create a tmp nifti file and convert it to a tmp AFNI format
