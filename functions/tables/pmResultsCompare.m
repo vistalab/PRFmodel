@@ -15,7 +15,7 @@ function [newDT, tSeries] = pmResultsCompare(synthDT, resNames, resDT, varargin)
 %% Read the inputs
 varargin = mrvParamFormat(varargin);
 p = inputParser;
-p.addRequired ('paramsDT'       , @istable);
+p.addRequired ('synthDT'        , @istable);
 p.addRequired ('resNames'       , @iscell);
 p.addRequired ('resDT'          , @iscell);
 paramDefaults = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};

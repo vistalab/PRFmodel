@@ -242,21 +242,11 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     % We obtain the values from python
                     
                     % I cannot make this work in GCP, so going back to hardocded
-                    % TR
-                    % HRF1   = double(py.popeye.utilities.double_gamma_hrf(0,1));
-                    % HRF15  = double(py.popeye.utilities.double_gamma_hrf(0,1.5));
-                    % HRF2   = double(py.popeye.utilities.double_gamma_hrf(0,2));
+                    % Values copies from tests below
 %                     
-                    HRF1 = [0,0.0044,0.0515,0.1440,0.2232,0.2505,0.2290,0.1809,0.1269,...
-                            0.0784,0.0391,0.0092,-0.0128,-0.0279,-0.0371,-0.0411,...
-                            -0.0411,-0.0381,-0.0333,-0.0277,-0.0220,-0.0169,-0.0125,...
-                            -0.0090,-0.0062,-0.0042,-0.0028,-0.0018,-0.0012,-0.0007,...
-                            -0.0004,-0.0003];
-                    HRF15 = [0    0.0302    0.2160    0.3659    0.3435    0.2307    0.1176    0.0346 ...
-                             -0.0192   -0.0498   -0.0617   -0.0599   -0.0500   -0.0373   -0.0253   -0.0159 ...
-                             -0.0094   -0.0052   -0.0027   -0.0014   -0.0007   -0.0003];
-                    HRF2  = [ 0    0.1030    0.4459    0.4575    0.2536    0.0782   -0.0256   -0.0740 ...
-                             -0.0821   -0.0666   -0.0440   -0.0250   -0.0125   -0.0056   -0.0023   -0.0009];
+                    HRF1  = [0,    0.0153,    0.1804,    0.5041,    0.7814,    0.8771,    0.8018,    0.6336,    0.4445,    0.2745,    0.1371,    0.0320,   -0.0449,   -0.0977,   -0.1298,   -0.1440,   -0.1439,   -0.1335,   -0.1167,   -0.0970,   -0.0772,   -0.0591,   -0.0437,   -0.0314,   -0.0218,   -0.0148,   -0.0098,   -0.0064,   -0.0040,   -0.0025,   -0.0015,   -0.0009];
+                    HRF15 = [0,    0.0706,    0.5041,    0.8541,    0.8018,    0.5384,    0.2745,    0.0808,   -0.0449,   -0.1162,   -0.1440,   -0.1397,   -0.1167,   -0.0870,   -0.0591,   -0.0372,   -0.0218,   -0.0121,   -0.0064,   -0.0032,   -0.0015,   -0.0007];
+                    HRF2  = [0,    0.1804,    0.7814,    0.8018,    0.4445,    0.1371,   -0.0449,   -0.1298,   -0.1439,   -0.1167,   -0.0772,   -0.0437,   -0.0218,   -0.0098,   -0.0040,   -0.0015];
                     switch hrf.TR
                         case 1
                             hrf.values = HRF1;
@@ -276,9 +266,9 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     % The shape of the hrf is very different just changing the
                     % TR
                     
-                    HRF1  = double(py.popeye.utilities.double_gamma_hrf(0,1));
-                    HRF15 = double(py.popeye.utilities.double_gamma_hrf(0,1.5));
-                    HRF2  = double(py.popeye.utilities.double_gamma_hrf(0,2));
+                    HRF1  = double(py.popeye.utilities.double_gamma_hrf(0,1,1.0,''));
+                    HRF15 = double(py.popeye.utilities.double_gamma_hrf(0,1.5,1.0,''));
+                    HRF2  = double(py.popeye.utilities.double_gamma_hrf(0,2,1.0,''));
                     timeS1  = 0: 1  : 1  *(length(HRF1 )-1);
                     timeS15 = 0: 1.5: 1.5*(length(HRF15)-1);
                     timeS2  = 0: 2  : 2  *(length(HRF2 )-1);

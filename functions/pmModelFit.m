@@ -10,9 +10,15 @@ function [pmEstimates, results] = pmModelFit(input, prfimplementation, varargin)
 %    model parameters for some implementation.
 %
 % Inputs:
-%   inputTable  - Data table including stimulus parameters and BOLD
-%                 time series. Each row of the data table is another
-%                 voxel
+%   input       - It can be a Data table including all the required info 
+%                 (stimulus, all parameters and BOLD time series). Each row of 
+%                 the data table is a voxel.
+%               - It can be a cell array with three paths to physical file
+%                 locations: 4D-nifti with synthetic bold series, 3D-nifti with
+%                 stimuli info, json file with all the params for all the
+%                 voxels. 
+%                 -- NOTE: if there is only one entry in the json file, the
+%                          same params apply to all voxels in the nifti file. 
 %   prfImplementation - String defining the model
 %
 % Outputs: 
@@ -42,7 +48,7 @@ varargin = mrvParamFormat(varargin);
 p = inputParser;
 p.addRequired('input');
 p.addRequired('prfimplementation',@ischar);
-p.addParameter('useParallel'    ,  false        , @islogical);
+p.addParameter('useParallel'    ,  true        , @islogical);
 
 % This options structs are defaults for analyzePRF
 options  = struct('seedmode', [0 1], 'display' , 'off');
@@ -72,9 +78,65 @@ useParallel = p.Results.useParallel;
 
 %% Convert the input
 % Check if the pm-s come in a table or alone
+% Read, preprocess, and check the values
 
 if iscell(input)
     niftiInputs = true;
+    % Extract filenames
+    BOLDname = input{1};
+    JSONname = input{2};
+    STIMname = input{3};
+    % Read the files
+    if ~exist(BOLDname,'file'),error('Cannot find %s',BOLDname),end
+    if ~exist(JSONname,'file'),error('Cannot find %s',JSONname),end
+    if ~exist(STIMname,'file'),error('Cannot find %s',STIMname),end
+    
+    % All three files come from the same synthDT table. 
+    % Table is separated into a nifti with the bold series and TR info,
+    % Into a nifti with the stimuli used, same for every bold tSeries, 
+    % and a json file with all the parameters. Some parameters have to be the
+    % same for all tSeries (TR, for example), but other are specific (x0y0
+    % locations or rfSizes, for example).
+    
+    % 1: nifti with the synthetic BOLD series
+    data     = niftiRead(BOLDname);
+    TRdata   = data.pixdim(4);
+    data     = squeeze(data.data);
+    
+    % 2: json with the metadata
+    synthDT  = struct2table(jsonread(JSONname));
+    for na=1:width(synthDT)
+        if isstruct(synthDT{:,na})
+            synthDT.(synthDT.Properties.VariableNames{na}) = struct2table(synthDT{:,na});
+        end
+    end
+    TRsynth = unique(synthDT.TR); if (length(TRsynth) ~= 1),error('More than 1 TR in synth json'),end
+    
+    % 3: nifti with the stimuli
+    stimulus = niftiRead(STIMname);
+    TRstim   = stimulus.pixdim(4);
+    stimulus = squeeze(stimulus.data);
+    % Check dimensions
+    if ~isequal(size(data,2), size(stimulus,3))
+        error('Data and stimulus have different time points')
+    end
+    
+    % Obtain the main parameters required for analysis
+    % TR
+    if (TRdata==TRstim && TRstim==TRsynth), TR = TRdata;
+    else, error('Data and stimulus have different TR'),end
+    % Stimulus related
+    Stimulus.ResizedHorz = unique(synthDT.Stimulus.ResizedHorz); if (length(Stimulus.ResizedHorz) ~= 1),error('More than 1 ResizedHorz in synth json'),end
+    Stimulus.ResizedVert = unique(synthDT.Stimulus.ResizedVert); if (length(Stimulus.ResizedVert) ~= 1),error('More than 1 ResizedVert in synth json'),end
+    Stimulus.fieldofviewHorz = unique(synthDT.Stimulus.fieldofviewHorz);if (length(Stimulus.fieldofviewHorz) ~= 1),error('More than 1 fieldofviewHorz in synth json'),end
+    Stimulus.fieldofviewVert = unique(synthDT.Stimulus.fieldofviewVert);if (length(Stimulus.fieldofviewVert) ~= 1),error('More than 1 fieldofviewVert in synth json'),end
+    Stimulus.spatialSampleHorz = Stimulus.fieldofviewHorz/Stimulus.ResizedHorz;
+    Stimulus.spatialSampleVert = Stimulus.fieldofviewVert / Stimulus.ResizedVert;
+    stimradius    = Stimulus.fieldofviewHorz / 2;
+    % BOLD related
+    BOLDmeanValue = unique(synthDT.BOLDmeanValue);
+    if (length(BOLDmeanValue) ~= 1),error('More than 1 BOLDmeanValue in synth json'),end
+    if (size(stimulus,3) == size(data,2)),timePointsN = size(data,2), end
 else
     niftiInputs = false;
     if ~istable(input)
@@ -82,6 +144,27 @@ else
         temp.pm = input;
         input = temp;
     end
+    % Obtain the same parameters as above
+    pm1      = input.pm(1);
+    stimulus = double(pm1.Stimulus.getStimValues);
+    % Check if the TR is the same
+    if length(unique(input.TR)) > 1, error('TR has to be the same for all synthetic BOLD series'),end
+    TR       = pm1.TR;
+    % Stimulus related
+    Stimulus.ResizedHorz = pm1.Stimulus.ResizedHorz;
+    Stimulus.ResizedVert = pm1.Stimulus.ResizedVert;
+    Stimulus.fieldofviewHorz = pm1.Stimulus.fieldofviewHorz;
+    Stimulus.fieldofviewVert = pm1.Stimulus.fieldofviewVert;
+    Stimulus.spatialSampleHorz = pm1.Stimulus.spatialSampleHorz;
+    Stimulus.spatialSampleVert = pm1.Stimulus.spatialSampleVert;
+    stimradius    = pm1.Stimulus.fieldofviewHorz/2;
+    % BOLD related
+    BOLDmeanValue = pm1.BOLDmeanValue;
+    timePointsN   = pm1.timePointsN;
+    % Add the time series
+    PMs        = input.pm;
+    data       = repmat(nan([1,pm1.timePointsN]), [height(input),1]);
+    for ii=1:height(input); data(ii,:)=PMs(ii).BOLDnoise;end
 end
 
 %% Choose the analysis case
@@ -93,56 +176,10 @@ switch prfimplementation
         %% Create and check tables
         % TODO: Let's define the format for the estimates so that this is
         %       the same for all the methods.
-        pmEstimates = table();
-                
+        pmEstimates = table();   
+        options  = p.Results.options;
         if useParallel
-            if niftiInputs
-                BOLDname = input{1};
-                STIMname = input{2};
-                data     = niftiRead(BOLDname);
-                TRdata   = data.pixdim(4);
-                data     = squeeze(data.data);
-                stimulus = niftiRead(STIMname);
-                TRstim   = stimulus.pixdim(4);
-                stimulus = squeeze(stimulus.data);
-                % Check dimensions
-                if ~isequal(size(data,2), size(stimulus,3))
-                    error('Data and stimulus have different time points')
-                end
-                if TRdata==TRstim
-                    TR = TRdata;
-                else
-                    error('Data and stimulus have different TR')
-                end
-                
-                Stimulus.ResizedHorz = size(stimulus,2);
-                Stimulus.ResizedVert = size(stimulus,1);
-                
-                Stimulus.spatialSampleHorz = 20 / Stimulus.ResizedHorz;
-                Stimulus.spatialSampleVert = 20 / Stimulus.ResizedVert;
-                BOLDmeanValue = 10000;
-            else
-                % Check if the TR is the same
-                if length(unique(input.TR)) > 1
-                    error('TR has to be the same for all synthetic BOLD series')
-                end
-                % Add the time series as well
-                pm1        = input.pm(1);
-                BOLDdata   = repmat(ones([1,pm1.timePointsN]), [height(input),1]);
-                PMs        = input.pm;
-                for ii=1:height(input); pmEstimates{ii,'testdata'}=PMs(ii).BOLDnoise;end
-                
-                % Create variables and function call
-                stimulus = double(pm1.Stimulus.getStimValues);
-                data     = pmEstimates.testdata;
-                TR       = pm1.TR;
-                options  = p.Results.options;
-                Stimulus.ResizedHorz = pm1.Stimulus.ResizedHorz;
-                Stimulus.ResizedVert = pm1.Stimulus.ResizedVert; 
-                Stimulus.spatialSampleHorz = pm1.Stimulus.spatialSampleHorz;
-                Stimulus.spatialSampleVert = pm1.Stimulus.spatialSampleVert;
-                BOLDmeanValue = pm1.BOLDmeanValue;
-            end
+            pmEstimates.testdata = data;
             
             % Calculate PRF
             results  = analyzePRF({stimulus}, {data}, TR, options);
@@ -332,16 +369,11 @@ switch prfimplementation
         mkdir(tmpName);
         %% Change the inputs
         if niftiInputs
-            BOLDname       = input{1};
-            STIMname       = input{2};
             niftiBOLDfile  = fullfile(tmpName, 'tmp.nii.gz')
             stimNiftiFname = fullfile(tmpName, 'tmpstim.nii.gz');
             
             copyfile(BOLDname,niftiBOLDfile)
             copyfile(STIMname,stimNiftiFname)
-            %% Select the stim radius
-            % TODO: HARDCODED RIGHT NOW
-            stimradius    = 10;
         else
             %% Write the stimuli as a nifti
             pm1            = input.pm(1);
@@ -351,8 +383,7 @@ switch prfimplementation
             %% Create a tmp nifti file
             niftiBOLDfile  = pmForwardModelToNifti(input, 'fname', ...
                 fullfile(tmpName,'tmp.nii.gz'));
-            %% Select the stim radius
-            stimradius    = pm1.Stimulus.fieldofviewHorz/2;
+            
         end
         
         %% Prepare the function call
@@ -368,6 +399,9 @@ switch prfimplementation
         numberStimulusGridPoints = p.Results.numberStimulusGridPoints;
         
         % Make the call to the function based on Jon's script
+        
+        % TODO: save some steps if we already start with niftis
+        
         results = pmVistasoft(homedir, stimfile, datafile, stimradius,...
             'model'  , model, ...
             'grid'   , grid, ...
@@ -462,18 +496,8 @@ switch prfimplementation
         tmpName = tempname(fullfile(pmRootPath,'local'));
         mkdir(tmpName);
         if niftiInputs
-            BOLDname       = input{1};
-            STIMname       = input{2};
             niftiBOLDfile  = fullfile(tmpName, 'tmp.nii.gz');         
             copyfile(BOLDname,niftiBOLDfile)
-            stimulus = niftiRead(STIMname);
-            TR       = stimulus.pixdim(4);
-            stimulus = squeeze(stimulus.data);   
-            timePointsN = size(stimulus,3);
-            % Change names, lower case is data, upper case is params
-            Stimulus.fieldofviewHorz = 20;
-            Stimulus.fieldofviewVert = 20;
-            BOLDmeanValue            = 10000;
         else
             warning('For AFNI analysis, be sure that all options have the same TR and the same stimulus')
             % Create a tmp nifti file and convert it to a tmp AFNI format
@@ -481,14 +505,7 @@ switch prfimplementation
             niftiBOLDfile  = pmForwardModelToNifti(input, ...
                 'fname',fullfile(tmpName,'tmp.nii.gz'), ...
                 'demean',true);
-            % Stimuli
-            pm1      = input.pm(1);
-            stimulus = pm1.Stimulus.getStimValues;
-            TR       = pm1.TR;
-            timePointsN = pm1.timePointsN;
-            Stimulus.fieldofviewHorz = pm1.Stimulus.fieldofviewHorz;
-            Stimulus.fieldofviewVert = pm1.Stimulus.fieldofviewVert;
-            BOLDmeanValue            = pm1.BOLDmeanValue;
+
         end
         
         % Create an AFNI file
@@ -695,17 +712,7 @@ switch prfimplementation
         
         % Fits
         %   - Testdata: same as input in the nifti
-        if niftiInputs
-            data     = niftiRead(BOLDname);
-            pmEstimates.testdata = squeeze(data.data);
-        else
-            pmEstimates.testdata   = repmat(ones([1,timePointsN]), ...
-                [height(pmEstimates),1]);
-            PMs                    = input.pm;
-            for ii=1:height(pmEstimates); pmEstimates{ii,'testdata'}=PMs(ii).BOLDnoise;end
-        end
-        
-        
+        pmEstimates.testdata = data;
         
         %   - modelpred: the fits comming out from AFNI
         % restore back the demeaning
@@ -744,22 +751,10 @@ switch prfimplementation
         mkdir(tmpName);
         %% Change the inputs
         if niftiInputs
-            BOLDname       = input{1};
-            STIMname       = input{2};
             niftiBOLDfile  = fullfile(tmpName, 'tmp.nii.gz')
             stimNiftiFname = fullfile(tmpName, 'tmpstim.nii.gz');
-            
             copyfile(BOLDname,niftiBOLDfile)
-            copyfile(STIMname,stimNiftiFname)
-            %% Select the pixels per degree
-            % TODO: HARDCODED RIGHT NOW
-            stimulus = niftiRead(STIMname);
-            TR       = stimulus.pixdim(4);
-            stimulus = squeeze(stimulus.data);
-            fovHorz = 20;
-            params.pixels_per_degree = size(stimulus,2) / fovHorz;
-            BOLDmeanValue = 10000;
-            timePointsN = size(stimulus,3);
+            copyfile(STIMname,stimNiftiFname)   
         else
             warning('For popeye analysis, be sure that all options have the same TR and the same stimulus')
             % Create a tmp nifti file
@@ -771,20 +766,11 @@ switch prfimplementation
             pm1            = input.pm(1);
             stimNiftiFname = fullfile(tmpName, 'tmpstim.nii.gz');
             stimNiftiFname = pm1.Stimulus.toNifti('fname',stimNiftiFname);
-            %Params
-            params.pixels_per_degree = pm1.Stimulus.ResizedHorz / pm1.Stimulus.fieldofviewHorz;
-            BOLDmeanValue = pm1.BOLDmeanValue;
-            timePointsN = pm1.timePointsN;
+            
         end
         
-        
-        
-        
-        
-        
-          
-        
-
+        %Params
+        params.pixels_per_degree = Stimulus.ResizedHorz / Stimulus.fieldofviewHorz;
         
         %% Prepare the json and function call
         % Create struct  with variables for params.json
@@ -827,16 +813,7 @@ switch prfimplementation
         pmEstimates.Theta      = zeros(size(sigma));
         % Fits
         %   - Testdata: same as input in the nifti
-        if niftiInputs
-            data     = niftiRead(BOLDname);
-            pmEstimates.testdata = squeeze(data.data);
-        else
-            pmEstimates.testdata   = repmat(ones([1,timePointsN]), ...
-                [height(pmEstimates),1]);
-            PMs                    = input.pm;
-            for ii=1:height(pmEstimates); pmEstimates{ii,'testdata'}=PMs(ii).BOLDnoise;end
-        end
-        
+        pmEstimates.testdata   = data;
         pmEstimates.modelpred  = squeeze(modelpred);
         % restore back the demeaning
         for ii=1:size(modelpred,1)

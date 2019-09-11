@@ -81,6 +81,8 @@ end
 
 % Write the stimuli as a nifti
 % pm1            = subTable.pm(1);
+% pm1            = prfModel; 
+% TR = 2; pm1.compute;
 stimNiftiFname = fullfile(pmRootPath,'local', 'defaultStim.nii.gz');
 % stimNiftiFname = pm1.Stimulus.toNifti('fname',stimNiftiFname);
 

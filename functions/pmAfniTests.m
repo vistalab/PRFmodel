@@ -10,7 +10,8 @@ COMBINE_PARAMETERS.RF.Theta      = [0]; %, deg2rad(45)];
 COMBINE_PARAMETERS.RF.sigmaMajor = [0.5,2,5];
 COMBINE_PARAMETERS.RF.sigmaMinor = 'same';
 COMBINE_PARAMETERS.TR            = [1.5];
-    HRF(1).Type                  = 'popeye_twogammas';
+    HRF(1).Type                  = 'canonical';
+    % HRF(1).Type                  = 'popeye_twogammas';
     % HRF(2).Type                  = 'afni_spm';
 COMBINE_PARAMETERS.HRF           = HRF;
 synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS);
@@ -38,7 +39,7 @@ stimulus   = squeeze(NIstimulus.data);
 %}
 
 % Analyze it with analyzePRF
-options             = struct('seedmode',[0,1], 'display','off', 'maxpolydeg',0);
+options             = struct('seedmode',[2], 'display','off', 'maxpolydeg',0);
 results_aPRF        = pmModelFit(synthDT,'analyzePRF','options',options,'useParallel',true);
 % VISUALIZE JUST THIS 
 % {
