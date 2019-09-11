@@ -46,7 +46,7 @@ end
 
 
 % Read the files (black was rebooted and we need the files back)
-%{
+% {
 cd(fullfile(pmRootPath,'local'));
 dateSelect = '20190902';
 allFiles   = [];
@@ -57,7 +57,7 @@ end
 %}
 
 % Load and concatenate it
-%{
+% {
 res1    = load(allFiles(1).name);
 synthDT = res1.trozo1;
 for nh=2:(length(allFiles)*3)
@@ -66,6 +66,8 @@ for nh=2:(length(allFiles)*3)
     synthDT = [synthDT; res.(trozoName{:})];
 end
 %}
+
+
 
 % Create nifti-s
 % The table is too big...
@@ -83,7 +85,7 @@ end
 % pm1            = subTable.pm(1);
 % pm1            = prfModel; 
 % TR = 2; pm1.compute;
-stimNiftiFname = fullfile(pmRootPath,'local', 'defaultStim.nii.gz');
+% stimNiftiFname = fullfile(pmRootPath,'local', 'defaultStim.nii.gz');
 % stimNiftiFname = pm1.Stimulus.toNifti('fname',stimNiftiFname);
 
 % Upload it to fw
@@ -92,88 +94,139 @@ stimNiftiFname = fullfile(pmRootPath,'local', 'defaultStim.nii.gz');
 % stts = st.fileUpload(parALLsynthDTfName, cc{1}.collection.id, 'collection');
 
 
-% Solve per each tool
+%% Write the files
+% Remove locations, only [5,5] for today
+synthDT55 = synthDT(synthDT.RF.Centerx0==5 & ...
+                  synthDT.RF.Centery0==5,:);
+TR = unique(synthDT55.TR);
+HRFs = unique(synthDT55.HRF.Type);
+
+
+
+% Save the default niftis with different TR and HRF to be used as tests later on
+niftiBOLDfile = fullfile(pmRootPath,'local',['synthDT55_TR' num2str(TR) '_HRF-all.nii.gz']);
+if ~exist(niftiBOLDfile, 'file')
+    pmForwardModelToNifti(synthDT55,'fname',niftiBOLDfile, 'demean',false);
+end
+
+jsonSynthFile = fullfile(pmRootPath,'local',['synthDT55_TR' num2str(TR) '_HRF-all.json']);
+if ~exist(jsonSynthFile, 'file')
+    % Encode json
+    jsonString = jsonencode(synthDT55(:,1:(end-1)));
+    % Format a little bit
+    jsonString = strrep(jsonString, ',', sprintf(',\r'));
+    jsonString = strrep(jsonString, '[{', sprintf('[\r{\r'));
+    jsonString = strrep(jsonString, '}]', sprintf('\r}\r]'));
+    % Write it
+    fid = fopen(jsonSynthFile, 'w');if fid == -1,error('Cannot create JSON file');end
+    fwrite(fid, jsonString, 'char');fclose(fid);
+    % Read the json
+    %{
+    A = struct2table(jsonread(jsonSynthFile));
+    for na=1:width(A)
+        if isstruct(A{:,na})
+            A.(A.Properties.VariableNames{na}) = struct2table(A{:,na});
+        end
+    end
+    %}
+end
+
+
+stimNiftiFname = fullfile(pmRootPath,'local', ['Stim55_TR' num2str(TR) '.nii.gz']);
+if ~exist(stimNiftiFname, 'file')
+    pm1            = prfModel; 
+    pm1.TR         = TR;
+    pm1.compute;
+    stimNiftiFname = pm1.Stimulus.toNifti('fname',stimNiftiFname);
+end
+
+niftis = {niftiBOLDfile, jsonSynthFile, stimNiftiFname};
+
+%% Solve per each tool
 % and per each hrf
 
 % aPRF
-for nh=2:length(HRFTypes)
+% aprfresults = table();
+% for nh=1:length(HRFTypes)
     % Obtain path to niftis
-    HRFType = HRFTypes{nh};
-    niftis = {fullfile(pmRootPath,'local',[char(HRFTypes{nh}) '_HRF_synthBOLD.nii.gz']), ...
-               stimNiftiFname};    
-    
-           
+    % HRFType = HRFTypes{nh};
+    % niftis = {fullfile(pmRootPath,'local',[char(HRFTypes{nh}) '_HRF_synthBOLD.nii.gz']), ...
+    %            stimNiftiFname};    
     % Solve with AnalyzePRF
-    aprfresults         = pmModelFit(niftis, 'aprf', 'useParallel', true);
-    % Save it locally
-    aprfresultfName = [HRFType '_result_aprf_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
-    save(fullfile(pmRootPath,'local',aprfresultfName), 'aprfresults');
-end
+    options  = struct('seedmode',[0,1,2], 'display','off', 'maxpolydeg',0);
+    % aprfresults.(HRFTypes{nh}) = pmModelFit(niftis, 'aprf', 'options', options);
+    aprfresults = pmModelFit(niftis, 'aprf', 'options', options);
+% end
+% Save it locally
+% aprfresultfName = [HRFType '_result_aprf_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
+aprfresultfName = ['synthDT55_result_aprf.mat'];
+save(fullfile(pmRootPath,'local',aprfresultfName), 'aprfresults');
 
 % mrVista
-for nh=1:length(HRFTypes)
+% for nh=1:length(HRFTypes)
     % Obtain path to niftis
-    HRFType = HRFTypes{nh};
-    niftis = {fullfile(pmRootPath,'local',[char(HRFTypes{nh}) '_HRF_synthBOLD.nii.gz']), ...
-               stimNiftiFname};    
+    % HRFType = HRFTypes{nh};
+    % niftis = {fullfile(pmRootPath,'local',[char(HRFTypes{nh}) '_HRF_synthBOLD.nii.gz']), ...
+    %            stimNiftiFname};    
     
            
     % Solve with mrvista
     vistaresults    = pmModelFit(niftis, 'mrvista','model','one gaussian', ...
         'grid', false, ... % if true, returns gFit
         'wSearch', 'coarse to fine');
-    vistaresultfName = [HRFType '_result_vista_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
+    % vistaresultfName = [HRFType '_result_vista_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
+    vistaresultfName = ['synthDT55_result_vista.mat'];
     save(fullfile(pmRootPath,'local',vistaresultfName), 'vistaresults');
-end
+% end
 % mrVista and hrf
-for nh=1:length(HRFTypes)
+% for nh=1:length(HRFTypes)
     % Obtain path to niftis
-    HRFType = HRFTypes{nh};
-    niftis = {fullfile(pmRootPath,'local',[char(HRFTypes{nh}) '_HRF_synthBOLD.nii.gz']), ...
-               stimNiftiFname};    
+    % HRFType = HRFTypes{nh};
+    % niftis = {fullfile(pmRootPath,'local',[char(HRFTypes{nh}) '_HRF_synthBOLD.nii.gz']), ...
+    %            stimNiftiFname};    
     
            
     % Solve with mrvista
-    vistaresults    = pmModelFit(niftis, 'mrvista','model','one gaussian', ...
+    vistaresultsandhrf    = pmModelFit(niftis, 'mrvista','model','one gaussian', ...
         'grid', false, ... % if true, returns gFit
         'wSearch', 'coarse to fine and hrf');
-    vistaresultfName = [HRFType '_result_vista_andhrf_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
-    save(fullfile(pmRootPath,'local',vistaresultfName), 'vistaresults');
-end
+    % vistaresultfName = [HRFType '_result_vista_andhrf_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
+    vistaandhrfresultfName = ['synthDT55_result_vistaandhrf.mat'];
+    save(fullfile(pmRootPath,'local',vistaandhrfresultfName), 'vistaresultsandhrf');
+% end
 
 % popeye
-for nh=1:length(HRFTypes) 
+% for nh=1:length(HRFTypes) 
     % Obtain path to niftis
-    HRFType = HRFTypes{nh};
-    niftis = {fullfile(pmRootPath,'local',[char(HRFTypes{nh}) '_HRF_synthBOLD.nii.gz']), ...
-               stimNiftiFname};    
+    % HRFType = HRFTypes{nh};
+    % niftis = {fullfile(pmRootPath,'local',[char(HRFTypes{nh}) '_HRF_synthBOLD.nii.gz']), ...
+    %            stimNiftiFname};    
     % Solve
-    results        = pmModelFit(niftis, 'popeye_onegaussian');
+    popresults        = pmModelFit(niftis, 'popeye_onegaussian');
     
     % Save the results
-    popresultfName = [HRFType '_result_pop_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
-    save(fullfile(pmRootPath,'local',popresultfName), 'results');
-end
+    % popresultfName = [HRFType '_result_pop_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
+    popresultfName = ['synthDT55_result_pop.mat'];
+    save(fullfile(pmRootPath,'local',popresultfName), 'popresults');
+% end
 
-% Afni
-results = {};
-afniresultfName = {};
-for nh=1:length(HRFTypes)
+% Afni 4
+% results = {};
+% afniresultfName = {};
+% for nh=1:length(HRFTypes)
     % Obtain path to niftis
-    HRFType = HRFTypes{nh};
-    niftis = {fullfile(pmRootPath,'local',[char(HRFTypes{nh}) '_HRF_synthBOLD.nii.gz']), ...
-               stimNiftiFname};    
+    % HRFType = HRFTypes{nh};
+    % niftis = {fullfile(pmRootPath,'local',[char(HRFTypes{nh}) '_HRF_synthBOLD.nii.gz']), ...
+    %            stimNiftiFname};    
     
-    results{nh}         = pmModelFit(niftis, 'afni_4');
-    afniresultfName{nh} = [HRFType '_result_afni4_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
-    
-    
+    afni4results         = pmModelFit(niftis, 'afni_4','afni_hrf','SPM');
+    % afniresultfName{nh} = [HRFType '_result_afni4_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
+    afni4resultfName = ['synthDT55_result_afni4.mat'];
     % Save it
-    tmpRes = results{nh};
-    save(fullfile(pmRootPath,'local',afniresultfName{nh}), 'tmpRes');
+    save(fullfile(pmRootPath,'local',afni4resultfName), 'afni4results');
     
     
-end
+% end
 % for parfor
 % for nh=1:length(HRFTypes)
 %     tmpRes = results{nh};
@@ -181,26 +234,15 @@ end
 % end
 
 % 
-% Afni
-results = {};
-afniresultfName = {};
-for nh=1:length(HRFTypes)
-    % Obtain path to niftis
-    HRFType = HRFTypes{nh};
-    niftis = {fullfile(pmRootPath,'local',[char(HRFTypes{nh}) '_HRF_synthBOLD.nii.gz']), ...
-               stimNiftiFname};    
-    
-    results{nh}         = pmModelFit(niftis, 'afni_6');
-    afniresultfName{nh} = [HRFType '_result_afni6_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
-    
-    
+% Afni 6
+    afni6results         = pmModelFit(niftis, 'afni_6','afni_hrf','SPM');
+    % afniresultfName{nh} = [HRFType '_result_afni4_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
+    afni6resultfName = ['synthDT55_result_afni6.mat'];
     % Save it
-    tmpRes = results{nh};
-    save(fullfile(pmRootPath,'local',afniresultfName{nh}), 'tmpRes');
-    
-    
-end
+    save(fullfile(pmRootPath,'local',afni6resultfName), 'afni6results');
 
+    
+    
 %% Plot the files locally, for that we need to locate the files and download them. 
 % If they are in the local folder, take from there instead of downloading them. 
 st          = scitran('stanfordlabs'); st.verify;
