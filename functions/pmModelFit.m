@@ -771,7 +771,7 @@ switch prfimplementation
             pm1            = input.pm(1);
             niftiBOLDfile  = pmForwardModelToNifti(input, ...
                 'fname',fullfile(tmpName,'tmp.nii.gz'), ...
-                'demean',true);
+                'demean',false);
             %% Create stimulus file in nifti
             pm1            = input.pm(1);
             stimNiftiFname = fullfile(tmpName, 'tmpstim.nii.gz');
@@ -826,9 +826,10 @@ switch prfimplementation
         pmEstimates.testdata   = data;
         pmEstimates.modelpred  = squeeze(modelpred);
         % restore back the demeaning
-        for ii=1:size(modelpred,1)
-            pmEstimates.modelpred(ii,:) = BOLDmeanValue * (pmEstimates.modelpred(ii,:) + 1);
-        end
+        
+        % for ii=1:size(modelpred,1)
+        %     pmEstimates.modelpred(ii,:) = BOLDmeanValue * (pmEstimates.modelpred(ii,:) + 1);
+        % end
               
     otherwise
         error('Method %s not implemented yet.', prfimplementation)
