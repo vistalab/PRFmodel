@@ -210,6 +210,21 @@ save(fullfile(pmRootPath,'local',aprfresultfName), 'aprfresults');
     save(fullfile(pmRootPath,'local',popresultfName), 'popresults');
 % end
 
+
+    % Solve: I created another docker and edited pmModelFit
+    % Fix this and pass it as a parameter
+    popresultsnohrf        = pmModelFit(niftis, 'popeye_onegaussian');
+    
+    % Save the results
+    % popresultfName = [HRFType '_result_pop_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
+    popnohrfresultfName = ['synthDT55_result_pop-nohrf.mat'];
+    save(fullfile(pmRootPath,'local',popnohrfresultfName), 'popresultsnohrf');
+
+
+
+
+
+
 % Afni 4
 % results = {};
 % afniresultfName = {};

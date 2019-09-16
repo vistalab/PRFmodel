@@ -357,7 +357,7 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
                     plot(pm.timePointsSeries, pm.BOLD);
                     legend({'Time Series','No Noise BOLD'})
                 otherwise
-                    error("'no noise', 'with noise', 'both', 'all', 'with noise timeseries', 'no noise timeseries' are acepted")
+                    error('no noise, with noise, both, all, with noise timeseries, no noise timeseries are acepted')
             end
             grid on; xlabel('Time (sec)'); ylabel('Relative amplitude');
             aa = gca;

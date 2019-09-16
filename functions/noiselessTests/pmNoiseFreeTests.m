@@ -39,6 +39,7 @@ varargin          = mrvParamFormat(varargin);
 p = inputParser;
 p.addRequired('prfimplementation',@ischar);
 p.addParameter('usenifti'   ,  false           , @islogical);
+p.addParameter('plotit'     ,  false           , @islogical);
 % Implementation specifics
 % AnalyzePRF
 options  = struct('seedmode', [0,1,2], 'display', 'off');
@@ -53,13 +54,15 @@ p.addParameter('wsearch'    , 'coarse to fine', @ischar);
 % Parse. Assign result inside each case
 p.parse(prfimplementation,varargin{:});
 useNifti = p.Results.usenifti;
+plotit   = p.Results.plotit;
+
 
 %% Create the test data
-COMBINE_PARAMETERS.RF.Centerx0        = [0, -6, 6]; % [-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
-COMBINE_PARAMETERS.RF.Centery0        = [0, -6, 6];
+COMBINE_PARAMETERS.RF.Centerx0        = [0, -5, 5]; % [-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
+COMBINE_PARAMETERS.RF.Centery0        = [0, -5, 5];
 COMBINE_PARAMETERS.RF.Theta           = [0]; %, deg2rad(45)];
-COMBINE_PARAMETERS.RF.sigmaMinor      = [4];
-COMBINE_PARAMETERS.RF.sigmaMajor      = [4];
+COMBINE_PARAMETERS.RF.sigmaMinor      = [0.5];
+COMBINE_PARAMETERS.RF.sigmaMajor      = [0.5];
 COMBINE_PARAMETERS.Noise.noise2signal = [0];  % By default only white noise added
 
 switch prfimplementation
@@ -180,11 +183,12 @@ end
 % Visualize with 2 digits after comma
 format bank; disp(compTable); format
 
-
-pmTseriesPlot(tSeries, synthDT(:,'TR'), ...
-    'to compare', {'synth', prfimplementation}, ...
-    'voxel',[1:height(synthDT)], ... % 'metric','RMSE', ...
-    'newWin',true)
+if plotit
+    pmTseriesPlot(tSeries, synthDT(:,'TR'), ...
+        'to compare', {'synth', prfimplementation}, ...
+        'voxel',[1:height(synthDT)], ... % 'metric','RMSE', ...
+        'newWin',true)
+end
 end
 
 
