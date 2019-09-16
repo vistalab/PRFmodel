@@ -102,7 +102,7 @@ TR = unique(synthDT55.TR);
 HRFs = unique(synthDT55.HRF.Type);
 
 
-
+TR = 1.5;
 % Save the default niftis with different TR and HRF to be used as tests later on
 niftiBOLDfile = fullfile(pmRootPath,'local',['synthDT55_TR' num2str(TR) '_HRF-all.nii.gz']);
 if ~exist(niftiBOLDfile, 'file')
@@ -241,6 +241,52 @@ save(fullfile(pmRootPath,'local',aprfresultfName), 'aprfresults');
     % Save it
     save(fullfile(pmRootPath,'local',afni6resultfName), 'afni6results');
 
+    
+%% PLOT IT
+% Read the json with the param information
+SynthDT = struct2table(jsonread(jsonSynthFile));
+for na=1:width(SynthDT)
+    if isstruct(SynthDT{:,na})
+        SynthDT.(SynthDT.Properties.VariableNames{na}) = struct2table(SynthDT{:,na});
+    end
+end
+
+% Read the result .mats
+aprfresultfName        = fullfile(pmRootPath,'local',['synthDT55_result_aprf.mat']);
+vistaresultfName       = fullfile(pmRootPath,'local',['synthDT55_result_vista.mat']);
+vistaandhrfresultfName = fullfile(pmRootPath,'local',['synthDT55_result_vistaandhrf.mat']);
+popresultfName         = fullfile(pmRootPath,'local',['synthDT55_result_pop.mat']);
+afni4resultfName       = fullfile(pmRootPath,'local',['synthDT55_result_afni4.mat']);
+afni6resultfName       = fullfile(pmRootPath,'local',['synthDT55_result_afni6.mat']);
+
+fNames = {aprfresultfName, vistaresultfName,vistaandhrfresultfName};
+for fName=fNames
+    if exist(fName{:},'file'), load(fName{:});
+    else, error('%s does not exist',fName{:}),end
+end
+
+paramDefaults = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
+% Create the concatenated result table
+compTable  = pmResultsCompare(SynthDT, ... % Defines the input params
+    {'aprf','vista','vistahrf','pop','afni4','afni6'}, ... % Analysis names we want to see: 'aPRF','vista',
+    {aprfresults,vistaresults,vistaresultsandhrf,popresults,afni4results,afni6results}, ...
+    'params', paramDefaults, ...
+    'shorten names',true, ...
+    'dotSeries', false);
+% Now create the new plots
+sortHRFlike = {'friston','vista_twogammas','afni_gam','boynton','afni_spm',...
+               'canonical','popeye_twogammas'};  % sorted according noise=0, RFsize=2
+pmNoisePlotsByHRF(compTable, {'aprf','vista','vistahrf','pop','afni4','afni6'}, ... % 'x0y0',[0,0],...
+                  'sortHRF',sortHRFlike,'usemetric','eccentricity')
+pmNoisePlotsByHRF(compTable, {'aprf','vista','vistahrf','pop','afni4','afni6'}, ... % 'x0y0',[0,0],...
+                  'sortHRF',sortHRFlike,'usemetric','polarangle')
+pmNoisePlotsByHRF(compTable, {'aprf','vista','vistahrf','pop','afni4','afni6'}, 'x0y0',[5,5],...
+                  'sortHRF',sortHRFlike,'usemetric','rfsize')
+    
+    
+    
+    
+    
     
     
 %% Plot the files locally, for that we need to locate the files and download them. 

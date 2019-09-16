@@ -41,6 +41,7 @@ if istable(compTable)
             % Reduce the table removing the locations
             compTable = compTable(compTable.synth.x0 == x0y0(1) & ...
                 compTable.synth.y0 == x0y0(2), :);
+            
         case {'polarangle'}
             metrics = unique(compTable.synth.angle);
             % Reduce the table removing the rfSize
@@ -112,10 +113,13 @@ for np=1:length(metrics)
                 otherwise
                     error('Metric %s not defined', usemetric)
             end
-            
-            a = [a;scatter(1:length(HRFs), result, 30, colors(nt,:), 'filled')];hold on;
+            % ADD SOME JITTER
+            xvaluesCenter = 1:length(HRFs);
+            xvalues = xvaluesCenter + 0.07*(nt-1);
+            a = [a;scatter(xvalues, result, 30, colors(nt,:), 'filled')];hold on;
             % Add the confidence intervals in every point now
-            xxx = [1:length(HRFs);1:length(HRFs)]';
+            % xxx = [1:length(HRFs);1:length(HRFs)]';
+            xxx = [xvalues;xvalues]';
             for ns=1:length(sds)
                 plot(xxx(ns,:),sds(ns,:),'Color',colors(nt,:),'LineStyle','-','LineWidth',1);
             end
@@ -134,12 +138,12 @@ for np=1:length(metrics)
             title(sprintf('%s: %1.1f | Noise: %0.1f',usemetric,metric,noiselvl));
         end
         if plotNum == 1
-            legend([h1;a],['synth',tools],'Location','bestoutside');
+            legend([h1;a],['synth',tools],'Location','best');
         end
         
         % In the bottom row, add the HRF names
         if np==length(metrics)
-            xticks(1:length(HRFs))
+            xticks(xvaluesCenter)
             xticklabels(strrep(HRFs,'_','\_'));xtickangle(45)
             % set(gca,'TickLength',[0 0])
             ax = gca;
@@ -156,8 +160,11 @@ end
 % Add title to the whole thing
 Theta = unique(compTable.synth.Th);
 TR    = unique(compTable.TR);
-dr_suptitle(sprintf('HRF Comparison | Location=[%i,%i] | Theta=%i | TR=%1.2f | CI = 50%', x0y0(1), x0y0(2), Theta, TR));
-
+if strcmp(usemetric, 'rfsize')
+    dr_suptitle(sprintf('%s HRF Comparison | Location=[%i,%i] | Theta=%i | TR=%1.2f | CI = 50%', usemetric, x0y0(1), x0y0(2), Theta, TR));
+else
+    dr_suptitle(sprintf('%s HRF Comparison | Theta=%i | TR=%1.2f | CI = 50%', usemetric, Theta, TR));
+end
 
 
 

@@ -11,7 +11,8 @@ function [y, mu, sigma, mn, mx, med, ci] = dr_distPlottingVals(x)
     % Define the required confidence intervals
     CIrange        = 50;
     twoTailedRange = (100 - CIrange)/2;
-    ci             = prctile(x, [twoTailedRange, 100-twoTailedRange]);
+    % ci             = prctile(x, [twoTailedRange, 100-twoTailedRange]);
+    ci             = quantile(x, [twoTailedRange/100, (100-twoTailedRange)/100]);
     
     
 end
