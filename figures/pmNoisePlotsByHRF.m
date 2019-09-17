@@ -9,22 +9,24 @@ varargin = mrvParamFormat(varargin);
 p = inputParser;
 p.addRequired('compTable');
 p.addRequired('tools'                            , @iscell);
-p.addParameter('fnameroot', 'defaultFigNameRoot' , @ischar);
-p.addParameter('randomhrf', false                , @islogical);
-p.addParameter('x0y0'     , [0,0]                , @isnumeric);
-p.addParameter('sorthrf'  , {'same'}             , @iscell);
-p.addParameter('usemetric', 'rfsize'             , @ischar);
-p.addParameter('userfsize', 2                    , @isnumeric);
+p.addParameter('fnameroot'  , 'defaultFigNameRoot' , @ischar);
+p.addParameter('randomhrf'  , false                , @islogical);
+p.addParameter('x0y0'       , [0,0]                , @isnumeric);
+p.addParameter('sorthrf'    , {'same'}             , @iscell);
+p.addParameter('usemetric'  , 'rfsize'             , @ischar);
+p.addParameter('userfsize'  , [999]                    , @isnumeric);
+p.addParameter('noisevalues', [999]                , @isnumeric);
 
 % Parse. Assign result inside each case
 p.parse(compTable, tools, varargin{:});
 % Read here only the generic ones
-fnameRoot = p.Results.fnameroot;
-randomhrf = p.Results.randomhrf;
-x0y0      = p.Results.x0y0;
-sortHRF   = p.Results.sorthrf;
-usemetric = p.Results.usemetric;
-userfsize = p.Results.userfsize;
+fnameRoot   = p.Results.fnameroot;
+randomhrf   = p.Results.randomhrf;
+x0y0        = p.Results.x0y0;
+sortHRF     = p.Results.sorthrf;
+usemetric   = p.Results.usemetric;
+userfsize   = p.Results.userfsize;
+noisevalues = p.Results.noisevalues;
 
 %% Data selection
 if istable(compTable)
@@ -33,15 +35,25 @@ if istable(compTable)
     compTable.synth.angle = rad2deg(TH);
     compTable.synth.eccentricity = R;
     
-    noises   = unique(compTable.noise2sig);
-    
+    if noisevalues==999
+        noises   = unique(compTable.noise2sig);
+    else
+        noises   = noisevalues;
+    end
     switch usemetric
         case {'rfsize'}
-            metrics = unique(compTable.synth.sMaj);
-            % Reduce the table removing the locations
-            compTable = compTable(compTable.synth.x0 == x0y0(1) & ...
-                compTable.synth.y0 == x0y0(2), :);
-            
+            if userfsize == 999
+                metrics = unique(compTable.synth.sMaj);
+                % Reduce the table removing the locations
+                compTable = compTable(compTable.synth.x0 == x0y0(1) & ...
+                            compTable.synth.y0 == x0y0(2), :);
+            else
+                metrics = userfsize;
+                % Reduce the table removing the locations
+                compTable = compTable(compTable.synth.x0 == x0y0(1) & ...
+                                      compTable.synth.y0 == x0y0(2) & ...
+                                      ismember(compTable.synth.sMaj,metrics), :);
+            end
         case {'polarangle'}
             metrics = unique(compTable.synth.angle);
             % Reduce the table removing the rfSize
@@ -128,7 +140,7 @@ for np=1:length(metrics)
         h1 = plot([1,length(HRFs)],metric*[1,1],'Color','k','LineStyle','-.','LineWidth',1);
         
         grid
-        xticks([])
+        % xticks([])
         set(gca,'box','off','color','none')
         % ylabel('Acc. & prec. (deg)','FontSize',14,'FontWeight','bold','Color','k');
         ylabel(usemetric,'FontSize',14,'FontWeight','bold','Color','k');
@@ -138,7 +150,7 @@ for np=1:length(metrics)
             title(sprintf('%s: %1.1f | Noise: %0.1f',usemetric,metric,noiselvl));
         end
         if plotNum == 1
-            legend([h1;a],['synth',tools],'Location','best');
+            legend([h1;a],['synth',tools],'Location','westoutside');
         end
         
         % In the bottom row, add the HRF names
@@ -147,7 +159,7 @@ for np=1:length(metrics)
             xticklabels(strrep(HRFs,'_','\_'));xtickangle(45)
             % set(gca,'TickLength',[0 0])
             ax = gca;
-            ax.XGrid = 'off';
+            % ax.XGrid = 'off';
             xlabel('HRFs','FontSize',18,'FontWeight','bold','Color','k');
         end
         

@@ -259,7 +259,9 @@ save(fullfile(pmRootPath,'local',aprfresultfName), 'aprfresults');
     
 %% PLOT IT
 % Read the json with the param information
-SynthDT = struct2table(jsonread(jsonSynthFile));
+TR = 1.5;
+jsonSynthFile = fullfile(pmRootPath,'local',['synthDT55_TR' num2str(TR) '_HRF-all.json']);
+SynthDT       = struct2table(jsonread(jsonSynthFile));
 for na=1:width(SynthDT)
     if isstruct(SynthDT{:,na})
         SynthDT.(SynthDT.Properties.VariableNames{na}) = struct2table(SynthDT{:,na});
@@ -271,32 +273,45 @@ aprfresultfName        = fullfile(pmRootPath,'local',['synthDT55_result_aprf.mat
 vistaresultfName       = fullfile(pmRootPath,'local',['synthDT55_result_vista.mat']);
 vistaandhrfresultfName = fullfile(pmRootPath,'local',['synthDT55_result_vistaandhrf.mat']);
 popresultfName         = fullfile(pmRootPath,'local',['synthDT55_result_pop.mat']);
+popresultnohrffName    = fullfile(pmRootPath,'local',['synthDT55_result_pop-nohrf.mat']);
 afni4resultfName       = fullfile(pmRootPath,'local',['synthDT55_result_afni4.mat']);
 afni6resultfName       = fullfile(pmRootPath,'local',['synthDT55_result_afni6.mat']);
 
-fNames = {aprfresultfName, vistaresultfName,vistaandhrfresultfName};
+fNames = {aprfresultfName, vistaresultfName,vistaandhrfresultfName, ...
+          popresultfName, popresultnohrffName, afni4resultfName, afni6resultfName};
+% Connect to FW
+st   = scitran('stanfordlabs'); st.verify;
+cc   = st.search('collection','collection label exact','PRF_StimDependence');
 for fName=fNames
     if exist(fName{:},'file'), load(fName{:});
-    else, error('%s does not exist',fName{:}),end
+    else
+        % Check that the data is there
+        [~,fname,ext] = fileparts(fName{:});
+        data          = load(st.fw.downloadFileFromCollection(cc{1}.collection.id,...
+                        [fname ext],fName{:}));
+    end 
 end
 
 paramDefaults = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
 % Create the concatenated result table
 compTable  = pmResultsCompare(SynthDT, ... % Defines the input params
-    {'aprf','vista','vistahrf','pop','afni4','afni6'}, ... % Analysis names we want to see: 'aPRF','vista',
-    {aprfresults,vistaresults,vistaresultsandhrf,popresults,afni4results,afni6results}, ...
+    {'aprf','vista','vistahrf','pop','popno','afni4','afni6'}, ... % Analysis names we want to see: 'aPRF','vista',
+    {aprfresults,vistaresults,vistaresultsandhrf,popresults,popresultsnohrf,afni4results,afni6results}, ...
     'params', paramDefaults, ...
     'shorten names',true, ...
     'dotSeries', false);
 % Now create the new plots
 sortHRFlike = {'friston','vista_twogammas','afni_gam','boynton','afni_spm',...
                'canonical','popeye_twogammas'};  % sorted according noise=0, RFsize=2
-pmNoisePlotsByHRF(compTable, {'aprf','vista','vistahrf','pop','afni4','afni6'}, ... % 'x0y0',[0,0],...
-                  'sortHRF',sortHRFlike,'usemetric','eccentricity')
-pmNoisePlotsByHRF(compTable, {'aprf','vista','vistahrf','pop','afni4','afni6'}, ... % 'x0y0',[0,0],...
-                  'sortHRF',sortHRFlike,'usemetric','polarangle')
-pmNoisePlotsByHRF(compTable, {'aprf','vista','vistahrf','pop','afni4','afni6'}, 'x0y0',[5,5],...
-                  'sortHRF',sortHRFlike,'usemetric','rfsize')
+pmNoisePlotsByHRF(compTable, {'aprf','vista','vistahrf','pop','popno','afni4','afni6'}, ... % 'x0y0',[0,0],...
+                  'sortHRF',sortHRFlike,'usemetric','eccentricity', ...
+                  'noisevalues',[0,0.2], 'userfsize',2)
+pmNoisePlotsByHRF(compTable, {'aprf','vista','vistahrf','pop','popno','afni4','afni6'}, ... % 'x0y0',[0,0],...
+                  'sortHRF',sortHRFlike,'usemetric','polarangle', ...
+                  'noisevalues',[0,0.2], 'userfsize',2)
+pmNoisePlotsByHRF(compTable, {'aprf','vista','vistahrf','pop','popno','afni4','afni6'}, 'x0y0',[5,5],...
+                  'sortHRF',sortHRFlike,'usemetric','rfsize', ...
+                  'noisevalues',[0,0.2], 'userfsize',2)
     
     
     
