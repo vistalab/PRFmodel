@@ -755,7 +755,7 @@ switch prfimplementation
                 error('%s not implemented yet',prfimplementation)
         end
         
-    case {'popeye','popeye_onegaussian','popeye_CSS','popeye_dog'}
+    case {'popeye','popeye_onegaussian','popeye_CSS','popnohrf','popeyenohrf'}
         %% Create temp folders
         tmpName = tempname(fullfile(pmRootPath,'local'));
         mkdir(tmpName);
@@ -795,14 +795,17 @@ switch prfimplementation
         if fid == -1, error('Cannot create JSON file'); end
         fwrite(fid, jsonStr, 'char');
         fclose(fid);
-        % Run the docerk container
-        % system(['docker run -it --rm '...
-        %         '-v "' tmpName ':/input" nben/popeye-mini' ...
-        %         ]);
-        system(['docker run -it --rm '...
-                '-v "' tmpName ':/input" nben/popeye-mini-nohrf' ...
-                ]);
-        
+        % Run the Docker container
+        switch prfimplementation
+            case {'popnohrf','popeyenohrf'}
+                system(['docker run -it --rm '...
+                        '-v "' tmpName ':/input" nben/popeye-mini-nohrf' ...
+                        ]);
+            otherwise
+                system(['docker run -it --rm '...
+                        '-v "' tmpName ':/input" nben/popeye-mini' ...
+                        ]);
+        end
         %% Read the results back to Matlab
         x0    = niftiRead(fullfile(tmpName,'out_x.nii.gz'));
         x0    = x0.data(:,1,1,1);
