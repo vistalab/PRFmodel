@@ -150,7 +150,7 @@ for np=1:length(metrics)
             title(sprintf('%s: %1.1f | Noise: %0.1f',usemetric,metric,noiselvl));
         end
         if plotNum == 1
-            legend([h1;a],['synth',tools],'Location','westoutside');
+            legend([h1;a],['synth',tools],'Location','best') % 'westoutside');
         end
         
         % In the bottom row, add the HRF names

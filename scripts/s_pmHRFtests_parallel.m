@@ -1,10 +1,31 @@
 %% s_pmHRFtests_parallel.m
 
-%% Generate the big synthDT file
-% It cannot be stored.
+% Create the names that will be used in this script
+TR   = 1.5;
 HRFTypes = {'friston','boynton','canonical','vista_twogammas','popeye_twogammas',...
             'afni_gam','afni_spm'};
-% {
+% INPUTS
+niftiBOLDfile  = fullfile(pmRootPath,'local',['synthDT55b_TR' num2str(TR) '_HRF-all.nii.gz']);
+jsonSynthFile  = fullfile(pmRootPath,'local',['synthDT55b_TR' num2str(TR) '_HRF-all.json']);
+stimNiftiFname = fullfile(pmRootPath,'local',['Stim55b_TR'    num2str(TR) '.nii.gz']);
+inputNiftis = {niftiBOLDfile, jsonSynthFile, stimNiftiFname};
+% OUTPUTS
+aprfresultfName        = fullfile(pmRootPath,'local',['synthDT55b_result_aprf.mat']);
+vistaresultfName       = fullfile(pmRootPath,'local',['synthDT55b_result_vista.mat']);
+vistaandhrfresultfName = fullfile(pmRootPath,'local',['synthDT55b_result_vistaandhrf.mat']);
+popresultfName         = fullfile(pmRootPath,'local',['synthDT55b_result_pop.mat']);
+popresultnohrffName    = fullfile(pmRootPath,'local',['synthDT55b_result_popnohrf.mat']);
+afni4resultfName       = fullfile(pmRootPath,'local',['synthDT55b_result_afni4.mat']);
+afni6resultfName       = fullfile(pmRootPath,'local',['synthDT55b_result_afni6.mat']);
+outputNiftis = {aprfresultfName, vistaresultfName,vistaandhrfresultfName, ...
+                popresultfName, popresultnohrffName, afni4resultfName, afni6resultfName};
+             
+% Connect to fw
+st   = scitran('stanfordlabs'); st.verify;
+cc   = st.search('collection','collection label exact','PRF_StimDependence');
+
+%% Generate the big synthDT file
+% It cannot be stored.
 synthDTsep = {};
 parfor nh=1:length(HRFTypes)
     COMBINE_PARAMETERS                    = struct();
@@ -13,7 +34,7 @@ parfor nh=1:length(HRFTypes)
     COMBINE_PARAMETERS.RF.Theta           = [0]; %, deg2rad(45)];
     COMBINE_PARAMETERS.RF.sigmaMajor      = [0.5,2,8];  % [1,2,3,4];
     COMBINE_PARAMETERS.RF.sigmaMinor      = 'same'; % 'same' for making it the same to Major
-    COMBINE_PARAMETERS.TR                 = [1.5];
+    COMBINE_PARAMETERS.TR                 = [TR];
     HRF                                   = struct();
     HRF(1).Type                           = HRFTypes{nh};
     COMBINE_PARAMETERS.HRF                = HRF;
@@ -28,20 +49,16 @@ for nh=2:length(HRFTypes)
     synthDT = [synthDT; synthDTsep{nh}];
 end
 
-
-
-% Create niftis
-TR   = unique(synthDT.TR);
-HRFs = unique(synthDT.HRF.Type);
-
+%% Create niftis and upload  to FW
 
 % Save the default niftis with different TR and HRF to be used as tests later on
-niftiBOLDfile = fullfile(pmRootPath,'local',['synthDT55b_TR' num2str(TR) '_HRF-all.nii.gz']);
+% BOLD FILE
 if ~exist(niftiBOLDfile, 'file')
     pmForwardModelToNifti(synthDT,'fname',niftiBOLDfile, 'demean',false);
 end
-
-jsonSynthFile = fullfile(pmRootPath,'local',['synthDT55b_TR' num2str(TR) '_HRF-all.json']);
+% Upload it
+stts = st.fileUpload(niftiBOLDfile, cc{1}.collection.id, 'collection');
+% JSON FILE
 if ~exist(jsonSynthFile, 'file')
     % Encode json
     jsonString = jsonencode(synthDT(:,1:(end-1)));
@@ -61,107 +78,97 @@ if ~exist(jsonSynthFile, 'file')
         end
     end
     %}
+    % Upload it
+    stts = st.fileUpload(jsonSynthFile, cc{1}.collection.id, 'collection');
 end
-
-stimNiftiFname = fullfile(pmRootPath,'local', ['Stim55b_TR' num2str(TR) '.nii.gz']);
+% STIM FILE
 if ~exist(stimNiftiFname, 'file')
     pm1            = prfModel; 
     pm1.TR         = TR;
     pm1.compute;
     stimNiftiFname = pm1.Stimulus.toNifti('fname',stimNiftiFname);
 end
+% Upload it to FW
+stts = st.fileUpload(stimNiftiFname, cc{1}.collection.id, 'collection');
 
-niftis = {niftiBOLDfile, jsonSynthFile, stimNiftiFname};
-
-
-
-% Upload it to fw
-st   = scitran('stanfordlabs'); st.verify;
-cc   = st.search('collection','collection label exact','PRF_StimDependence');
-
-% Solve, save and upload with all of them
-%%%%%%
-% aPRF
-%%%%%%
-options          = struct('seedmode',[0,1,2], 'display','off', 'maxpolydeg',0);
-aprfresults      = pmModelFit(niftis, 'aprf', 'options', options);
-aprfresultfName  = ['synthDT55b_result_aprf.mat'];
-save(fullfile(pmRootPath,'local',aprfresultfName), 'aprfresults');
-stts             = st.fileUpload(aprfresultfName, cc{1}.collection.id, 'collection');
-
-% mrVista
-vistaresults    = pmModelFit(niftis, 'mrvista','model','one gaussian', ...
-                  'grid', false, ... % if true, returns gFit
-                  'wSearch', 'coarse to fine');
-vistaresultfName = ['synthDT55b_result_vista.mat'];
-save(fullfile(pmRootPath,'local',vistaresultfName), 'vistaresults');
-stts             = st.fileUpload(vistaresultfName, cc{1}.collection.id, 'collection');
-
-% mrvista and hrf
+%% Solve and upload to FW
+% SOLVE
+%  - aPRF
+options = struct('seedmode',[0,1,2], 'display','off', 'maxpolydeg',0);
+aprfresults = pmModelFit(niftis, 'aprf', 'options', options);
+save(aprfresultfName, 'aprfresults');
+%  - mrVista
+vistaresults = pmModelFit(niftis, 'mrvista','model','one gaussian', ...
+                  'grid', false, 'wSearch', 'coarse to fine');
+save(vistaresultfName, 'vistaresults');
+%  - mrvista and hrf
 vistaresultsandhrf = pmModelFit(niftis, 'mrvista','model','one gaussian', ...
-                    'grid', false, ... % if true, returns gFit
-                    'wSearch', 'coarse to fine and hrf');
-vistaandhrfresultfName = ['synthDT55b_result_vistaandhrf.mat'];
-save(fullfile(pmRootPath,'local',vistaandhrfresultfName), 'vistaresultsandhrf');
-stts             = st.fileUpload(vistaandhrfresultfName, cc{1}.collection.id, 'collection');
+                    'grid', false, 'wSearch', 'coarse to fine and hrf');
+save(vistaandhrfresultfName, 'vistaresultsandhrf');
+%  - popeye, default with hrf search
+popresults = pmModelFit(niftis, 'popeye'); save(popresultfName, 'popresults');
+%  - popeye no hrf
+popresultsnohrf= pmModelFit(niftis, 'popeyenohrf'); save(popnohrfresultfName, 'popresultsnohrf');
+%  - Afni 4
+afni4results = pmModelFit(niftis, 'afni_4','afni_hrf','SPM'); save(afni4resultfName, 'afni4results');
+%  - Afni 6
+afni6results = pmModelFit(niftis, 'afni_6','afni_hrf','SPM'); save(afni6resultfName, 'afni6results');
 
-% popeye
-popresults        = pmModelFit(niftis, 'popeye');
-popresultfName = ['synthDT55b_result_pop.mat'];
-save(fullfile(pmRootPath,'local',popresultfName), 'popresults');
-stts             = st.fileUpload(popresultfName, cc{1}.collection.id, 'collection');
+% UPLOAD
+for nu=1:length(outputNiftis)
+    resultfName = outputNiftis{nu}
+    stts      = st.fileUpload(resultfName, cc{1}.collection.id, 'collection');
+end
 
-% popeye no hrf
-popresultsnohrf        = pmModelFit(niftis, 'popeyenohrf');
-popnohrfresultfName = ['synthDT55b_result_popnohrf.mat'];
-save(fullfile(pmRootPath,'local',popnohrfresultfName), 'popresultsnohrf');
-stts             = st.fileUpload(popnohrfresultfName, cc{1}.collection.id, 'collection');
+%% Download and PLOT
 
-% Afni 4
-afni4results         = pmModelFit(niftis, 'afni_4','afni_hrf','SPM');
-afni4resultfName = ['synthDT55b_result_afni4.mat'];
-save(fullfile(pmRootPath,'local',afni4resultfName), 'afni4results');
-stts             = st.fileUpload(afni4resultfName, cc{1}.collection.id, 'collection');
+% (Download and) read the input nifti-s (only the json for now)
+for ni=1:length(inputNiftis)
+    [fpath,fname,ext] = fileparts(inputNiftis{ni});
+    if ~exist(inputNiftis{ni},'file')
+        st.fw.downloadFileFromCollection(cc{1}.collection.id,[fname ext],inputNiftis{ni});
+    end
+    if strcmp(ext, '.json')
+        SynthDT  = struct2table(jsonread(inputNiftis{ni}));
+        for na=1:width(SynthDT),if isstruct(SynthDT{:,na})
+            SynthDT.(SynthDT.Properties.VariableNames{na}) = struct2table(SynthDT{:,na});
+        end,end
+    end
+end
 
+% (Download and) read the output nifti-s
+for outputNiftis=outputNiftis
+    if exist(outputNiftis{:},'file'), load(outputNiftis{:});
+    else
+        % TODO Check that the data is there before trying to download
+        [~,fname,ext] = fileparts(outputNiftis{:});
+        load(st.fw.downloadFileFromCollection(cc{1}.collection.id,...
+                        [fname ext],outputNiftis{:}));
+    end 
+end
 
-% Afni 6
-afni6results         = pmModelFit(niftis, 'afni_6','afni_hrf','SPM');
-afni6resultfName = ['synthDT55b_result_afni6.mat'];
-save(fullfile(pmRootPath,'local',afni6resultfName), 'afni6results');
-stts             = st.fileUpload(afni6resultfName, cc{1}.collection.id, 'collection');
+paramDefaults = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
+% Create the concatenated result table
+compTable  = pmResultsCompare(SynthDT, ... % Defines the input params
+    {'aprf','vista','vistahrf','pop','popno','afni4','afni6'}, ... % Analysis names we want to see: 'aPRF','vista',
+    {aprfresults,vistaresults,vistaresultsandhrf,popresults,popresultsnohrf,afni4results,afni6results}, ...
+    'params', paramDefaults, ...
+    'shorten names',true, ...
+    'dotSeries', false);
+% Now create the new plots
+sortHRFlike = {'friston','vista_twogammas','afni_gam','boynton','afni_spm',...
+               'canonical','popeye_twogammas'};  % sorted according noise=0, RFsize=2
+pmNoisePlotsByHRF(compTable, {'aprf','vista','vistahrf','pop','popno','afni4','afni6'}, ... % 'x0y0',[0,0],...
+                  'sortHRF',sortHRFlike,'usemetric','eccentricity', ...
+                  'noisevalues',[0,0.2], 'userfsize',2)
+pmNoisePlotsByHRF(compTable, {'aprf','vista','vistahrf','pop','popno','afni4','afni6'}, ... % 'x0y0',[0,0],...
+                  'sortHRF',sortHRFlike,'usemetric','polarangle', ...
+                  'noisevalues',[0,0.2], 'userfsize',2)
+pmNoisePlotsByHRF(compTable, {'aprf','vista','vistahrf','pop','popno','afni4','afni6'}, 'x0y0',[5,5],...
+                  'sortHRF',sortHRFlike,'usemetric','rfsize', ...
+                  'noisevalues',[0,0.2], 'userfsize',2)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+%% Revise and delete
 
 %}
 
@@ -215,7 +222,7 @@ end
 % stts = st.fileUpload(parALLsynthDTfName, cc{1}.collection.id, 'collection');
 
 
-%% Write the files
+% Write the files
 % Remove locations, only [5,5] for today
 synthDT55 = synthDT(synthDT.RF.Centerx0==5 & ...
                   synthDT.RF.Centery0==5,:);
@@ -263,7 +270,7 @@ end
 
 niftis = {niftiBOLDfile, jsonSynthFile, stimNiftiFname};
 
-%% Solve per each tool
+% Solve per each tool
 % and per each hrf
 
 % aPRF
@@ -378,61 +385,7 @@ save(fullfile(pmRootPath,'local',aprfresultfName), 'aprfresults');
     save(fullfile(pmRootPath,'local',afni6resultfName), 'afni6results');
 
     
-%% PLOT IT
-% Read the json with the param information
-TR = 1.5;
-jsonSynthFile = fullfile(pmRootPath,'local',['synthDT55_TR' num2str(TR) '_HRF-all.json']);
-SynthDT       = struct2table(jsonread(jsonSynthFile));
-for na=1:width(SynthDT)
-    if isstruct(SynthDT{:,na})
-        SynthDT.(SynthDT.Properties.VariableNames{na}) = struct2table(SynthDT{:,na});
-    end
-end
 
-% Read the result .mats
-aprfresultfName        = fullfile(pmRootPath,'local',['synthDT55_result_aprf.mat']);
-vistaresultfName       = fullfile(pmRootPath,'local',['synthDT55_result_vista.mat']);
-vistaandhrfresultfName = fullfile(pmRootPath,'local',['synthDT55_result_vistaandhrf.mat']);
-popresultfName         = fullfile(pmRootPath,'local',['synthDT55_result_pop.mat']);
-popresultnohrffName    = fullfile(pmRootPath,'local',['synthDT55_result_pop-nohrf.mat']);
-afni4resultfName       = fullfile(pmRootPath,'local',['synthDT55_result_afni4.mat']);
-afni6resultfName       = fullfile(pmRootPath,'local',['synthDT55_result_afni6.mat']);
-
-fNames = {aprfresultfName, vistaresultfName,vistaandhrfresultfName, ...
-          popresultfName, popresultnohrffName, afni4resultfName, afni6resultfName};
-% Connect to FW
-st   = scitran('stanfordlabs'); st.verify;
-cc   = st.search('collection','collection label exact','PRF_StimDependence');
-for fName=fNames
-    if exist(fName{:},'file'), load(fName{:});
-    else
-        % Check that the data is there
-        [~,fname,ext] = fileparts(fName{:});
-        data          = load(st.fw.downloadFileFromCollection(cc{1}.collection.id,...
-                        [fname ext],fName{:}));
-    end 
-end
-
-paramDefaults = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
-% Create the concatenated result table
-compTable  = pmResultsCompare(SynthDT, ... % Defines the input params
-    {'aprf','vista','vistahrf','pop','popno','afni4','afni6'}, ... % Analysis names we want to see: 'aPRF','vista',
-    {aprfresults,vistaresults,vistaresultsandhrf,popresults,popresultsnohrf,afni4results,afni6results}, ...
-    'params', paramDefaults, ...
-    'shorten names',true, ...
-    'dotSeries', false);
-% Now create the new plots
-sortHRFlike = {'friston','vista_twogammas','afni_gam','boynton','afni_spm',...
-               'canonical','popeye_twogammas'};  % sorted according noise=0, RFsize=2
-pmNoisePlotsByHRF(compTable, {'aprf','vista','vistahrf','pop','popno','afni4','afni6'}, ... % 'x0y0',[0,0],...
-                  'sortHRF',sortHRFlike,'usemetric','eccentricity', ...
-                  'noisevalues',[0,0.2], 'userfsize',2)
-pmNoisePlotsByHRF(compTable, {'aprf','vista','vistahrf','pop','popno','afni4','afni6'}, ... % 'x0y0',[0,0],...
-                  'sortHRF',sortHRFlike,'usemetric','polarangle', ...
-                  'noisevalues',[0,0.2], 'userfsize',2)
-pmNoisePlotsByHRF(compTable, {'aprf','vista','vistahrf','pop','popno','afni4','afni6'}, 'x0y0',[5,5],...
-                  'sortHRF',sortHRFlike,'usemetric','rfsize', ...
-                  'noisevalues',[0,0.2], 'userfsize',2)
     
     
     
@@ -440,7 +393,7 @@ pmNoisePlotsByHRF(compTable, {'aprf','vista','vistahrf','pop','popno','afni4','a
     
     
     
-%% Plot the files locally, for that we need to locate the files and download them. 
+% Plot the files locally, for that we need to locate the files and download them. 
 % If they are in the local folder, take from there instead of downloading them. 
 st          = scitran('stanfordlabs'); st.verify;
 cc          = st.search('collection','collection label exact','PRF_StimDependence');
@@ -703,7 +656,7 @@ for nh=1:length(sortHRFlike)
 end
 
 
-%% Copy from below if needed, delete all at the end
+% Copy from below if needed, delete all at the end
 %{
 
 
