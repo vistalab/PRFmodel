@@ -43,4 +43,77 @@ Probably in Flywheel as data and Gears.
 
 We may also put them on the Stanford Digital repository and Dockerhub.
 
+# INSTALLATION
+
+
+
+
+
+# HOW TO USE
+
+## Running with existing data
+
+
+## Synthetic data generation
+Edit a json file with all the parameters required to generate a synthetic BOLD signal.
+This is the template json:
+```
+{ 
+   "TR":1,
+   "Type":"basic",
+   "BOLDmeanValue":10000,
+   "BOLDcontrast":8,
+   "HRF":[ 
+      { 
+         "Type":"friston",
+         "Duration":20,
+         "params":{ 
+            "a":[ 
+               6,
+               12
+            ],
+            "b":[ 
+               0.9,
+               0.9
+            ],
+            "c":0.35,
+            "n":3,
+            "tau":1.08,
+            "delay":2.05,
+            "stimDuration":1
+         }
+      }
+   ],
+   "RF":[ 
+      { 
+         "Centerx0":0,
+         "Centery0":0,
+         "Theta":0,
+         "sigmaMajor":1,
+         "sigmaMinor":1,
+         "Type":"mrvista"
+      }
+   ],
+   "Stimulus":[ 
+      { 
+         "fieldofviewHorz":20,
+         "fieldofviewVert":20,
+         "expName":"103",
+         "Binary":true,
+         "Resize":true,
+         "ResizedHorz":101,
+         "ResizedVert":101,
+         "barWidth":2
+      }
+   ],
+   "Noise":[ 
+      { 
+         "noise2signal":0,
+         "amplitude":0.1,
+         "frequency":1.25
+      }
+   ]
+}
+```
+
 
