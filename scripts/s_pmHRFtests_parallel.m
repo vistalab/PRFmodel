@@ -4,44 +4,165 @@
 % It cannot be stored.
 HRFTypes = {'friston','boynton','canonical','vista_twogammas','popeye_twogammas',...
             'afni_gam','afni_spm'};
-%{
+% {
 synthDTsep = {};
 parfor nh=1:length(HRFTypes)
     COMBINE_PARAMETERS                    = struct();
-    COMBINE_PARAMETERS.RF.Centerx0        = [0,5,-5];
-    COMBINE_PARAMETERS.RF.Centery0        = [0,5,-5];  % [-6 5 4 3 2 1 0 1 2 3 4 5 6];
+    COMBINE_PARAMETERS.RF.Centerx0        = [5];
+    COMBINE_PARAMETERS.RF.Centery0        = [5];  % [-6 5 4 3 2 1 0 1 2 3 4 5 6];
     COMBINE_PARAMETERS.RF.Theta           = [0]; %, deg2rad(45)];
-    COMBINE_PARAMETERS.RF.sigmaMajor      = [0.5,1,2,4,8];  % [1,2,3,4];
+    COMBINE_PARAMETERS.RF.sigmaMajor      = [0.5,2,8];  % [1,2,3,4];
     COMBINE_PARAMETERS.RF.sigmaMinor      = 'same'; % 'same' for making it the same to Major
     COMBINE_PARAMETERS.TR                 = [1.5];
     HRF                                   = struct();
     HRF(1).Type                           = HRFTypes{nh};
     COMBINE_PARAMETERS.HRF                = HRF;
     % Right now only the parameter for white noise can be edited.
-    COMBINE_PARAMETERS.Noise.noise2signal = [0:0.1:0.5];
+    COMBINE_PARAMETERS.Noise.noise2signal = [0,0.2];
     synthDTsep{nh} = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'mult',100);
     synthDTsep{nh} = pmForwardModelCalculate(synthDTsep{nh});
 end
-
-% It cannot save a file that big
-for nh=1:length(HRFTypes)
-    hrftype     = HRFTypes{nh};
-    synth2Write = synthDTsep{nh};
-    % The files are to big to be written but we want to have some backup
-    trozo1 = synth2Write(1:9000,:);
-    trozo2 = synth2Write(9001:18000,:);
-    trozo3 = synth2Write(18001:27000,:);
-    
-    % Save it 
-    parALLsynthDTfName = [hrftype '_1_synthDT_parALL_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat']
-    save(fullfile(pmRootPath,'local',parALLsynthDTfName), 'trozo1');
-
-    parALLsynthDTfName = [hrftype '_2_synthDT_parALL_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat']
-    psave(fullfile(pmRootPath,'local',parALLsynthDTfName), 'trozo2');
-
-    parALLsynthDTfName = [hrftype '_3_synthDT_parALL_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat']
-    save(fullfile(pmRootPath,'local',parALLsynthDTfName), 'trozo3');
+% Concatenate
+synthDT = synthDTsep{1};
+for nh=2:length(HRFTypes)
+    synthDT = [synthDT; synthDTsep{nh}];
 end
+
+
+
+% Create niftis
+TR   = unique(synthDT.TR);
+HRFs = unique(synthDT.HRF.Type);
+
+
+% Save the default niftis with different TR and HRF to be used as tests later on
+niftiBOLDfile = fullfile(pmRootPath,'local',['synthDT55b_TR' num2str(TR) '_HRF-all.nii.gz']);
+if ~exist(niftiBOLDfile, 'file')
+    pmForwardModelToNifti(synthDT,'fname',niftiBOLDfile, 'demean',false);
+end
+
+jsonSynthFile = fullfile(pmRootPath,'local',['synthDT55b_TR' num2str(TR) '_HRF-all.json']);
+if ~exist(jsonSynthFile, 'file')
+    % Encode json
+    jsonString = jsonencode(synthDT(:,1:(end-1)));
+    % Format a little bit
+    jsonString = strrep(jsonString, ',', sprintf(',\r'));
+    jsonString = strrep(jsonString, '[{', sprintf('[\r{\r'));
+    jsonString = strrep(jsonString, '}]', sprintf('\r}\r]'));
+    % Write it
+    fid = fopen(jsonSynthFile, 'w');if fid == -1,error('Cannot create JSON file');end
+    fwrite(fid, jsonString, 'char');fclose(fid);
+    % Read the json
+    %{
+    A = struct2table(jsonread(jsonSynthFile));
+    for na=1:width(A)
+        if isstruct(A{:,na})
+            A.(A.Properties.VariableNames{na}) = struct2table(A{:,na});
+        end
+    end
+    %}
+end
+
+stimNiftiFname = fullfile(pmRootPath,'local', ['Stim55b_TR' num2str(TR) '.nii.gz']);
+if ~exist(stimNiftiFname, 'file')
+    pm1            = prfModel; 
+    pm1.TR         = TR;
+    pm1.compute;
+    stimNiftiFname = pm1.Stimulus.toNifti('fname',stimNiftiFname);
+end
+
+niftis = {niftiBOLDfile, jsonSynthFile, stimNiftiFname};
+
+
+
+% Upload it to fw
+st   = scitran('stanfordlabs'); st.verify;
+cc   = st.search('collection','collection label exact','PRF_StimDependence');
+
+% Solve, save and upload with all of them
+%%%%%%
+% aPRF
+%%%%%%
+options          = struct('seedmode',[0,1,2], 'display','off', 'maxpolydeg',0);
+aprfresults      = pmModelFit(niftis, 'aprf', 'options', options);
+aprfresultfName  = ['synthDT55b_result_aprf.mat'];
+save(fullfile(pmRootPath,'local',aprfresultfName), 'aprfresults');
+stts             = st.fileUpload(aprfresultfName, cc{1}.collection.id, 'collection');
+
+% mrVista
+vistaresults    = pmModelFit(niftis, 'mrvista','model','one gaussian', ...
+                  'grid', false, ... % if true, returns gFit
+                  'wSearch', 'coarse to fine');
+vistaresultfName = ['synthDT55b_result_vista.mat'];
+save(fullfile(pmRootPath,'local',vistaresultfName), 'vistaresults');
+stts             = st.fileUpload(vistaresultfName, cc{1}.collection.id, 'collection');
+
+% mrvista and hrf
+vistaresultsandhrf = pmModelFit(niftis, 'mrvista','model','one gaussian', ...
+                    'grid', false, ... % if true, returns gFit
+                    'wSearch', 'coarse to fine and hrf');
+vistaandhrfresultfName = ['synthDT55b_result_vistaandhrf.mat'];
+save(fullfile(pmRootPath,'local',vistaandhrfresultfName), 'vistaresultsandhrf');
+stts             = st.fileUpload(vistaandhrfresultfName, cc{1}.collection.id, 'collection');
+
+% popeye
+popresults        = pmModelFit(niftis, 'popeye');
+popresultfName = ['synthDT55b_result_pop.mat'];
+save(fullfile(pmRootPath,'local',popresultfName), 'popresults');
+stts             = st.fileUpload(popresultfName, cc{1}.collection.id, 'collection');
+
+% popeye no hrf
+popresultsnohrf        = pmModelFit(niftis, 'popeyenohrf');
+popnohrfresultfName = ['synthDT55b_result_popnohrf.mat'];
+save(fullfile(pmRootPath,'local',popnohrfresultfName), 'popresultsnohrf');
+stts             = st.fileUpload(popnohrfresultfName, cc{1}.collection.id, 'collection');
+
+% Afni 4
+afni4results         = pmModelFit(niftis, 'afni_4','afni_hrf','SPM');
+afni4resultfName = ['synthDT55b_result_afni4.mat'];
+save(fullfile(pmRootPath,'local',afni4resultfName), 'afni4results');
+stts             = st.fileUpload(afni4resultfName, cc{1}.collection.id, 'collection');
+
+
+% Afni 6
+afni6results         = pmModelFit(niftis, 'afni_6','afni_hrf','SPM');
+afni6resultfName = ['synthDT55b_result_afni6.mat'];
+save(fullfile(pmRootPath,'local',afni6resultfName), 'afni6results');
+stts             = st.fileUpload(afni6resultfName, cc{1}.collection.id, 'collection');
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 %}
 
 

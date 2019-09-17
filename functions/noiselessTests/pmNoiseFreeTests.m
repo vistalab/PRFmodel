@@ -58,11 +58,11 @@ plotit   = p.Results.plotit;
 
 
 %% Create the test data
-COMBINE_PARAMETERS.RF.Centerx0        = [0, -5, 5]; % [-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
-COMBINE_PARAMETERS.RF.Centery0        = [0, -5, 5];
+COMBINE_PARAMETERS.RF.Centerx0        = [5]; % [-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
+COMBINE_PARAMETERS.RF.Centery0        = [5];
 COMBINE_PARAMETERS.RF.Theta           = [0]; %, deg2rad(45)];
-COMBINE_PARAMETERS.RF.sigmaMinor      = [0.5];
-COMBINE_PARAMETERS.RF.sigmaMajor      = [0.5];
+COMBINE_PARAMETERS.RF.sigmaMinor      = [2];
+COMBINE_PARAMETERS.RF.sigmaMajor      = [2];
 COMBINE_PARAMETERS.Noise.noise2signal = [0];  % By default only white noise added
 
 switch prfimplementation
@@ -77,17 +77,18 @@ switch prfimplementation
         HRF(1).Type = 'vista_twogammas';
         % COMBINE_PARAMETERS.Stimulus.ResizedHorz = [100];
         % COMBINE_PARAMETERS.Stimulus.ResizedVert = [100];
-    case {'popeye','pop'}
+    case {'popeye','pop','popnohrf','popeyenohrf'}
         COMBINE_PARAMETERS.TR                   = [1.5]; % before it had to be one because the hrf was hardcoded
         % amazing, TR:1 and 3, all ok, for TR:2, the last test fails and it is
         % not capable of predicting anything. 
         HRF(1).Type = 'popeye_twogammas';
+        HRF(2).Type = 'canonical';
     otherwise
         error('%s not yet implemented',prfimplementation);
 end
 
 COMBINE_PARAMETERS.HRF           = HRF;
-synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS);
+synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'mult', 5);
 synthDT = pmForwardModelCalculate(synthDT);
 % Visually check that all the combinations we specified are there
 % [synthDT.RF(:,{'Centerx0','Centery0','Theta','sigmaMajor','sigmaMinor'}), ...
@@ -164,7 +165,9 @@ switch prfimplementation
             'keepAllPoints', true, ...
             'numberStimulusGridPoints', 50);  %  We need to remove it otherwise it will find an average HRF for all of them
     case {'popeye','pop'}
-        results  = pmModelFit(input,'popeye_onegaussian');
+        results  = pmModelFit(input,'popeye');
+    case {'popnoherf','popeyenohrf'}
+        results  = pmModelFit(input,'popeyenohrf');
     otherwise
         error('%s not yet implemented',prfimplementation);
 end
