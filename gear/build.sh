@@ -1,1 +1,1 @@
-docker build --tag scitran/dwi-split-shells ./
+docker build --tag vistalab/prfvalidation ./

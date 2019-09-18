@@ -2,7 +2,7 @@
 #
 #
 
-CONTAINER="[scitran/dwi-split-shells]"
+CONTAINER="[vistalab/prfvalidation]"
 echo -e "$CONTAINER  Initiated"
 
 
