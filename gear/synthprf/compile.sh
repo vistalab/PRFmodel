@@ -15,7 +15,7 @@ addpath(genpath('/data/localhome/glerma/toolboxes/PRFmodel'));
 % mcc -m -R -nodisplay -a /data/localhome/glerma/soft/encode/mexfiles -a /data/localhome/glerma/soft/vistasoft/mrDiffusion -d compiled AFQ_StandAlone_QMR.m
 
 
-mcc -m -R -nodisplay -d compiled synthBOLDgenerator.m 
+mcc -m -R -nodisplay -a /data/localhome/glerma/toolboxes/PRFmodel/data -d compiled synthBOLDgenerator.m 
 exit
 END
 /software/matlab/r2018b/bin/matlab -nodisplay -nosplash -r build && rm build.m

@@ -58,7 +58,8 @@ fi
 
 
 # Get a list of the files in the output directory
-outputs=$(find $OUTPUT_DIR/* -maxdepth 0 -type f)
+# outputs=$(find $OUTPUT_DIR/* -maxdepth 0 -type f)
+outputs=$(find $OUTPUT_DIR/* )
 
 
 # If outputs exist, generate metadata, and exit
