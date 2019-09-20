@@ -2,7 +2,7 @@
 #
 #
 
-CONTAINER="[vistalab/synthprf]"
+CONTAINER="[garikoitz/synthprf]"
 echo -e "$CONTAINER  Initiated"
 
 
@@ -58,7 +58,8 @@ fi
 
 
 # Get a list of the files in the output directory
-outputs=$(find $OUTPUT_DIR/* -maxdepth 0 -type f)
+# outputs=$(find $OUTPUT_DIR/* -maxdepth 0 -type f)
+outputs=$(find $OUTPUT_DIR/* )
 
 
 # If outputs exist, generate metadata, and exit
@@ -67,7 +68,7 @@ if [[ -z $outputs ]]; then
   exit 1
 else
   cd $OUTPUT_DIR
-  echo -e "$CONTAINER  Wrote: `ls`"
+  echo -e "$CONTAINER  Available synth datasets: `ls`"
   echo -e "$CONTAINER  Done!"
 fi
 

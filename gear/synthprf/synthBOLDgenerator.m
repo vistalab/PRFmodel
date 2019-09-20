@@ -136,7 +136,6 @@ TEST = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'mult', 2);
 TEST = pmForwardModelCalculate(TEST);
 %}
 PARAMETERS = J;
-PARAMETERS = rmfield(PARAMETERS,'output_dir');
 PARAMETERS = rmfield(PARAMETERS,'fileName');
 PARAMETERS = rmfield(PARAMETERS,'mult');
 % Do the required conversions before creating the table
