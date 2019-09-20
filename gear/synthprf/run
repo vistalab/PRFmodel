@@ -2,7 +2,7 @@
 #
 #
 
-CONTAINER="[vistalab/synthprf]"
+CONTAINER="[garikoitz/synthprf]"
 echo -e "$CONTAINER  Initiated"
 
 
@@ -68,7 +68,7 @@ if [[ -z $outputs ]]; then
   exit 1
 else
   cd $OUTPUT_DIR
-  echo -e "$CONTAINER  Wrote: `ls`"
+  echo -e "$CONTAINER  Available synth datasets: `ls`"
   echo -e "$CONTAINER  Done!"
 fi
 
