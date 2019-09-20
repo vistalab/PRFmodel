@@ -1,7 +1,7 @@
 %% s_pmHRFtests_parallel.m
 
 % Create the names that will be used in this script
-TR   = 1.5;
+TR       = 1.5;
 HRFTypes = {'friston','boynton','canonical','vista_twogammas','popeye_twogammas',...
             'afni_gam','afni_spm'};
 % INPUTS
@@ -10,16 +10,19 @@ jsonSynthFile  = fullfile(pmRootPath,'local',['synthDT55b_TR' num2str(TR) '_HRF-
 stimNiftiFname = fullfile(pmRootPath,'local',['Stim55b_TR'    num2str(TR) '.nii.gz']);
 inputNiftis = {niftiBOLDfile, jsonSynthFile, stimNiftiFname};
 % OUTPUTS
-aprfresultfName        = fullfile(pmRootPath,'local',['synthDT55b_result_aprf.mat']);
+aprfcssresultfName     = fullfile(pmRootPath,'local',['synthDT55c_result_aprfcss.mat']);
+aprfresultfName        = fullfile(pmRootPath,'local',['synthDT55c_result_aprf.mat']);
 vistaresultfName       = fullfile(pmRootPath,'local',['synthDT55b_result_vista.mat']);
 vistaandhrfresultfName = fullfile(pmRootPath,'local',['synthDT55b_result_vistaandhrf.mat']);
 popresultfName         = fullfile(pmRootPath,'local',['synthDT55b_result_pop.mat']);
 popresultnohrffName    = fullfile(pmRootPath,'local',['synthDT55b_result_popnohrf.mat']);
 afni4resultfName       = fullfile(pmRootPath,'local',['synthDT55b_result_afni4.mat']);
 afni6resultfName       = fullfile(pmRootPath,'local',['synthDT55b_result_afni6.mat']);
-outputNiftis = {aprfresultfName, vistaresultfName,vistaandhrfresultfName, ...
-                popresultfName, popresultnohrffName, afni4resultfName, afni6resultfName};
-             
+% outputNiftis = {aprfresultfName, vistaresultfName,vistaandhrfresultfName, ...
+%                 popresultfName, popresultnohrffName, afni4resultfName, afni6resultfName};
+outputNiftis = {aprfcssresultfName, aprfresultfName};
+    
+            
 % Connect to fw
 st   = scitran('stanfordlabs'); st.verify;
 cc   = st.search('collection','collection label exact','PRF_StimDependence');
@@ -93,26 +96,34 @@ stts = st.fileUpload(stimNiftiFname, cc{1}.collection.id, 'collection');
 
 %% Solve and upload to FW
 % SOLVE
-%  - aPRF
-options = struct('seedmode',[0,1,2], 'display','off', 'maxpolydeg',0);
-aprfresults = pmModelFit(niftis, 'aprf', 'options', options);
+%  - aPRF CSS=true
+options = struct('seedmode',[0,1,2], 'display','off', 'maxpolydeg',0, ...
+                  'usecss',true);
+aprfcssresults = pmModelFit(inputNiftis, 'aprf', 'options', options);
+save(aprfcssresultfName, 'aprfcssresults');
+%  - aPRF CSS=false
+options = struct('seedmode',[0,1,2], 'display','off', 'maxpolydeg',0, ...
+                  'usecss',false);
+aprfresults = pmModelFit(inputNiftis, 'aprf', 'options', options);
 save(aprfresultfName, 'aprfresults');
+%{
 %  - mrVista
-vistaresults = pmModelFit(niftis, 'mrvista','model','one gaussian', ...
+vistaresults = pmModelFit(inputNiftis, 'mrvista','model','one gaussian', ...
                   'grid', false, 'wSearch', 'coarse to fine');
 save(vistaresultfName, 'vistaresults');
 %  - mrvista and hrf
-vistaresultsandhrf = pmModelFit(niftis, 'mrvista','model','one gaussian', ...
+vistaresultsandhrf = pmModelFit(inputNiftis, 'mrvista','model','one gaussian', ...
                     'grid', false, 'wSearch', 'coarse to fine and hrf');
 save(vistaandhrfresultfName, 'vistaresultsandhrf');
 %  - popeye, default with hrf search
-popresults = pmModelFit(niftis, 'popeye'); save(popresultfName, 'popresults');
+popresults = pmModelFit(inputNiftis, 'popeye'); save(popresultfName, 'popresults');
 %  - popeye no hrf
-popresultsnohrf= pmModelFit(niftis, 'popeyenohrf'); save(popnohrfresultfName, 'popresultsnohrf');
+popresultsnohrf= pmModelFit(inputNiftis, 'popeyenohrf'); save(popnohrfresultfName, 'popresultsnohrf');
 %  - Afni 4
-afni4results = pmModelFit(niftis, 'afni_4','afni_hrf','SPM'); save(afni4resultfName, 'afni4results');
+afni4results = pmModelFit(inputNiftis, 'afni_4','afni_hrf','SPM'); save(afni4resultfName, 'afni4results');
 %  - Afni 6
-afni6results = pmModelFit(niftis, 'afni_6','afni_hrf','SPM'); save(afni6resultfName, 'afni6results');
+afni6results = pmModelFit(inputNiftis, 'afni_6','afni_hrf','SPM'); save(afni6resultfName, 'afni6results');
+%}
 
 % UPLOAD
 for nu=1:length(outputNiftis)

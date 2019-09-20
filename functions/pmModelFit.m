@@ -48,7 +48,7 @@ varargin = mrvParamFormat(varargin);
 p = inputParser;
 p.addRequired('input');
 p.addRequired('prfimplementation',@ischar);
-p.addParameter('useParallel'    ,  true        , @islogical);
+p.addParameter('useparallel'    ,  true        , @islogical);
 
 % This options structs are defaults for analyzePRF
 options  = struct('seedmode', [0 1], 'display' , 'off');
@@ -73,7 +73,7 @@ p.addParameter('afni_hrf'   , 'SPM'           , @ischar);
 % Parse. Assign result inside each case
 p.parse(input,prfimplementation,varargin{:});
 % Read here only the generic ones
-useParallel = p.Results.useParallel;
+useParallel = p.Results.useparallel;
 
 
 %% Convert the input
