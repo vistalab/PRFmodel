@@ -152,7 +152,7 @@ end
 %% Launch the analysis
 switch prfimplementation
     case {'aprf','analyzeprf'}
-        options  = struct('seedmode',[0,1,2], 'display','off', 'maxpolydeg',0);
+        options  = struct('seedmode',[0,1,2], 'display','off', 'maxpolydeg',0,'usecss',true);
         results = pmModelFit(input,'analyzePRF','options',options);
     case {'afni_4','afni_6','afni'}
         results    = pmModelFit(input,'afni_4','afni_hrf','SPM');
