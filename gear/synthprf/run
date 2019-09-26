@@ -2,7 +2,7 @@
 #
 #
 
-CONTAINER="[garikoitz/synthprf]"
+CONTAINER="[garikoitz/prfsynth]"
 echo -e "$CONTAINER  Initiated"
 
 

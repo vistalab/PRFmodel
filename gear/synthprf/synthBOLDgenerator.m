@@ -115,7 +115,7 @@ end
 
 
 % Create an output subfolder for the outputs 
-outputSubFolder = ['synthBOLD_', datestr(datetime,'yyyymmddTHHMMSS','local')];
+outputSubFolder = [J.fileName '_' datestr(datetime,'yyyymmddTHHMMSS','local')];
 output_dir = fullfile(output_dir, outputSubFolder);
 mkdir(output_dir);
 
