@@ -57,6 +57,8 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
     
     methods (Static)
         function d = defaultsGet
+            % This provides the defaults of this class, which is the only one at
+            % the top level. 
             d.TR            = 1;
             d.Type          = 'basic';
             d.BOLDmeanValue = 10000;
@@ -80,7 +82,6 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             p.addParameter('boldmeanValue',  d.BOLDmeanValue, @isnumeric);
             p.addParameter('boldcontrast' ,  d.BOLDcontrast , @isnumeric);
             
-            
             p.parse(varargin{:});
             % Assign defaults/parameters to class/variables
             pm.TR            = p.Results.tr;
@@ -92,24 +93,11 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             pm.Stimulus      = pmStimulus(pm);
             pm.HRF           = pmHRF(pm); 
             pm.RF            = pmRF(pm);
-            
-            % We should initialize the RNG here and return the seed
-            
-            % pm.Noise takes one or several noise models that will be added
-            % recursively and independently to the bold signal, i.e. each noise
-            % is independent from each other.
-            % Add parameters like this:,'params',struct('frequency',1.3)
-            pm.Noise = {pmNoise(pm, 'Type','white')};  % , ...
-                        % pmNoise(pm, 'Type','cardiac'), ...
-                        % pmNoise(pm, 'Type','respiratory')};
-            % pm.Noise = {};
+            pm.Noise         = pmNoise(pm);
         end
         % Functions that apply the setting of main parameters to subclasses
-        % TR: set and get
         function set.TR(pm, tr)
-            pm.uniqueTR           = tr;
-            % pm.HRF.setTR(tr);
-            % pm.Stimulus.setTR(tr);
+            pm.uniqueTR      = tr;
         end
         function v = get.TR(pm)
             v = pm.uniqueTR;
@@ -125,9 +113,11 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
         function v = get.timePointsN(pm)
             v = pm.Stimulus.timePointsN;
         end
+        
         function v = get.timePointsSeries(pm)
             v  = pm.Stimulus.timePointsSeries;
         end
+        
         function defaultsTable = get.defaultsTable(pm)
             % This function obtains all the defaults from all the
             % subclasses, so that we can construct a parameter table
@@ -135,16 +125,9 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             defaultsTable.HRF       = pm.HRF.defaultsGet;
             defaultsTable.RF        = pm.RF.defaultsGet;
             defaultsTable.Stimulus  = pm.Stimulus.defaultsGet;
-            % Noise are several noise models by default, add them all
-            % TODO: think about this. 
-            %       right now, return only params
-            % for nn = 1:length(pm.Noise)
-            %     tmp                 = pm.Noise{nn}.defaultsGet;
-            %     tmp.Type            = pm.Noise{nn}.Type;
-            %     defaultsTable.(['Noise_' tmp.Type]) = tmp;
-            % end
-            defaultsTable.Noise  = pm.Noise{1}.defaultsGet;
+            defaultsTable.Noise     = pm.Noise.defaultsGet;
         end
+        
         % Compute synthetic BOLD without noise
         function computeBOLD(pm,varargin)
             % For this linear model we take the inner product of the
@@ -303,18 +286,12 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             pm.Stimulus.compute;
             pm.RF.compute;
             pm.HRF.compute;
+            pm.Noise.compute;
             
             % Every sub-class has a computeBOLD function to compute the mean response.
             pm.computeBOLD;
-            
-            % Compute and add noise
-            sumOfNoise = zeros(size(pm.BOLD));
-            for ii=1:length(pm.Noise)
-                pm.Noise{ii}.compute;
-                sumOfNoise = sumOfNoise + pm.Noise{ii}.values;
-            end
-            
-            pm.BOLDnoise = pm.BOLD + sumOfNoise;
+            % Add the noise component. We want them to be separated. 
+            pm.BOLDnoise = pm.BOLD + pm.Noise.values;
         end
         % Plot it
         function plot(pm, varargin)

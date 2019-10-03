@@ -43,8 +43,14 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
     
     properties
         PM;           % prfModel that has some of the variables we need, such as TR
-        Type;         % 'White', ...
-        params;
+        white;
+        white_noise2signal;
+        cardiac;
+        cardiac_amplitude;
+        cardiac_frequency;
+        respiratory;
+        respiratory_amplitude;
+        respiratory_frequency;
         values;
     end
     
@@ -57,12 +63,33 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
     %%
     methods (Static)
         function d = defaultsGet
-            d.Type                = 'white';
-            d.params.noise2signal = 0; % white noise; constant to relate to signal
-            d.params.amplitude    = 0.1; % cardiac and respiratory
-            d.params.frequency    = 1.25; % cardiac and respiratory
+            % White Noise
+            d.white              = false; 
+            d.white_noise2signal = 0.1; % white noise; constant to relate to signal
+            
+            % Cardiac
+            d.cardiac            = false; 
+            d.cardiac_amplitude  = 0.1;
+            d.cardiac_frequency  = 1.17; 
+            
+            % Respiratory
+            d.respiratory            = false; 
+            d.respiratory_amplitude  = 0.1;
+            d.respiratory_frequency  = 0.2; 
+            
+            % Low frequency
+            
+            
+            % Autocorrelation
+            
+            
+            
+            % Task related
+            
+            
+            
             % Convert to table and return
-            d = struct2table(d.params,'AsArray',true);
+            d = struct2table(d,'AsArray',true);
         end
     end
     methods
@@ -75,20 +102,28 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
             % Read the inputs
             varargin = mrvParamFormat(varargin);
             p = inputParser;
-            p.addRequired('pm'       ,             @(x)(isa(x,'prfModel')));
-            % p.addParameter('type'    ,d.Type{:}  , @ischar);
-            % p.addParameter('params'  ,d.params   , @isstruct);
-            p.addParameter('type'    ,'white'  , @ischar);
-            p.addParameter('params'  ,table2struct(d)   , @isstruct);
+            p.addRequired('pm'                                             , @(x)(isa(x,'prfModel')));
+            p.addParameter('white'                 ,d.white                , @islogical);
+            p.addParameter('white_noise2signal'    ,d.white_noise2signal   , @isnumeric);
+            p.addParameter('cardiac'               ,d.cardiac              , @islogical);
+            p.addParameter('cardiac_amplitude'     ,d.cardiac_amplitude    , @isnumeric);
+            p.addParameter('cardiac_frequency'     ,d.cardiac_frequency    , @isnumeric);
+            p.addParameter('respiratory'           ,d.respiratory          , @islogical);
+            p.addParameter('respiratory_amplitude' ,d.respiratory_amplitude, @isnumeric);
+            p.addParameter('respiratory_frequency' ,d.respiratory_frequency, @isnumeric);
             p.parse(pm,varargin{:});
             
             % Initialize the pm model and hrf model parameters
             noise.PM       = pm;
-            noise.Type     = p.Results.type;
-            % Check if only some of the fields in params where set
-            % noise.params   = pmParamsCompletenessCheck(p.Results.params,d.params);
-            noise.params   = pmParamsCompletenessCheck(p.Results.params,table2struct(d));
-            
+            % params
+            noise.white    = p.Results.white;
+            noise.white_noise2signal = p.Results.white_noise2signal;
+            noise.cardiac            = p.Results.cardiac;
+            noise.cardiac_amplitude  = p.Results.cardiac_amplitude;
+            noise.cardiac_frequency  = p.Results.cardiac_frequency;
+            noise.respiratory            = p.Results.respiratory;
+            noise.respiratory_amplitude  = p.Results.respiratory_amplitude;
+            noise.respiratory_frequency  = p.Results.respiratory_frequency;
         end
         
         % Methods available to this class and his childrens (friston, boynton... classes)
@@ -98,22 +133,65 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
         
         % COMPUTE
         function compute(noise)
+            % Simplifying this code. Noise is a simple class, and the noise
+            % models will be specified in the parameters. 
+            
+            % Obtain the BOLD signal without noise. 
+            noise.PM.computeBOLD;
+            signal       = noise.PM.BOLD; % Retrieved from the parent model
+            tmpNoise     = {};
+            
+            % WHITE
+            tmpNoise{1}  = {};
+            if noise.white
+                n = noise.white_noise2signal * (max(signal) - min(signal));
+                tmpNoise{1} = n * randn([1,noise.PM.timePointsN]);
+            end
+            
+            % CARDIAC
+            tmpNoise{2}  = {};
+            if noise.cardiac
+                % Frequency [Hz]
+                fNoise = noise.cardiac_frequency;
+                % Amplitude
+                aNoise = noise.cardiac_amplitude * (max(noise.PM.BOLD) - min(noise.PM.BOLD));
+                t      = noise.PM.timePointsSeries;
+                % Calculate the noise
+                tmpNoise{2} = aNoise*sin(2*pi.*t.*fNoise);                
+            end
+            
+            % RESPIRATORY
+            tmpNoise{3}  = {};
+            if noise.respiratory
+                % Frequency [Hz]
+                fNoise = noise.respiratory_frequency;
+                % Amplitude
+                aNoise = noise.respiratory_amplitude * (max(noise.PM.BOLD) - min(noise.PM.BOLD));
+                t      = noise.PM.timePointsSeries;
+                % Calculate the noise
+                tmpNoise{2} = aNoise*sin(2*pi.*t.*fNoise);                
+            end
+            
+            
+            % SUM ALL NOISE MODEL
+            vals = zeros(size(signal));
+            for nn=1:length(tmpNoise)
+                if ~isempty(tmpNoise{nn})
+                    vals = vals + tmpNoise{nn};
+                end
+            end
+            
+            % RETURN VALUES
+            noise.values = vals;
+            
+            
+            
+            % Old code, to be deleted
+            %{
             % TODO: move the code to the .m functions of the same name
             switch noise.Type
                 case 'white'  % Indstrumen
-                    % This is the amplitude of the white noise, the goal is to
-                    % scale it so that it h
-                    noise.PM.computeBOLD;
-                    signal       = noise.PM.BOLD; % Retrieved from the parent model
-                    n            = noise.params.noise2signal * (max(signal) - min(signal));
-                    noise.values = n * randn([1,noise.PM.timePointsN]);
                 case 'pink'  % fisiological
-                    % This is the amplitude of the white noise, the goal is to
-                    % scale it so that it h
-                    noise.PM.computeBOLD;
-                    signal       = noise.PM.BOLD; % Retrieved from the parent model
-                    n            = noise.params.noise2signal * (max(signal) - min(signal));
-                    noise.values = n * randn([1,noise.PM.timePointsN]);
                 case 'cardiac'
                     %                     % Make sure that when cardiac is selected, params comes with
                     %                     % the correct parameters, otherwise use defaults for cardiac
@@ -129,13 +207,7 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     
                     % Compute the noise
                     signal = noise.PM.BOLD;  % BOLD signal, add noise to this
-                    % Frequency [Hz]
-                    fNoise = noise.params.frequency;
-                    % Amplitude
-                    aNoise = noise.params.amplitude * (max(noise.PM.BOLD) - min(noise.PM.BOLD));
-                    t      = noise.PM.timePointsSeries;
-                    % Calculate the noise
-                    noise.values = aNoise*sin(2*pi.*t.*fNoise);
+                    
                 case 'respiratory'
                     %                     % Make sure that when respiratory is selected, params comes with
                     %                     % the correct parameters, otherwise use defaults for respiratory
@@ -163,6 +235,7 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
                 otherwise
                     error('Noise model %s not implemented or valid.',noise.Type);
             end
+            %}
         end
         
         

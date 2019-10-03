@@ -682,6 +682,9 @@ switch prfimplementation
             '-jobs 36' ... % num2str(c.NumWorkers)...
             ]);
         toc
+        
+        
+        
         %% Read the results back to Matlab
         kk = which('BrikLoad');
         if isempty(kk)

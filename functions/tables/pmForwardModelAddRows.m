@@ -12,24 +12,33 @@ if ~isa(values, 'table')
     values = values(2:end);
 end
 
+% Obtain a pm to have defaults
+pm = prfModel;
+
 % TODO: add checks to values to validate that the value type corresponds to the
 % variable that we want to expand
 tmp = synthDT;
-
 switch variableName
-    case 'HRF'
-        tmp.HRF          = repmat(values, [height(tmp),1]);
-        % Solving the concatenation problem for Type
-        tmp.HRF.Type     = categorical(cellstr(tmp.HRF.Type));
-        synthDT.HRF.Type = categorical(synthDT.HRF.Type);
-        % Solving the concatenation problem for Duration
-        tmp.HRF.Duration     = double(tmp.HRF.Duration);
-        synthDT.HRF.Duration = double(synthDT.HRF.Duration);
-        
-        % Now concatenate the original and the recently created one.
-        synthDT          = [synthDT; tmp];
-    case 'Noise'
-        warning('Noise not implemented yet.')
+    case {'HRF','Noise'}
+        for ii=1:length(values)
+            % Add rows with the combinations of parameters we want to check
+            % Then check that the whole thing should be complete
+            complete = pmParamsCompletenessCheck(values(ii), ...
+                table2struct(pm.defaultsTable.(variableName)));
+            if strcmp(variableName,'HRF')
+                % Check if only some of the fields in params where set
+                complete.params = pmParamsCompletenessCheck(complete.params, ...
+                    pm.defaultsTable.(variableName).params);
+            end
+            % Convert it to table
+            fieldValuesTable = struct2table(complete,'AsArray',true);
+            % Take the copy of the existing table, and make everything equal
+            % except the one thing we are changing
+            tmp.(variableName)          = repmat(fieldValuesTable, [height(tmp),1]);
+            
+            % Now concatenate the original and the recently created one.
+            synthDT          = [synthDT; tmp];
+        end
     otherwise
         vars = strsplit(variableName,'.');
         for ii=1:length(values)

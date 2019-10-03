@@ -31,14 +31,14 @@ for ii=1:height(DT)
         paramName               = dt.Stimulus.Properties.VariableNames{jj};
         pm.Stimulus.(paramName) = dt.Stimulus.(paramName);
     end
-    pm.Stimulus.compute;
+    % pm.Stimulus.compute;
     
     %% RF
     for jj=1:width(dt.RF)
         paramName         = dt.RF.Properties.VariableNames{jj};
         pm.RF.(paramName) = dt.RF.(paramName);
     end
-    pm.RF.compute;
+    % pm.RF.compute;
     
     %% HRF
     for jj=1:width(dt.HRF)
@@ -50,18 +50,21 @@ for ii=1:height(DT)
             pm.HRF.(paramName) = val;
         end
     end
-    pm.HRF.compute;
+    % pm.HRF.compute;
     
     
     %% Noise
-    % In this version we are only going to change the values for white noise
-    % Read values from table
-    pm.Noise{1}.params.noise2signal    = dt.Noise.noise2signal;
-    pm.Noise{1}.compute;
-    
+    for jj=1:width(dt.Noise)
+        paramName            = dt.Noise.Properties.VariableNames{jj};
+        pm.Noise.(paramName) = dt.Noise.(paramName);
+    end
+    % pm.Noise.compute;
     
     %% Compute the synthetic signal
+    % The compute at the top level computes all the lovel level ones. 
+    % Just do it once here. 
     pm.compute;
+    
     %% Write back the updated pm model
     DT.pm(ii) = pm;
     

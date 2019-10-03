@@ -48,6 +48,7 @@
 % The values that are not set-up below will use defaults. 
 % To see default parameters, execute:
 % clear classes
+clear all;
 pm       = prfModel;
 DEFAULTS = pm.defaultsTable
 % 
@@ -62,44 +63,40 @@ DEFAULTS = pm.defaultsTable
 %     - Create struct with the same organization as the table. 
 %     - (DO NOT ADD DEFAULTS, they will be in the first row of the synthDT table)
 
-% COMBINE_PARAMETERS.TR            = [2];      % Don't add 1
-% COMBINE_PARAMETERS.Type          = {'CSS'};  % Don't add basic
-COMBINE_PARAMETERS.RF.Centerx0   = [0];    % etc ...
-COMBINE_PARAMETERS.RF.Centery0   = [0];
-COMBINE_PARAMETERS.RF.sigmaMinor = [1];
-COMBINE_PARAMETERS.RF.sigmaMajor = [1];
-% Some parameters go in groups, because params are specific to the choice
-% If we change only some, the rest will remain defaults. 
-% HRF
-HRF(1).Type                      = 'friston';
-HRF(1).Duration                  = 18;
-HRF(1).params.c                  = 0.5;
 
-HRF(2).Type                      = 'canonical';
-HRF(2).params.stimDuration       = 2;
+% Main model related
+COMBINE_PARAMETERS.TR           = [2];      % Don't add 1
+% RF related
+COMBINE_PARAMETERS.RF.Centerx0  = [0,5];    % etc ...
+COMBINE_PARAMETERS.RF.Centery0  = [0];
+COMBINE_PARAMETERS.RF.sigmaMajor= [1];
+COMBINE_PARAMETERS.RF.sigmaMinor= "same";
 
-COMBINE_PARAMETERS.HRF           = HRF;
-% Noise
-% Noise is an array of noises. 
-% For simplicity, we are going to make it fixed: i.e. always the same noise 
-% models will be present. As with the other cases, just specify what we want to
-% change, and the rest will be maintained with the default
-% Noise(1).Type                      = 'friston';
-% Noise(1).params.noise2                  = 0.5;
-% % Another one with the three default ones
-% HRF(2).Type                      = 'canonical';
-% HRF(2).params.stimDuration       = 2;
+% HRF (goes in groups)
+HRF(1).Type                     = 'vista_twogammas';
+HRF(2).Type                     = 'canonical';
+HRF(3).Type                     = 'boynton';
+COMBINE_PARAMETERS.HRF          = HRF;
 
+% Noise (goes in groups)
+Noise(1).white                 = 0; % No noise
+Noise(1).cardiac               = 0;
+Noise(1).respiratory           = 0;
 
-% TODO: add the possibility to repeat the same line N times (to check for random effects)
+Noise(2).white                 = 1; % Just white
+Noise(2).cardiac               = 0;
+Noise(2).respiratory           = 0;
+
+Noise(3).white                 = 1; % White, cardiac and respiratory
+Noise(3).cardiac               = 1;
+Noise(3).respiratory           = 1;
+COMBINE_PARAMETERS.Noise       = Noise;
 
 % 
 % The entries in these different tables will be used to generate
 % synthetic BOLD timeseries.  These will be analyzed and the estimates
 % will be compared with the parameters set here.
-% NOTE: row(1)from synthDT will always be the defaults, for testing purposes
-synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS);
-
+synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats', 2)
 
 
 %% Compute the pm-s using the parameters in each row 

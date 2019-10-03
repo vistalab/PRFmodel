@@ -58,15 +58,15 @@ plotit   = p.Results.plotit;
 
 
 %% Create the test data
-COMBINE_PARAMETERS.RF.Centerx0        = [5]; % [-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
-COMBINE_PARAMETERS.RF.Centery0        = [5];
+COMBINE_PARAMETERS.RF.Centerx0        = [0,5,-5]; % [-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
+COMBINE_PARAMETERS.RF.Centery0        = [0,5,-5];
 COMBINE_PARAMETERS.RF.Theta           = [0]; %, deg2rad(45)];
 COMBINE_PARAMETERS.RF.sigmaMinor      = [2];
 COMBINE_PARAMETERS.RF.sigmaMajor      = [2];
 COMBINE_PARAMETERS.Noise.noise2signal = [0];  % By default only white noise added
 
 switch prfimplementation
-    case {'aprf','analyzeprf'}
+    case {'aprf','analyzeprf','aprfcss'}
         COMBINE_PARAMETERS.TR                   = [1.5];
         HRF(1).Type = 'canonical';
     case {'afni_4','afni_6','afni'}
@@ -88,7 +88,7 @@ switch prfimplementation
 end
 
 COMBINE_PARAMETERS.HRF           = HRF;
-synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'mult', 5);
+synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'mult', 1);
 synthDT = pmForwardModelCalculate(synthDT);
 % Visually check that all the combinations we specified are there
 % [synthDT.RF(:,{'Centerx0','Centery0','Theta','sigmaMajor','sigmaMinor'}), ...
@@ -152,6 +152,9 @@ end
 %% Launch the analysis
 switch prfimplementation
     case {'aprf','analyzeprf'}
+        options  = struct('seedmode',[0,1,2], 'display','off', 'maxpolydeg',0,'usecss',false);
+        results = pmModelFit(input,'analyzePRF','options',options);
+    case {'aprfcss'}
         options  = struct('seedmode',[0,1,2], 'display','off', 'maxpolydeg',0,'usecss',true);
         results = pmModelFit(input,'analyzePRF','options',options);
     case {'afni_4','afni_6','afni'}

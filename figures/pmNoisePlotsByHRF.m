@@ -14,8 +14,9 @@ p.addParameter('randomhrf'  , false                , @islogical);
 p.addParameter('x0y0'       , [0,0]                , @isnumeric);
 p.addParameter('sorthrf'    , {'same'}             , @iscell);
 p.addParameter('usemetric'  , 'rfsize'             , @ischar);
-p.addParameter('userfsize'  , [999]                    , @isnumeric);
+p.addParameter('userfsize'  , [999]                , @isnumeric);
 p.addParameter('noisevalues', [999]                , @isnumeric);
+p.addParameter('ylims'      , [0,0]                , @isnumeric);
 
 % Parse. Assign result inside each case
 p.parse(compTable, tools, varargin{:});
@@ -27,6 +28,7 @@ sortHRF     = p.Results.sorthrf;
 usemetric   = p.Results.usemetric;
 userfsize   = p.Results.userfsize;
 noisevalues = p.Results.noisevalues;
+ylims       = p.Results.ylims;
 
 %% Data selection
 if istable(compTable)
@@ -162,11 +164,11 @@ for np=1:length(metrics)
             % ax.XGrid = 'off';
             xlabel('HRFs','FontSize',18,'FontWeight','bold','Color','k');
         end
-        
+        % Modify ylims
+        if ylims(1) ~= ylims(2)
+            ylim(ylims);
+        end
     end
-    
-
-
 end
 
 % Add title to the whole thing

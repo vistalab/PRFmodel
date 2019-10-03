@@ -21,10 +21,10 @@ varargin = mrvParamFormat(varargin);
 p = inputParser;
 p.addRequired('COMBINE_PARAMETERS' ,    @(x)(isa(x,'struct')));
 % By default do not create multiple copies
-p.addParameter('mult'              , 1, @isnumeric); 
+p.addParameter('repeats'              , 1, @isnumeric); 
 p.parse(COMBINE_PARAMETERS, varargin{:});
 % Assign it
-mult = p.Results.mult;
+repeats = p.Results.repeats;
 
 %% Do the thing
 
@@ -46,7 +46,7 @@ for ii=1:length(fieldsToCombine)
     fieldName   = fieldsToCombine{ii};
     fieldValues = COMBINE_PARAMETERS.(fieldName);
     switch fieldName
-        case 'HRF'
+        case {'HRF','hrf'}
             % We are only interested in the first array if there are more than one
             nh          = 1;
             completeHRF = pmParamsCompletenessCheck(fieldValues(nh), ...
@@ -62,7 +62,19 @@ for ii=1:length(fieldsToCombine)
             if length(fieldValues)==1
                 REDUCED_COMBINE_PARAMETERS = rmfield(REDUCED_COMBINE_PARAMETERS,'HRF');
             end
-        % case 'Noise'
+        case {'Noise','noise'}
+            % We are only interested in the first array if there are more than one
+            nh            = 1;
+            completeNoise = pmParamsCompletenessCheck(fieldValues(nh), ...
+                                            table2struct(pm.defaultsTable.Noise));
+            % Convert it to table
+            fieldValuesTable = struct2table(completeNoise,'AsArray',true);
+            % Change the default
+            synthDT.(fieldName) = fieldValuesTable;
+            % If there is only only one Noise, then delete the variable
+            if length(fieldValues)==1
+                REDUCED_COMBINE_PARAMETERS = rmfield(REDUCED_COMBINE_PARAMETERS,'Noise');
+            end
         otherwise
             if ~isstruct(fieldValues)
                 % Change the default if provided
@@ -82,11 +94,11 @@ for ii=1:length(fieldsToCombine)
                     end
                     if ~isstruct(fieldValues)
                         % Change the default if provided
-                        if strcmp(fieldName,'Noise')
+                        % if strcmp(fieldName,'Noise')
                             
-                        else
+                        % else
                             synthDT.(fieldName).(subFieldsToCombine{ii}) = fieldValues(1);
-                        end
+                        % end
                         % If it is only one value, add it to defaults and delete it
                         if length(fieldValues)==1
                             tmpStruct = REDUCED_COMBINE_PARAMETERS.(fieldName);
@@ -114,63 +126,43 @@ for ii=1:length(fieldsToCombine)
     % Construct fieldname
     fieldName   = fieldsToCombine{ii};
     fieldValues = REDUCED_COMBINE_PARAMETERS.(fieldName);
-    switch fieldName
-        case 'HRF'
-            for nh = 2:length(fieldValues)  % the first one is the default
-                % Add rows with the combinations of parameters we want to check
-                % Then check that the whole thing should be complete
-                completeHRF        = pmParamsCompletenessCheck(fieldValues(nh), ...
-                                            table2struct(pm.defaultsTable.HRF));
-                % Check if only some of the fields in params where set
-                % Check the struct params first
-                completeHRF.params = pmParamsCompletenessCheck(completeHRF.params, ...
-                                                   pm.defaultsTable.HRF.params);
-                
-                % Convert it to table
-                fieldValuesTable = struct2table(completeHRF,'AsArray',true);
-                % Add all possible combinations based on this options
-                synthDT          = pmForwardModelAddRows(synthDT, fieldName, fieldValuesTable);
-            end
-        % case 'Noise'
-        otherwise
+    if ~isstruct(fieldValues) || ismember(fieldName, {'HRF','Noise'})
+        % Add rows with the combinations of parameters we want to check
+        synthDT = pmForwardModelAddRows(synthDT, fieldName, fieldValues);
+    else
+        subFieldsToCombine = fieldnames(fieldValues);
+        for ii=1:length(subFieldsToCombine)
+            % Construct fieldname
+            subFieldName  = subFieldsToCombine{ii};
+            fieldValues   = getfield(REDUCED_COMBINE_PARAMETERS,fieldName,subFieldName);
             if ~isstruct(fieldValues)
-                % Add rows with the combinations of parameters we want to check
-                synthDT = pmForwardModelAddRows(synthDT, fieldName,fieldValues);
-            else
-                subFieldsToCombine = fieldnames(fieldValues);
-                for ii=1:length(subFieldsToCombine)
-                    % Construct fieldname
-                    subFieldName  = subFieldsToCombine{ii};
-                    fieldValues   = getfield(REDUCED_COMBINE_PARAMETERS,fieldName,subFieldName);
-                    if ~isstruct(fieldValues)
-                        % Check if sigmaMinor is 'same'. If it is do nothing
-                        % here, but everytime sigmaMajor is changed, change
-                        % minor too. 
-                        if strcmp(subFieldName,'sigmaMinor') && strcmp(fieldValues,'same')
-                            continue
-                        elseif strcmp(subFieldName,'sigmaMajor') && strcmp(REDUCED_COMBINE_PARAMETERS.RF.sigmaMinor,'same')
-                            % Add rows with the combinations of parameters we want to check
-                            subFieldName          = [fieldName '.' subFieldsToCombine{ii}];
-                            synthDT               = pmForwardModelAddRows(synthDT, subFieldName,fieldValues);
-                            synthDT.RF.sigmaMinor = synthDT.RF.sigmaMajor;
-                        else
-                            % Add rows with the combinations of parameters we want to check
-                            subFieldName  = [fieldName '.' subFieldsToCombine{ii}];
-                            synthDT = pmForwardModelAddRows(synthDT, subFieldName,fieldValues);
-                        end
-                        
-                    else
-                        error('Only two levels of nesting implemented');
-                    end
-                    
+                % Check if sigmaMinor is 'same'. If it is do nothing
+                % here, but everytime sigmaMajor is changed, change
+                % minor too.
+                if strcmp(subFieldName,'sigmaMinor') && strcmp(fieldValues,'same')
+                    continue
+                elseif strcmp(subFieldName,'sigmaMajor') && strcmp(REDUCED_COMBINE_PARAMETERS.RF.sigmaMinor,'same')
+                    % Add rows with the combinations of parameters we want to check
+                    subFieldName          = [fieldName '.' subFieldsToCombine{ii}];
+                    synthDT               = pmForwardModelAddRows(synthDT, subFieldName,fieldValues);
+                    synthDT.RF.sigmaMinor = synthDT.RF.sigmaMajor;
+                else
+                    % Add rows with the combinations of parameters we want to check
+                    subFieldName  = [fieldName '.' subFieldsToCombine{ii}];
+                    synthDT = pmForwardModelAddRows(synthDT, subFieldName,fieldValues);
                 end
+                
+            else
+                error('Only two levels of nesting implemented');
             end
+            
+        end
     end
 end
 
 % Now create multiple copies. 
-if mult > 1
-    synthDT = repmat(synthDT,[mult,1]);
+if repeats > 1
+    synthDT = repmat(synthDT,[repeats,1]);
 end
 
 

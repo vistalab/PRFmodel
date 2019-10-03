@@ -4,18 +4,23 @@
 % NOTE: for analyzePRF, any TR and Stimulus can be used, but for AFNI and
 % mrVista, they need to be the same, as they will be written into a nifti
 clear all;
-COMBINE_PARAMETERS.RF.Centerx0   = [0]; % [-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
-COMBINE_PARAMETERS.RF.Centery0   = [0];
-COMBINE_PARAMETERS.RF.Theta      = [0]; %, deg2rad(45)];
-COMBINE_PARAMETERS.RF.sigmaMajor = [0.5,2,5];
-COMBINE_PARAMETERS.RF.sigmaMinor = 'same';
+% Params related to the main model
 COMBINE_PARAMETERS.TR            = [1.5];
+COMBINE_PARAMETERS.RF.Centerx0   = [0,5]; % [-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
+COMBINE_PARAMETERS.RF.Centery0   = [5];
+COMBINE_PARAMETERS.RF.Theta      = [0]; %, deg2rad(45)];
+COMBINE_PARAMETERS.RF.sigmaMajor = [2];
+COMBINE_PARAMETERS.RF.sigmaMinor = 'same';
+
+% HRF goes in groups
     HRF(1).Type                  = 'canonical';
-    % HRF(1).Type                  = 'popeye_twogammas';
-    % HRF(2).Type                  = 'afni_spm';
+    HRF(2).Type                  = 'popeye_twogammas';
+    HRF(3).Type                  = 'afni_spm';
 COMBINE_PARAMETERS.HRF           = HRF;
-synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS);
+% CREATE AND CALCULATE
+synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS,'mult',1);
 synthDT = pmForwardModelCalculate(synthDT);
+
 % Visually check that all the combinations we specified are there
 [synthDT.RF(:,{'Centerx0','Centery0','Theta','sigmaMajor','sigmaMinor'}), ...
  synthDT(:,'TR'), ...
@@ -39,19 +44,21 @@ stimulus   = squeeze(NIstimulus.data);
 %}
 
 % Analyze it with analyzePRF
-options             = struct('seedmode',[2], 'display','off', 'maxpolydeg',0);
+options             = struct('seedmode',[2], 'display','off', 'maxpolydeg',0,'usecss',false);
 results_aPRF        = pmModelFit(synthDT,'analyzePRF','options',options,'useParallel',true);
+options             = struct('seedmode',[2], 'display','off', 'maxpolydeg',0,'usecss',true);
+results_aPRFcss        = pmModelFit(synthDT,'analyzePRF','options',options,'useParallel',true);
 % VISUALIZE JUST THIS 
 % {
 [compTable,tSeries] = pmResultsCompare(synthDT, ... % Defines the input params
-                            {'aPRF'}, ... % Analysis names we want to see: 'aPRF','vista',
-                            {results_aPRF}, ... % results_analyzePRF,results_vista,
+                            {'aPRF','aprfcss'}, ... % Analysis names we want to see: 'aPRF','vista',
+                            {results_aPRF,results_aPRFcss}, ... % results_analyzePRF,results_vista,
                             'shorten names',true);
 % Visualize with 2 digits after comma
 format bank; disp(compTable); format
 pmTseriesPlot(tSeries, synthDT(:,'TR'), ...
-              'to compare', {'synth','aPRF'}, ...
-              'voxel',[1:3], ... % 'metric','RMSE', ...
+              'to compare', {'synth','aPRF','aprfcss'}, ...
+              'voxel',[1:4], ... % 'metric','RMSE', ...
               'newWin',true)
 %}
 
