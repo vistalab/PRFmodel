@@ -79,15 +79,15 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             p = inputParser;
             p.addParameter('tr'           ,  d.TR           , @isnumeric);
             p.addParameter('type'         ,  d.Type{:}      , @ischar);
-            p.addParameter('boldmeanValue',  d.BOLDmeanValue, @isnumeric);
+            p.addParameter('boldmeanvalue',  d.BOLDmeanValue, @isnumeric);
             p.addParameter('boldcontrast' ,  d.BOLDcontrast , @isnumeric);
             
             p.parse(varargin{:});
             % Assign defaults/parameters to class/variables
             pm.TR            = p.Results.tr;
             pm.Type          = p.Results.type;
-            pm.BOLDmeanValue = 10000;
-            pm.BOLDcontrast  = 8;  % In percentage
+            pm.BOLDmeanValue = p.Results.boldmeanvalue;
+            pm.BOLDcontrast  = p.Results.boldcontrast;  % In percentage
             
             % Create the classes, and initialize a prfModel inside it
             pm.Stimulus      = pmStimulus(pm);
