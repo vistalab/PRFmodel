@@ -53,17 +53,23 @@ if istable(compTable)
                 metrics = userfsize;
                 % Reduce the table removing the locations
                 compTable = compTable(compTable.synth.x0 == x0y0(1) & ...
-                                      compTable.synth.y0 == x0y0(2) & ...
+                                         compTable.synth.y0 == x0y0(2) & ...
                                       ismember(compTable.synth.sMaj,metrics), :);
             end
         case {'polarangle'}
             metrics = unique(compTable.synth.angle);
             % Reduce the table removing the rfSize
             compTable = compTable(compTable.synth.sMaj == userfsize , :);
+            if isempty(compTable)
+                warning('No values, set up the values for the rfSize')
+            end
         case {'eccentricity'}
             metrics = unique(compTable.synth.eccentricity);
             % Reduce the table removing the rfSize
             compTable = compTable(compTable.synth.sMaj == userfsize, :);
+            if isempty(compTable)
+                warning('No values, set up the values for the rfSize')
+            end                       
         otherwise
             error('Metric %s not defined', usemetric)
     end

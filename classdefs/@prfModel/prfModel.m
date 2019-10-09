@@ -287,8 +287,7 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             pm.RF.compute;
             pm.HRF.compute;
             pm.Noise.compute;
-            
-            % Every sub-class has a computeBOLD function to compute the mean response.
+            % Compute BOLD signal
             pm.computeBOLD;
             % Add the noise component. We want them to be separated. 
             pm.BOLDnoise = pm.BOLD + pm.Noise.values;
@@ -299,12 +298,12 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             varargin = mrvParamFormat(varargin);
             p = inputParser;
             p.addRequired ('pm'  ,  @(x)(isa(x,'prfModel')));
-            p.addParameter('what', 'nonoise', @ischar);
+            p.addParameter('what', 'both', @ischar);
             p.addParameter('window', true, @islogical);
             p.parse(pm,varargin{:});
             what = mrvParamFormat(p.Results.what);
             w  = p.Results.window;
-            
+            pm.compute;
             switch what
                 case 'nonoise'
                     if w;mrvNewGraphWin([pm.Type 'Synthetic BOLD signal (no noise)']);end
