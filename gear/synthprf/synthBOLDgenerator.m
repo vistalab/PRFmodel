@@ -3,7 +3,7 @@ function synthBOLDgenerator(json, output_dir)
 %     1/ name.nii.gii    : nifti file with the synthetic BOLD signal
 %     2/ name.json       : json file with the parameters of the BOLD tSeries
 %     3/ name_Stim.nii.gz: nifti file with the stimulus used to generate the BOLD tSeries
-% 
+% If instead of a jason file an empty string is passed or it cannot find the file, then it will write a default json file into output_dir 
 % 
 % REQUIRED INPUTS:
 %       jsonParams file. Use the synthBOLDgenerator_paramsExample.json as a
@@ -72,25 +72,53 @@ end
 
 if exist(json, 'file') == 2
     J = loadjson(json);
-elseif exist(json, 'dir') == 7
-    jsonFile = dir(fullfile(json, '*.json'));
-    jsonFile = fullfile(json, jsonFile.name);
-    disp(jsonFile);
-    if ~isempty(jsonFile)
-        J = loadjson(jsonFile);
-    else
-        error('No JSON file could be found');
-    end
-elseif ~isempty(json) && ischar(json)
-    try
-        J = loadjson(json);
-    catch ME
-        disp(ME.message); 
-        return
-    end
 else
-    error('Could not find/parse the json file/structure');
+    % return the default json and exit
+    pm = prfModel;
+    DEFAULTS = pm.defaultsTable;
+    % Add two params required to generate the file
+    DEFAULTS.fileName = "editDefaultName";
+    DEFAULTS.repeats  = 2;
+    % Reorder fieldnames
+    DEFAULTS = DEFAULTS(:,{'fileName','repeats','TR','Type','BOLDmeanValue','BOLDcontrast','HRF','RF','Stimulus','Noise'});
+    % Select filename to be saved
+    fname = fullfile(output_dir, 'defaultParams_ToBeEdited.json');
+    % Encode json
+    jsonString = jsonencode(DEFAULTS);
+    % Format a little bit
+    jsonString = strrep(jsonString, ',', sprintf(',\n'));
+    jsonString = strrep(jsonString, '[{', sprintf('[\n{\n'));
+    jsonString = strrep(jsonString, '}]', sprintf('\n}\n]'));
+    % Delete the first and last []
+    jsonString(1)   = '';
+    jsonString(end) = '';
+    % Write it
+    fid = fopen(fname,'w');if fid == -1,error('Cannot create JSON file');end
+    fwrite(fid, jsonString,'char');fclose(fid);
+    % Permissions
+    fileattrib(fname,'+w +x', 'o g'); 
+    disp('defaultParams_ToBeEdited.json written, edit it and pass it to the container to generate synthetic data.')
+    return
 end
+% elseif exist(json, 'dir') == 7
+%    jsonFile = dir(fullfile(json, '*.json'));
+%    jsonFile = fullfile(json, jsonFile.name);
+%    disp(jsonFile);
+%    if ~isempty(jsonFile)
+%        J = loadjson(jsonFile);
+%    else
+%        error('No JSON file could be found');
+%    end
+% elseif ~isempty(json) && ischar(json)
+%    try
+%        J = loadjson(json);
+%    catch ME
+%        disp(ME.message); 
+%        return
+%    end
+%else
+%    error('Could not find/parse the json file/structure');
+% end
 
 %% Check the json object for required fields
 %{
@@ -132,12 +160,12 @@ COMBINE_PARAMETERS.TR                 = [1.5];
     HRF(1).Type = 'friston';
     HRF(2).Type = 'canonical';
 COMBINE_PARAMETERS.HRF                = HRF;
-TEST = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'mult', 2);
+TEST = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats', 2);
 TEST = pmForwardModelCalculate(TEST);
 %}
 PARAMETERS = J;
 PARAMETERS = rmfield(PARAMETERS,'fileName');
-PARAMETERS = rmfield(PARAMETERS,'mult');
+PARAMETERS = rmfield(PARAMETERS,'repeats');
 % Do the required conversions before creating the table
 PARAMETERS.HRF       = [PARAMETERS.HRF{:}]; 
 PARAMETERS.RF        = [PARAMETERS.RF{:}];
@@ -148,7 +176,7 @@ PARAMETERS.Type      = string(PARAMETERS.Type);
 PARAMETERS.RF.Type   = string(PARAMETERS.RF.Type);
 PARAMETERS.Stimulus.expName = string(PARAMETERS.Stimulus.expName);
 % Generate the same thing from the json file
-synthDT = pmForwardModelTableCreate(PARAMETERS, 'mult', J.mult);
+synthDT = pmForwardModelTableCreate(PARAMETERS, 'repeats', J.repeats);
 synthDT = pmForwardModelCalculate(synthDT);
 
 %% Generate the files
@@ -165,9 +193,12 @@ jsonSynthFile = [J.fileName '.json'];
 % Encode json
 jsonString = jsonencode(synthDT(:,1:(end-1)));
 % Format a little bit
-jsonString = strrep(jsonString, ',', sprintf(',\r'));
-jsonString = strrep(jsonString, '[{', sprintf('[\r{\r'));
-jsonString = strrep(jsonString, '}]', sprintf('\r}\r]'));
+jsonString = strrep(jsonString, ',', sprintf(',\n'));
+jsonString = strrep(jsonString, '[{', sprintf('[\n{\n'));
+jsonString = strrep(jsonString, '}]', sprintf('\n}\n]'));
+% Delete the first and last []
+jsonString(1)   = '';
+jsonString(end) = '';
 % Write it
 fid = fopen(jsonSynthFile,'w');if fid == -1,error('Cannot create JSON file');end
 fwrite(fid, jsonString,'char');fclose(fid);
