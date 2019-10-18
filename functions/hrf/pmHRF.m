@@ -51,3 +51,12 @@ end
 
 
 end
+
+
+figure
+for HRFtype=pm.HRF.Types
+    pm.HRF.Type = HRFtype{:};
+    pm.HRF.plot; hold on;
+end
+legend(strrep(pm.HRF.Types,'_','\_'))
+title('Different HRF implementations')

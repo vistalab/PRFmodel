@@ -343,9 +343,9 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
             varargin = mrvParamFormat(varargin);
             p = inputParser;
             p.addRequired ('hrf'  ,  @(x)(isa(x,'pmHRF')));
-            p.addParameter('window', true, @islogical);
+            p.addParameter('newwin', true, @islogical);
             p.parse(hrf,varargin{:});
-            w  = p.Results.window;
+            w  = p.Results.newwin;
             % Calculate it and return every time we need it.
             % Compute it just in case, to have the latest version
             hrf.compute;
