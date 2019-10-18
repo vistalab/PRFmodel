@@ -63,7 +63,6 @@ COMBINE_PARAMETERS.RF.Centery0        = [0,5,-5];
 COMBINE_PARAMETERS.RF.Theta           = [0]; %, deg2rad(45)];
 COMBINE_PARAMETERS.RF.sigmaMinor      = [2];
 COMBINE_PARAMETERS.RF.sigmaMajor      = [2];
-COMBINE_PARAMETERS.Noise.noise2signal = [0];  % By default only white noise added
 
 switch prfimplementation
     case {'aprf','analyzeprf','aprfcss'}
@@ -88,7 +87,7 @@ switch prfimplementation
 end
 
 COMBINE_PARAMETERS.HRF           = HRF;
-synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'mult', 1);
+synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats', 1);
 synthDT = pmForwardModelCalculate(synthDT);
 % Visually check that all the combinations we specified are there
 % [synthDT.RF(:,{'Centerx0','Centery0','Theta','sigmaMajor','sigmaMinor'}), ...

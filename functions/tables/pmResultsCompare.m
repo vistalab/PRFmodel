@@ -51,7 +51,7 @@ newDT.HRFtype   = synthDT.HRF.Type;
 % Add the TR type
 newDT.TR        = synthDT.TR;
 % Add the White Noise param
-newDT.noise2sig = synthDT.Noise.noise2signal;
+newDT.noise2sig = synthDT.Noise.white_noise2signal;
 
 
 
