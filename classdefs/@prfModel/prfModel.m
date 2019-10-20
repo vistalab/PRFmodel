@@ -113,11 +113,9 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
         function v = get.timePointsN(pm)
             v = pm.Stimulus.timePointsN;
         end
-        
         function v = get.timePointsSeries(pm)
             v  = pm.Stimulus.timePointsSeries;
         end
-        
         function defaultsTable = get.defaultsTable(pm)
             % This function obtains all the defaults from all the
             % subclasses, so that we can construct a parameter table
@@ -127,7 +125,6 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             defaultsTable.Stimulus  = pm.Stimulus.defaultsGet;
             defaultsTable.Noise     = pm.Noise.defaultsGet;
         end
-        
         % Compute synthetic BOLD without noise
         function computeBOLD(pm,varargin)
             % For this linear model we take the inner product of the
@@ -305,7 +302,7 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             w  = p.Results.window;
             pm.compute;
             switch what
-                case 'nonoise'
+                case {'nonoise','noiseless'}
                     if w;mrvNewGraphWin([pm.Type 'Synthetic BOLD signal (no noise)']);end
                     plot(pm.timePointsSeries, pm.BOLD);
                 case 'withnoise'

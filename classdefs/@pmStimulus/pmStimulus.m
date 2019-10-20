@@ -194,7 +194,7 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             mrvNewGraphWin('Stimulus file montage');
             image3D = pmStimulusRead(stim.values);
             [sz1,sz2,sz3] = size(image3D);
-            img = makeMontage(image3D,slicelist);
+            img = pmMakeMontage(image3D,slicelist);
             imagesc(img); colormap(gray);
             grid off; axis equal off; 
             aa = gca;text(1,aa.YLim(2)*(1.05),sprintf('%3.0fx%3.0fx%3.0f',sz1,sz2,sz3));
