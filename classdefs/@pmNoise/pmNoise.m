@@ -34,7 +34,8 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
     % Description
     %
     % See also
-    %
+    % At the end of this function we have the calculations in normal subjects to
+    % have an idea of how a representative noise looks
     
     % Examples
     %{
@@ -84,13 +85,6 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
             d.lowfrequ               = false;
             d.lowfrequ_frequ         = 120;  % Seconds
             d.lowfrequ_amplitude     = 0.1;  % Seconds
-            
-            % Autocorrelation
-            % TODO
-            
-            
-            % Task related
-            % TODO
             
             
             % Convert to table and return
@@ -217,59 +211,7 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
             
             % RETURN VALUES
             noise.values = vals;
-            
-            
-            
-            % Old code, to be deleted
-            %{
-            % TODO: move the code to the .m functions of the same name
-            switch noise.Type
-                case 'white'  % Indstrumen
-                case 'pink'  % fisiological
-                case 'cardiac'
-                    %                     % Make sure that when cardiac is selected, params comes with
-                    %                     % the correct parameters, otherwise use defaults for cardiac
-                    %                     if ~isfield(noise.params,'frequency')
-                    %                         params.frequency = 1.25;% 1.25 Hz:75 beats/min
-                    %                     end
-                    %                     if ~isfield(noise.params,'amplitude')
-                    %                         params.amplitude = 0.10;  % 0-1 proportion over mean BOLD signal
-                    %                     end
-                    %
-                    %                     % Update the obj just in case
-                    %                     noise.params = params;
-                    
-                    % Compute the noise
-                    signal = noise.PM.BOLD;  % BOLD signal, add noise to this
-                    
-                case 'respiratory'
-                    %                     % Make sure that when respiratory is selected, params comes with
-                    %                     % the correct parameters, otherwise use defaults for respiratory
-                    %                     if ~isfield(noise.params,'frequency')
-                    %                         params.frequency = 0.3;  % 0.3 Hz : 18 breaths/min
-                    %                     end
-                    %                     if ~isfield(noise.params,'amplitude')
-                    %                         params.amplitude = 0.1;  % 0-1 proportion over BOLD signal amplitude
-                    %                     end
-                    %
-                    %                     % Update the obj just in case
-                    %                     noise.params = params;
-                    
-                    % Compute the noise
-                    signal = noise.PM.BOLD;  % BOLD signal, add noise to this
-                    % Frequency [Hz]
-                    fNoise = noise.params.frequency;
-                    % Amplitude
-                    aNoise = noise.params.amplitude * (max(noise.PM.BOLD) - min(noise.PM.BOLD));
-                    t      = noise.PM.timePointsSeries;
-                    % Calculate the noise
-                    noise.values = aNoise*sin(2*pi.*t.*fNoise);
-                case 'eyemovement'
-                    warning('eyemovement noise model not implemented yet')
-                otherwise
-                    error('Noise model %s not implemented or valid.',noise.Type);
-            end
-            %}
+
         end
         
         

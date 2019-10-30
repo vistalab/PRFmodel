@@ -18,7 +18,7 @@ COMBINE_PARAMETERS.RF.sigmaMinor = 'same';
     HRF(3).Type                  = 'afni_spm';
 COMBINE_PARAMETERS.HRF           = HRF;
 % CREATE AND CALCULATE
-synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS,'mult',1);
+synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS,'repeats',1);
 synthDT = pmForwardModelCalculate(synthDT);
 
 % Visually check that all the combinations we specified are there

@@ -1,4 +1,7 @@
 classdef pmNoiseList <  matlab.mixin.SetGet & matlab.mixin.Copyable
+    % We decided not to use this function, complicates things too much, not
+    % useful
+    % 
     % This is a superclass for List of Noise-s. 
     % This class will invoke different noise models and add them. The result
     % will be added to the noiseless BOLD signal in the main model. 

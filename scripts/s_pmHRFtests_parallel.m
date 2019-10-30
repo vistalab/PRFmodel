@@ -90,7 +90,7 @@ if ~exist(stimNiftiFname, 'file')
     stimNiftiFname = pm1.Stimulus.toNifti('fname',stimNiftiFname);
 end
 % Upload it to FW
-stts = st.fileUpload(stimNiftiFname, cc{1}.collection.id, 'collection');
+    stts = st.fileUpload(stimNiftiFname, cc{1}.collection.id, 'collection');
 end
 
 %% Solve and upload to FW
