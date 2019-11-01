@@ -193,7 +193,7 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     error("Number of basis functions is too low. Lower frequency or longer scanning time should be provided.")
                 end
                 spmdrift    = spm_drift(noise.PM.timePointsN, n);
-                driftbase   = spmdrift(:,2:end);
+                driftbase   = spmdrift(:,2:end);  % Eliminate the DC term
                 driftbase   = sum(driftbase,2)'; 
                 % Now we need to scale this noise to the actual noise values
                 n           = noise.lowfrequ_amplitude * (max(signal) - min(signal));
