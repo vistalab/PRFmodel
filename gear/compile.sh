@@ -20,6 +20,8 @@ fi
 # Look for a version of matlab we can use:
 if   [ -x "`which Matlabr2018b`" ]
 then MLAB="`which Matlabr2018b`"
+elif [ -x "/Applications/MATLAB9.5.app/bin/matlab" ]
+then MLAB="/Applications/MATLAB9.5.app/bin/matlab"
 elif [ -x "`which matlab`" ]
 then echo "Warning: Unsure if matlab is version 2018b" >&2
      MLAB="`which matlab`"
