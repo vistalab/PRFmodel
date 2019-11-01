@@ -2,8 +2,8 @@
 # module load matlab/2017a
 
 # Try loading the module if we know about the module command
-if   [ -x "`which module`" ]
-then module load matlab/2017a
+if   [ -d "$MODULESHOME" ] && [ -z "`which matlab`" ]
+then module load matlab/2018b
 fi
 
 # This is the directory in which the toolboxes are stored
@@ -18,15 +18,13 @@ else echo "Cannot find toolboxes path!" >&2
 fi
 
 # Look for a version of matlab we can use:
-if   [ -x "`which Matlabr2017a`" ]
-then MLAB="`which Matlabr2017a`"
-elif [ -x "/Applications/MATLAB9.2.app/bin/matlab" ]
-then MLAB="/Applications/MATLAB9.2.app/bin/matlab"
+if   [ -x "`which Matlabr2018b`" ]
+then MLAB="`which Matlabr2018b`"
 elif [ -x "`which matlab`" ]
-then echo "Warning: Unsure if matlab is version 2017a" >&2
+then echo "Warning: Unsure if matlab is version 2018b" >&2
      MLAB="`which matlab`"
 elif [ -x "`which MATLAB`" ]
-then echo "Warning: Unsure if matlab is version 2017a" >&2
+then echo "Warning: Unsure if matlab is version 2018b" >&2
      MLAB="`which MATLAB`"
 else echo "Cannot find a matlab executable!"
      exit 1
