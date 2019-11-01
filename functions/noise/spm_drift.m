@@ -26,7 +26,12 @@ for k = 2:K
     C(:, k) = sqrt(2/N) * 10 * cos(pi * (2 * n + 1) * (k - 1)/(2 * N));
 end
 
-C = C*diag([1 0.5 1]);
+% Edited by Brian to check if we can get closer to the real data
+% Gari made it "generic" for any number of K (first test had K=4...)
+vectOnes    = ones([1,K]);
+vectOnes(2) = 0.4;
+vectOnes(3) = 0.8;
+C = C * diag(vectOnes);
 
 end
 
