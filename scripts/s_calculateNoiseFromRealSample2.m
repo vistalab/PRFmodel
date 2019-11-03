@@ -1,14 +1,15 @@
 %% Calculate noise in a typical subject 
+clear all;
 if (0)
-    % The data comes from the processed reading_prf/heb_pilot09 subject
+    % The data comes from the processed reading_prf/heb_pilot09/RetAndHebrewLoc/Gray subject
     % The data is now in /share/wandell/data but it will be in Flywheel too
-    
+    basedir = '/share/wandell/data/reading_prf/heb_pilot09/RetAndHebrewLoc/Gray';
     
     % N1 = niftiRead('Words_Hebrew1/TSeries/tSeriesScan1.nii.gz');
     % N2 = niftiRead('Words_Hebrew2/TSeries/tSeriesScan1.nii.gz');
-    T1 = load('Words_Hebrew1/TSeries/Scan1/tSeries1.mat');
-    T2 = load('Words_Hebrew2/TSeries/Scan1/tSeries1.mat');
-    T3 = load('Words_English1/TSeries/Scan1/tSeries1.mat');
+    T1 = load(fullfile(basedir,'Words_Hebrew1/TSeries/Scan1/tSeries1.mat'));
+    T2 = load(fullfile(basedir,'Words_Hebrew2/TSeries/Scan1/tSeries1.mat'));
+    T3 = load(fullfile(basedir,'Words_English1/TSeries/Scan1/tSeries1.mat'));
     
     Tsum  = (T1.tSeries+T2.tSeries+T3.tSeries) / 3;
     diff1 = T1.tSeries - Tsum;
@@ -38,7 +39,7 @@ if (0)
 end
 
 %% Generate synthetic data without noise
-COMBINE_PARAMETERS               = [];
+COMBINE_PARAMETERS               = [];HRF=[];Noise=[];
 COMBINE_PARAMETERS.TR            = [1.5];
 COMBINE_PARAMETERS.RF.Centerx0   = [-4,-3,-2,-1,0,1,2,3,4,5]; % [-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
 COMBINE_PARAMETERS.RF.Centery0   = [-5,-4,-3,-2,-1,0,1,2,3,4];
@@ -51,58 +52,16 @@ HRF(2).Type                      = 'popeye_twogammas';
 HRF(3).Type                      = 'afni_spm';
 COMBINE_PARAMETERS.HRF           = HRF;
 % Noise goes in groups, create 1
-Noise(1).white                   = false;
-Noise(1).cardiac                 = false;
-Noise(1).respiratory             = false;
-Noise(1).lowfrequ                = false;
+Noise(1).noisemult               = 0;
 COMBINE_PARAMETERS.Noise         = Noise;
 % CREATE AND CALCULATE
-nonoise_synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS,'repeats',3);
-nonoise_synthDT = pmForwardModelCalculate(nonoise_synthDT);
+synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS,'repeats',3);
+no_noiseTest = pmForwardModelCalculate(synthDT);
 % Save it in local
-save(fullfile(pmRootPath,'local','nonoise_Test1.mat'),'nonoise_synthDT')
-
-%{
-%% Generate synthetic data with normal noise, with slow drift
-    noisemult = 1;
-
-    COMBINE_PARAMETERS               = [];
-    COMBINE_PARAMETERS.TR            = [1.5];
-    COMBINE_PARAMETERS.RF.Centerx0   = [-4,-3,-2,-1,0,1,2,3,4,5]; 
-    COMBINE_PARAMETERS.RF.Centery0   = [-5,-4,-3,-2,-1,0,1,2,3,4];
-    COMBINE_PARAMETERS.RF.Theta      = [0]; %, deg2rad(45)];
-    COMBINE_PARAMETERS.RF.sigmaMajor = [1,4];
-    COMBINE_PARAMETERS.RF.sigmaMinor = 'same';
-    % HRF goes in groups, create 3
-    HRF(1).Type                    = 'canonical';
-    HRF(2).Type                    = 'popeye_twogammas';
-    HRF(3).Type                    = 'afni_spm';
-    COMBINE_PARAMETERS.HRF         = HRF;
-    % Noise goes in groups, create 1
-    Noise(1).white                 = true;
-    Noise(1).white_noise2signal    = 0.12 * noisemult;
-    Noise(1).cardiac               = true;
-    Noise(1).cardiac_frequency     = 1.17;
-    Noise(1).cardiac_amplitude     = 0.014 * noisemult;
-    Noise(1).respiratory           = true;
-    Noise(1).respiratory_frequency = 0.23;
-    Noise(1).respiratory_amplitude = 0.014 * noisemult;
-    Noise(1).lowfrequ              = true;
-    Noise(1).lowfrequ_frequ        = 120;
-    Noise(1).lowfrequ_amplitude    = 0.23 * noisemult;
-    COMBINE_PARAMETERS.Noise       = Noise;
-    % CREATE AND CALCULATE
-    synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS,'repeats',3);
-    synthDT16 = pmForwardModelCalculate(synthDT);
-    % Save it in local
-    save(fullfile(pmRootPath,'local','noiseTest16.mat'),'synthDT16')
-    
-%}
+save(fullfile(pmRootPath,'local','no_noiseTest.mat'),'no_noiseTest')
     
 %% Generate synthetic data with normal noise, with slow drift
-    noisemult = 1;
-
-    COMBINE_PARAMETERS               = [];
+    COMBINE_PARAMETERS               = [];HRF=[];Noise=[];
     COMBINE_PARAMETERS.TR            = [1.5];
     COMBINE_PARAMETERS.RF.Centerx0   = [-4,-3,-2,-1,0,1,2,3,4,5]; % [-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
     COMBINE_PARAMETERS.RF.Centery0   = [-5,-4,-3,-2,-1,0,1,2,3,4];
@@ -115,28 +74,24 @@ save(fullfile(pmRootPath,'local','nonoise_Test1.mat'),'nonoise_synthDT')
     HRF(3).Type                    = 'afni_spm';
     COMBINE_PARAMETERS.HRF         = HRF;
     % Noise goes in groups, create 1
-    Noise(1).white                 = true;
-    Noise(1).white_noise2signal    = 0.12 * noisemult;
-    Noise(1).cardiac               = true;
+    Noise(1).noisemult             = 1;
+    Noise(1).white_noise2signal    = 0.12 ;
     Noise(1).cardiac_frequency     = 1.17;
-    Noise(1).cardiac_amplitude     = 0.014 * noisemult;
-    Noise(1).respiratory           = true;
+    Noise(1).cardiac_amplitude     = 0.014 ;
     Noise(1).respiratory_frequency = 0.23;
-    Noise(1).respiratory_amplitude = 0.014 * noisemult;
-    Noise(1).lowfrequ              = true;
+    Noise(1).respiratory_amplitude = 0.014 ;
     Noise(1).lowfrequ_frequ        = 120;
-    Noise(1).lowfrequ_amplitude    = 0.23 * noisemult;
+    Noise(1).lowfrequ_amplitude    = 0.23 ;
     COMBINE_PARAMETERS.Noise       = Noise;
     % CREATE AND CALCULATE
     synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS,'repeats',3);
-    same_synthDT = pmForwardModelCalculate(synthDT);
+    same_noiseTest_jit0 = pmForwardModelCalculate(synthDT);
     % Save it in local
-    save(fullfile(pmRootPath,'local','same_noiseTest.mat'),'same_synthDT')    
+    save(fullfile(pmRootPath,'local','same_noiseTest_jit0.mat'),'same_noiseTest_jit0')    
       
 %% Generate synthetic data with half the noise
-    noisemult = 1/2;
-
-    COMBINE_PARAMETERS               = [];
+%{
+    COMBINE_PARAMETERS               = [];HRF=[];Noise=[];
     COMBINE_PARAMETERS.TR            = [1.5];
     COMBINE_PARAMETERS.RF.Centerx0   = [-4,-3,-2,-1,0,1,2,3,4,5]; % [-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
     COMBINE_PARAMETERS.RF.Centery0   = [-5,-4,-3,-2,-1,0,1,2,3,4];
@@ -149,28 +104,17 @@ save(fullfile(pmRootPath,'local','nonoise_Test1.mat'),'nonoise_synthDT')
     HRF(3).Type                    = 'afni_spm';
     COMBINE_PARAMETERS.HRF         = HRF;
     % Noise goes in groups, create 1
-    Noise(1).white                 = true;
-    Noise(1).white_noise2signal    = 0.12 * noisemult;
-    Noise(1).cardiac               = true;
-    Noise(1).cardiac_frequency     = 1.17;
-    Noise(1).cardiac_amplitude     = 0.014 * noisemult;
-    Noise(1).respiratory           = true;
-    Noise(1).respiratory_frequency = 0.23;
-    Noise(1).respiratory_amplitude = 0.014 * noisemult;
-    Noise(1).lowfrequ              = true;
-    Noise(1).lowfrequ_frequ        = 120;
-    Noise(1).lowfrequ_amplitude    = 0.23 * noisemult;
+    Noise(1).noisemult             = 0.5;
     COMBINE_PARAMETERS.Noise       = Noise;
     % CREATE AND CALCULATE
     synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS,'repeats',3);
-    half_synthDT = pmForwardModelCalculate(synthDT);
+    half_noiseTest_jit0 = pmForwardModelCalculate(synthDT);
     % Save it in local
-    save(fullfile(pmRootPath,'local','half_noiseTest.mat'),'half_synthDT')
-    
+    save(fullfile(pmRootPath,'local','half_noiseTest_jit0.mat'),'half_noiseTest_jit0')
+    %}
 %% Generate synthetic data with double noise
-    noisemult = 2;
-
-    COMBINE_PARAMETERS               = [];
+%{
+    COMBINE_PARAMETERS               = [];HRF=[];Noise=[];
     COMBINE_PARAMETERS.TR            = [1.5];
     COMBINE_PARAMETERS.RF.Centerx0   = [-4,-3,-2,-1,0,1,2,3,4,5]; % [-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
     COMBINE_PARAMETERS.RF.Centery0   = [-5,-4,-3,-2,-1,0,1,2,3,4];
@@ -183,27 +127,17 @@ save(fullfile(pmRootPath,'local','nonoise_Test1.mat'),'nonoise_synthDT')
     HRF(3).Type                    = 'afni_spm';
     COMBINE_PARAMETERS.HRF         = HRF;
     % Noise goes in groups, create 1
-    Noise(1).white                 = true;
-    Noise(1).white_noise2signal    = 0.12 * noisemult;
-    Noise(1).cardiac               = true;
-    Noise(1).cardiac_frequency     = 1.17;
-    Noise(1).cardiac_amplitude     = 0.014 * noisemult;
-    Noise(1).respiratory           = true;
-    Noise(1).respiratory_frequency = 0.23;
-    Noise(1).respiratory_amplitude = 0.014 * noisemult;
-    Noise(1).lowfrequ              = true;
-    Noise(1).lowfrequ_frequ        = 120;
-    Noise(1).lowfrequ_amplitude    = 0.23 * noisemult;
+    Noise(1).noisemult             = 2;
     COMBINE_PARAMETERS.Noise       = Noise;
     % CREATE AND CALCULATE
     synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS,'repeats',3);
-    double_synthDT = pmForwardModelCalculate(synthDT);
+    double_noiseTest_jit0 = pmForwardModelCalculate(synthDT);
     % Save it in local
-    save(fullfile(pmRootPath,'local','double_noiseTest.mat'),'double_synthDT')
-       
+    save(fullfile(pmRootPath,'local','double_noiseTest_jit0.mat'),'double_noiseTest_jit0')
+      %} 
     %% Compare synthetic to the real data
     % Load real
-    % load(fullfile(pmRootPath,'data','noise','F1mean.mat'),'F1mean')
+    load(fullfile(pmRootPath,'data','noise','F1mean.mat'),'F1mean')
     % load(fullfile(pmRootPath,'data','noise','diff1mean.mat'),'diff1mean')
     % load(fullfile(pmRootPath,'data','noise','signalmeanmaxmin.mat'),'signalmeanmaxmin')
     % 
@@ -215,12 +149,12 @@ save(fullfile(pmRootPath,'local','nonoise_Test1.mat'),'nonoise_synthDT')
 
     % Generate matrices
     % Noise free
-    PMnf       = nonoise_synthDT.pm;
+    PMnf       = no_noiseTest.pm;
     nfdata     = repmat(nan([1,PMnf(1).timePointsN]), [length(PMnf),1]);
     for ii=1:length(PMnf); nfdata(ii,:)=PMnf(ii).BOLDnoise;end
     
     % With noise: same
-    PMs        = same_synthDT.pm;
+    PMs        = same_noiseTest_jit0.pm;
     sdata      = repmat(nan([1,PMs(1).timePointsN]), [length(PMs),1]);
     for ii=1:length(PMs); sdata(ii,:)=PMs(ii).BOLDnoise;end
     % Generate same values
@@ -229,7 +163,7 @@ save(fullfile(pmRootPath,'local','nonoise_Test1.mat'),'nonoise_synthDT')
     same_Fsmean = mean(abs(Fs(5:end-3,:)),2);
 
      % With noise: half
-    PMs        = half_synthDT.pm;
+    PMs        = half_noiseTest_jit0.pm;
     sdata      = repmat(nan([1,PMs(1).timePointsN]), [length(PMs),1]);
     for ii=1:length(PMs); sdata(ii,:)=PMs(ii).BOLDnoise;end
     % Generate same values
@@ -238,7 +172,7 @@ save(fullfile(pmRootPath,'local','nonoise_Test1.mat'),'nonoise_synthDT')
     half_Fsmean = mean(abs(Fs(5:end-3,:)),2);
     
      % With noise: double
-    PMs        = double_synthDT.pm;
+    PMs        = double_noiseTest_jit0.pm;
     sdata      = repmat(nan([1,PMs(1).timePointsN]), [length(PMs),1]);
     for ii=1:length(PMs); sdata(ii,:)=PMs(ii).BOLDnoise;end
     % Generate same values
@@ -249,7 +183,10 @@ save(fullfile(pmRootPath,'local','nonoise_Test1.mat'),'nonoise_synthDT')
     % Plot it
     mrvNewGraphWin('F1mean');plot(F1mean);hold on;
                              plot(same_Fsmean);
-                             plot(half_Fsmean);
-                             plot(double_Fsmean);
-    legend({'human','synth','synth/2','synth*2'})
-    title('Real noise spectrum vs synthetic noise')
+    legend({'human','synth'})
+%     mrvNewGraphWin('F1mean');plot(F1mean);hold on;
+%                              plot(same_Fsmean);
+%                              plot(half_Fsmean);
+%                              plot(double_Fsmean);
+%     legend({'human','synth','synth/2','synth*2'})
+    title('Real noise spectrum vs synthetic noise (with jitter 0.0)')
