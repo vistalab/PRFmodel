@@ -23,27 +23,6 @@ fi
 # Set paths to input files
 CONFIG_FILE=${FLYWHEEL_BASE}/input/config.json
 
-# Check for required inputs
-# if [[ -z "$bvecFile" ]] ||  [[ -z "$bvalFile" ]] || [[ -z "$dwiFile" ]]; then
-#  echo -e "$CONTAINER  One or more input files were not found! Exiting!"
-#  exit 1
-# fi
-
-
-# Parse Config File
-#if [[ -f $CONFIG_FILE ]]; then
-#  # Parse config from config.json
-#  echo -e "$CONTAINER  Loading configuration from ${CONFIG_FILE}"
-  # doNorm=$(cat $CONFIG_FILE | jq -r '.config.doNorm')
-#  echo "$CONTAINER  BVALUE normalization has been set to $doNorm"
- #else
-  # Parse defaults from the manifest.json
- # CONFIG_FILE=$FLYWHEEL_BASE/manifest.json
- # echo -e "$CONTAINER  Loading defaults from ${CONFIG_FILE}"
- # doNorm=$(cat $CONFIG_FILE | jq -r '.config.doNorm.default')
- # echo "$CONTAINER  BVALUE normalization has been set to $doNorm"
-#fi
-
 
 # Run the Matlab executable
 time /compiled/run_synthBOLDgenerator.sh "${MCR_ROOT}" "${CONFIG_FILE}" "${OUTPUT_DIR}"
