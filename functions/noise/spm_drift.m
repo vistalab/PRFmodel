@@ -26,7 +26,12 @@ for k = 2:K
     C(:, k) = sqrt(2/N) * 10 * cos(pi * (2 * n + 1) * (k - 1)/(2 * N));
 end
 
-C = C*diag([1 0.5 1]);
+% We edited this to make the synthetic noise look as similar as possible to
+% the real noise we obtain from a random subject
+vectOnes    = ones([1,K]);
+vectOnes(2) = 1;
+vectOnes(3) = 1;
+C = C * diag(vectOnes);
 
 end
 
