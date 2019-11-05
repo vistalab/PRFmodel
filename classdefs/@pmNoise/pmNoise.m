@@ -1,11 +1,22 @@
 classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
-    % This is a superclass for Noise-s. Every particular instance of this class
+    % This is a superclass for Noise-s. 
+    %
+    % The noise returned has zero mean and an amplitude that makes sense
+    % for the mean level of the simulated BOLD signal.  We are considering
+    % returning a unit contrast for the noise and scaling its amplitude. At
+    % this time, The mean BOLD is specified by a parameter (BOLDmeanValue).
+    % The range of the BOLD signal is specified by a parameter
+    % (BOLDcontrast).  These set the level and range of the BOLD signal.
+    % The amplitude of the noise is related to these two values.
+    %
+    % To adjust the contrast of the noise, we set the parameter noiseMult
+    % and the parameter noise2signal.
+    %
+    % Every particular instance of this class
     % will have different parameters, so it will be a children class. For
     % example:
     %   - White noise (white)
     %
-    %   - Eye motion jitter
-    %     eyeMotionJitter = 1;  % Deg
     %
     %   - Motion related (translation and rotation)
     %
@@ -22,6 +33,9 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
     %
     %   - Hardware related instabilities
     %
+    % TO-DO:
+    %    %   - Eye motion jitter
+    %     eyeMotionJitter = 1;  % Deg
     % Syntax:
     %      noise = Noise;
     %
@@ -39,13 +53,63 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
     
     % Examples
     %{
-       
-    %}
+      pm = prfModel;
+      pm.Noise.compute;
+      pm.Noise.plot
     
+      pm.BOLDmeanValue=100;
+      pm.Noise.compute;
+      pm.Noise.plot
+    
+    
+    %}
+    %{
+      pm = prfModel;
+      pm.Noise.seed = 'none';
+      pm.Noise.compute;
+      pm.Noise.plot
+    
+    %}
+    %{
+      pm = prfModel;
+    pm.Noise.seed=1;
+      pm.Noise.compute;
+      pm.Noise.plot
+    
+      pm.BOLDmeanValue=100;
+    pm.Noise.seed=1;
+      pm.Noise.compute;
+      pm.Noise.plot
+    %}
+        %{
+      pm = prfModel;
+    pm.Noise.seed=1;
+      pm.Noise.compute;
+      pm.Noise.plot
+    
+      pm.BOLDmeanValue=100;
+    pm.Noise.seed=2;
+      pm.Noise.compute;
+      pm.Noise.plot
+    %}
+   %{
+      pm = prfModel;
+    pm.Noise.lowfrequ_amplitude=0;
+    
+      pm.Noise.compute;
+      pm.Noise.plot
+    %}
+     %{
+      pm = prfModel;
+      pm.Noise.compute;
+      F = abs(fft(pm.Noise.values'));
+      mrvNewGraphWin;plot(F);
+      
+    %}
     properties
         PM;           % prfModel that has some of the variables we need, such as TR
         seed;         % 'none' for no noise, 'random' or numeric(seed) otherwise
-        jitter;       % 0-1 numeric, 0 for no jitter
+        jitter;       % 0-1 numeric 2 vector, [freq_jitter, amplitude_jitter], [0 0] for no jitter
         noisemult;    % noise amplitude multiplier
         white_noise2signal; % amplitude of white noise, 0 for no white noise
         cardiac_amplitude;  % amplitude of cardiac noise, 0 for no cardiac noise
@@ -67,7 +131,7 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
     methods (Static)
         function d = defaultsGet
             d.seed               = 'random';
-            d.jitter             = 0;
+            d.jitter             = [0,0];  % freq, amplitude
             d.noisemult          = 1;
             
             % White Noise
@@ -128,8 +192,10 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
             noise.lowfrequ_frequ         = p.Results.lowfrequ_frequ;
             noise.lowfrequ_amplitude     = p.Results.lowfrequ_amplitude;
             
+            
             % Check that jitter is between 0 and 1
-            validateattributes(noise.jitter, {'numeric'},{'>=',0,'<=',1})
+            validateattributes(noise.jitter(1), {'numeric'},{'>=',0,'<=',1})
+            validateattributes(noise.jitter(2), {'numeric'},{'>=',0})
         end
         
         % Methods available to this class and his childrens (friston, boynton... classes)
@@ -147,15 +213,10 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
             % Set a seed so that the rands generates the same sequence
             switch noise.seed
                 case {'none','nonoise'}
-                    % No noise case
-                    % noise.white_noise2signal     = 0;
-                    % noise.cardiac_amplitude      = 0;
-                    % noise.respiratory_amplitude  = 0;
-                    % noise.lowfrequ_amplitude     = 0;
                     addnoise = false;
                 case 'random'
                     % Initialize with a random seed, say time
-                    rng(now)
+                    rng('shuffle')
                     addnoise = true;
                 otherwise
                     addnoise = true;
@@ -169,15 +230,19 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
             
             
             % Obtain the BOLD signal without noise. 
-            noise.PM.computeBOLD;
-            signal       = noise.PM.BOLD; % Retrieved from the parent model
+            % noise.PM.computeBOLD;
+            % signal       = noise.PM.BOLD; % Retrieved from the parent model
             tmpNoise     = {};
-            
+            if isclose(noise.PM.BOLDmeanValue,0,'tolerance',0.1)
+                BOLDrange = noise.PM.BOLDcontrast/100;
+            else
+                BOLDrange = (noise.PM.BOLDmeanValue * noise.PM.BOLDcontrast)/100;                
+            end
             % WHITE
             tmpNoise{1}  = {};
             if noise.white_noise2signal > 0 && addnoise
                 aNoise      = noise.white_noise2signal * noise.noisemult;
-                aNoise      = aNoise * (max(signal) - min(signal));
+                aNoise      = aNoise * BOLDrange;
                 tmpNoise{1} = aNoise * randn([1,noise.PM.timePointsN]);
             end
                   
@@ -190,11 +255,11 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
                 % the sd is equal to the parameter value itself.  
                 
                 % Frequency [Hz]
-                fNoise = noise.cardiac_frequency*(1 + noise.jitter*randn(1,1));
+                fNoise = noise.cardiac_frequency*(1 + noise.jitter(1)*randn(1,1));
                 % Amplitude
-                aNoise = noise.cardiac_amplitude*(1 + noise.jitter*randn(1,1));
+                aNoise = noise.cardiac_amplitude*(1 + noise.jitter(2)*randn(1,1));
                 aNoise = aNoise * noise.noisemult;
-                aNoise = aNoise * (max(noise.PM.BOLD) - min(noise.PM.BOLD));
+                aNoise = aNoise * BOLDrange;
                 
                 % Time points
                 t      = noise.PM.timePointsSeries;
@@ -208,11 +273,11 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
                 % See cardiac for the jitter explanation
                 
                 % Frequency [Hz]
-                fNoise = noise.respiratory_frequency*(1 + noise.jitter*randn(1,1));
+                fNoise = noise.respiratory_frequency*(1 + noise.jitter(1)*randn(1,1));
                 % Amplitude
-                aNoise = noise.respiratory_amplitude * (1 + noise.jitter*randn(1,1));
+                aNoise = noise.respiratory_amplitude * (1 + noise.jitter(2)*randn(1,1));
                 aNoise = aNoise * noise.noisemult;
-                aNoise = aNoise * (max(noise.PM.BOLD) - min(noise.PM.BOLD));
+                aNoise = aNoise * BOLDrange;
                 % Time points
                 t      = noise.PM.timePointsSeries;
                 % Calculate the noise
@@ -232,8 +297,8 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
                 % isclose(tmpNoise{4},R_result','tolerance',0.000000001)
                 
                 % Jitter: see cardiac and respiratory
-                fNoise = noise.lowfrequ_frequ * (1 + noise.jitter*randn(1,1));
-                aNoise = noise.lowfrequ_amplitude * (1 + noise.jitter*randn(1,1));
+                fNoise = noise.lowfrequ_frequ * (1 + noise.jitter(1)*randn(1,1));
+                aNoise = noise.lowfrequ_amplitude * (1 + noise.jitter(2)*randn(1,1));
                 aNoise = aNoise * noise.noisemult;
                 
                 n = floor(2 * (noise.PM.timePointsN * noise.PM.TR)/fNoise + 1);
@@ -244,13 +309,13 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
                 driftbase   = spmdrift(:,2:end);  % Eliminate the DC term
                 driftbase   = sum(driftbase,2)'; 
                 % Now we need to scale this noise to the actual noise values
-                aNoise      = aNoise * (max(signal) - min(signal));
+                aNoise      = aNoise * BOLDrange;
                 tmpNoise{4} = aNoise * driftbase;
             end
             
             
             % SUM ALL NOISE MODEL
-            vals = zeros(size(signal));
+            vals = zeros([1,noise.PM.timePointsN]);
             for nn=1:length(tmpNoise)
                 if ~isempty(tmpNoise{nn})
                     vals = vals + tmpNoise{nn};
