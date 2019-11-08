@@ -124,15 +124,10 @@ mrvNewGraphWin('synth vs real');
 plot(F1meansynth(5:end-3,:),'b');hold on;
 plot(F1mean(2:end,:),'r');  
 set(gca,'yscale','log')
-    
-    
-    
+   
 %% Select high quality voxels with a common expected mean response from the retinotopy data
 % We shuold find block data. Retinotopy data will be shifting in time
 % because different voxels react differently
-
-%  
-
 V1       = niftiRead(fullfile(pmRootPath,'data','examples','reallyGood_cube.nii.gz'));
 % Reshape it to make time x Nvoxels
 nVoxels = V1.dim(1)*V1.dim(2)*V1.dim(3);
@@ -177,6 +172,63 @@ mrvNewGraphWin('abs fft of all real diffs');plot(frequency',mean(realF1all,2));
 xlabel('Hz');ylabel('relative amplitude')
 realF =mean(realF1all,2); 
 
+%% Select high quality visual cortex voxels with on/off stimuli
+% Attached is a set of time series from 100 voxels from one subject. The file
+% has a variable called 'ts' which is an array 100x132x4, for 100 voxels x 132
+% time points x 4 repetitions. The 100 voxels are sorted so that the first has
+% the strongest visual signal and the last has the weakest. The TR was 1.5
+% seconds. The first 4 volumes are an initial blank period, followed by 8 cycles
+% of 16 volumes (8 on, 8 off, for a 24 s period).
+onoff       = load(fullfile(pmRootPath,'data','examples','onoff_ts.mat'));
+removeInit  = 4;
+TR          = 1.5;
+thisRep     = [1:4];
+whatVoxels  = [1:1];
+V1          = squeeze(onoff.ts(whatVoxels,removeInit+1:end,thisRep));
+nTimePoints = size(V1,1);
+nVoxels     = size(V1,2);
+% Plot to visualize how the time series look
+mrvNewGraphWin('Real V1 data');plot(0:TR:TR*nTimePoints-1,V1);
+
+% They have very different mean signal. Convert them to contrast:
+realNormV1 = (V1-mean(V1)) ./ mean(V1);
+mrvNewGraphWin('Real V1 data, signal percent');plot(0:TR:TR*nTimePoints-1,realNormV1);
+
+% Separate one of the time series (1st) and obtain the mean of the rest, plot it
+% Select a random voxel
+% thisVoxel = 9;
+V1diff1 = zeros([nTimePoints, nVoxels]);
+for thisVoxel=1:nVoxels
+    z = ones(1,nVoxels);
+    
+    V1s1         = realNormV1(:,thisVoxel);
+    z(thisVoxel) = 0;
+    V1s_rest     = realNormV1(:,logical(z));
+    V1mean       = mean(V1s_rest,2);
+    
+    % Obtain difference from the singled out time series
+    V1diff1(:,thisVoxel) = V1s1 - V1mean;
+    
+    % mrvNewGraphWin('Real V1 data: 1 BOLD versus Mean');
+    % plot(V1s1);hold on;plot(V1mean);legend({'Real V1','Mean V1 rest'});
+    % pause
+end
+% If the noise would be pointwise independent then this would be the
+% noise distributio, it is about a sd (.3% of the BOLD contrast)
+mrvNewGraphWin('diff noise hist'); hist(V1diff1(:),100)
+
+% Look for structure in the time series
+% fft and normalize, and multiply by two to have the real amplitude
+realF1all          = abs(fft(V1diff1)/nTimePoints);
+realF1all(2:end-1) = 2*realF1all(2:end-1);
+frequency          = ((1/TR)*(1:nTimePoints)/nTimePoints)';
+mrvNewGraphWin('abs fft of all real diffs');plot(frequency,realF1all);
+xlabel('Hz');ylabel('relative amplitude')
+% We find there is a little more low freq noise than high frequency
+
+mrvNewGraphWin('mean abs fft of all real diffs');plot(frequency,mean(realF1all,2));
+xlabel('Hz');ylabel('relative amplitude')
+
 
 %% 
 mrvNewGraphWin('V1 noise');plot(V1diff1);
@@ -197,7 +249,7 @@ pm.BOLDcontrast = 8;
 pm.BOLDmeanValue = 10000;
 pm.Noise.seed   = 'none';
 pm.compute;
-noisefree       = pm.BOLDnoise;
+noisefree       = pm.BOLDnoise;`
 % Add noise to the same time series
 pm.Noise.seed      = 12345;
 pm.Noise.noisemult = 1;

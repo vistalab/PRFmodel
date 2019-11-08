@@ -128,7 +128,6 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
                    ];
                assert(isa(Name, 'char'));
         end
-        
         % Methods
         function v = get.TR(hrf)
             v       = hrf.PM.TR;
