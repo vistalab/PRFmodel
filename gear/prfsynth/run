@@ -36,17 +36,18 @@ function getFRAMES {
     FRAMES="`python -c \"import neuropythy as ny; im = ny.load('$1', to='image'); print(np.squeeze(im.dataobj).shape[-1]); exit();\"`"
 }
 function writeEventsFile {
-    EVENTS_FILE="$1" STIM_FILE="$2" python <<EOF
+    EVENTS_FILE="$1" STIM_FILE="$2" STIMNAME="`basename \"$2\"`" python <<EOF
 from __future__ import print_function
 import neuropythy as ny, sys, os, pimms, numpy as np
 stimfl = os.environ['STIM_FILE']
+lstimfl = os.environ['STIMNAME']
 im = ny.load(stimfl, to='image')
 rows = np.squeeze(im.dataobj).shape[-1]
 trlen = pimms.mag(ny.to_image_spec(im)['voxel_duration'], 'seconds')
 with open(os.environ['EVENTS_FILE'], 'w') as f:
     print('onset','duration','stim_file','stim_file_index', sep='\t', file=f)
     for ii in range(rows):
-        print('%7.3f\t%7.3f\t%s\t%d' % (trlen * ii, trlen, stimfl, ii+1), file=f)
+        print('%7.3f\t%7.3f\t%s\t%d' % (trlen * ii, trlen, lstimfl, ii+1), file=f)
 sys.exit(0)
 EOF
 }
@@ -94,7 +95,7 @@ else note "Available synth datasets: ${STIMFILES[@]}"
           echo '   "Authors": ["Garikoitz Lerma-Usabiaga",' >> "$DDFL"
           echo '               "Noah C. Benson",' >> "$DDFL"
           echo '               "Jonathan Winawer",' >> "$DDFL"
-          echo '               "Brian Wandell"],' >> "$DDFL"
+          echo '               "Brian Wandell"]' >> "$DDFL"
           echo '}' >> "$DDFL"
      fi
 fi
@@ -105,7 +106,7 @@ do # Get the actual dataset name...
    ddir="`dirname \"$SF\"`"
    dname="`basename \"$ddir\"`"
    tt="${dname:$(( ${#name} + 1 ))}"
-   echo "BIDS-ifying Dataset ${name} ($tt)..."
+   note "BIDS-ifying Dataset ${name} ($tt)..."
    # Make a subject and session directory and put the functional simulations
    sub="`echo $name | tr ' ' '+'`"
    ses="prfsynth${tt}"
@@ -118,10 +119,10 @@ do # Get the actual dataset name...
    mkdir -p "$BIDS_DIR"/stimuli \
     && mv "$SF" "$STIMFL"
    # Make the BOLD JSON sidecar file
-   JSONFL="$BIDS_DIR"/sub-${sub}/ses-${ses}/func/sub-${sub}_ses-${ses}_task-prf_acq-normal_run-01_bold.json
+   JSONFL="$BIDS_DIR/sub-${sub}/ses-${ses}/func/sub-${sub}_ses-${ses}_task-prf_acq-normal_run-01_bold.json"
    getTRLEN "$BOLDFL"
    echo '{' > "$JSONFL"
-   echo '   "RepetitionTime": ${TRLEN},' >> "$JSONFL"
+   echo "   \"RepetitionTime\": ${TRLEN}," >> "$JSONFL"
    echo '   "TaskName": "prf"' >> "$JSONFL"
    echo '}' >> "$JSONFL"
    # Make a derivatives directory and put the extra json there
@@ -129,7 +130,7 @@ do # Get the actual dataset name...
     && mv "$ddir"/"${name}.json" "$BIDS_DIR"/derivatives/prfsynth/sub-${sub}/ses-${ses}/sub-${sub}_ses-${ses}_task-prf_acq-normal_run-01_bold.json
    # Make an events file for the stimulus
    EVENTSFL="${BIDS_DIR}/sub-${sub}/ses-${ses}/func/sub-${sub}_ses-${ses}_task-prf_events.tsv"
-   writeEventsFile "$EVENTSFL" "$STIMFL"
+   writeEventsFile "$EVENTSFL" "$STIMFL" "$BIDS_DIR"
    # That's all!
 done
 
@@ -137,7 +138,7 @@ done
 find "$OUTPUT_DIR" -type d -exec chmod 755 '{}' ';'
 find "$OUTPUT_DIR" -type f -exec chmod 644 '{}' ';'
 #chmod -R 755 "$OUTPUT_DIR"/*
-echo -e "$CONTAINER  Done!"
+note "$CONTAINER  Done!"
 
 # Exit
 exit 0
