@@ -35,6 +35,9 @@ function getTRLEN {
 function getFRAMES {
     FRAMES="`python -c \"import neuropythy as ny; im = ny.load('$1', to='image'); print(np.squeeze(im.dataobj).shape[-1]); exit();\"`"
 }
+function getSLICES {
+    SLICES="`python -c \"import neuropythy as ny; im = ny.load('$1', to='image'); print(im.shape[2]); exit();\"`"
+}
 function writeEventsFile {
     EVENTS_FILE="$1" STIM_FILE="$2" STIMNAME="`basename \"$2\"`" python <<EOF
 from __future__ import print_function
@@ -98,6 +101,13 @@ else note "Available synth datasets: ${STIMFILES[@]}"
           echo '               "Brian Wandell"]' >> "$DDFL"
           echo '}' >> "$DDFL"
      fi
+     # Also make a README
+     if [ -a "$BIDS_DIR"/README ]
+     then note "  * (Found existing README; this file left untouched)"
+     else echo 'This BIDS directory contains synthesized PRF data for use' > "$BIDS_DIR"/README
+          echo 'in testing PRF models. These data and this file were' >> "$BIDS_DIR"/README
+          echo 'automatically generated using the prfSynth docker image.' >> "$BIDS_DIR"/README
+     fi
 fi
 # Actually go through the datasets:
 for SF in "${STIMFILES[@]}"
@@ -123,6 +133,15 @@ do # Get the actual dataset name...
    getTRLEN "$BOLDFL"
    echo '{' > "$JSONFL"
    echo "   \"RepetitionTime\": ${TRLEN}," >> "$JSONFL"
+   echo -n '   "SliceTiming": [' >> "$JSONFL"
+   getSLICES "$BOLDFL"
+   for ii in $(seq $SLICES)
+   do if [ $ii = 1 ]
+      then echo -n "0" >> "$JSONFL"
+      else echo -n ", 0" >> "$JSONFL"
+      fi
+   done
+   echo '],' >> "$JSONFL"
    echo '   "TaskName": "prf"' >> "$JSONFL"
    echo '}' >> "$JSONFL"
    # Make a derivatives directory and put the extra json there
@@ -131,6 +150,15 @@ do # Get the actual dataset name...
    # Make an events file for the stimulus
    EVENTSFL="${BIDS_DIR}/sub-${sub}/ses-${ses}/func/sub-${sub}_ses-${ses}_task-prf_events.tsv"
    writeEventsFile "$EVENTSFL" "$STIMFL" "$BIDS_DIR"
+   # Also write out an accompanying events json file
+   EVJSONFL="${BIDS_DIR}/sub-${sub}/ses-${ses}/func/sub-${sub}_ses-${ses}_task-prf_events.json"
+   echo '{' > "$EVJSONFL"
+   echo '   "stim_file_index": {' >> "$EVJSONFL"
+   echo '      "Description": "1-based index into the stimulus file of the relevant stimulus"' >> "$EVJSONFL"
+   echo '   }' >> "$EVJSONFL"
+   echo '}' >> "$EVJSONFL"
+   # If we've arrived here; we can cleanup the previous directories
+   rmdir "$ddir"
    # That's all!
 done
 
