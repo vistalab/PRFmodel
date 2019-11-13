@@ -153,7 +153,6 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
         PM;                 % prfModel that has some of the variables we need, such as TR
         seed;               % 'none' for no noise, 'random' or numeric(seed) otherwise
         jitter;             % 0-1 numeric 2 vector, [freq_jitter, amplitude_jitter], [0 0] for no jitter
-        noisemult;          % noise amplitude multiplier
         white_amplitude;    % amplitude of white noise, the stdev of the gaussian, 0 for no white noise
         cardiac_amplitude;  % amplitude of cardiac noise, 0 for no cardiac noise
         cardiac_frequency;  % cardiac frequ in Hz
@@ -172,29 +171,61 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
     
     %%
     methods (Static)
-        function d = defaultsGet
-            d.seed               = 'random';
-            d.jitter             = [0,0];  % freq, amplitude
-            d.noisemult          = 1;
+        function d = defaultsGet(varargin)
+            varargin = mrvParamFormat(varargin);
+            p = inputParser;
+            p.addParameter('voxel','mid', @ischar);
+            p.parse(varargin{:});
+            d.voxel = p.Results.voxel;
             
-            % White Noise
-            d.white_amplitude    = 0.002; % white noise constant to relate to random number generator
-            
-            % Cardiac
-            d.cardiac_amplitude  = 0.004;
-            d.cardiac_frequency  = 1.17; 
-            
-            % Respiratory
-            d.respiratory_amplitude  = 0.003;
-            d.respiratory_frequency  = 0.2; 
-            
-            % Low frequency drift
-            d.lowfrequ_amplitude     = 0.008; 
-            d.lowfrequ_frequ         = 120;  % Seconds
-            
-            % Convert to table and return
+            switch strrep(lower(d.voxel),' ','')
+                case {'mid','midnoise'}
+                    d.seed               = 'random';
+                    d.jitter             = [0,0];  % freq, amplitude
+                    % White Noise
+                    d.white_amplitude    = 0.017; % white noise constant to relate to random number generator
+                    % Cardiac
+                    d.cardiac_amplitude  = 0.005;
+                    d.cardiac_frequency  = 1.05;
+                    % Respiratory
+                    d.respiratory_amplitude  = 0.005;
+                    d.respiratory_frequency  = 0.3;
+                    % Low frequency drift
+                    d.lowfrequ_amplitude     = 0.009;
+                    d.lowfrequ_frequ         = 120;  % Seconds
+                case {'good','low','lownoise'}
+                    d.seed               = 'random';
+                    d.jitter             = [0,0];  % freq, amplitude
+                    % White Noise
+                    d.white_amplitude    = 0.008; % white noise constant to relate to random number generator
+                    % Cardiac
+                    d.cardiac_amplitude  = 0.002;
+                    d.cardiac_frequency  = 1.05;
+                    % Respiratory
+                    d.respiratory_amplitude  = 0.002;
+                    d.respiratory_frequency  = 0.28;
+                    % Low frequency drift
+                    d.lowfrequ_amplitude     = 0.0045;
+                    d.lowfrequ_frequ         = 120;  % Seconds
+                case {'bad','high','highnoise'}
+                    d.seed               = 'random';
+                    d.jitter             = [0,0];  % freq, amplitude
+                    % White Noise
+                    d.white_amplitude    = 0.045; % white noise constant to relate to random number generator
+                    % Cardiac
+                    d.cardiac_amplitude  = 0.02;
+                    d.cardiac_frequency  = 1.055;
+                    % Respiratory
+                    d.respiratory_amplitude  = 0.008;
+                    d.respiratory_frequency  = 0.3;
+                    % Low frequency drift
+                    d.lowfrequ_amplitude     = 0.02;
+                    d.lowfrequ_frequ         = 120;  % Seconds
+                otherwise
+                    error('Voxel type %s not recognized',d.voxel)
+            end
             d = struct2table(d,'AsArray',true);
-        end 
+        end
         
     end
     methods
@@ -210,7 +241,6 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
             p.addRequired('pm'                                , @(x)(isa(x,'prfModel')));
             p.addParameter('seed'                  ,d.seed                          );
             p.addParameter('jitter'                ,d.jitter               , @isnumeric);
-            p.addParameter('noisemult'             ,d.noisemult            , @isnumeric);
             p.addParameter('white_amplitude'       ,d.white_amplitude      , @isnumeric);
             p.addParameter('cardiac_amplitude'     ,d.cardiac_amplitude    , @isnumeric);
             p.addParameter('cardiac_frequency'     ,d.cardiac_frequency    , @isnumeric);
@@ -225,7 +255,6 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
             % params
             noise.seed                   = p.Results.seed;
             noise.jitter                 = p.Results.jitter;
-            noise.noisemult              = p.Results.noisemult;
             noise.white_amplitude        = p.Results.white_amplitude;
             noise.cardiac_amplitude      = p.Results.cardiac_amplitude;
             noise.cardiac_frequency      = p.Results.cardiac_frequency;
@@ -238,6 +267,22 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
             % Check that jitter is between 0 and 1
             validateattributes(noise.jitter(1), {'numeric'},{'>=',0,'<=',1})
             validateattributes(noise.jitter(2), {'numeric'},{'>=',0})
+        end
+        
+        function noise = setVoxelDefaults(noise,voxelType)
+            % Obtain defaults table. If a parameters is not passed, it will use
+            % the default one defined in the static function
+            d = table2struct(noise.defaultsGet('voxel',voxelType));
+            
+            noise.seed                  = d.seed;
+            noise.jitter                = d.jitter;
+            noise.white_amplitude       = d.white_amplitude;
+            noise.cardiac_amplitude     = d.cardiac_amplitude;
+            noise.cardiac_frequency     = d.cardiac_frequency;
+            noise.respiratory_amplitude = d.respiratory_amplitude;
+            noise.respiratory_frequency = d.respiratory_frequency;
+            noise.lowfrequ_frequ        = d.lowfrequ_frequ;
+            noise.lowfrequ_amplitude    = d.lowfrequ_amplitude;
         end
         
         % Methods available to this class and his childrens (friston, boynton... classes)
@@ -278,7 +323,7 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
             % WHITE
             tmpNoise{1}  = {};
             if noise.white_amplitude > 0 && addnoise
-                aNoise      = noise.white_amplitude * noise.noisemult;
+                aNoise      = noise.white_amplitude;
                 tmpNoise{1} = aNoise * randn(1,noise.PM.timePointsN);
             end
                   
@@ -294,7 +339,6 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
                 fNoise = noise.cardiac_frequency*(1 + noise.jitter(1)*randn(1,1));
                 % Amplitude
                 aNoise = noise.cardiac_amplitude*(1 + noise.jitter(2)*randn(1,1));
-                aNoise = aNoise * noise.noisemult;                
                 % Time points
                 t      = noise.PM.timePointsSeries;
                 % Calculate the noise
@@ -310,7 +354,6 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
                 fNoise = noise.respiratory_frequency*(1 + noise.jitter(1)*randn(1,1));
                 % Amplitude
                 aNoise = noise.respiratory_amplitude * (1 + noise.jitter(2)*randn(1,1));
-                aNoise = aNoise * noise.noisemult;
                 % Time points
                 t      = noise.PM.timePointsSeries;
                 % Calculate the noise
@@ -332,7 +375,6 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
                 % Jitter: see cardiac and respiratory
                 fNoise = noise.lowfrequ_frequ * (1 + noise.jitter(1)*randn(1,1));
                 aNoise = noise.lowfrequ_amplitude * (1 + noise.jitter(2)*randn(1,1));
-                aNoise = aNoise * noise.noisemult;
                 
                 n = floor(2 * (noise.PM.timePointsN * noise.PM.TR)/fNoise + 1);
                 if (n < 3) 
@@ -388,7 +430,7 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
                 % The amplitude is divided in the two halfs, so we take one half and
                 % multiply the amplitude by two
                 F(2:end-1) = 2*F(2:end-1);
-                % Obtain the frequency vector (for the half points)
+                % Get the frequency vector (for the half points)
                 f = (1/noise.PM.TR)*(0:(timePoints/2)-1)./timePoints;
             %}
             
@@ -409,17 +451,59 @@ end
 
     %{
       pm = prfModel;
-      pm.TR = 1.5;
+      pm.TR = 1;
       pm.Noise.white_amplitude  = 0.0;
       pm.Noise.respiratory_amplitude  = 1;
       pm.Noise.respiratory_frequency  = 0.2;
-      pm.Noise.cardiac_amplitude  = 0.5;
-      pm.Noise.cardiac_frequency  = 1.17;
-      pm.Noise.lowfrequ_amplitude = 1;
+      pm.Noise.cardiac_amplitude  = 1;
+      pm.Noise.cardiac_frequency  = 1.2;
+      pm.Noise.lowfrequ_amplitude = 0;
       pm.Noise.lowfrequ_frequ     = 120; % 1/120=0.0083
       pm.Noise.plot;
       
-    %}  
+    %}
+    %{ 
+       % Check jitter
+       pm = prfModel;
+       pm.TR=1.5;
+       pm.BOLDcontrast = 16;
+       % Same seed, jitter should be the same every repetition
+       pm.Noise.seed = 12346
+       % Make all zero except respiratory
+       pm.Noise.white_amplitude=0;
+       pm.Noise.lowfrequ_amplitude=0;
+       pm.Noise.cardiac_amplitude=0;
+       % Set desired respiratory
+       pm.Noise.respiratory_amplitude=1;
+       pm.Noise.respiratory_frequency=0.2;
+       % Plot
+       pm.Noise.plot;title('no jitter')
+       pm.Noise.jitter = 0.1;
+       pm.Noise.plot;title('0.1 jitter')
+       pm.Noise.jitter = 0.5;
+       pm.Noise.plot;title('0.5 jitter')
+       % close all
+    %}
+    %{ 
+       % Check jitter
+       pm = prfModel;
+       pm.TR=1.5;
+       pm.BOLDcontrast = 16;
+       % Same seed, jitter should be the same every repetition
+       pm.Noise.seed = 12345
+       % Make all zero except lowfrequ
+       pm.Noise.white_amplitude=0;
+       pm.Noise.respiratory_amplitude=0;
+       pm.Noise.cardiac_amplitude=0;
+       % Plot
+       pm.Noise.plot;title('no jitter')
+       pm.Noise.jitter = 0.1;
+       pm.Noise.plot;title('0.1 jitter')
+       pm.Noise.jitter = 0.4;
+       pm.Noise.plot;title('0.5 jitter')
+       % close all
+    %}
+
     
 
 

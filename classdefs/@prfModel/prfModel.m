@@ -24,79 +24,20 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
     %{ 
        % Check mean BOLD, range, contrast
        pm = prfModel;
-       pm.BOLDcontrast = 16;
+       pm.BOLDcontrast = 8;
        pm.Noise.seed = 12345
+       pm.HRF.Type = 'boynton'
        pm.compute;
        pm.plot;
-       noiselessRange = max(pm.BOLD)-min(pm.BOLD);  % should be 0.16
+       noiselessRange = (max(pm.BOLD)-min(pm.BOLD))/2;  % should be 0.16
        assert(pm.BOLDcontrast/100 == noiselessRange)
        pm.signalPercentage = false; % Give real signal with a mean of BOLDmeanValue
        pm.compute;
-       noiselessRange = max(pm.BOLD)-min(pm.BOLD);  % should be 0.16
+       noiselessRange = (max(pm.BOLD)-min(pm.BOLD))/2;  % should be 0.16
        assert(pm.BOLDcontrast/100 == noiselessRange/pm.BOLDmeanValue)
        pm.plot
     %}
-    %{ 
-       % Check jitter
-       pm = prfModel;
-       pm.TR=1.5;
-       pm.BOLDcontrast = 16;
-       % Same seed, jitter should be the same every repetition
-       pm.Noise.seed = 12346
-       % Make all zero except respiratory
-       pm.Noise.white_amplitude=0;
-       pm.Noise.lowfrequ_amplitude=0;
-       pm.Noise.cardiac_amplitude=0;
-       % Set desired respiratory
-       pm.Noise.respiratory_amplitude=1;
-       pm.Noise.respiratory_frequency=0.2;
-       % Plot
-       pm.Noise.plot;title('no jitter')
-       pm.Noise.jitter = 0.1;
-       pm.Noise.plot;title('0.1 jitter')
-       pm.Noise.jitter = 0.5;
-       pm.Noise.plot;title('0.5 jitter')
-       % close all
-    %}
-    %{ 
-       % Check jitter
-       pm = prfModel;
-       pm.TR=1.5;
-       pm.BOLDcontrast = 16;
-       % Same seed, jitter should be the same every repetition
-       pm.Noise.seed = 12345
-       % Make all zero except lowfrequ
-       pm.Noise.white_amplitude=0;
-       pm.Noise.respiratory_amplitude=0;
-       pm.Noise.cardiac_amplitude=0;
-       % Plot
-       pm.Noise.plot;title('no jitter')
-       pm.Noise.jitter = 0.1;
-       pm.Noise.plot;title('0.1 jitter')
-       pm.Noise.jitter = 0.4;
-       pm.Noise.plot;title('0.5 jitter')
-       % close all
-    %}
-    %{ 
-       % Check noisemult
-       pm = prfModel;
-       pm.TR=1.5;
-       pm.BOLDcontrast = 16;
-       % Same seed, jitter should be the same every repetition
-       pm.Noise.seed = 12345
-       % Make all zero except one and check
-       pm.Noise.white_amplitude=0;
-       pm.Noise.respiratory_amplitude=0;
-       pm.Noise.cardiac_amplitude=1;
-       pm.Noise.lowfrequ_amplitude=0;
-       % Plot
-       pm.Noise.plot;title('noisemult 1')
-       pm.Noise.noisemult = 0.5;
-       pm.Noise.plot;title('noisemult 0.5')
-       pm.Noise.noisemult = 2;
-       pm.Noise.plot;title('noisemult 2')
-       % close all
-    %}    
+  
     
     properties (Access = private)
         % What do we need to create our synthetic bold series
@@ -140,7 +81,7 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             d.TR               = 1;
             d.Type             = 'basic';
             d.signalPercentage = true;
-            d.BOLDcontrast     = 16;    % Percent. So this will be 0.08
+            d.BOLDcontrast     = 8;    % Percent. So this will be 0.08
             d.BOLDmeanValue    = 10000; % Mean BOLD, set signalPercentage to false
             % Convert to table and return
             d = struct2table(d,'AsArray',true);
@@ -286,7 +227,7 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             end
             % Scale the signal so that it has the required mean and contrast
             if pm.signalPercentage
-                pm.BOLD  = pm.BOLD2contrast(pm.BOLD, pm.BOLDcontrast);
+                pm.BOLD  = pm.unitless2contrast(pm.BOLD, pm.BOLDcontrast);
             else
                 pm.BOLD  = pm.contrast2BOLD(pm.BOLD, pm.BOLDcontrast, pm.BOLDmeanValue);
             end
@@ -296,7 +237,7 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             normBOLD    = (signal - min(signal))/(max(signal) - min(signal));
             % Calculate the max value, so that the relation between the
             % meanValue and the amplitude is the one set in pm.BOLDcontrast
-            maxValue    = (contrast/100) * meanBOLD;
+            maxValue    = (2*contrast/100) * meanBOLD;
             % No obtain the scaled value with the following formula
             minValue    = 0;
             scaledBOLD  = minValue + normBOLD .* (maxValue - minValue);
@@ -305,12 +246,12 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             % to the signal so that pm.BOLD == pm.BOLDmeanValue
             v           = (scaledBOLD - mean(scaledBOLD)) + meanBOLD;
         end
-        function v = BOLD2contrast(pm, signal, contrast)
+        function v = unitless2contrast(pm, signal, contrast)
             % Normalize to 0-1, so that min(normBOLD) == 0
             normBOLD    = (signal - min(signal))/(max(signal) - min(signal));
             % Calculate the max value, so that the relation between the
             % meanValue and the amplitude is the one set in pm.BOLDcontrast
-            maxValue    = (contrast/100);
+            maxValue    = (2*contrast/100);
             % No obtain the scaled value with the following formula
             minValue    = 0;
             scaledBOLD  = minValue + normBOLD .* (maxValue - minValue);
@@ -351,16 +292,24 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             p.addRequired ('pm'  ,  @(x)(isa(x,'prfModel')));
             p.addParameter('what', 'both', @ischar);
             p.addParameter('window', true, @islogical);
+            p.addParameter('addtext', true, @islogical);
+            p.addParameter('color', 'k', @ischar);
+            
             p.parse(pm,varargin{:});
             what = mrvParamFormat(p.Results.what);
             w  = p.Results.window;
+            t  = p.Results.addtext;
+            c  = p.Results.color;
+            
             pm.compute;
             switch what
                 case {'nonoise','noiseless','noisefree'}
                     if w;mrvNewGraphWin([pm.Type 'Synthetic BOLD signal (no noise)']);end
-                    plot(pm.timePointsSeries, pm.BOLD);
+                    plot(pm.timePointsSeries, pm.BOLD,c);
+                    grid on; xlabel('Time (sec)'); ylabel('Relative amplitude');
                 case 'withnoise'
                     if w;mrvNewGraphWin([pm.Type 'Synthetic BOLD signal (noise)']);end
+                    plot(pm.timePointsSeries, pm.BOLDnoise,c);
                     grid on; xlabel('Time (sec)'); ylabel('Relative amplitude');
                 case 'both'
                     if w;mrvNewGraphWin([pm.Type 'Synthetic BOLD signals']);end
@@ -388,10 +337,10 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             end
             grid on; xlabel('Time (sec)'); ylabel('Relative amplitude');
             aa = gca;
-            text(5,aa.YLim(1)*(1.0025),...
-                sprintf('TR=%1.1fs, Center(x0,y0)=[%1.1f,%1.1f]deg, Theta=%1.1frad, \\sigmaMaj=%1.1fdeg, \\sigmaMin=%1.1fdeg, FoVh=%1.1fdeg, FoVv=%1.1fdeg' ,...
-                pm.TR,        pm.RF.Centerx0, pm.RF.Centery0, pm.RF.Theta,    pm.RF.sigmaMajor,     pm.RF.sigmaMinor,     pm.Stimulus.fieldofviewHorz, pm.Stimulus.fieldofviewVert))
-            
+            if t, text(5,aa.YLim(1)*(1.0025),...
+                    sprintf('TR=%1.1fs, Center(x0,y0)=[%1.1f,%1.1f]deg, Theta=%1.1frad, \\sigmaMaj=%1.1fdeg, \\sigmaMin=%1.1fdeg, FoVh=%1.1fdeg, FoVv=%1.1fdeg' ,...
+                    pm.TR,        pm.RF.Centerx0, pm.RF.Centery0, pm.RF.Theta,    pm.RF.sigmaMajor,     pm.RF.sigmaMinor,     pm.Stimulus.fieldofviewHorz, pm.Stimulus.fieldofviewVert))
+            end
         end
     end
 end
