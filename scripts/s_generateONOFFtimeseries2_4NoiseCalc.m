@@ -91,7 +91,7 @@ mrvNewGraphWin;plot(f(2:end),meanMN(2:nTimes/2));hold on;
 plot(f(stimidx)*[1,1],[0,max(meanMN(2:nTimes/2))],'r-.', 'LineWidth', 1.5)
 plot(f(noiseidx(1))*[1,1],[0,max(meanMN(2:nTimes/2))],'r-', 'LineWidth', 0.75)
 plot(f(noiseidx(end))*[1,1],[0,max(meanMN(2:nTimes/2))],'r-', 'LineWidth', 0.75)
-xlabel(sprintf('f [Hz] (TR=%1.1fs)',tr));
+xlabel(sprintf('f [Hz] (TR=%1.1fs)',tr));set(gca,'FontSize',14)
 ylabel('BOLD Amplitude')
 
 % Plot the signal being compared for the coherence calculation
@@ -117,7 +117,8 @@ tmin    = text(mincoh,pdf(minCohii)+0.11,sprintf('Coh.:%0.3f',mincoh),'Horizonta
 hmax    = plot(maxcoh*[1,1],[0 pdf(maxCohii)],'Color','k','LineStyle','-.','LineWidth',2);
 tmax    = text(maxcoh,pdf(maxCohii)+0.15,sprintf('Coh.:%0.3f',maxcoh),'HorizontalAlignment','center','FontSize',14);
 jbfill(X_values(minCohii:maxCohii), pdf(minCohii:maxCohii), 0*pdf(minCohii:maxCohii), 'k','k',1,0.4)
-xlabel('Coherence Values'); ylabel('Probability density'); title('');
+xlabel('Coherence Values'); ylabel('Probability density'); 
+title('Coherence density distribution');set(gca,'FontSize',14)
 
 %% From all the coherent voxels, select 3 based on noise
 
@@ -190,6 +191,7 @@ amin    = plot(XVALS(midNoiseIndex,:),PDF(midNoiseIndex,:),'Color','b','LineStyl
 amin    = plot(XVALS(minNoiseIndex,:),PDF(minNoiseIndex,:),'Color','g','LineStyle','-','LineWidth',2);
 xlabel('Relative noise values'); ylabel('Probability density'); title('');
 legend({'High noise voxel','Mid noise voxel','Low noise voxel'})
+set(gca,'FontSize',14)
 
 % Plot time series and noise spectrum of the new selected 3 voxels
 mrvNewGraphWin('Time series and noise spectrum of selected voxels');
@@ -201,7 +203,7 @@ plot(t, squeeze(ts(minNoiseIndex,:,:)), 'g-', 'LineWidth', 1);
 plot(t, tsmn(:,[maxNoiseIndex,midNoiseIndex,minNoiseIndex]), 'k-', 'LineWidth', 2);
 set(gca, 'XTick', tr*keepframes(1:period:end), 'XGrid', 'on', 'FontSize', 16)
 xlabel('Time (seconds)')
-ylabel('BOLD response')
+ylabel('BOLD response');set(gca,'FontSize',14)
 % legend({'High noise voxel','Mid noise voxel','Low noise voxel'},'location','best')
 
 % To calculate the fft, use the first repetition time series always
@@ -225,7 +227,7 @@ plot(frequency(2:end),realFallmin(2:end),'r');hold on;
 plot(frequency(2:end),realFallmid(2:end),'b');
 plot(frequency(2:end),realFallmax(2:end),'g');
 legend({'High noise voxel','Mid noise voxel','Low noise voxel'})
-xlabel('Hz'); ylabel('relative amplitude')
+xlabel('Hz'); ylabel('relative amplitude');set(gca,'FontSize',14)
 
 
 %% Fit the parameters in pmNoise until we have similar values
@@ -252,7 +254,9 @@ Fsynth          = abs(fft(pm.Noise.values)/pm.timePointsN)';
 Fsynth(2:end-1) = 2*Fsynth(2:end-1);
 Fsynth          = Fsynth(1:(pm.timePointsN/2));
 Fsynthmin       = Fsynth;
-pm.plot('what','withnoise','window',false,'addtext',false,'color','r');hold on
+pm.plot('what','withnoise','window',false,'addtext',false,'color','r');
+xlabel('Time [sec]'), set(gca,'FontSize',14)
+title('HIGH NOISE')
 
 subplot(2,3,2)
 % Change for mid voxel
@@ -263,6 +267,9 @@ Fsynth(2:end-1) = 2*Fsynth(2:end-1);
 Fsynth          = Fsynth(1:(pm.timePointsN/2));
 Fsynthmid       = Fsynth;
 pm.plot('what','withnoise','window',false,'addtext',false,'color','b')
+set(gca,'FontSize',14)
+xlabel('Time [sec]'), ylabel('BOLD contrast')
+title('MID NOISE')
 
 subplot(2,3,3)
 % Obtain the max voxel
@@ -273,23 +280,24 @@ Fsynth(2:end-1) = 2*Fsynth(2:end-1);
 Fsynth          = Fsynth(1:(pm.timePointsN/2));
 Fsynthmax       = Fsynth;
 pm.plot('what','withnoise','window',false,'addtext',false,'color','g')
-
+xlabel('Time [sec]'),set(gca,'FontSize',14)
+title('LOW NOISE')
 
 subplot(2,3,4)
-plot(sfrequency(2:end,:),Fsynthmin(2:end,:),'r-.');hold on;
-plot(frequency(2:end,:),realFallmin(2:end,:),'r-');  
+plot(sfrequency(2:end,:),Fsynthmin(2:end,:),'r-');hold on;
+plot(frequency(2:end,:),realFallmin(2:end,:),'-.','color',[1 0.8 0.8],'linewidth',2);  
 legend({'High noise (synth)','High noise (real)'},'location','best')
-xlabel('Hz'); ylabel('Relative amplitude')
+xlabel('f [Hz]'); ylabel('Relative amplitude'),set(gca,'FontSize',14)
 
 subplot(2,3,5)
-plot(sfrequency(2:end,:),Fsynthmid(2:end,:),'b-.');hold on;
-plot(frequency(2:end,:),realFallmid(2:end,:),'b-');  
+plot(sfrequency(2:end,:),Fsynthmid(2:end,:),'b-');hold on;
+plot(frequency(2:end,:),realFallmid(2:end,:),'-.','color',[0.8 0.8 1],'linewidth',2);  
 legend({'Mid noise (synth)','Mid noise (real)'},'location','best')
-xlabel('Hz'); ylabel('Relative amplitude')
+xlabel('f [Hz]'); set(gca,'FontSize',14)
 
 subplot(2,3,6)
-plot(sfrequency(2:end,:),Fsynthmax(2:end,:),'g-.');hold on;
-plot(frequency(2:end,:),realFallmax(2:end,:),'g-');  
+plot(sfrequency(2:end,:),Fsynthmax(2:end,:),'g-');hold on;
+plot(frequency(2:end,:),realFallmax(2:end,:),'-.','color',[0.8 1 0.8],'linewidth',2);  
 legend({'Low noise (synth)','Low noise (real)'},'location','best')
-xlabel('Hz'); ylabel('Relative amplitude')
+xlabel('f [Hz]'); set(gca,'FontSize',14)
 % title('Noise spectrum of the real and synth voxels')
