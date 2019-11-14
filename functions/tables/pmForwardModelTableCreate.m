@@ -65,8 +65,15 @@ for ii=1:length(fieldsToCombine)
         case {'Noise','noise'}
             % We are only interested in the first array if there are more than one
             nh            = 1;
-            completeNoise = pmParamsCompletenessCheck(fieldValues(nh), ...
+            % If we are specifying a type of noise voxel, obtain its
+            % defaults, don't override the rest
+            if isfield(fieldValues(nh),'voxel')
+                completeNoise = pmParamsCompletenessCheck(fieldValues(nh), ...
+                                            table2struct(pm.Noise.defaultsGet('voxel',fieldValues(nh).voxel)));
+            else
+                completeNoise = pmParamsCompletenessCheck(fieldValues(nh), ...
                                             table2struct(pm.defaultsTable.Noise));
+            end
             % Convert it to table
             fieldValuesTable = struct2table(completeNoise,'AsArray',true);
             % Change the default

@@ -12,7 +12,7 @@ then TOOLBOXTOOLBOX_PATH="$1"
 elif [ -n "$TOOLBOXTOOLBOX_PATH" ]
 then : # noop
 elif [ -d /data/localhome/glerma/toolboxes ]
-then TOOLBOXTOOLBOX_PATH="/data/localhome/glerma/toolboxes"
+then TOOLBOXTOOLBOX_PATH="/data/localhome/glerma/soft/ToolboxToolbox"
 else echo "Cannot find toolboxes path!" >&2
      exit 1
 fi

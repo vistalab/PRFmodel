@@ -56,7 +56,20 @@ for ii=1:height(DT)
     %% Noise
     for jj=1:width(dt.Noise)
         paramName            = dt.Noise.Properties.VariableNames{jj};
-        pm.Noise.(paramName) = dt.Noise.(paramName);
+        % We did not create it as a variable, as it is just to specify a
+        % series of noise defaults. I don't like to have specific variable
+        % names here, think about making it a noise param
+        if strcmp(paramName,'seed')
+            [val, status] = str2num(dt.Noise.(paramName){:});
+            if status
+                pm.Noise.(paramName) = val;
+            else
+                pm.Noise.(paramName) = dt.Noise.(paramName);
+            end
+        elseif ~strcmp(paramName,'voxel')
+            pm.Noise.(paramName) = dt.Noise.(paramName);
+        end
+        
     end
     % pm.Noise.compute;
     

@@ -34,6 +34,8 @@ function synthBOLDgenerator(json, output_dir)
 %{
     % Create files
     jsonPath   = fullfile(pmRootPath,'gear','synthprf','synthBOLDgenerator_paramsExample.json');
+   
+    jsonPath   = fullfile(pmRootPath,'local','params_big_test_for_paper_v01.json');
     output_dir = fullfile(pmRootPath,'local','output');
     synthBOLDgenerator(jsonPath, output_dir);
 
@@ -69,18 +71,24 @@ if ischar(json)
 end
 
 %% Parse the JSON file or object
-
+% Create a pm instance, we will use it in both cases
+pm = prfModel;
+% Check if we need to read a json or provide a default one
 if exist(json, 'file') == 2
     J = loadjson(json);
+    if iscell(J)
+        J=J{:};
+    end
 else
     % return the default json and exit
-    pm = prfModel;
     DEFAULTS = pm.defaultsTable;
     % Add two params required to generate the file
     DEFAULTS.fileName = "editDefaultName";
     DEFAULTS.repeats  = 2;
     % Reorder fieldnames
-    DEFAULTS = DEFAULTS(:,{'fileName','repeats','TR','Type','BOLDmeanValue','BOLDcontrast','HRF','RF','Stimulus','Noise'});
+    DEF_colnames = DEFAULTS.Properties.VariableNames;
+    DEF_colnames = DEF_colnames([end-1,end,1:end-2]);
+    DEFAULTS     = DEFAULTS(:,DEF_colnames);
     % Select filename to be saved
     fname = fullfile(output_dir, 'defaultParams_ToBeEdited.json');
     % Encode json
@@ -89,9 +97,7 @@ else
     jsonString = strrep(jsonString, ',', sprintf(',\n'));
     jsonString = strrep(jsonString, '[{', sprintf('[\n{\n'));
     jsonString = strrep(jsonString, '}]', sprintf('\n}\n]'));
-    % Delete the first and last []
-    jsonString(1)   = '';
-    jsonString(end) = '';
+
     % Write it
     fid = fopen(fname,'w');if fid == -1,error('Cannot create JSON file');end
     fwrite(fid, jsonString,'char');fclose(fid);
@@ -100,49 +106,8 @@ else
     disp('defaultParams_ToBeEdited.json written, edit it and pass it to the container to generate synthetic data.')
     return
 end
-% elseif exist(json, 'dir') == 7
-%    jsonFile = dir(fullfile(json, '*.json'));
-%    jsonFile = fullfile(json, jsonFile.name);
-%    disp(jsonFile);
-%    if ~isempty(jsonFile)
-%        J = loadjson(jsonFile);
-%    else
-%        error('No JSON file could be found');
-%    end
-% elseif ~isempty(json) && ischar(json)
-%    try
-%        J = loadjson(json);
-%    catch ME
-%        disp(ME.message); 
-%        return
-%    end
-%else
-%    error('Could not find/parse the json file/structure');
-% end
 
-%% Check the json object for required fields
-%{
-required = {'input_dir', 'output_dir'};
-err = false;
-
-for r = 1:numel(required)
-    if ~isfield(J, required{r})
-        err = true;
-        fprintf('%s not found in JSON object!\n', required{r});
-    elseif ~exist(J.(required{r}), 'dir')
-        fprintf('%s Does not exist!\n', required{r});
-        err = true;
-    end
-end
-
-% If there was a problem, return
-if err 
-    error('Exiting! There was a problem with the inputs. Please check input_dir and output_dir!');
-end
-%}
-
-
-% Create an output subfolder for the outputs 
+%% Create an output subfolder for the outputs 
 outputSubFolder = [J.fileName '_' datestr(datetime,'yyyymmddTHHMMSS','local')];
 output_dir = fullfile(output_dir, outputSubFolder);
 mkdir(output_dir);
@@ -163,13 +128,33 @@ COMBINE_PARAMETERS.HRF                = HRF;
 TEST = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats', 2);
 TEST = pmForwardModelCalculate(TEST);
 %}
+% Create one pm instance to obtain defaults
+pm = prfModel;
 PARAMETERS = J;
 PARAMETERS = rmfield(PARAMETERS,'fileName');
 PARAMETERS = rmfield(PARAMETERS,'repeats');
 % Do the required conversions before creating the table
-PARAMETERS.HRF       = [PARAMETERS.HRF{:}]; 
+% To concatenate structs they need to have the same num of fields
+for nh=1:length(PARAMETERS.HRF)
+    thisHRF = PARAMETERS.HRF(nh); 
+        PARAMETERS.HRF(nh) = {pmParamsCompletenessCheck(thisHRF{:}, ...
+                              table2struct(pm.defaultsTable.HRF))};
+end
+PARAMETERS.HRF       = [PARAMETERS.HRF{:}];
 PARAMETERS.RF        = [PARAMETERS.RF{:}];
 PARAMETERS.Stimulus  = [PARAMETERS.Stimulus{:}];
+% Noise can have different amount of variables. Complete them and concatenate
+for nh=1:length(PARAMETERS.Noise)
+    thisNoise = PARAMETERS.Noise(nh); 
+    if isfield(thisNoise{:},'voxel')
+        completeNoise = pmParamsCompletenessCheck(thisNoise{:}, ...
+            table2struct(pm.Noise.defaultsGet('voxel',thisNoise{:}.voxel)));
+    else
+        completeNoise = pmParamsCompletenessCheck(thisNoise{:}, ...
+            table2struct(pm.defaultsTable.Noise));
+    end
+    PARAMETERS.Noise(nh) = {completeNoise};
+end
 PARAMETERS.Noise     = [PARAMETERS.Noise{:}];
 % Convert some char-s to string-s, char-s are treated as individual elements...
 PARAMETERS.Type      = string(PARAMETERS.Type);
@@ -196,9 +181,6 @@ jsonString = jsonencode(synthDT(:,1:(end-1)));
 jsonString = strrep(jsonString, ',', sprintf(',\n'));
 jsonString = strrep(jsonString, '[{', sprintf('[\n{\n'));
 jsonString = strrep(jsonString, '}]', sprintf('\n}\n]'));
-% Delete the first and last []
-jsonString(1)   = '';
-jsonString(end) = '';
 % Write it
 fid = fopen(jsonSynthFile,'w');if fid == -1,error('Cannot create JSON file');end
 fwrite(fid, jsonString,'char');fclose(fid);

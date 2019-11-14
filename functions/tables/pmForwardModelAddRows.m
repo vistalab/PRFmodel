@@ -19,17 +19,40 @@ pm = prfModel;
 % variable that we want to expand
 tmp = synthDT;
 switch variableName
-    case {'HRF','Noise'}
+    case {'HRF'}
         for ii=1:length(values)
             % Add rows with the combinations of parameters we want to check
             % Then check that the whole thing should be complete
             complete = pmParamsCompletenessCheck(values(ii), ...
-                table2struct(pm.defaultsTable.(variableName)));
-            if strcmp(variableName,'HRF')
-                % Check if only some of the fields in params where set
-                complete.params = pmParamsCompletenessCheck(complete.params, ...
-                    pm.defaultsTable.(variableName).params);
+                table2struct(pm.defaultsTable.HRF));
+            % Check if only some of the fields in params where set
+            complete.params = pmParamsCompletenessCheck(complete.params, ...
+                pm.defaultsTable.HRF.params);
+            % Convert it to table
+            fieldValuesTable = struct2table(complete,'AsArray',true);
+            % Take the copy of the existing table, and make everything equal
+            % except the one thing we are changing
+            tmp.(variableName)          = repmat(fieldValuesTable, [height(tmp),1]);
+            
+            % Now concatenate the original and the recently created one.
+            synthDT          = [synthDT; tmp];
+        end
+    case {'Noise'}
+        for ii=1:length(values)
+            % Add rows with the combinations of parameters we want to check
+            % Then check that the whole thing should be complete
+            % If we are providing a specific type of noise voxel, obtain
+            % such defaults
+            if isfield(values,'voxel')
+                completeNoise = pmParamsCompletenessCheck(values(ii), ...
+                                            table2struct(pm.Noise.defaultsGet('voxel',values(ii).voxel)));
+            else
+                completeNoise = pmParamsCompletenessCheck(values(ii), ...
+                                            table2struct(pm.defaultsTable.Noise));
             end
+            complete = pmParamsCompletenessCheck(values(ii), ...
+                table2struct(pm.defaultsTable.Noise));
+            
             % Convert it to table
             fieldValuesTable = struct2table(complete,'AsArray',true);
             % Take the copy of the existing table, and make everything equal
