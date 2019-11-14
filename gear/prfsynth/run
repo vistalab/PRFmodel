@@ -68,7 +68,11 @@ time /compiled/run_synthBOLDgenerator.sh "${MCR_ROOT}" "${CONFIG_FILE}" "${OUTPU
 [ $? = 0 ] || die "An error occurred during execution of the Matlab executable. Exiting!"
 # Get a list of the files in the output directory
 outputs=$(find "$OUTPUT_DIR" -type f -name '*_Stim.nii.gz')
-[ -z "$outputs" ] && die "No results found in output directory... Exiting"
+[ -z "$outputs" ] && {
+    find "$OUTPUT_DIR" -type d -exec chmod 777 '{}' ';'
+    find "$OUTPUT_DIR" -type f -exec chmod 666 '{}' ';'
+    die "No results found in output directory... Exiting"
+}
 # Make sure there's a BIDS directory:
 [ -d "$OUTPUT_DIR"/BIDS ] || {
     note "Making BIDS directory: $OUTPUT_DIR/BIDS"
@@ -163,8 +167,8 @@ do # Get the actual dataset name...
 done
 
 # Handle permissions of the outputs
-find "$OUTPUT_DIR" -type d -exec chmod 755 '{}' ';'
-find "$OUTPUT_DIR" -type f -exec chmod 644 '{}' ';'
+find "$OUTPUT_DIR" -type d -exec chmod 777 '{}' ';'
+find "$OUTPUT_DIR" -type f -exec chmod 666 '{}' ';'
 #chmod -R 755 "$OUTPUT_DIR"/*
 note "$CONTAINER  Done!"
 
