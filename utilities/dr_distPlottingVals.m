@@ -1,4 +1,4 @@
-function [y, mu, sigma, mn, mx, med, ci] = dr_distPlottingVals(x)
+function [y, mu, sigma, mn, mx, med, ci] = dr_distPlottingVals(x,CIrange)
     mu    = mean(x, 'omitnan');
     sigma = std(x, 'omitnan');
     mn    = mu - 5 * sigma;
@@ -9,7 +9,7 @@ function [y, mu, sigma, mn, mx, med, ci] = dr_distPlottingVals(x)
     % Obtain the median and the 25%-75% confidence intervals
     med    = median(x, 'omitnan');
     % Define the required confidence intervals
-    CIrange        = 50;
+    %CIrange        = 50;
     twoTailedRange = (100 - CIrange)/2;
     % ci             = prctile(x, [twoTailedRange, 100-twoTailedRange]);
     ci             = quantile(x, [twoTailedRange/100, (100-twoTailedRange)/100]);

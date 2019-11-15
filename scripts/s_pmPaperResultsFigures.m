@@ -107,62 +107,79 @@ end
 
 %% Load files (download to local if don't exist)
 if (1)
-% (Download and) read the input nifti-s (only the json for now)
-for ni=1:length(inputNiftis)
-    [fpath,fname,ext] = fileparts(inputNiftis{ni});
-    if ~exist(inputNiftis{ni},'file')
-        mkdir(fpath)
-        st.fw.downloadFileFromCollection(cc{1}.collection.id,[fname ext],inputNiftis{ni});
+    % (Download and) read the input nifti-s (only the json for now)
+    for ni=1:length(inputNiftis)
+        [fpath,fname,ext] = fileparts(inputNiftis{ni});
+        if ~exist(inputNiftis{ni},'file')
+            mkdir(fpath)
+            st.fw.downloadFileFromCollection(cc{1}.collection.id,[fname ext],inputNiftis{ni});
+        end
+        if strcmp(ext, '.json')
+            SynthDT  = struct2table(jsonread(inputNiftis{ni}));
+            for na=1:width(SynthDT),if isstruct(SynthDT{:,na})
+                    SynthDT.(SynthDT.Properties.VariableNames{na}) = struct2table(SynthDT{:,na});
+                end,end
+        end
     end
-    if strcmp(ext, '.json')
-        SynthDT  = struct2table(jsonread(inputNiftis{ni}));
-        for na=1:width(SynthDT),if isstruct(SynthDT{:,na})
-            SynthDT.(SynthDT.Properties.VariableNames{na}) = struct2table(SynthDT{:,na});
-        end,end
+    
+    % (Download and) read the output nifti-s
+    res = struct();
+    for outputNifti=outputNiftis
+        rname = outputNifti{:}(1:end-4);
+        rname = split(rname,'_');
+        rname = rname{end,:};
+        if exist(outputNifti{:},'file')
+            load(outputNifti{:});
+        else
+            % TODO Check that the data is there before trying to download
+            [~,fname,ext] = fileparts(outputNifti{:});
+            load(st.fw.downloadFileFromCollection(cc{1}.collection.id,...
+                [fname ext],outputNifti{:}));
+        end
+        res.(rname) = results;
     end
-end
-
-% (Download and) read the output nifti-s
-for outputNifti=outputNiftis
-    if exist(outputNifti{:},'file'), load(outputNifti{:});
-    else
-        % TODO Check that the data is there before trying to download
-        [~,fname,ext] = fileparts(outputNifti{:});
-        load(st.fw.downloadFileFromCollection(cc{1}.collection.id,...
-                        [fname ext],outputNifti{:}));
-    end 
-end
 end
 
 %% PLOT
 if (1)
     paramDefaults = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
     % Create the concatenated result table
-    compTable  = pmResultsCompare(SynthDT, ... % Defines the input params
-        {'aprf','aprfcss','vista','vistahrf','pop','popno','afni4','afni6'}, ... % Analysis names we want to see: 'aPRF','vista',
-        {aprfresults,aprfcssresults,vistaresults,vistaresultsandhrf,popresults,popresultsnohrf,afni4results,afni6results}, ...
+    
+    % Select analysis names we want to see: 'aPRF','vista',... by default, all of them
+    %     {'aprf','aprfcss','vista','vistahrf','pop','popno','afni4','afni6'}
+    anNames = fieldnames(res);
+    % Select the result files
+    ress = [{res.(anNames{1})}];
+    for an =2:length(anNames)
+        ress = [ress, {res.(anNames{an})}];
+    end
+    compTable  = pmResultsCompare(SynthDT, anNames, ress, ... 
         'params', paramDefaults, ...
         'shorten names',true, ...
         'dotSeries', false);
     % Now create the new plots
-    sortHRFlike = {'friston','vista_twogammas','afni_gam','boynton','afni_spm',...
+    sortHRFlike = {'friston','afni_gam','boynton','afni_spm',...
         'popeye_twogammas','canonical'};  % sorted according noise=0, RFsize=2
   
     
     % PLOTS
     tools = {'aprf','vista','popno','afni4'};
-    
+    % Or select them all
+    tools = anNames;
     pmNoisePlotsByHRF(compTable, tools, ... % 'x0y0',[0,0],...
         'sortHRF',sortHRFlike,'usemetric','eccentricity', ...
-        'noisevalues',[0,0.2], 'userfsize',2, 'ylims',[6.5,11.5])
+        'noisevalues',{'none','mid','high','low'}, 'userfsize',2, ...
+        'ylims',[0,2], 'CIrange',10)
     
     pmNoisePlotsByHRF(compTable, tools, ... % 'x0y0',[0,0],...
         'sortHRF',sortHRFlike,'usemetric','polarangle', ...
-        'noisevalues',[0,0.2], 'userfsize',2, 'ylims',[39,53])
+        'noisevalues',{'none','mid','high','low'}, 'userfsize',2, ...
+        'ylims',[0,360], 'CIrange',50)
     
-    pmNoisePlotsByHRF(compTable, tools, 'x0y0',[5,5],...
+    pmNoisePlotsByHRF(compTable, tools, 'x0y0',[0,0],...
         'sortHRF',sortHRFlike,'usemetric','rfsize', ...
-        'noisevalues',[0,0.2], 'userfsize',2, 'ylims',[0,8])
+        'noisevalues',{'none','mid','high','low'}, 'userfsize',2, ...
+        'ylims',[0,8], 'CIrange',50)
 
     
 end
@@ -172,16 +189,16 @@ end
 % Optional params to be used as varargin when creating the function
 tools = {'aprf','aprfcss','vista','vistahrf','pop','popno','afni4','afni6'};
 % tools = {'aprf','vista','popno','afni4'};
-tools = {'aprfcss','vista'};
+tools = {'afni4','pop'};
 
 pmCloudOfResults(compTable, tools, ...
-                 'onlyCenters', false, ...
+                 'onlyCenters', true, ...
                  'userfsize'  , 2, ...
-                 'centerPerc' , 10, ...
-                 'useHRF'     , 'vista_twogammas', ...
+                 'centerPerc' , 90, ...
+                 'useHRF'     , 'popeye_twogammas', ...
                  'lineStyle'  , '-', ...
                  'lineWidth'  , .7, ...
-                 'noiselevel' , 0.2, ...
+                 'noiselevel' , "mid", ...
                  'newWin'     , true)
 
 
