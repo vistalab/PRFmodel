@@ -9,24 +9,24 @@ tbUse prfmodel;
 
 HRFTypes = {'friston','boynton','canonical','popeye_twogammas','afni_gam','afni_spm'};
 % INPUTS
-niftiBOLDfile  = fullfile(pmRootPath,'local','output','BIDS',...
-    'sub-Data4ResultsPaperv02','ses-prfsynth20191114T015946','func',...
-    'sub-Data4ResultsPaperv02_ses-prfsynth20191114T015946_task-prf_acq-normal_run-01_bold.nii.gz');
-jsonSynthFile  = fullfile(pmRootPath,'local','output','BIDS','derivatives','prfsynth',...
-    'sub-Data4ResultsPaperv02','ses-prfsynth20191114T015946',...
-    'sub-Data4ResultsPaperv02_ses-prfsynth20191114T015946_task-prf_acq-normal_run-01_bold.json');
+niftiBOLDfile  = fullfile(...
+    '/data/localhome/glerma/toolboxes/PRFmodel/local/output/paper/BIDS/sub-Data4ResultsPaperv02BOLD/ses-prfsynth20191115T210307/func',...
+    'sub-Data4ResultsPaperv02BOLD_ses-prfsynth20191115T210307_task-prf_acq-normal_run-01_bold.nii.gz');
+jsonSynthFile  = fullfile(...
+    '/data/localhome/glerma/toolboxes/PRFmodel/local/output/paper/BIDS/derivatives/prfsynth/sub-Data4ResultsPaperv02BOLD/ses-prfsynth20191115T210307',...
+    'sub-Data4ResultsPaperv02BOLD_ses-prfsynth20191115T210307_task-prf_acq-normal_run-01_bold.json');
 stimNiftiFname = fullfile(pmRootPath,'local','output','BIDS','stimuli',...
     'sub-Data4ResultsPaperv02_ses-prfsynth20191114T015946_task-prf_apertures.nii.gz');
 inputNiftis = {niftiBOLDfile, jsonSynthFile, stimNiftiFname};
 % OUTPUTS
-aprfcssresultfName     = fullfile(pmRootPath,'local',['paper01_result_aprfcss.mat']);
-aprfresultfName        = fullfile(pmRootPath,'local',['paper01_result_aprf.mat']);
-vistaresultfName       = fullfile(pmRootPath,'local',['paper01_result_vista.mat']);
-vistaandhrfresultfName = fullfile(pmRootPath,'local',['paper01_result_vistaandhrf.mat']);
-popresultfName         = fullfile(pmRootPath,'local',['paper01_result_pop.mat']);
-popnohrfresultfName    = fullfile(pmRootPath,'local',['paper01_result_popnohrf.mat']);
-afni4resultfName       = fullfile(pmRootPath,'local',['paper01_result_afni4.mat']);
-afni6resultfName       = fullfile(pmRootPath,'local',['paper01_result_afni6.mat']);
+aprfcssresultfName     = fullfile(pmRootPath,'local',['paper02_result_aprfcss.mat']);
+aprfresultfName        = fullfile(pmRootPath,'local',['paper02_result_aprf.mat']);
+vistaresultfName       = fullfile(pmRootPath,'local',['paper02_result_vista.mat']);
+vistaandhrfresultfName = fullfile(pmRootPath,'local',['paper02_result_vistaandhrf.mat']);
+popresultfName         = fullfile(pmRootPath,'local',['paper02_result_pop.mat']);
+popnohrfresultfName    = fullfile(pmRootPath,'local',['paper02_result_popnohrf.mat']);
+afni4resultfName       = fullfile(pmRootPath,'local',['paper02_result_afni4.mat']);
+afni6resultfName       = fullfile(pmRootPath,'local',['paper02_result_afni6.mat']);
 
 outputNiftis = {aprfcssresultfName,aprfresultfName, ...
                 vistaresultfName,vistaandhrfresultfName, ...
