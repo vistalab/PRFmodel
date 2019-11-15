@@ -4,6 +4,9 @@
 
 % Create the names that will be used in this script
 
+close all;clear all;clc
+tbUse prfmodel;
+
 HRFTypes = {'friston','boynton','canonical','popeye_twogammas','afni_gam','afni_spm'};
 % INPUTS
 niftiBOLDfile  = fullfile(pmRootPath,'local','output','BIDS',...
@@ -25,47 +28,72 @@ popnohrfresultfName    = fullfile(pmRootPath,'local',['paper01_result_popnohrf.m
 afni4resultfName       = fullfile(pmRootPath,'local',['paper01_result_afni4.mat']);
 afni6resultfName       = fullfile(pmRootPath,'local',['paper01_result_afni6.mat']);
 outputNiftis = {aprfcssresultfName,aprfresultfName, vistaresultfName,vistaandhrfresultfName, ...
-                popresultfName, popresultnohrffName, afni4resultfName, afni6resultfName};          
+                popresultfName, popnohrfresultfName, afni4resultfName, afni6resultfName};          
 % Connect to fw
 st   = scitran('stanfordlabs'); st.verify;
 cc   = st.search('collection','collection label exact','PRF_StimDependence');
-% Upload it
+
+%% Upload it
+if (0)
 for ii=1:length(inputNiftis)
     stts = st.fileUpload(inputNiftis{ii}, cc{1}.collection.id, 'collection');
+end
 end
 
 %% Solve and upload to FW
 if (0)
 % SOLVE
 %  - aPRF CSS=true
-disp('START aPRF CSS=true')
+disp('START aPRF CSS=true ... ')
 options = struct('seedmode',[0,1,2], 'display','off', 'usecss',true);
 results = pmModelFit(inputNiftis, 'aprf', 'options', options);
 save(aprfcssresultfName, 'results'); clear results
+disp(' ... END aPRF CSS=true')
+
 %  - aPRF CSS=false
+disp('START aPRF CSS=false ...')
 options = struct('seedmode',[0,1,2], 'display','off', 'usecss',false);
 results = pmModelFit(inputNiftis, 'aprf', 'options', options);
 save(aprfresultfName, 'results'); clear results
+disp(' ... END aPRF CSS=false')
+
 %  - mrVista
+disp('START mrVista ... ')
 results = pmModelFit(inputNiftis, 'mrvista','model','one gaussian', ...
                   'grid', false, 'wSearch', 'coarse to fine');
 save(vistaresultfName, 'results'); clear results
+disp(' ... END mrVista')
+
 %  - mrvista and hrf
+disp('START mrvista and hrf ... ')
 results = pmModelFit(inputNiftis, 'mrvista','model','one gaussian', ...
                     'grid', false, 'wSearch', 'coarse to fine and hrf');
 save(vistaandhrfresultfName, 'results'); clear results
+disp(' ... END mrvista and hrf')
+
 %  - popeye, default with hrf search
+disp('START popeye, default with hrf search ... ')
 results = pmModelFit(inputNiftis, 'popeye'); 
 save(popresultfName, 'results'); clear results
+disp(' ... END popeye, default with hrf search')
+
 %  - popeye no hrf
+disp('START popeye no hrf ... ')
 results= pmModelFit(inputNiftis, 'popeyenohrf'); 
 save(popnohrfresultfName, 'results'); clear results
+disp(' ... END popeye no hrf')
+
 %  - Afni 4
+disp('START Afni 4 ... ')
 results = pmModelFit(inputNiftis, 'afni_4','afni_hrf','SPM'); 
 save(afni4resultfName, 'results'); clear results
+disp(' ... END Afni 4')
+
 %  - Afni 6
+disp('START Afni 6 ... ')
 results = pmModelFit(inputNiftis, 'afni_6','afni_hrf','SPM'); 
 save(afni6resultfName, 'results'); clear results
+disp(' ... END Afni 6')
 
 % UPLOAD
 for nu=1:length(outputNiftis)
@@ -80,6 +108,7 @@ if (1)
 for ni=1:length(inputNiftis)
     [fpath,fname,ext] = fileparts(inputNiftis{ni});
     if ~exist(inputNiftis{ni},'file')
+        mkdir(fpath)
         st.fw.downloadFileFromCollection(cc{1}.collection.id,[fname ext],inputNiftis{ni});
     end
     if strcmp(ext, '.json')

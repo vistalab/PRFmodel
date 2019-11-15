@@ -1,4 +1,4 @@
-%% Calculate noise in a typical subject 
+%% Calculate noise in a typical subject: this is an old version, use s_generateONOFFtimeseries2_4NoiseCalc.m
 clear all;
 if (0)
     % The data comes from the processed reading_prf/heb_pilot09/RetAndHebrewLoc/Gray subject
