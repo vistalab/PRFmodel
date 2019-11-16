@@ -99,7 +99,7 @@ save(afni6resultfName, 'results'); clear results
 disp(' ... END Afni 6')
 
 % UPLOAD
-for nu=1:length(outputNiftis)
+for nu=3:length(outputNiftis)
     resultfName = outputNiftis{nu}
     stts      = st.fileUpload(resultfName, cc{1}.collection.id, 'collection');
 end

@@ -83,11 +83,12 @@ else
     % return the default json and exit
     DEFAULTS = pm.defaultsTable;
     % Add two params required to generate the file
-    DEFAULTS.fileName = "editDefaultName";
+    DEFAULTS.subjectName = "editDefaultSubjectName";
+    DEFAULTS.sessionName = "editDefaultSessionName";
     DEFAULTS.repeats  = 2;
     % Reorder fieldnames
     DEF_colnames = DEFAULTS.Properties.VariableNames;
-    DEF_colnames = DEF_colnames([end-1,end,1:end-2]);
+    DEF_colnames = DEF_colnames([end-2,end,1:end-3]);
     DEFAULTS     = DEFAULTS(:,DEF_colnames);
     % Select filename to be saved
     fname = fullfile(output_dir, 'defaultParams_ToBeEdited.json');
@@ -108,7 +109,7 @@ else
 end
 
 %% Create an output subfolder for the outputs 
-outputSubFolder = [J.fileName '_' datestr(datetime,'yyyymmddTHHMMSS','local')];
+outputSubFolder = [J.subjectName '_' datestr(datetime,'yyyymmddTHHMMSS','local')];
 output_dir = fullfile(output_dir, outputSubFolder);
 mkdir(output_dir);
 
@@ -131,7 +132,8 @@ TEST = pmForwardModelCalculate(TEST);
 % Create one pm instance to obtain defaults
 pm = prfModel;
 PARAMETERS = J;
-PARAMETERS = rmfield(PARAMETERS,'fileName');
+PARAMETERS = rmfield(PARAMETERS,'subjectName');
+PARAMETERS = rmfield(PARAMETERS,'sessionName');
 PARAMETERS = rmfield(PARAMETERS,'repeats');
 % Do the required conversions before creating the table
 % To concatenate structs they need to have the same num of fields
@@ -170,11 +172,11 @@ synthDT = pmForwardModelCalculate(synthDT);
 
 % BOLD FILE
 cd(output_dir)
-fname = [J.fileName '.nii.gz'];
+fname = [J.subjectName '_' J.sessionName  '.nii.gz'];
 pmForwardModelToNifti(synthDT, 'fname',fname, 'demean',false);
 
 % JSON FILE
-jsonSynthFile = [J.fileName '.json'];
+jsonSynthFile = [J.subjectName '_' J.sessionName  '.json'];
 % Encode json
 jsonString = jsonencode(synthDT(:,1:(end-1)));
 % Format a little bit
@@ -186,7 +188,7 @@ fid = fopen(jsonSynthFile,'w');if fid == -1,error('Cannot create JSON file');end
 fwrite(fid, jsonString,'char');fclose(fid);
 
 % STIM FILE
-stimNiftiFname = [J.fileName '_Stim.nii.gz'];
+stimNiftiFname = [J.subjectName '_' J.sessionName '_Stim.nii.gz'];
 pm1            = synthDT.pm(1);
 stimNiftiFname = pm1.Stimulus.toNifti('fname',stimNiftiFname);
 
