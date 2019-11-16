@@ -9,24 +9,24 @@ tbUse prfmodel;
 
 HRFTypes = {'friston','boynton','canonical','popeye_twogammas','afni_gam','afni_spm'};
 % INPUTS
-niftiBOLDfile  = fullfile(...
-    '/data/localhome/glerma/toolboxes/PRFmodel/local/output/paper/BIDS/sub-Data4ResultsPaperv02BOLD/ses-prfsynth20191115T210307/func',...
-    'sub-Data4ResultsPaperv02BOLD_ses-prfsynth20191115T210307_task-prf_acq-normal_run-01_bold.nii.gz');
-jsonSynthFile  = fullfile(...
-    '/data/localhome/glerma/toolboxes/PRFmodel/local/output/paper/BIDS/derivatives/prfsynth/sub-Data4ResultsPaperv02BOLD/ses-prfsynth20191115T210307',...
-    'sub-Data4ResultsPaperv02BOLD_ses-prfsynth20191115T210307_task-prf_acq-normal_run-01_bold.json');
+niftiBOLDfile  = fullfile(pmRootPath, ...
+    'local/output/paper/BIDS/sub-paperResults/ses-prfsynthBOLDx3y3/func',...
+    'sub-paperResults_ses-prfsynthBOLDx3y3_task-prf_acq-normal_run-01_bold.nii.gz');
+jsonSynthFile  = fullfile(pmRootPath, ...
+    'local/output/paper/BIDS/derivatives/prfsynth/sub-paperResults/ses-prfsynthBOLDx3y3',...
+    'sub-paperResults_ses-prfsynthBOLDx3y3_task-prf_acq-normal_run-01_bold.json');
 stimNiftiFname = fullfile(pmRootPath,'local','output','BIDS','stimuli',...
     'sub-Data4ResultsPaperv02_ses-prfsynth20191114T015946_task-prf_apertures.nii.gz');
 inputNiftis = {niftiBOLDfile, jsonSynthFile, stimNiftiFname};
 % OUTPUTS
-aprfcssresultfName     = fullfile(pmRootPath,'local',['paper01_result_aprfcss.mat']);
-aprfresultfName        = fullfile(pmRootPath,'local',['paper01_result_aprf.mat']);
-vistaresultfName       = fullfile(pmRootPath,'local',['paper02_result_vista.mat']); % 2 is BOLD, 1 is contrast
-vistaandhrfresultfName = fullfile(pmRootPath,'local',['paper01_result_vistaandhrf.mat']);
-popresultfName         = fullfile(pmRootPath,'local',['paper01_result_pop.mat']);
-popnohrfresultfName    = fullfile(pmRootPath,'local',['paper01_result_popnohrf.mat']);
-afni4resultfName       = fullfile(pmRootPath,'local',['paper01_result_afni4.mat']);
-afni6resultfName       = fullfile(pmRootPath,'local',['paper01_result_afni6.mat']);
+aprfcssresultfName     = fullfile(pmRootPath,'local',['paper03_result_aprfcss.mat']);
+aprfresultfName        = fullfile(pmRootPath,'local',['paper03_result_aprf.mat']);
+vistaresultfName       = fullfile(pmRootPath,'local',['paper03_result_vista.mat']); % 2 is BOLD, 1 is contrast
+vistaandhrfresultfName = fullfile(pmRootPath,'local',['paper03_result_vistaandhrf.mat']);
+popresultfName         = fullfile(pmRootPath,'local',['paper03_result_pop.mat']);
+popnohrfresultfName    = fullfile(pmRootPath,'local',['paper03_result_popnohrf.mat']);
+afni4resultfName       = fullfile(pmRootPath,'local',['paper03_result_afni4.mat']);
+afni6resultfName       = fullfile(pmRootPath,'local',['paper03_result_afni6.mat']);
 
 outputNiftis = {aprfcssresultfName,aprfresultfName, ...
                 vistaresultfName,vistaandhrfresultfName, ...
@@ -59,7 +59,7 @@ options = struct('seedmode',[0,1,2], 'display','off', 'usecss',false);
 results = pmModelFit(inputNiftis, 'aprf', 'options', options);
 save(aprfresultfName, 'results'); clear results
 disp(' ... END aPRF CSS=false')
-
+% {
 %  - mrVista
 disp('START mrVista ... ')
 results = pmModelFit(inputNiftis, 'mrvista','model','one gaussian', ...
@@ -73,7 +73,7 @@ results = pmModelFit(inputNiftis, 'mrvista','model','one gaussian', ...
                     'grid', false, 'wSearch', 'coarse to fine and hrf');
 save(vistaandhrfresultfName, 'results'); clear results
 disp(' ... END mrvista and hrf')
-
+%}
 %  - popeye, default with hrf search
 disp('START popeye, default with hrf search ... ')
 results = pmModelFit(inputNiftis, 'popeye'); 
@@ -99,7 +99,7 @@ save(afni6resultfName, 'results'); clear results
 disp(' ... END Afni 6')
 
 % UPLOAD
-for nu=3:length(outputNiftis)
+for nu=1:length(outputNiftis)
     resultfName = outputNiftis{nu}
     stts      = st.fileUpload(resultfName, cc{1}.collection.id, 'collection');
 end
