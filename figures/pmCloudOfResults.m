@@ -16,7 +16,7 @@ p.addParameter('usehrf'     , 'friston', @ischar);
 p.addParameter('linestyle'  , '-'      , @ischar);
 p.addParameter('linewidth'  , .7       , @isnumeric);
 p.addParameter('newwin'     , true     , @islogical);
-p.addParameter('noiselevel' , 0        , @isnumeric);
+p.addParameter('noiselevel' , "none"        , @isstring);
 % Parse. Assign result inside each case
 p.parse(compTable, tools, varargin{:});
 % Read here only the generic ones
@@ -33,7 +33,7 @@ noiseLevel  = p.Results.noiselevel;
 %% Do the thing
 
 Cs               = distinguishable_colors(1+length(tools),'w');
-
+Cs(2,:) = Cs(2,:) * 0.5;
 if newWin
     mrvNewGraphWin(sprintf('Clouds, %s',useHRF));
 end
@@ -50,7 +50,7 @@ twoTailedRange = (100 - centerPerc) / 2;
 % Filter the results table
 dt        = compTable(compTable.synth.sMaj == userfsize , :);
 % Only one noise level
-dt        = dt(dt.noise2sig == noiseLevel, :);
+dt        = dt(dt.noiseLevel == noiseLevel, :);
 % Use only friston
 dt        = dt(dt.HRFtype == string(useHRF), :);
 toolLegend= {'synth'};
@@ -99,7 +99,7 @@ title({sprintf('HRF: %s. Filled circle is the median value', useHRF), ...
 
 % Check what we are plotting
 % a = compTable;
-% a = a(a.synth.sMaj==2 & a.noise2sig==0.2 & a.HRFtype=="friston",{'synth','aprfcss','vista'})
+% a = a(a.synth.sMaj==2 & a.noiseLevel==0.2 & a.HRFtype=="friston",{'synth','aprfcss','vista'})
 
 
 

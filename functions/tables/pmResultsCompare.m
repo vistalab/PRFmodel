@@ -51,7 +51,8 @@ newDT.HRFtype   = synthDT.HRF.Type;
 % Add the TR type
 newDT.TR        = synthDT.TR;
 % Add the White Noise param
-newDT.noise2sig = synthDT.Noise.white_noise2signal;
+newDT.noiseLevel = synthDT.Noise.voxel;
+newDT.noiseLevel(synthDT.Noise.seed=="none") = repmat({'none'},[length(newDT.noiseLevel(synthDT.Noise.seed=="none")),1]);
 
 
 

@@ -15,8 +15,9 @@ p.addParameter('x0y0'       , [0,0]                , @isnumeric);
 p.addParameter('sorthrf'    , {'same'}             , @iscell);
 p.addParameter('usemetric'  , 'rfsize'             , @ischar);
 p.addParameter('userfsize'  , [999]                , @isnumeric);
-p.addParameter('noisevalues', [999]                , @isnumeric);
+p.addParameter('noisevalues', {'all'}              , @iscell);
 p.addParameter('ylims'      , [0,0]                , @isnumeric);
+p.addParameter('cirange'    , 50                   , @isnumeric);
 
 % Parse. Assign result inside each case
 p.parse(compTable, tools, varargin{:});
@@ -29,6 +30,7 @@ usemetric   = p.Results.usemetric;
 userfsize   = p.Results.userfsize;
 noisevalues = p.Results.noisevalues;
 ylims       = p.Results.ylims;
+CIrange     = p.Results.cirange; 
 
 %% Data selection
 if istable(compTable)
@@ -36,9 +38,12 @@ if istable(compTable)
     [TH,R] = cart2pol(compTable.synth.x0, compTable.synth.y0);
     compTable.synth.angle = rad2deg(TH);
     compTable.synth.eccentricity = R;
-    
-    if noisevalues==999
-        noises   = unique(compTable.noise2sig);
+    if length(noisevalues)==1
+        if strcmp(noisevalues{:}, 'all')
+            noises   = unique(compTable.noiseLevel);
+        else
+            noises   = noisevalues;
+        end
     else
         noises   = noisevalues;
     end
@@ -88,7 +93,7 @@ for np=1:length(metrics)
         plotNum = plotNum +1;
         subplot(length(metrics), length(noises), plotNum);
         metric     = metrics(np);
-        noiselvl    = noises(nn);
+        noiselvl    = string(noises(nn));
         a = [];b = [];
         for nt=1:length(tools)
             tool = tools{nt};
@@ -101,7 +106,7 @@ for np=1:length(metrics)
             switch usemetric
                 case {'rfsize','size'}
                     DT = compTable(compTable.synth.sMaj==metric & ...
-                        compTable.noise2sig==noiselvl & ...
+                        compTable.noiseLevel==noiselvl & ...
                         compTable.synth.x0==x0y0(1) & ...
                         compTable.synth.y0==x0y0(2) ,:);
                     [result,HRFs,sds] = pmNoise2AccPrec(DT, 'both', ...
@@ -109,27 +114,30 @@ for np=1:length(metrics)
                         'separatehrf',true, ...
                         'medianCI', true, ...
                         'sortHRF',sortHRF, ...
-                        'usemetric', 'rfsize');
+                        'usemetric', 'rfsize', ...
+                        'CIrange',CIrange);
                 case {'angle','polarangle'}
                     DT = compTable(compTable.synth.angle==metric & ...
-                        compTable.noise2sig==noiselvl & ...
+                        compTable.noiseLevel==noiselvl & ...
                         compTable.synth.sMaj==userfsize,:);
                     [result,HRFs,sds] = pmNoise2AccPrec(DT, 'both', ...
                         'plotIt',false,'tool',tool, ...
                         'separatehrf',true, ...
                         'medianCI', true, ...
                         'sortHRF',sortHRF, ...
-                        'usemetric', 'polarangle');
+                        'usemetric', 'polarangle', ...
+                        'CIrange',CIrange);
                 case {'eccen','eccentricity'}
                     DT = compTable(compTable.synth.eccentricity==metric & ...
-                        compTable.noise2sig==noiselvl & ...
+                        compTable.noiseLevel==noiselvl & ...
                         compTable.synth.sMaj==userfsize,:);
                     [result,HRFs,sds] = pmNoise2AccPrec(DT, 'both', ...
                         'plotIt',false,'tool',tool, ...
                         'separatehrf',true, ...
                         'medianCI', true, ...
                         'sortHRF',sortHRF, ...
-                        'usemetric', 'eccentricity');
+                        'usemetric', 'eccentricity', ...
+                        'CIrange',CIrange);
                 otherwise
                     error('Metric %s not defined', usemetric)
             end
@@ -152,13 +160,13 @@ for np=1:length(metrics)
         set(gca,'box','off','color','none')
         % ylabel('Acc. & prec. (deg)','FontSize',14,'FontWeight','bold','Color','k');
         ylabel(usemetric,'FontSize',14,'FontWeight','bold','Color','k');
-        if (metric==2 && noiselvl==0)
-            title(sprintf('(HRF SORT) %s: %1.1f | Noise: %0.1f',usemetric,metric,noiselvl));
+        if (metric==2 && noiselvl=="none")
+            title(sprintf('(HRF SORT) %s: %1.1f | Noise: %s',usemetric,metric,noiselvl));
         else
-            title(sprintf('%s: %1.1f | Noise: %0.1f',usemetric,metric,noiselvl));
+            title(sprintf('%s: %1.1f | Noise: %s',usemetric,metric,noiselvl));
         end
         if plotNum == 1
-            legend([h1;a],['synth',tools],'Location','best') % 'westoutside');
+            legend([h1;a],[{'synth'};tools],'Location','best') % 'westoutside');
         end
         
         % In the bottom row, add the HRF names
@@ -181,9 +189,9 @@ end
 Theta = unique(compTable.synth.Th);
 TR    = unique(compTable.TR);
 if strcmp(usemetric, 'rfsize')
-    dr_suptitle(sprintf('%s HRF Comparison | Location=[%i,%i] | Theta=%i | TR=%1.2f | CI = 50%', usemetric, x0y0(1), x0y0(2), Theta, TR));
+    dr_suptitle(sprintf('%s HRF Comparison | Location=[%i,%i] | Theta=%i | TR=%1.2f | CI = %i%', usemetric, x0y0(1), x0y0(2), Theta, TR, CIrange));
 else
-    dr_suptitle(sprintf('%s HRF Comparison | Theta=%i | TR=%1.2f | CI = 50%', usemetric, Theta, TR));
+    dr_suptitle(sprintf('%s HRF Comparison | Theta=%i | TR=%1.2f | CI = %i%', usemetric, Theta, TR, CIrange));
 end
 
 
