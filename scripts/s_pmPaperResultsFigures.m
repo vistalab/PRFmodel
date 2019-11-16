@@ -21,7 +21,7 @@ inputNiftis = {niftiBOLDfile, jsonSynthFile, stimNiftiFname};
 % OUTPUTS
 aprfcssresultfName     = fullfile(pmRootPath,'local',['paper01_result_aprfcss.mat']);
 aprfresultfName        = fullfile(pmRootPath,'local',['paper01_result_aprf.mat']);
-vistaresultfName       = fullfile(pmRootPath,'local',['paper01_result_vista.mat']);
+vistaresultfName       = fullfile(pmRootPath,'local',['paper02_result_vista.mat']); % 2 is BOLD, 1 is contrast
 vistaandhrfresultfName = fullfile(pmRootPath,'local',['paper01_result_vistaandhrf.mat']);
 popresultfName         = fullfile(pmRootPath,'local',['paper01_result_pop.mat']);
 popnohrfresultfName    = fullfile(pmRootPath,'local',['paper01_result_popnohrf.mat']);
