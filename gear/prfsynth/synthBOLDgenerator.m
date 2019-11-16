@@ -88,7 +88,7 @@ else
     DEFAULTS.repeats  = 2;
     % Reorder fieldnames
     DEF_colnames = DEFAULTS.Properties.VariableNames;
-    DEF_colnames = DEF_colnames([end-2,end,1:end-3]);
+    DEF_colnames = DEF_colnames([end-2:end,1:end-3]);
     DEFAULTS     = DEFAULTS(:,DEF_colnames);
     % Select filename to be saved
     fname = fullfile(output_dir, 'defaultParams_ToBeEdited.json');
@@ -109,7 +109,8 @@ else
 end
 
 %% Create an output subfolder for the outputs 
-outputSubFolder = [J.subjectName '_' datestr(datetime,'yyyymmddTHHMMSS','local')];
+% outputSubFolder = [J.subjectName '_' datestr(datetime,'yyyymmddTHHMMSS','local')];
+outputSubFolder = [J.subjectName '_' J.sessionName];
 output_dir = fullfile(output_dir, outputSubFolder);
 mkdir(output_dir);
 
@@ -172,11 +173,11 @@ synthDT = pmForwardModelCalculate(synthDT);
 
 % BOLD FILE
 cd(output_dir)
-fname = [J.subjectName '_' J.sessionName  '.nii.gz'];
+fname = [J.subjectName '.nii.gz'];
 pmForwardModelToNifti(synthDT, 'fname',fname, 'demean',false);
 
 % JSON FILE
-jsonSynthFile = [J.subjectName '_' J.sessionName  '.json'];
+jsonSynthFile = [J.subjectName '.json'];
 % Encode json
 jsonString = jsonencode(synthDT(:,1:(end-1)));
 % Format a little bit
@@ -188,7 +189,7 @@ fid = fopen(jsonSynthFile,'w');if fid == -1,error('Cannot create JSON file');end
 fwrite(fid, jsonString,'char');fclose(fid);
 
 % STIM FILE
-stimNiftiFname = [J.subjectName '_' J.sessionName '_Stim.nii.gz'];
+stimNiftiFname = [J.subjectName '_Stim.nii.gz'];
 pm1            = synthDT.pm(1);
 stimNiftiFname = pm1.Stimulus.toNifti('fname',stimNiftiFname);
 
