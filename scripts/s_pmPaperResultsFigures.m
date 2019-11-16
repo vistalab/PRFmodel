@@ -19,14 +19,14 @@ stimNiftiFname = fullfile(pmRootPath,'local','output','BIDS','stimuli',...
     'sub-Data4ResultsPaperv02_ses-prfsynth20191114T015946_task-prf_apertures.nii.gz');
 inputNiftis = {niftiBOLDfile, jsonSynthFile, stimNiftiFname};
 % OUTPUTS
-aprfcssresultfName     = fullfile(pmRootPath,'local',['paper02_result_aprfcss.mat']);
-aprfresultfName        = fullfile(pmRootPath,'local',['paper02_result_aprf.mat']);
-vistaresultfName       = fullfile(pmRootPath,'local',['paper02_result_vista.mat']);
-vistaandhrfresultfName = fullfile(pmRootPath,'local',['paper02_result_vistaandhrf.mat']);
-popresultfName         = fullfile(pmRootPath,'local',['paper02_result_pop.mat']);
-popnohrfresultfName    = fullfile(pmRootPath,'local',['paper02_result_popnohrf.mat']);
-afni4resultfName       = fullfile(pmRootPath,'local',['paper02_result_afni4.mat']);
-afni6resultfName       = fullfile(pmRootPath,'local',['paper02_result_afni6.mat']);
+aprfcssresultfName     = fullfile(pmRootPath,'local',['paper01_result_aprfcss.mat']);
+aprfresultfName        = fullfile(pmRootPath,'local',['paper01_result_aprf.mat']);
+vistaresultfName       = fullfile(pmRootPath,'local',['paper02_result_vista.mat']); % 2 is BOLD, 1 is contrast
+vistaandhrfresultfName = fullfile(pmRootPath,'local',['paper01_result_vistaandhrf.mat']);
+popresultfName         = fullfile(pmRootPath,'local',['paper01_result_pop.mat']);
+popnohrfresultfName    = fullfile(pmRootPath,'local',['paper01_result_popnohrf.mat']);
+afni4resultfName       = fullfile(pmRootPath,'local',['paper01_result_afni4.mat']);
+afni6resultfName       = fullfile(pmRootPath,'local',['paper01_result_afni6.mat']);
 
 outputNiftis = {aprfcssresultfName,aprfresultfName, ...
                 vistaresultfName,vistaandhrfresultfName, ...
