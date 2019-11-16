@@ -123,7 +123,7 @@ do # Get the actual dataset name...
    note "BIDS-ifying Dataset ${name} ($tt)..."
    # Make a subject and session directory and put the functional simulations
    sub="`echo $name | tr ' ' '+'`"
-   ses="prfsynth${tt}"
+   ses="${tt}"
    # Move the BOLD nifti to the appropriate spot
    BOLDFL="${BIDS_DIR}/sub-${sub}/ses-${ses}/func/sub-${sub}_ses-${ses}_task-prf_acq-normal_run-01_bold.nii.gz"
    mkdir -p "$BIDS_DIR"/sub-${sub}/ses-${ses}/func \
