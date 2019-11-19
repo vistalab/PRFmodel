@@ -111,6 +111,7 @@ if iscell(input)
         end
     end
     TRsynth = unique(synthDT.TR); if (length(TRsynth) ~= 1),error('More than 1 TR in synth json'),end
+    signalPercentage = unique(synthDT.signalPercentage); if (length(signalPercentage) ~= 1),error('More than 1 signalPercentage in synth json'),end
     
     % 3: nifti with the stimuli
     stimulus = niftiRead(STIMname);
@@ -150,6 +151,9 @@ else
     % Check if the TR is the same
     if length(unique(input.TR)) > 1, error('TR has to be the same for all synthetic BOLD series'),end
     TR       = pm1.TR;
+    % Check if the signalPercentage is the same
+    if length(unique(input.signalPercentage)) > 1, error('signalPercentage has to be the same for all synthetic BOLD series'),end
+    signalPercentage = pm1.signalPercentage;
     % Stimulus related
     Stimulus.ResizedHorz = pm1.Stimulus.ResizedHorz;
     Stimulus.ResizedVert = pm1.Stimulus.ResizedVert;
@@ -498,23 +502,29 @@ switch prfimplementation
         if niftiInputs
             niftiBOLDfile  = fullfile(tmpName, 'tmp.nii.gz');         
             copyfile(BOLDname,niftiBOLDfile)
-            % Demean it as in the other case
-            demeanData = data;
-            for ii=1:size(data,1)
-                tmp = data(ii,:);
-                demeanData(ii,:) = (tmp-mean(tmp)) / mean(tmp);
+            
+            % Demean it if pm.signalPercent=false
+            if signalPercentage; demean = false; else, demean = true;end
+            if demean
+                demeanData = data;
+                for ii=1:size(data,1)
+                    tmp = data(ii,:);
+                    demeanData(ii,:) = (tmp-mean(tmp)) / mean(tmp);
+                end
+                demeanData = reshape(demeanData,[size(demeanData,1),1,1,size(demeanData,2)]);
+                TMP = niftiRead(niftiBOLDfile);
+                TMP.data = demeanData;
+                niftiWrite(TMP);
             end
-            demeanData = reshape(demeanData,[size(demeanData,1),1,1,size(demeanData,2)]);
-            TMP = niftiRead(niftiBOLDfile);
-            TMP.data = demeanData;
-            niftiWrite(TMP);
+            
         else
             warning('For AFNI analysis, be sure that all options have the same TR and the same stimulus')
             % Create a tmp nifti file and convert it to a tmp AFNI format
             pm1            = input.pm(1);
+            if signalPercentage; demean = false; else,demean = true;end
             niftiBOLDfile  = pmForwardModelToNifti(input, ...
                 'fname',fullfile(tmpName,'tmp.nii.gz'), ...
-                'demean',true);
+                'demean',demean);
 
         end
         

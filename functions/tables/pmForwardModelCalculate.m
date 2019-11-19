@@ -23,8 +23,14 @@ for ii=1:height(DT)
     pm     = prfModel;
 
     
-    %% TR
-    pm.TR = dt.TR;
+    %% High Level Variables
+    isprfmodel = @(x)(isa(x,'prfModel'));
+    for vn = dt.Properties.VariableNames
+        if ~istable(dt.(vn{:})) && ~isprfmodel(dt.(vn{:}))
+            pm.(vn{:}) = dt.(vn{:});    
+        end
+    end
+    
 
     %% Stimulus
     for jj=1:width(dt.Stimulus)

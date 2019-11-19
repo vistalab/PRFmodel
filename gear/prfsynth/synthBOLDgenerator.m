@@ -33,11 +33,17 @@ function synthBOLDgenerator(json, output_dir)
 % Use this command to launch in matlab
 %{
     % Create files
-    jsonPath   = fullfile(pmRootPath,'gear','synthprf','synthBOLDgenerator_paramsExample.json');
-   
-    jsonPath   = fullfile(pmRootPath,'local','params_big_test_for_paper_v01.json');
-    output_dir = fullfile(pmRootPath,'local','output');
+    jsonPath   = fullfile(pmRootPath,'local','output','paper', ...
+                          'params_big_test_for_paper_3-3_v02BOLD.json');
+    output_dir = fullfile(pmRootPath,'local','output','paper');
     synthBOLDgenerator(jsonPath, output_dir);
+
+
+
+
+
+
+
 
     % Run the analysis
     results = pmModelFit({'synthBOLD_20190917T222512/synthBOLD.nii.gz', ...
@@ -83,11 +89,12 @@ else
     % return the default json and exit
     DEFAULTS = pm.defaultsTable;
     % Add two params required to generate the file
-    DEFAULTS.fileName = "editDefaultName";
+    DEFAULTS.subjectName = "editDefaultSubjectName";
+    DEFAULTS.sessionName = "editDefaultSessionName";
     DEFAULTS.repeats  = 2;
     % Reorder fieldnames
     DEF_colnames = DEFAULTS.Properties.VariableNames;
-    DEF_colnames = DEF_colnames([end-1,end,1:end-2]);
+    DEF_colnames = DEF_colnames([end-2:end,1:end-3]);
     DEFAULTS     = DEFAULTS(:,DEF_colnames);
     % Select filename to be saved
     fname = fullfile(output_dir, 'defaultParams_ToBeEdited.json');
@@ -108,7 +115,8 @@ else
 end
 
 %% Create an output subfolder for the outputs 
-outputSubFolder = [J.fileName '_' datestr(datetime,'yyyymmddTHHMMSS','local')];
+% outputSubFolder = [J.subjectName '_' datestr(datetime,'yyyymmddTHHMMSS','local')];
+outputSubFolder = [J.subjectName '_' J.sessionName];
 output_dir = fullfile(output_dir, outputSubFolder);
 mkdir(output_dir);
 
@@ -129,10 +137,13 @@ TEST = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats', 2);
 TEST = pmForwardModelCalculate(TEST);
 %}
 % Create one pm instance to obtain defaults
-pm = prfModel;
 PARAMETERS = J;
-PARAMETERS = rmfield(PARAMETERS,'fileName');
+PARAMETERS = rmfield(PARAMETERS,'subjectName');
+PARAMETERS = rmfield(PARAMETERS,'sessionName');
 PARAMETERS = rmfield(PARAMETERS,'repeats');
+% Add first the simple parameters
+
+% Add now the sub-table params
 % Do the required conversions before creating the table
 % To concatenate structs they need to have the same num of fields
 for nh=1:length(PARAMETERS.HRF)
@@ -170,11 +181,11 @@ synthDT = pmForwardModelCalculate(synthDT);
 
 % BOLD FILE
 cd(output_dir)
-fname = [J.fileName '.nii.gz'];
+fname = [J.subjectName '.nii.gz'];
 pmForwardModelToNifti(synthDT, 'fname',fname, 'demean',false);
 
 % JSON FILE
-jsonSynthFile = [J.fileName '.json'];
+jsonSynthFile = [J.subjectName '.json'];
 % Encode json
 jsonString = jsonencode(synthDT(:,1:(end-1)));
 % Format a little bit
@@ -186,7 +197,7 @@ fid = fopen(jsonSynthFile,'w');if fid == -1,error('Cannot create JSON file');end
 fwrite(fid, jsonString,'char');fclose(fid);
 
 % STIM FILE
-stimNiftiFname = [J.fileName '_Stim.nii.gz'];
+stimNiftiFname = [J.subjectName '_Stim.nii.gz'];
 pm1            = synthDT.pm(1);
 stimNiftiFname = pm1.Stimulus.toNifti('fname',stimNiftiFname);
 

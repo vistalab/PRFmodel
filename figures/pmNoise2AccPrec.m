@@ -14,8 +14,9 @@ p.addParameter('plotit'     , true                 , @islogical);
 p.addParameter('tool'       , 'first'              , @ischar);
 p.addParameter('separatehrf', false                , @islogical);
 p.addParameter('medianci'   , false                , @islogical);
-p.addParameter('sorthrf'  , {'same'}             , @iscell);
-p.addParameter('usemetric', 'rfsize'             , @ischar);
+p.addParameter('sorthrf'  , {'same'}               , @iscell);
+p.addParameter('usemetric', 'rfsize'               , @ischar);
+p.addParameter('cirange'  , 50                     , @isnumeric);
 
 
 
@@ -29,12 +30,12 @@ separatehrf = p.Results.separatehrf;
 medianCI    = p.Results.medianci;
 sortHRF     = p.Results.sorthrf;
 usemetric   = p.Results.usemetric;
-
+CIrange     = p.Results.cirange;
 
 
 %% Do the thing
 % Select the values/categories we are going to filter to generate the different distributions
-noiseVals = unique(DT.noise2sig)';
+noiseVals = unique(DT.noiseLevel)';
 
 if length(sortHRF)==1 && strcmp(sortHRF{1},'same')
     HRFs      = unique(DT.HRFtype)';
@@ -91,11 +92,11 @@ for sc=1:length(sliceVals)
     if separatehrf
         x = DT.tool.(usemetriccol)(strcmp(DT.HRFtype,sliceVals{sc}));
     else
-        x = DT.tool.(usemetriccol)(DT.noise2sig == sliceVals(sc));
+        x = DT.tool.(usemetriccol)(DT.noiseLevel == sliceVals(sc));
     end
     
     % Calculate the summary stats
-    [x_values, mu, sigma, mn, mx, med, ci] = dr_distPlottingVals(x);
+    [x_values, mu, sigma, mn, mx, med, ci] = dr_distPlottingVals(x,CIrange);
     
     % Obtain precision or accuracy
     accorprec = mrvParamFormat(accorprec);

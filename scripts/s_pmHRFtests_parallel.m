@@ -55,7 +55,7 @@ if (0)
 % Save the default niftis with different TR and HRF to be used as tests later on
 % BOLD FILE
 if ~exist(niftiBOLDfile, 'file')
-    pmForwardModelToNifti(synthDT,'fname',niftiBOLDfile, 'demean',false);
+    pmForwardModelToNifti(synthDT,'fname',niftiBOLDfile, 'demean',false);   
 end
 % Upload it
 stts = st.fileUpload(niftiBOLDfile, cc{1}.collection.id, 'collection');
