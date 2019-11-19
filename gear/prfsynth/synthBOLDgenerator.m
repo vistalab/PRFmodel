@@ -33,11 +33,17 @@ function synthBOLDgenerator(json, output_dir)
 % Use this command to launch in matlab
 %{
     % Create files
-    jsonPath   = fullfile(pmRootPath,'gear','synthprf','synthBOLDgenerator_paramsExample.json');
-   
-    jsonPath   = fullfile(pmRootPath,'local','params_big_test_for_paper_v01.json');
-    output_dir = fullfile(pmRootPath,'local','output');
+    jsonPath   = fullfile(pmRootPath,'local','output','paper', ...
+                          'params_big_test_for_paper_3-3_v02BOLD.json');
+    output_dir = fullfile(pmRootPath,'local','output','paper');
     synthBOLDgenerator(jsonPath, output_dir);
+
+
+
+
+
+
+
 
     % Run the analysis
     results = pmModelFit({'synthBOLD_20190917T222512/synthBOLD.nii.gz', ...
@@ -131,11 +137,13 @@ TEST = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats', 2);
 TEST = pmForwardModelCalculate(TEST);
 %}
 % Create one pm instance to obtain defaults
-pm = prfModel;
 PARAMETERS = J;
 PARAMETERS = rmfield(PARAMETERS,'subjectName');
 PARAMETERS = rmfield(PARAMETERS,'sessionName');
 PARAMETERS = rmfield(PARAMETERS,'repeats');
+% Add first the simple parameters
+
+% Add now the sub-table params
 % Do the required conversions before creating the table
 % To concatenate structs they need to have the same num of fields
 for nh=1:length(PARAMETERS.HRF)
