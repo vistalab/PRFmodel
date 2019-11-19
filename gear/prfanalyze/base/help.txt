@@ -1,0 +1,5 @@
+Usage:
+  docker run --rm -it \
+             -v <output_path>:/flywheel/v0/output \
+             -v <input_path>:/flywheel/v0/input \
+             <dockerimage-tag> <config_json> <BOLD_nifti> <stimulus_nifti>
