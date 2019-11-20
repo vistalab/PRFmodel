@@ -59,6 +59,31 @@ python /scripts/run.py || die "Python startup script failed!"
 # which should be linked to /running/output_bids
 [ -d /running/output_bids ] || die "Pythin startup script failed to make output link!"
 
+# go to the output_bids path and extract subject and session...
+cd -P /running/output_bids
+sesdir=$PWD
+subdir=$(dirname $sesdir)
+ses=$(basename $sesdir)
+ses=${ses:4}
+sub=$(basename $subdir)
+sub=${sub:4}
+
+# For any nifti file in the output directory, we want to BIDSify it:
+if compgen -G "/running/output_bids/*.nii" > /dev/null
+then for fl in /running/output_bids/*.nii
+     do bnm="`basename $fl .nii`"
+        dnm="`dirname $fl`"
+        mv "$fl" "${dnm}/sub-${sub}_ses-${ses}_task-prf_${bnm}.nii"
+     done
+fi
+if compgen -G "/running/output_bids/*.nii.gz" > /dev/null
+then for fl in /running/output_bids/*.nii.gz
+     do bnm="`basename $fl .nii.gz`"
+        dnm="`dirname $fl`"
+        mv "$fl" "${dnm}/sub-${sub}_ses-${ses}_task-prf_${bnm}.nii.gz"
+     done
+fi
+
 # we don't have any post-processing to do at this point (but later we might)
 exit 0
 

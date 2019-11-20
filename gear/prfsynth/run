@@ -71,7 +71,8 @@ outputs=$(find "$OUTPUT_DIR" -type f -name '*_Stim.nii.gz')
 [ -z "$outputs" ] && {
     find "$OUTPUT_DIR" -type d -exec chmod 777 '{}' ';'
     find "$OUTPUT_DIR" -type f -exec chmod 666 '{}' ';'
-    die "No results found in output directory... Exiting"
+    note "No results found in output directory... Exiting"
+    exit 0
 }
 # Make sure there's a BIDS directory:
 [ -d "$OUTPUT_DIR"/BIDS ] || {

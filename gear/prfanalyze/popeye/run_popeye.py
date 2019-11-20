@@ -28,7 +28,7 @@ bold = np.reshape(np.asarray(bold_im.dataobj), (-1, bold_im.shape[-1]))
 stim = np.squeeze(np.asarray(stim_im.dataobj))
 if len(stim_json) != bold.shape[0]:
     raise ValueError('BOLD Image and Stimulus JSON do not have the same number of data points')
-fields = ('theta', 'rho', 'sigma', 'hrf_delay', 'beta', 'baseline')
+fields = ('theta', 'rho', 'sigma', 'hrfdelay', 'beta', 'baseline')
 res = {k:[] for k in fields}
 for (ii, vx,js) in zip(range(len(bold)), bold, stim_json):
     stdat = js['Stimulus']
