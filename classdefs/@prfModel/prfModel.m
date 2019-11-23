@@ -159,10 +159,13 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             p = inputParser;
             p.addRequired('pm',@(x)(isa(x,'prfModel')));
             p.addParameter('randomseed',1000,@(x)(round(x) == x && x > 0));
+            p.addParameter('showconv',false,@islogical);
             p.parse(pm,varargin{:});
+            showconv = p.Results.showconv;
             
             % First, compute the values in the required sub-classes
-            % TODO: optimize this to not repeat operations
+            % TODO: optimize this to not repeat operations, add flags or
+            %       automate them depending the case
             pm.Stimulus.compute;
             pm.RF.compute;
             pm.HRF.compute;
@@ -176,10 +179,13 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             switch pm.Type
                 case 'basic'
                     % Calculate time series
-                    pm.timeSeries = spaceStim' * pm.RF.values(:);
+                    pm.timeSeries = spaceStim' * pm.RF.values(:);   
                     pm.BOLD       = conv(pm.timeSeries',pm.HRF.values);
                     pm.BOLD       = pm.BOLD(1:(end+1-length(pm.HRF.values)));
-                    % pm.BOLD = [0,pm.BOLD(1:(end-length(pm.HRF.values)))];
+                    if showconv
+                        pm.showConvolution
+                        hold on
+                    end
                 case 'CSS'
                     error('Untested, use only basic')
                     % Import function from analyzePRF and use it to generate the predicted BOLD signal.
@@ -231,6 +237,173 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             else
                 pm.BOLD  = pm.contrast2BOLD(pm.BOLD, pm.BOLDcontrast, pm.BOLDmeanValue);
             end
+        end
+        function showConvolution(pm)
+            a_fig = mrvNewGraphWin('show convolution')
+            % %%%%%%%%%%%%%%%%%%%%% Function: acnv.m %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            %
+            %  Title: Animation of Graphical Convolution
+            %
+            %  To run this script just type 'acnv' on the MatLab prompt: > acnv
+            %
+            %  Description:
+            %   1. This is a simple MatLab demo to animate the process of convolution.
+            %      It is meant to help student to visualize how convolution works.
+            %
+            %   2. When this script is run, two function f(t) and go(t) are convolved
+            %      and the output figure will show animated graphical convolution.
+            %
+            %   3. The functions "f" and "go" and their range of interval can be changed
+            %      by editing this script at line numbers around "48 to 64"
+            %
+            %   4. Note:  For a better scaled plots of the functions f(t) and go(t1),
+            %             it is recommended to set the functions such that their
+            %             maximum value remains comparable. e.g one can use appropriate
+            %             scaling. Other functions are also given 'commented out'
+            %
+            %             Interger values are recommended for the intervals
+            %
+            %   5. The animation can be made faster or slower by changing the value of
+            %      the pause function in the animation loop. (around line number 134)
+            %
+            %  Author:
+            %      Laine Berhane Kahsay
+            %      Uni-Ulm, Germany
+            %
+            %   email: kahsay_2004@yahoo.com
+            %
+            %     ver: 1.0, written in Matlab 6.5/7.0
+            %
+            %  To see this help - type on the Matlab Prompt: > help acnv
+            %
+            % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            %
+            % help acnv;
+            % color of axis constant
+            axis_color= [0.5 0.5 0.5];
+            % sampling interval constant
+            s_int = pm.TR;
+            % interval for function 'f(t)'
+            % t = [ -10:s_int:10 ];
+            t = pm.timePointsSeries;
+            % definition of function 'f(t)'
+            % f = 0.1*(t.^2);
+            f = pm.timeSeries';
+            HRFcontrast = (max(pm.HRF.values)-min(pm.HRF.values))/2;
+            f = 100 * pm.unitless2contrast(f,HRFcontrast);
+            if f(1) >= 0, f = f - f(1);end
+            if f(1) <= 0, f = f + abs(f(1));end
+            %  f = 5*ones(1, length(t));
+            %  f = t;
+            % interval for function 'go(t1)'
+            % t1 = [-7:s_int:7];
+            t1 = pm.HRF.tSteps;
+            
+            
+            % definition of function 'go(t1)'
+            % go = -0.1*(t1.^2);
+            go = pm.HRF.values;
+            
+            % go = .1*(t1.^3);
+            % go = 5*cos(2*pi*t1);
+            % go = 5*ones(1, length(t1));
+            % go = zeros(1, length(t1));go(1)=5;
+            % convolve: note the multiplation by the sampling interval
+            c = s_int * conv(f, go);
+            % Animation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            % flip 'go(t1)' for the graphical convolutions g = go(-t1)
+            g = fliplr(go);
+            tf = fliplr(-t1);
+            % slide range of 'g' to discard non-ovelapping areas with 'f' in the convolution
+            tf = tf + ( min(t)-max(tf) );
+            % get the range of function 'c' which is the convolution of 'f(t)' and 'go(t1)'
+            tc = [ tf t(2:end)];
+            tc = tc+max(t1);
+            % start graphical output with three subplots
+            % a_fig = figure;
+            set(a_fig, 'Name', 'Animated Convolution', 'unit', 'pixel', ...
+                'Position', [300, 150, 600, 750]);
+            % plot f(t) and go(t1)
+            ax_1 = subplot(3,1,1);
+            op = plot(t,f, 'b',  t1, go, 'r');
+            if isempty(pm.BOLD); pm.computeBOLD; end
+            hold on; grid on;
+            set(ax_1, 'XColor', axis_color, 'YColor', axis_color, 'Color', 'w', 'Fontsize', 9);
+            xlim( [ ( min(t)-abs(max(tf)-min(tf)) - 1 ) ( max(t)+abs(max(tf)-min(tf)) + 1 ) ] );
+            title('Graph of f(t) and go(t)', 'Color', axis_color );
+            legend({'f(t)' 'go(t)'});
+            % initialize animation the plot of 'g' is slided over the plot of 'f'
+            % plot f in the subplot number 2
+            ax_2 = subplot(3,1,2);
+            p = plot(t, f);
+            hold on; grid on;
+            title('Graphical Convolution: f(t) and g = go(-t1)', 'Color', axis_color );
+            
+            % plot g in the subplot number 2
+            q = plot(tf, g, 'r');
+            xlim( [ ( min(t)-abs(max(tf)-min(tf))-1 ) ( max(t)+abs(max(tf)-min(tf))+1 ) ] );
+            u_ym = get(ax_2, 'ylim');
+            % plot two vertical lines to show the range of ovelapped area
+            s_l = line( [min(t) min(t)], [u_ym(1) u_ym(2)], 'color', 'g'  );
+            e_l = line( [min(t) min(t)], [u_ym(1) u_ym(2)], 'color', 'g'  );
+            hold on; grid on;
+            set(ax_2, 'XColor', axis_color, 'YColor', axis_color, 'Color', 'w', 'Fontsize', 9);
+            % put a yellow shade on ovelapped region
+            sg = rectangle('Position', [min(t) u_ym(1) 0.0001 u_ym(2)-u_ym(1)], ...
+                'EdgeColor', [0 0 1]*0.7); %, 'FaceColor', [0 0 1]*0.7); %, 'EraseMode', 'xor');
+            drawnow
+            
+            % initialize the plot the convolution result 'c'
+            ax_3 = subplot(3,1,3);
+            r = plot(tc, c);
+            grid on; hold on;
+            set(ax_3, 'XColor', axis_color, 'YColor', axis_color, 'Fontsize', 9);
+            % xlim( [ min(tc)-1 max(tc)+1 ] );
+            xlim( [ ( min(t)-abs(max(tf)-min(tf)) - 1 ) ( max(t)+abs(max(tf)-min(tf)) + 1 ) ] );
+            title('Convolutional Product c(t). Black is our BOLD', 'Color', axis_color );
+            % animation block
+            for i=1:length(tc)
+                
+                % control speed of animation minimum is 0, the lower the faster
+                pause(0.005);
+                drawnow;
+                
+                % update the position of sliding function 'g', its handle is 'q'
+                tf=tf+s_int;
+                drawnow % set(q,'EraseMode','xor');
+                
+                set(q,'XData',tf,'YData',g);
+                % show overlapping regions
+                
+                % show a vertical line for a left boundary of overlapping region
+                sx = min( max( tf(1), min(t) ), max(t) );
+                sx_a = [sx sx];
+                drawnow % set(s_l,'EraseMode','xor');
+                set(s_l, 'XData', sx_a);
+                % show a second vetical line for the right boundary of overlapping region
+                ex = min( tf(end), max(t) );
+                ex_a = [ex ex];
+                drawnow % set(e_l,'EraseMode','xor');
+                set(e_l, 'XData', ex_a);
+                
+                % update shading on ovelapped region
+                rpos = [sx u_ym(1) max(0.0001, ex-sx) u_ym(2)-u_ym(1)];
+                set(sg, 'Position', rpos);
+                
+                % update the plot of convolutional product 'c', its handle is r
+                drawnow % set(r,'EraseMode','xor');
+                set(r,'XData',tc(1:i),'YData',c(1:i) );
+                
+            end;
+            tccontrast = (max(c)-min(c))/2;
+            ourBOLD = 100 * pm.unitless2contrast(pm.BOLD,tccontrast);
+            if ourBOLD(1) >= 0, ourBOLD = ourBOLD - ourBOLD(1);end
+            if ourBOLD(1) <= 0, ourBOLD = ourBOLD + abs(ourBOLD(1));end
+            plot(ourBOLD,'k-.')
+            
+            %
+            % end of acnv %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
         end
         function v = contrast2BOLD(pm, signal, contrast, meanBOLD)
             % Normalize to 0-1, so that min(normBOLD) == 0
@@ -293,7 +466,7 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             p.addParameter('what', 'both', @ischar);
             p.addParameter('window', true, @islogical);
             p.addParameter('addtext', true, @islogical);
-            p.addParameter('color', 'k', @ischar);
+            p.addParameter('color', 'b');
             
             p.parse(pm,varargin{:});
             what = mrvParamFormat(p.Results.what);
@@ -301,37 +474,44 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             t  = p.Results.addtext;
             c  = p.Results.color;
             
-            pm.compute;
+            
             switch what
+                case 'nonoisetimeseries'
+                    pm.computeBOLD
+                    if w;mrvNewGraphWin([pm.Type 'Synthetic BOLD signals']);end
+                    plot(pm.timePointsSeries, pm.unitless2contrast(pm.timeSeries, ...
+                         pm.BOLDcontrast),'--','color','k','LineWidth',1); hold on;
+                    plot(pm.timePointsSeries, pm.BOLD,'color','b');
+                    legend({'Time Series','No Noise BOLD'})
                 case {'nonoise','noiseless','noisefree'}
+                    pm.computeBOLD
                     if w;mrvNewGraphWin([pm.Type 'Synthetic BOLD signal (no noise)']);end
-                    plot(pm.timePointsSeries, pm.BOLD,c);
+                    plot(pm.timePointsSeries, pm.BOLD,'color',c);
                     grid on; xlabel('Time (sec)'); ylabel('Relative amplitude');
                 case 'withnoise'
+                    pm.compute;
                     if w;mrvNewGraphWin([pm.Type 'Synthetic BOLD signal (noise)']);end
-                    plot(pm.timePointsSeries, pm.BOLDnoise,c);
+                    plot(pm.timePointsSeries, pm.BOLDnoise,'color',c);
                     grid on; xlabel('Time (sec)'); ylabel('Relative amplitude');
                 case 'both'
+                    pm.compute;
                     if w;mrvNewGraphWin([pm.Type 'Synthetic BOLD signals']);end
-                    plot(pm.timePointsSeries, pm.BOLD); hold on;
-                    plot(pm.timePointsSeries, pm.BOLDnoise);
+                    plot(pm.timePointsSeries, pm.BOLD,'color','k'); hold on;
+                    plot(pm.timePointsSeries, pm.BOLDnoise,'color',c);
                     legend({'No Noise BOLD','With Noise BOLD'})
                 case 'all'
+                    pm.compute;
                     if w;mrvNewGraphWin([pm.Type 'Synthetic BOLD signals']);end
-                    plot(pm.timePointsSeries, pm.contrast2BOLD(pm.timeSeries, pm.BOLDcontrast, pm.BOLDmeanValue)); hold on;
+                    plot(pm.timePointsSeries, pm.unitless2contrast(pm.timeSeries, pm.BOLDcontrast),'color','k'); hold on;
                     plot(pm.timePointsSeries, pm.BOLD);
                     plot(pm.timePointsSeries, pm.BOLDnoise);
                     legend({'Time Series','No Noise BOLD','With Noise BOLD'})                    
                 case 'withnoisetimeseries'
+                    pm.compute;
                     if w;mrvNewGraphWin([pm.Type 'Synthetic BOLD signals']);end
-                    plot(pm.timePointsSeries, pm.contrast2BOLD(pm.timeSeries, pm.BOLDcontrast, pm.BOLDmeanValue)); hold on;
+                    plot(pm.timePointsSeries, pm.unitless2contrast(pm.timeSeries, pm.BOLDcontrast),'color','k'); hold on;
                     plot(pm.timePointsSeries, pm.BOLDnoise);
                     legend({'Time Series','With Noise BOLD'})
-                case 'nonoisetimeseries'
-                    if w;mrvNewGraphWin([pm.Type 'Synthetic BOLD signals']);end
-                    plot(pm.timePointsSeries, pm.contrast2BOLD(pm.timeSeries, pm.BOLDcontrast, pm.BOLDmeanValue)); hold on;
-                    plot(pm.timePointsSeries, pm.BOLD);
-                    legend({'Time Series','No Noise BOLD'})
                 otherwise
                     error('no noise, with noise, both, all, with noise timeseries, no noise timeseries are acepted')
             end

@@ -20,8 +20,129 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
     
     % Examples
     %{
-       
-    %}
+     % RFSIZE = 0.5;
+     mrvNewGraphWin;
+     window = false;
+     nrow = 2; ncol = 4;
+     pm               = prfModel;  
+     pm.RF.sigmaMajor = 0.5;
+     pm.RF.sigmaMinor = pm.RF.sigmaMajor;
+     pm.Stimulus.frameduration = 4;
+     
+     subplot(nrow,ncol,1)
+     pm.TR = 1;
+     pm.Stimulus.durationSecs = 300;
+     pm.Stimulus
+     pm.Stimulus.compute
+     % pm.Stimulus.plot
+     pm.plot('what','nonoisetimeseries','window',window)
+     
+     subplot(nrow,ncol,2)
+     pm.TR = 1;
+     pm.Stimulus.durationSecs = 150;
+     pm.Stimulus
+     pm.Stimulus.compute
+     % pm.Stimulus.plot
+     pm.plot('what','nonoisetimeseries','window',window)
+     
+     subplot(nrow,ncol,3)
+     pm.TR = 2;
+     pm.Stimulus.durationSecs = 300;
+     pm.Stimulus.compute
+     % pm.Stimulus.plot
+     pm.plot('what','nonoisetimeseries','window',window)
+    
+     subplot(nrow,ncol,4)
+     pm.TR = 2;
+     pm.Stimulus.durationSecs = 150;
+     pm.Stimulus.compute
+     % pm.Stimulus.plot
+     pm.plot('what','nonoisetimeseries','window',window)
+      
+    % RFSIZE = 2;
+     pm               = prfModel;  
+     pm.RF.sigmaMajor = 2;
+     pm.Stimulus.frameduration = 4;
+     pm.RF.sigmaMinor = pm.RF.sigmaMajor;    
+     % pm.RF.plot    
+   
+     subplot(nrow,ncol,5)
+     pm.TR = 1;
+     pm.Stimulus.durationSecs = 300;
+     pm.Stimulus
+     pm.Stimulus.compute
+     % pm.Stimulus.plot
+     pm.plot('what','nonoisetimeseries','window',window)
+     
+     subplot(nrow,ncol,6)
+     pm.TR = 1;
+     pm.Stimulus.durationSecs = 150;
+     pm.Stimulus
+     pm.Stimulus.compute
+     % pm.Stimulus.plot
+     pm.plot('what','nonoisetimeseries','window',window)
+     
+     subplot(nrow,ncol,7)
+     pm.TR = 2;
+     pm.Stimulus.durationSecs = 300;
+     pm.Stimulus.compute
+     % pm.Stimulus.plot
+     pm.plot('what','nonoisetimeseries','window',window)
+    
+     subplot(nrow,ncol,8)
+     pm.TR = 2;
+     pm.Stimulus.durationSecs = 150;
+     pm.Stimulus.compute
+     % pm.Stimulus.plot
+     pm.plot('what','nonoisetimeseries','window',window)
+   %} 
+   %{
+     pm.TR = 4;
+     pm.Stimulus.compute
+     pm.Stimulus.plot
+     pm.plot('what','nonoise')
+     
+     pm.TR = 1.5;
+     pm.Stimulus.durationSecs = (6+128)*1.5;
+     pm.Stimulus.compute
+     pm.Stimulus.plot
+     pm.plot('what','nonoise')
+
+    
+     pm.TR = 6;
+     pm.Stimulus.durationSecs=300;
+     pm.Stimulus.compute
+     pm.Stimulus.plot
+     pm.plot('what','nonoise')
+   %}
+    
+   % Create a 15 second on/off stimulus, 5 off, 5 on, 5 off
+   %{
+    pm = prfModel;
+    pm.TR=1;
+    pm.Stimulus.durationSecs = 15;
+    pm.Stimulus.compute
+    pm.Stimulus.plot
+    % Edit it manually to make it a single on/off bar
+    fName = fullfile(pmRootPath,'data','stimulus','Exp-103_bin-true_size-20x20_resize-true_Horz-101x101_barW-2_dur-15_TR-1_framedur-4.mat');
+    kk = load(fName);
+    % Repeat fourth bar, make rest zero, and save it with the same name, it will
+    % not overwrite it. 
+    kk.stim(:,:,6:10) = repmat(kk.stim(:,:,4),[1,1,5]);
+    kk.stim(:,:,[1:5,11:15]) = zeros(size(kk.stim(:,:,[1:5,11:15])));
+    % Check it
+    montage(kk.stim)
+    % Save it
+    stim = kk.stim;
+    save(fName,'stim');
+    % Check again as part of class, it should just read it and plot what we want
+    pm.Stimulus.plot
+    % Compute the time series
+    % pm.compute: we can't do this because the number of basis functions too low, for slow drift noise
+    pm.computeBOLD
+    pm.plot('what','nonoisetimeseries','window',true)
+    
+   %}
     
     properties
         PM               ;   % prfModel that has some of the variables we need, such as TR
@@ -33,6 +154,8 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
         ResizedHorz      ;   % Numeric. Size in pixels of resized horizontal side
         ResizedVert      ;   % Numeric. Size in pixels of resized vertical side
         barWidth         ;   % Degrees
+        durationSecs     ;   % Numeric, duration of the stimuli in secs, default 300secs
+        frameduration    ;   % Numeric, how many frames we want a refresh to last
         values           ;   % char/string with path to the stimulus .mat
         videoFileName    ;
         niftiFileName    ;
@@ -65,6 +188,8 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             d.ResizedHorz     = 101;   % 101 is the default in mrVista
             d.ResizedVert     = 101;   % 101 is the default in mrVista
             d.barWidth        = 2;     % Degrees. TODO
+            d.durationSecs    = 200;   % Seconds
+            d.frameduration   = 4;   
             
             % Convert to table and return
             d = struct2table(d,'AsArray',true);
@@ -88,6 +213,8 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             p.addParameter('resizedhorz'    ,d.ResizedHorz    , @isnumeric);
             p.addParameter('resizedvert'    ,d.ResizedVert    , @isnumeric);
             p.addParameter('barwidth'       ,d.barWidth       , @isnumeric);
+            p.addParameter('durationsecs'   ,d.durationSecs   , @isnumeric);
+            p.addParameter('frameduration'  ,d.frameduration  , @isnumeric);
             p.parse(pm,varargin{:});
             
             % Initialize the PM model
@@ -101,13 +228,19 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             stim.ResizedHorz     = p.Results.resizedhorz;
             stim.ResizedVert     = p.Results.resizedvert;
             stim.barWidth        = p.Results.barwidth;
+            stim.durationSecs    = p.Results.durationsecs;
+            stim.frameduration   = p.Results.frameduration;
             % If it does not exist, create the stim file.
             % Always store just the path and the name
             stim.LocalPath     = fullfile(pmRootPath,'local');
             stim.DataPath      = fullfile(pmRootPath,'data','stimulus');
             stimNameWithPath   = fullfile(stim.DataPath, [stim.Name '.mat']);
             if ~exist(stimNameWithPath, 'file')
-                pmStimulusGenerate('filename', stimNameWithPath);
+                % TODO: add all parameters, see .compute below
+                pmStimulusGenerate('filename', stimNameWithPath,...
+                    'totalduration',stim.durationSecs, ...
+                    'TR', stim.TR, ...
+                    'frameduration',stim.frameduration);
             end
             stim.values        =  char(stimNameWithPath);
             % Default fileName if we want to write a video of the stimuli
@@ -118,13 +251,16 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
         function Name = get.Name(stim)
             Name = [...
                    'Exp-'          char(stim.expName) ...
-                   '_binary-'      choose(stim.Binary,'true','false') ...
+                   '_bin-'         choose(stim.Binary,'true','false') ...
                    '_size-'        num2str(stim.fieldofviewVert) 'x' ...
                                    num2str(stim.fieldofviewHorz) ...
-                   '_wantresize-'  choose(stim.Resize,'true', 'false') ...
-                   '_ResizedHorz-' num2str(stim.ResizedVert) 'x' ...
+                   '_resize-'      choose(stim.Resize,'true', 'false') ...
+                   '_Horz-'        num2str(stim.ResizedVert) 'x' ...
                                    num2str(stim.ResizedHorz) ...
-                   '_barWidth-'    num2str(stim.barWidth) ...
+                   '_barW-'        num2str(stim.barWidth) ...
+                   '_dur-'         num2str(stim.durationSecs) ...
+                   '_TR-'          num2str(stim.TR) ...
+                   '_framedur-'    num2str(stim.frameduration) ...
                    ];
                assert(isa(Name, 'char'));
         end
@@ -170,7 +306,11 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             stimNameWithPath = fullfile(stim.DataPath, [stim.Name '.mat']);
             if ~exist(stimNameWithPath, 'file')
                 fprintf('Computing and storing new stimulus file in %s',stimNameWithPath)
-                pmStimulusGenerate('filename', stimNameWithPath);
+                % TODO: pass all the variables and make it more flexible
+                pmStimulusGenerate('filename', stimNameWithPath,...
+                                    'totalduration',stim.durationSecs, ...
+                                    'TR', stim.TR, ...
+                                    'frameduration',stim.frameduration);
             end
             % fprintf('Retrieving stimulus file in %s',stimNameWithPath)
             stim.values        =  char(stimNameWithPath);
@@ -186,11 +326,12 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             p = inputParser;
             p.addRequired ('stim'  ,  @(x)(isa(x,'pmStimulus')));
             p.addParameter('slicelist',[], @isnumeric);
+            p.addParameter('window',true, @islogical);
             p.parse(stim,varargin{:});
             slicelist = p.Results.slicelist;
+            w = p.Results.window;
             
-            
-            mrvNewGraphWin('Stimulus file montage');
+            if w, mrvNewGraphWin('Stimulus file montage'); end
             image3D = pmStimulusRead(stim.values);
             [sz1,sz2,sz3] = size(image3D);
             img = pmMakeMontage(image3D,slicelist);

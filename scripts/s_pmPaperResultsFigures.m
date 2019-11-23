@@ -10,11 +10,11 @@ tbUse prfmodel;
 % Control execution of the script file
 defineFileNames    = true;
 generateInputFiles = false;
-uploadInputFiles   = true;
-analysisInputFiles = true;
-downloadLoadFiles  = false;
-plotGroupAnalysis  = false;
-plotCloudPoints    = false;
+uploadInputFiles   = false;
+analysisInputFiles = false;
+downloadLoadFiles  = true;
+plotGroupAnalysis  = true;
+plotCloudPoints    = true;
 
 %% defineFileNames
 if defineFileNames
@@ -50,6 +50,9 @@ if defineFileNames
     % Connect to fw
     st   = scitran('stanfordlabs'); st.verify;
     cc   = st.search('collection','collection label exact','PRF_StimDependence');
+    
+    % Save files to
+    saveTo = '/Users/glerma/gDrive/STANFORD/PROJECTS/2019_PRF_Validation_methods_(Gari)/__PUBLISH__/PAPER_SUBMISSION01/Figures/RAW';
 end
 
 %% generateInputFiles
@@ -186,23 +189,47 @@ if (plotGroupAnalysis)
   
     
     % PLOTS
-    tools = {'aprf','vista','popno','afni4'};
+    tools = {'vista','afni4','popnohrf','aprf'}';
     % Or select them all
-    tools = anNames;
-    pmNoisePlotsByHRF(compTable, tools, ... % 'x0y0',[0,0],...
+    % tools = anNames;
+    
+    % Noise free
+    pmNoisePlotsByHRF(compTable, tools, ... 
         'sortHRF',sortHRFlike,'usemetric','eccentricity', ...
-        'noisevalues',{'none','mid','high','low'}, 'userfsize',2, ...
-        'ylims',[0,2], 'CIrange',10)
+        'noisevalues',{'none'}, 'userfsize',2, ...
+        'ylims',[4.2,4.7], 'CIrange',50,...
+        'saveTo',saveTo,'saveToType','svg','fontSize',16);
     
-    pmNoisePlotsByHRF(compTable, tools, ... % 'x0y0',[0,0],...
+    pmNoisePlotsByHRF(compTable, tools, ... 
         'sortHRF',sortHRFlike,'usemetric','polarangle', ...
-        'noisevalues',{'none','mid','high','low'}, 'userfsize',2, ...
-        'ylims',[0,360], 'CIrange',50)
+        'noisevalues',{'none'}, 'userfsize',2, ...
+        'ylims',[44,46], 'CIrange',50,...
+        'saveTo',saveTo,'saveToType','svg','fontSize',16)
     
-    pmNoisePlotsByHRF(compTable, tools, 'x0y0',[0,0],...
+    pmNoisePlotsByHRF(compTable, tools, 'x0y0',[3,3],...
         'sortHRF',sortHRFlike,'usemetric','rfsize', ...
-        'noisevalues',{'none','mid','high','low'}, 'userfsize',2, ...
-        'ylims',[0,8], 'CIrange',50)
+        'noisevalues',{'none'}, 'userfsize',2, ...
+        'ylims',[0,4], 'CIrange',50,...
+        'saveTo',saveTo,'saveToType','svg','fontSize',16)
+    
+    % Three noise levels
+    pmNoisePlotsByHRF(compTable, tools, ... 
+        'sortHRF',sortHRFlike,'usemetric','eccentricity', ...
+        'noisevalues',{'mid','high','low'}, 'userfsize',2, ...
+        'ylims',[3.8,4.8], 'CIrange',50,...
+        'saveTo',saveTo,'saveToType','svg','fontSize',16)
+    
+    pmNoisePlotsByHRF(compTable, tools, ... 
+        'sortHRF',sortHRFlike,'usemetric','polarangle', ...
+        'noisevalues',{'mid','high','low'}, 'userfsize',2, ...
+        'ylims',[38,52], 'CIrange',50,...
+        'saveTo',saveTo,'saveToType','svg','fontSize',16)
+    
+    pmNoisePlotsByHRF(compTable, tools, 'x0y0',[3,3],...
+        'sortHRF',sortHRFlike,'usemetric','rfsize', ...
+        'noisevalues',{'mid','high','low'}, 'userfsize',2, ...
+        'ylims',[0,4], 'CIrange',50,...
+        'saveTo',saveTo,'saveToType','svg','fontSize',16)
 
     
 end
@@ -210,17 +237,112 @@ end
 %% plotCloudPoints
 if plotCloudPoints
 % Optional params to be used as varargin when creating the function
-tools = {'aprf','aprfcss','vista','vistahrf','pop','popno','afni4','afni6'};
-% tools = {'aprf','vista','popno','afni4'};
-tools = {'afni4','pop'};
+% tools = {'aprf','aprfcss','vista','vistahrf','pop','popnohrf','afni4','afni6'};
 
-pmCloudOfResults(compTable, tools, ...
-                 'onlyCenters', true, ...
-                 'userfsize'  , 2, ...
-                 'centerPerc' , 90, ...
-                 'useHRF'     , 'popeye_twogammas', ...
-                 'lineStyle'  , '-', ...
-                 'lineWidth'  , .7, ...
-                 'noiselevel' , "mid", ...
-                 'newWin'     , true)
+kk = mrvNewGraphWin('NoiselessCloudPoints','wide');
+% Fig size is relative to the screen used. This is for laptop at 1900x1200
+set(kk,'Position',[0.007 0.62  0.8  0.3]);
+subplot(1,4,1)
+tools  = {'vista'};
+useHRF = 'friston';
+nslvl  = 'none';
+pmCloudOfResults(compTable   , tools ,'onlyCenters',false ,'userfsize' , 2, ...
+                 'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
+                 'lineWidth' , 2     ,'noiselevel' ,nslvl , ...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+
+subplot(1,4,2)
+tools  = {'afni4'};
+useHRF = 'afni_spm';
+nslvl  = 'none';
+pmCloudOfResults(compTable   , tools ,'onlyCenters',false ,'userfsize' , 2, ...
+                 'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
+                 'lineWidth' , 2     ,'noiselevel' ,nslvl , ...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+
+subplot(1,4,3)
+tools  = {'popnohrf'};
+useHRF = 'popeye_twogammas';
+nslvl  = 'none';
+pmCloudOfResults(compTable   , tools ,'onlyCenters',false ,'userfsize' , 2, ...
+                 'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
+                 'lineWidth' , 2     ,'noiselevel' ,nslvl , ...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+
+subplot(1,4,4)
+tools  = {'aprf'};
+useHRF = 'canonical';
+nslvl  = 'none';
+pmCloudOfResults(compTable   , tools ,'onlyCenters',false ,'userfsize' , 2, ...
+                 'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
+                 'lineWidth' , 1.5   ,'noiselevel' ,nslvl , ...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+
+fnameRoot = 'Noisefree_accuracy';
+saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
+
+
+
+% LOW NOISE
+mm = mrvNewGraphWin('NoiselessCloudPoints');
+% Fig size is relative to the screen used. This is for laptop at 1900x1200
+set(mm,'Position',[0.007 0.62  0.8  0.8]);
+tools   = {'vista','afni4','popnohrf','aprf'};
+useHRFs = {'friston','afni_spm','popeye_twogammas','canonical'};
+nslvl   = 'low';
+np      = 0;
+for tool = tools; for useHRF = useHRFs
+    np=np+1;
+    subplot(4,4,np)
+    pmCloudOfResults(compTable   , tool ,'onlyCenters',false ,'userfsize' , 2, ...
+                 'centerPerc', 90    ,'useHRF'     ,useHRF{:},'lineStyle' , '-', ...
+                 'lineWidth' , .7     ,'noiselevel' ,nslvl , ...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+end;end
+fnameRoot = ['CloudPlots_4x4_Noise_' nslvl];
+saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
+
+
+% MID NOISE
+mm = mrvNewGraphWin('NoiselessCloudPoints');
+% Fig size is relative to the screen used. This is for laptop at 1900x1200
+set(mm,'Position',[0.007 0.62  0.8  0.8]);
+tools   = {'vista','afni4','popnohrf','aprf'};
+useHRFs = {'friston','afni_spm','popeye_twogammas','canonical'};
+nslvl   = 'mid';
+np      = 0;
+for tool = tools; for useHRF = useHRFs
+    np=np+1;
+    subplot(4,4,np)
+    pmCloudOfResults(compTable   , tool ,'onlyCenters',false ,'userfsize' , 2, ...
+                 'centerPerc', 90    ,'useHRF'     ,useHRF{:},'lineStyle' , '-', ...
+                 'lineWidth' , .7     ,'noiselevel' ,nslvl , ...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+end;end
+fnameRoot = ['CloudPlots_4x4_Noise_' nslvl];
+saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
+
+
+% HIGH NOISE
+mm = mrvNewGraphWin('NoiselessCloudPoints');
+% Fig size is relative to the screen used. This is for laptop at 1900x1200
+set(mm,'Position',[0.007 0.62  0.8  0.8]);
+tools   = {'vista','afni4','popnohrf','aprf'};
+useHRFs = {'friston','afni_spm','popeye_twogammas','canonical'};
+nslvl   = 'high';
+np      = 0;
+for tool = tools; for useHRF = useHRFs
+    np=np+1;
+    subplot(4,4,np)
+    pmCloudOfResults(compTable   , tool ,'onlyCenters',false ,'userfsize' , 2, ...
+                 'centerPerc', 90    ,'useHRF'     ,useHRF{:},'lineStyle' , '-', ...
+                 'lineWidth' , .7     ,'noiselevel' ,nslvl , ...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+end;end
+fnameRoot = ['CloudPlots_4x4_Noise_' nslvl];
+saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
+
+
 end
+
+

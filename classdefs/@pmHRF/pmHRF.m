@@ -18,8 +18,15 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
     %
     
     % Examples
+    % Plot several HRFs for comparison
     %{
-       
+      HRFs = {'vista_twogammas','popeye_twogammas','canonical','afni_spm'};
+      pm = prfModel;
+      pm.TR = 1.5;
+      for HRF = HRFs
+          pm.HRF.Type = HRF{:};
+            
+      end
     %}
     
     properties

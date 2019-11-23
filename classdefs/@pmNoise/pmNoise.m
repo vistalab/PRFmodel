@@ -184,36 +184,36 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
             switch strrep(lower(d.voxel),' ','')
                 case {'mid','midnoise'}
                     % White Noise
-                    d.white_amplitude    = 0.017; % white noise constant to relate to random number generator
+                    d.white_amplitude    = 0.032; % white noise constant to relate to random number generator
                     % Cardiac
-                    d.cardiac_amplitude  = 0.005;
+                    d.cardiac_amplitude  = 0.01;
                     d.cardiac_frequency  = 1.05;
                     % Respiratory
-                    d.respiratory_amplitude  = 0.005;
+                    d.respiratory_amplitude  = 0.01;
                     d.respiratory_frequency  = 0.3;
                     % Low frequency drift
-                    d.lowfrequ_amplitude     = 0.004;
+                    d.lowfrequ_amplitude     = 0.01;
                     d.lowfrequ_frequ         = 120;  % Seconds
                 case {'good','low','lownoise'}
                     % White Noise
-                    d.white_amplitude    = 0.008; % white noise constant to relate to random number generator
+                    d.white_amplitude    = 0.016; % white noise constant to relate to random number generator
                     % Cardiac
-                    d.cardiac_amplitude  = 0.002;
+                    d.cardiac_amplitude  = 0.004;
                     d.cardiac_frequency  = 1.05;
                     % Respiratory
-                    d.respiratory_amplitude  = 0.002;
+                    d.respiratory_amplitude  = 0.004;
                     d.respiratory_frequency  = 0.28;
                     % Low frequency drift
-                    d.lowfrequ_amplitude     = 0.002;
+                    d.lowfrequ_amplitude     = 0.004;
                     d.lowfrequ_frequ         = 120;  % Seconds
                 case {'bad','high','highnoise'}
                     % White Noise
-                    d.white_amplitude    = 0.045; % white noise constant to relate to random number generator
+                    d.white_amplitude    = 0.05; % white noise constant to relate to random number generator
                     % Cardiac
-                    d.cardiac_amplitude  = 0.02;
+                    d.cardiac_amplitude  = 0.025;
                     d.cardiac_frequency  = 1.055;
                     % Respiratory
-                    d.respiratory_amplitude  = 0.008;
+                    d.respiratory_amplitude  = 0.01;
                     d.respiratory_frequency  = 0.3;
                     % Low frequency drift
                     d.lowfrequ_amplitude     = 0.015;
@@ -302,7 +302,8 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     addnoise = false;
                 case 'random'
                     % Initialize with a random seed, say time
-                    rng('shuffle')
+                    % rng('shuffle')
+                    rng('default')
                     addnoise = true;
                 otherwise
                     addnoise = true;
