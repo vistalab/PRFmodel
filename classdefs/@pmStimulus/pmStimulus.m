@@ -118,29 +118,7 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
     
    % Create a 15 second on/off stimulus, 5 off, 5 on, 5 off
    %{
-    pm = prfModel;
-    pm.TR=1;
-    pm.Stimulus.durationSecs = 15;
-    pm.Stimulus.compute
-    pm.Stimulus.plot
-    % Edit it manually to make it a single on/off bar
-    fName = fullfile(pmRootPath,'data','stimulus','Exp-103_bin-true_size-20x20_resize-true_Horz-101x101_barW-2_dur-15_TR-1_framedur-4.mat');
-    kk = load(fName);
-    % Repeat fourth bar, make rest zero, and save it with the same name, it will
-    % not overwrite it. 
-    kk.stim(:,:,6:10) = repmat(kk.stim(:,:,4),[1,1,5]);
-    kk.stim(:,:,[1:5,11:15]) = zeros(size(kk.stim(:,:,[1:5,11:15])));
-    % Check it
-    montage(kk.stim)
-    % Save it
-    stim = kk.stim;
-    save(fName,'stim');
-    % Check again as part of class, it should just read it and plot what we want
-    pm.Stimulus.plot
-    % Compute the time series
-    % pm.compute: we can't do this because the number of basis functions too low, for slow drift noise
-    pm.computeBOLD
-    pm.plot('what','nonoisetimeseries','window',true)
+     See stimtests.m
     
    %}
     

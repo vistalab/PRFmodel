@@ -20,24 +20,42 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
     % Examples
     % Plot several HRFs for comparison
     %{
-      HRFs = {'vista_twogammas','popeye_twogammas','canonical','afni_spm'};
-      pm = prfModel;
-      pm.TR = 1.5;
-      for HRF = HRFs
-          pm.HRF.Type = HRF{:};
-            
+      HRFs     = {'vista_twogammas','afni_gam','boynton','afni_spm','popeye_twogammas','canonical'};
+      normeths = {'height','absarea'};
+      pm       = prfModel;
+      pm.TR    = 1;
+      mrvNewGraphWin('Normalized HRFs')
+      for np=1:length(normeths)
+          subplot(1,length(normeths),np);
+          a        = [];
+          leg      = [];
+          for HRF = HRFs
+              pm.HRF.Type      = HRF{:};
+              pm.HRF.normalize = normeths{np};
+              pm.HRF.compute
+              ctrapz = cumtrapz(pm.HRF.values);
+              a = [a;pm.HRF.plot('window',false,'dots',false,'width',false,'xlims',[0,25])];
+              sprintf('Type:%s, width:%i',pm.HRF.Type,pm.HRF.width);
+              if strcmp(HRF{:},'boynton');useindex = 6;else;useindex=6;end
+              leg = [leg;{[strrep(HRF{:},'_','\_') ' (' num2str(ctrapz(useindex)) ')']}];
+              title(sprintf('HRFs normalized by %s',pm.HRF.normalize))
+          end;
+          legend(a,leg); 
       end
+      
     %}
     
     properties
         Type;          % Friston, Boyton, canonical...
         PM;            % prfModel that has some of the variables we need, such as TR
         Duration;      % Seconds
+        normalize;     % 'none', 'height', 'area'
         params;        % Different values depending on the type of HRF
         values;
     end
     properties (Dependent = true, Access = public)
         tSteps;
+        width;    % Width at half height of the positive part
     end
     properties(Dependent = true, SetAccess = private, GetAccess = public)
         % List of all possible options
@@ -53,12 +71,10 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
             % Defaults for all different models
             d.Type                = 'friston';  % 'canonical'
             d.Duration            = 20;
+            d.normalize           = 'none';
             % Default params for friston
             % [peak1 width1 peak2 width2 -weight2]
             % [5.4000 5.2000 10.8000 7.3500 0.3500]
-            % d.params.a            = [5.4  ,  5.2];
-            % d.params.b            = [0.9, 0.9];
-            % d.params.c            = 0.35;
             d.params.a            = [6  ,  12];
             d.params.b            = [0.9, 0.9];
             d.params.c            = 0.35;
@@ -81,19 +97,18 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
             % Read the inputs
             varargin = mrvParamFormat(varargin);
             p = inputParser;
-            p.addRequired('pm'       ,             @(x)(isa(x,'prfModel')));
-            p.addParameter('type'    ,d.Type{:}  , @ischar);
-            p.addParameter('params'  ,d.params   , @isstruct);
-            p.addParameter('duration',d.Duration , @isnumeric);
+            p.addRequired('pm'         ,                  @(x)(isa(x,'prfModel')));
+            p.addParameter('type'      , d.Type{:}      , @ischar);
+            p.addParameter('params'    , d.params       , @isstruct);
+            p.addParameter('duration'  , d.Duration     , @isnumeric);
+            p.addParameter('normalize' , d.normalize{:} , @ischar);
             p.parse(pm,varargin{:});
-            % Assign it
-            params   = p.Results.params;
-            Duration = p.Results.duration;
             
             % Initialize the pm model and hrf model parameters
-            hrf.PM       = pm;
-            hrf.Type     = p.Results.type;
-            hrf.Duration = p.Results.duration;
+            hrf.PM        = pm;
+            hrf.Type      = p.Results.type;
+            hrf.Duration  = p.Results.duration;
+            hrf.normalize = p.Results.normalize;
             % Check if only some of the fields in params where set
             hrf.params   = pmParamsCompletenessCheck(p.Results.params,d.params);
         end
@@ -109,6 +124,13 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
             % Now with the new type, do the calculations. 
             switch hrf.Type
                 case {'friston'}
+                    % params
+                    %   peak1 = params(1);
+                    %   fwhm1 = params(2);
+                    %   peak2 = params(3);
+                    %   fwhm2 = params(4);
+                    %   dip   = params(5);
+                    
                     % TODO: use a function under @HRF again, remove code from here.
                     a = hrf.params.a;
                     b = hrf.params.b;
@@ -137,7 +159,7 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     tau   = hrf.params.tau;
                     delay = hrf.params.delay;
                     
-                    t = hrf.tSteps;
+                    t     = hrf.tSteps;
                     
                     %    hrf = boyntonHIRF(t, [n=3], [tau=1.08], [delay=2.05]])
                     %
@@ -238,13 +260,27 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     % This is the default inside the function
                     vistaParams     = [5.4 5.2 10.8 7.35 0.35];
                     hrf.values      = rmHrfTwogammas(hrf.tSteps, vistaParams);
-                    pm = prfModel;
-% plot examples
-                    %                     pm.HRF.Type = 'vista_twogammas';
-%                     figure(1);
-%                     pm.TR = 1  ; subplot(3,1,1);pm.HRF.plot('window',false);
-%                     pm.TR = 1.5; subplot(3,1,2);pm.HRF.plot('window',false);
-%                     pm.TR = 2  ; subplot(3,1,3);pm.HRF.plot('window',false);
+                    % plot examples
+                    %{
+                      pm = prfModel;  
+                      subplot(3,1,1);
+                      figure(2);
+                      pm.HRF.Type = 'vista_twogammas';
+                      pm.TR = 1  ;pm.HRF.compute; a=pm.HRF.values;
+                      pm.HRF.plot('window',false);xlim([0,20]);hold on;
+                      pm.HRF.Type = 'friston';pm.HRF.compute; pm.HRF.plot('window',false);xlim([0,20]);
+                      b= pm.HRF.values; isclose(a,b,'tolerance',0.01)
+                    
+                      subplot(3,1,2)
+                      pm.HRF.Type = 'vista_twogammas';
+                      pm.TR = 1.5; pm.HRF.compute;pm.HRF.plot('window',false);xlim([0,20]);hold on;
+                      pm.HRF.Type = 'friston';pm.HRF.compute;pm.HRF.plot('window',false);xlim([0,20]);
+                    
+                      subplot(3,1,3)
+                      pm.HRF.Type = 'vista_twogammas';
+                      pm.TR = 2  ; pm.HRF.compute;pm.HRF.plot('window',false);xlim([0,20]);hold on;
+                      pm.HRF.Type = 'friston';pm.HRF.plot('window',false);xlim([0,20]);
+                    %}
                 case {'popeye_twogammas'}
                     % We obtain the values from python
                     
@@ -271,7 +307,7 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     % I don't think this is right, I need to ask the developer
                     % if this is the expected behavior. 
                     % The shape of the hrf is very different just changing the
-                    % TR
+                    % TR >>> There was a bugs
                     
                     HRF1  = double(py.popeye.utilities.double_gamma_hrf(0,1,1.0,''));
                     HRF15 = double(py.popeye.utilities.double_gamma_hrf(0,1.5,1.0,''));
@@ -293,7 +329,8 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                             '-stim_times 1 "1D:0" GAM ' ... % k, tname, Rmodel
                             '-x1D ' hrfFileName]);
                     end
-                    [~, hrf.values, ~, ~] = Read_1D (hrfFileName);
+                    [~, hrf.values, ~, ~] = Read_1D(hrfFileName);
+                    hrf.values = hrf.values';
                 case {'afni_spm'}
                     hrfFileName = fullfile(pmRootPath,...
                               'data',['TR' num2str(hrf.TR) 'sisar.conv.ref.SPMG1.1D']);
@@ -305,14 +342,34 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                             '-stim_times 1 "1D:0" SPMG1\(0\) ' ...
                             '-x1D ' hrfFileName]);
                     end
-                    [~, hrf.values, ~, ~] = Read_1D (hrfFileName);
+                    [~, hrf.values, ~, ~] = Read_1D(hrfFileName);
+                    hrf.values = hrf.values';
                 otherwise
                     error('HRF method %s not implemented or valid.',hrf.Type);
             end
+            % Normalize it
+            switch hrf.normalize
+                case 'none'
+                    % do nothing for now
+                case 'height'
+                    hrf.values = hrf.values / max(hrf.values);
+                case 'area'
+                    tSteps      = 0: hrf.TR: hrf.TR*(length(hrf.values)-1);
+                    area        = trapz(tSteps, hrf.values);
+                    hrf.values  = hrf.values ./ area;
+                    if ~isclose(trapz(tSteps,hrf.values),1,'tolerance',0.0001)
+                        error('Could not make area 1,is %1.2f',trapz(tSteps,hrf.values))
+                    end
+                case 'absarea'
+                    tSteps          = 0: hrf.TR: hrf.TR*(length(hrf.values)-1);
+                    positivehrfvals = hrf.values + abs(min(hrf.values));
+                    area            = trapz(tSteps, positivehrfvals);
+                    positivehrfvals = positivehrfvals ./ area;
+                    hrf.values      = positivehrfvals -  (abs(min(hrf.values))/area);
+                otherwise
+                    error('Method %s for normalization not implemented yet, select none, height, area',hrf.normalize)
+            end
         end
-        
-        
-        % Methods available to this class and his childrens (friston, boynton... classes)
         function v = get.TR(hrf)
             v = hrf.PM.TR;
         end
@@ -337,34 +394,76 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                 case {'3','canonical','5','afni_gam','6','afni_spm','7','popeye_twogammas'}
                     % We need to compute it first in order to know the length
                     hrf.compute;
-                    tSteps  = 0: hrf.TR: hrf.TR*(length(hrf.values)-1);
+                    tSteps  = 0: hrf.TR: hrf.TR*(length(hrf.values)-1)';
                 otherwise
                     error('HRF method %s not implemented or valid.',hrf.Type);
             end
+        end
+        function width = get.width(hrf)
+            % Calculates the width at 0.5, even it is not a gaussian, it will be
+            % an aproximation, we would use the same to calculate the FWHM
+            % Select the half width at middle height of the HRF
+            t = hrf.tSteps;
+            v = hrf.values;
+
+            % Get only the positive part
+            t = t(v >=0 ); 
+            v = v(v >=0 );
+            
+            % scale hrf so the maximum is at 1 and the baseline is at 0
+            vsc = v;
+            vsc = vsc / max(vsc);
+            
+            %zero cross index finder by Star Strider
+            zci    = @(v) find(v(:) .* circshift(v(:), [-1 0]) <= 0); 
+            vTemp  = vsc - 0.5 * max(vsc);
+            idx    = zci(vTemp);  % get the indices of the two half-maximum points
+            
+            % Get the difference
+            width  = diff(t(idx));  % get the difference between the corresponding x-values
             
         end
-        
         % Plot it
-        function plot(hrf,varargin)
+        function p = plot(hrf,varargin)
+            % Default xlim
+            defx = length(hrf.values) * hrf.TR;
             % Read the inputs
             varargin = mrvParamFormat(varargin);
             p = inputParser;
             p.addRequired ('hrf'  ,  @(x)(isa(x,'pmHRF')));
-            p.addParameter('newwin', true, @islogical);
+            p.addParameter('window', true, @islogical);
+            p.addParameter('dots'  , true, @islogical);
+            p.addParameter('addwidth' , false, @islogical);
+            p.addParameter('xlims' , [0,defx], @isnumeric);
+            p.addParameter('color' , 'b');
+            p.addParameter('line' , '-');
             p.parse(hrf,varargin{:});
-            w  = p.Results.newwin;
+            w     = p.Results.window;
+            d     = p.Results.dots;
+            addwidth   = p.Results.addwidth;
+            xlims = p.Results.xlims;
+            color = p.Results.color;
+            line  = p.Results.line;
             % Calculate it and return every time we need it.
             % Compute it just in case, to have the latest version
             hrf.compute;
             % Plot it
-            if w; mrvNewGraphWin([hrf.Type ' HRF']);end;
-            plot(hrf.tSteps, hrf.values,'-o');
-            grid on; xlabel('Time (sec)'); ylabel('Relative amplitude');
-        end
-        
+            if w; mrvNewGraphWin([hrf.Type ' HRF']); end
+            if d
+                p = plot(hrf.tSteps, hrf.values,'o','color',color,'LineStyle',line);
+            else
+                p = plot(hrf.tSteps, hrf.values,'color',color,'LineStyle',line);
+            end
+            xlim(xlims);
+            grid on; 
+            if ~w;hold on;end
+            xlabel('Time [sec]'); ylabel('Relative amplitude');
+            % Plot the line where the width was taken and the width itself
+            if addwidth
+                text(1,.1,['Width (FWHM): ' num2str(hrf.width)]);
+            end 
+        end 
     end
-    
-    
 end
 
 

@@ -21,6 +21,7 @@ p.addParameter('cirange'    , 50                   , @isnumeric);
 p.addParameter('saveto'     , ''                   , @ischar);
 p.addParameter('savetotype' , 'png'                , @ischar);
 p.addParameter('fontsize'   , 14                   , @isnumeric);
+p.addParameter('lines'      , false                , @islogical);
 
 % Parse. Assign result inside each case
 p.parse(compTable, tools, varargin{:});
@@ -37,6 +38,7 @@ CIrange     = p.Results.cirange;
 saveTo      = p.Results.saveto;
 saveToType  = p.Results.savetotype; 
 fontSize    = p.Results.fontsize; 
+lines       = p.Results.lines; 
 
 %% Data selection
 if istable(compTable)
@@ -168,6 +170,7 @@ for np=1:length(metrics)
             xvaluesCenter = 1:length(HRFs);
             xvalues = xvaluesCenter + 0.07*(nt-1);
             a = [a;scatter(xvalues, result, 50, colors(nt,:),'filled')];hold on;
+            if lines;plot(xvalues, result, 'color',colors(nt,:),'LineWidth',2);end
             % Add the confidence intervals in every point now
             % xxx = [1:length(HRFs);1:length(HRFs)]';
             xxx = [xvalues;xvalues]';

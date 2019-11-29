@@ -118,13 +118,23 @@ classdef pmRF <   matlab.mixin.SetGet & matlab.mixin.Copyable
         end
         
         % Plot it
-        function plot(rf)
+        function plot(rf,varargin)
+            set(0, 'DefaultFigureRenderer', 'opengl');
+            % Read the inputs
+            varargin = mrvParamFormat(varargin);
+            p = inputParser;
+            p.addRequired ('rf'  ,  @(x)(isa(x,'pmRF')));
+            p.addParameter('window',true, @islogical);
+            p.parse(rf,varargin{:});
+            w = p.Results.window;
             % Compute before plotting
             rf.compute
             % Plot it
-            mrvNewGraphWin('Receptive Field');
+            if w; mrvNewGraphWin('Receptive Field');end
             mesh(rf.values);
-            grid on; xlabel('x'); ylabel('y');
+            grid on; 
+            if w; xlabel('x'); ylabel('y'); end
+            set(0, 'DefaultFigureRenderer', 'painters');
         end
     end
     

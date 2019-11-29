@@ -174,14 +174,19 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             stimValues = pm.Stimulus.getStimValues;
             
             % Initialize timeSeries, it is the signal prior to convolution
-            [r,c,t]   = size(stimValues);
-            spaceStim = reshape(stimValues,r*c,t);
+            [r,c,t]    = size(stimValues);
+            spaceStim  = reshape(stimValues,r*c,t);
             switch pm.Type
                 case 'basic'
                     % Calculate time series
                     pm.timeSeries = spaceStim' * pm.RF.values(:);   
-                    pm.BOLD       = conv(pm.timeSeries',pm.HRF.values);
-                    pm.BOLD       = pm.BOLD(1:(end+1-length(pm.HRF.values)));
+                    convValues    = conv(pm.timeSeries',pm.HRF.values);
+                    % Create the bold signal with the correct size
+                    % TODO: make all vectors columns whenever possible. Time vertical
+                    % The conv is longer (HRF size -1), we need to cut the end
+                    % of the conv, or paste the results in a correct sized vect
+                    pm.BOLD       = zeros(size(pm.timeSeries))';
+                    pm.BOLD       = convValues(1:length(pm.BOLD));
                     if showconv
                         pm.showConvolution
                         hold on
@@ -233,7 +238,7 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             end
             % Scale the signal so that it has the required mean and contrast
             if pm.signalPercentage
-                pm.BOLD  = pm.unitless2contrast(pm.BOLD, pm.BOLDcontrast);
+                pm.BOLD  = pm.unitless2contrast(pm.BOLD, pm.BOLDcontrast,true);
             else
                 pm.BOLD  = pm.contrast2BOLD(pm.BOLD, pm.BOLDcontrast, pm.BOLDmeanValue);
             end
@@ -290,7 +295,7 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             % f = 0.1*(t.^2);
             f = pm.timeSeries';
             HRFcontrast = (max(pm.HRF.values)-min(pm.HRF.values))/2;
-            f = 100 * pm.unitless2contrast(f,HRFcontrast);
+            f = 100 * pm.unitless2contrast(f,HRFcontrast,true);
             if f(1) >= 0, f = f - f(1);end
             if f(1) <= 0, f = f + abs(f(1));end
             %  f = 5*ones(1, length(t));
@@ -396,7 +401,7 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
                 
             end;
             tccontrast = (max(c)-min(c))/2;
-            ourBOLD = 100 * pm.unitless2contrast(pm.BOLD,tccontrast);
+            ourBOLD = 100 * pm.unitless2contrast(pm.BOLD,tccontrast,true);
             if ourBOLD(1) >= 0, ourBOLD = ourBOLD - ourBOLD(1);end
             if ourBOLD(1) <= 0, ourBOLD = ourBOLD + abs(ourBOLD(1));end
             plot(ourBOLD,'k-.')
@@ -419,19 +424,21 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             % to the signal so that pm.BOLD == pm.BOLDmeanValue
             v           = (scaledBOLD - mean(scaledBOLD)) + meanBOLD;
         end
-        function v = unitless2contrast(pm, signal, contrast)
+        function v = unitless2contrast(pm, signal, contrast, centerzero)
             % Normalize to 0-1, so that min(normBOLD) == 0
             normBOLD    = (signal - min(signal))/(max(signal) - min(signal));
             % Calculate the max value, so that the relation between the
             % meanValue and the amplitude is the one set in pm.BOLDcontrast
             maxValue    = (2*contrast/100);
-            % No obtain the scaled value with the following formula
+            % Now obtain the scaled value with the following formula
             minValue    = 0;
             scaledBOLD  = minValue + normBOLD .* (maxValue - minValue);
-            % Now 100 * (max(scaledBOLD) - min(scaledBOLD)) / pm.BOLDmeanValue
-            % is equal to pm.BOLDcontrast. Now we need to add the correct mean
-            % to the signal so that pm.BOLD == pm.BOLDmeanValue
             v           = (scaledBOLD - mean(scaledBOLD));
+            if centerzero
+                if v(1) >= 0, v = v - v(1);end
+                if v(1) <= 0, v = v + abs(v(1));end
+            end
+            
         end
         % Compute synthetic BOLD with noise in top of the BOLD signal
         function compute(pm)
@@ -465,22 +472,29 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             p.addRequired ('pm'  ,  @(x)(isa(x,'prfModel')));
             p.addParameter('what', 'both', @ischar);
             p.addParameter('window', true, @islogical);
-            p.addParameter('addtext', true, @islogical);
+            p.addParameter('addtext', false, @islogical);
             p.addParameter('color', 'b');
+            p.addParameter('centerzero', false);
             
             p.parse(pm,varargin{:});
             what = mrvParamFormat(p.Results.what);
             w  = p.Results.window;
             t  = p.Results.addtext;
             c  = p.Results.color;
-            
+            z  = p.Results.centerzero;
             
             switch what
+                case 'timeseries'
+                    pm.computeBOLD
+                    if w;mrvNewGraphWin([pm.Type 'timeseries']);end
+                    plot(pm.timePointsSeries, pm.unitless2contrast(pm.timeSeries, ...
+                         pm.BOLDcontrast,true),'-','color',c,'LineWidth',2);
+                    legend({'Time Series'})
                 case 'nonoisetimeseries'
                     pm.computeBOLD
                     if w;mrvNewGraphWin([pm.Type 'Synthetic BOLD signals']);end
                     plot(pm.timePointsSeries, pm.unitless2contrast(pm.timeSeries, ...
-                         pm.BOLDcontrast),'--','color','k','LineWidth',1); hold on;
+                         pm.BOLDcontrast,true),'--','color','k','LineWidth',1); hold on;
                     plot(pm.timePointsSeries, pm.BOLD,'color','b');
                     legend({'Time Series','No Noise BOLD'})
                 case {'nonoise','noiseless','noisefree'}
@@ -502,14 +516,14 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
                 case 'all'
                     pm.compute;
                     if w;mrvNewGraphWin([pm.Type 'Synthetic BOLD signals']);end
-                    plot(pm.timePointsSeries, pm.unitless2contrast(pm.timeSeries, pm.BOLDcontrast),'color','k'); hold on;
+                    plot(pm.timePointsSeries, pm.unitless2contrast(pm.timeSeries, pm.BOLDcontrast,true),'color','k'); hold on;
                     plot(pm.timePointsSeries, pm.BOLD);
                     plot(pm.timePointsSeries, pm.BOLDnoise);
                     legend({'Time Series','No Noise BOLD','With Noise BOLD'})                    
                 case 'withnoisetimeseries'
                     pm.compute;
                     if w;mrvNewGraphWin([pm.Type 'Synthetic BOLD signals']);end
-                    plot(pm.timePointsSeries, pm.unitless2contrast(pm.timeSeries, pm.BOLDcontrast),'color','k'); hold on;
+                    plot(pm.timePointsSeries, pm.unitless2contrast(pm.timeSeries, pm.BOLDcontrast,true),'color','k'); hold on;
                     plot(pm.timePointsSeries, pm.BOLDnoise);
                     legend({'Time Series','With Noise BOLD'})
                 otherwise

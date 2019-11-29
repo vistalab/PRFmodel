@@ -1,37 +1,7 @@
-[images4,maskimages4,frameorder4] = ...
-  pmShowmulticlass(filename,offset,movieflip,4,fixationinfo,...
-                 fixationsize,tfun, ...
-                 ptonparams,soafun,0,images,expnum,[],grayval,iscolor,...
-                 [],[],[],dres,triggerkey, ...
-                 [],trialparams,[],maskimages,gridImage,stimulusdir); 
-             
-
-[images15,maskimages15,frameorder15] = ...
-  pmShowmulticlass(filename,offset,movieflip,15,fixationinfo,...
-                 fixationsize,tfun, ...
-                 ptonparams,soafun,0,images,expnum,[],grayval,iscolor,...
-                 [],[],[],dres,triggerkey, ...
-                 [],trialparams,[],maskimages,gridImage,stimulusdir); 
-             
-             
-             
-imagesc(images(:,:,:,50))
-imagesc(maskimages(:,:,1900))
-imagesc(stim(:,:,1900))
-imagesc(stim(:,:,1000))
-
-
-isequal(images4,images15)
-isequal(maskimages4,maskimages15)
-isequal(frameorder4(1,:),frameorder15(1,:))  % FALSE
-isequal(frameorder4(2,:),frameorder15(2,:))  % TRUE
-
-cc = [frameorder4(1,:);frameorder15(1,:)];
-cc(:,200:300)
-
 
 mrvNewGraphWin;
 doIt = false;
+window = false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Make the middle bar one frame
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -203,7 +173,6 @@ pmmid.Stimulus.compute
 pmmid.computeBOLD
 pmmid.timeSeries
 pmmid.plot('what','nonoisetimeseries','window',true);hold on;
-ylim([-.06,.14]);xlim([0,25])
 
 
 % Read the 5 bars on the side
@@ -213,8 +182,108 @@ pmside.Stimulus.compute
 % pmside.Stimulus.plot
 pmside.computeBOLD
 pmside.timeSeries
-pmside.plot('what','nonoisetimeseries','window',false)
-ylim([-.06,.14]);xlim([0,25])
+pmside.plot('what','nonoisetimeseries','window',false,'addtext',false)
+ylim([-.05,.2]);xlim([0,25])
+
+%% Show the convolution in action
+pmmid.showConvolution
 
 
+%% Compare for rfsize=2, the results when we use canonical HRF or vista_twogammas
+mrvNewGraphWin;
+window = false;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Make the middle bar one frame
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+pm = prfModel;
+pm.TR=1;
+pm.RF.sigmaMajor = 2;
+pm.RF.sigmaMinor = 2;
+pm.HRF.Type = 'vista_twogammas';
+pm.HRF.compute
+pm.Stimulus.durationSecs = 31;
+pm.Stimulus.compute
+
+subplot(1,2,1)
+pm.Stimulus.plot('window',window)
+
+subplot(1,2,2)
+pm.computeBOLD
+pm.plot('what','nonoisetimeseries','window',window,'centerzero',true); hold on
+ylim([-.1,.2]);xlim([0,30])
+pm.HRF.Type = 'popeye_twogammas';
+pm.HRF.compute
+pm.computeBOLD
+pm.plot('what','nonoise','window',window,'color','r','addtext',false,'centerzero',true)
+title('middle bar one frame, two HRF')
+legend({'timeseries','vista\_twogammas','popeye\_twogammas'})
+
+%% DELETE THIS
+%{
+% RF    = exp( -.5 * (((Y - y0) ./ sigma).^2 + ((X - x0) ./ sigma).^2));
+% logRF = log(RF);
+% sigma = unique(sqrt(((Y - y0).^2+(X - x0).^2)./(-2*logRF)));
+% pm.timeSeries  = spaceStim' * pm.RF.values(:); 
+% pm.BOLD       = conv(pm.timeSeries',pm.HRF.values);
+% pm.BOLD       = pm.BOLD(1:(end+1-length(pm.HRF.values)));
+
+% Do the process backwards
+[retimeseries,R] = deconv(bold,hrf(2:end));
+timeseries = zeros(1,pm.timePointsN)';
+timeseries(1:length(retimeseries)) = retimeseries';
+reshstim = reshape(stim,[101*101,pm.timePointsN]);
+rerf = reshstim'\timeseries;
+reshrf = reshape(rerf, [101,101]);
+resigma = unique(sqrt(((Y - y0).^2+(X - x0).^2)./(-2*log(reshrf))))
+
+
+ppm          = prfModel;
+ppm.HRF.Type = 'popeye_twogammas';
+ppm.HRF.normalize = 'absarea';
+ppm.HRF.compute
+phrf = ppm.HRF.values;
+ppm.Stimulus.durationSecs = 31;
+ppm.Stimulus.compute
+pstim = ppm.Stimulus.getStimValues;
+ppm.RF.Centerx0   = 3;
+ppm.RF.Centery0   = 3;
+ppm.RF.sigmaMajor = 2;
+ppm.RF.sigmaMinor = 2;
+ppm.RF.compute
+prf = ppm.RF.values;
+pX  = ppm.Stimulus.XY{1};
+pY  = ppm.Stimulus.XY{2};
+px0 = ppm.RF.Centerx0;
+py0 = ppm.RF.Centery0;
+psigma = ppm.RF.sigmaMajor;
+ppm.computeBOLD
+pbold = ppm.BOLD 
+
+% Do the process backwards
+% the only thing that changes is the bold
+[retimeseries,R] = deconv(bold,hrf(2:end))
+timeseries = zeros(1,pm.timePointsN)';
+timeseries(1:length(retimeseries)) = retimeseries';
+reshstim = reshape(stim,[101*101,pm.timePointsN])';
+rerf = reshstim\timeseries;
+reshrf = reshape(rerf, [101,101]);
+resigma = unique(sqrt(((Y - y0).^2+(X - x0).^2)./(-2*log(reshrf))))
+
+
+
+
+
+
+
+
+
+
+
+
+a = [pm.HRF.plot('window',false,'dots',false,'width',true,'xlims',[0,25])];
+
+pm.HRF.
+pm.HRF.compute
+a = [pm.HRF.plot('window',false,'dots',false,'width',true,'xlims',[0,25])];
+%}
 

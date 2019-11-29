@@ -1,4 +1,4 @@
-function [X0,Y0] = fitEllipse(x,y,color)
+function [X0,Y0] = fitEllipse(x,y,color,CI)
 data =[x,y];
 data(any(isnan(data),2),:) = [];
 
@@ -35,7 +35,16 @@ end
 avg = mean(data);
 
 % Get the 95% confidence interval error ellipse
-chisquare_val = 2.4477;
+% chisquare_val = 2.4477;
+% GLU: This was harcoded for 95%, calculate it
+if CI > 1; CI = CI/100; end 
+chisquare_val = sqrt(chi2inv(CI,2));
+% TEST: if we pass 95, this value should be 2.4477, the hardcoded one
+if CI==0.95
+    if ~isclose(chisquare_val,2.4477,'tolerance',0.0001)
+        error('For 95% CI the value shuold be 2.4477')
+    end
+end
 
 theta_grid = linspace(0,2*pi);
 phi = angle;

@@ -27,10 +27,15 @@ for ii=1:height(DT)
     isprfmodel = @(x)(isa(x,'prfModel'));
     for vn = dt.Properties.VariableNames
         if ~istable(dt.(vn{:})) && ~isprfmodel(dt.(vn{:}))
-            pm.(vn{:}) = dt.(vn{:});    
+            if iscell(dt.(vn{:}))
+                pm.(vn{:}) = dt.(vn{:}){:};
+            else
+                pm.(vn{:}) = dt.(vn{:});
+            end
+            % pm.(vn{:}) = dt.(vn{:});
         end
     end
-    
+        
 
     %% Stimulus
     for jj=1:width(dt.Stimulus)
@@ -62,7 +67,7 @@ for ii=1:height(DT)
     %% Noise
     for jj=1:width(dt.Noise)
         paramName            = dt.Noise.Properties.VariableNames{jj};
-        % We did not create it as a variable, as it is just to specify a
+        % voxel: we did not create it as a variable, as it is just to specify a
         % series of noise defaults. I don't like to have specific variable
         % names here, think about making it a noise param
         if strcmp(paramName,'seed')

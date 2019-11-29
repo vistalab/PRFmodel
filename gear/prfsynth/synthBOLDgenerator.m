@@ -168,9 +168,13 @@ for nh=1:length(PARAMETERS.Noise)
 end
 PARAMETERS.Noise     = [PARAMETERS.Noise{:}];
 % Convert some char-s to string-s, char-s are treated as individual elements...
-PARAMETERS.Type      = string(PARAMETERS.Type);
-PARAMETERS.RF.Type   = string(PARAMETERS.RF.Type);
+PARAMETERS.Type             = string(PARAMETERS.Type);
+PARAMETERS.RF.Type          = string(PARAMETERS.RF.Type);
+PARAMETERS.HRF.Type         = string(PARAMETERS.HRF.Type);
+PARAMETERS.HRF.normalize    = string(PARAMETERS.HRF.normalize);
+PARAMETERS.Noise.seed       = string(PARAMETERS.Noise.seed);
 PARAMETERS.Stimulus.expName = string(PARAMETERS.Stimulus.expName);
+
 % Generate the same thing from the json file
 synthDT = pmForwardModelTableCreate(PARAMETERS, 'repeats', J.repeats);
 synthDT = pmForwardModelCalculate(synthDT);
