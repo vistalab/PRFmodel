@@ -288,13 +288,19 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     % Values copies from tests below
 %                     
                     HRF1  = [0,    0.0153,    0.1804,    0.5041,    0.7814,    0.8771,    0.8018,    0.6336,    0.4445,    0.2745,    0.1371,    0.0320,   -0.0449,   -0.0977,   -0.1298,   -0.1440,   -0.1439,   -0.1335,   -0.1167,   -0.0970,   -0.0772,   -0.0591,   -0.0437,   -0.0314,   -0.0218,   -0.0148,   -0.0098,   -0.0064,   -0.0040,   -0.0025,   -0.0015,   -0.0009];
+                    HRF14 = [0     0.05526074  0.43606779  0.81654094  0.84784607  0.63361741 0.37297531  0.16187114  0.01455621 -0.07927074 -0.1297508  -0.14545027 -0.13620241 -0.11285704 -0.08499068 -0.05912214 -0.03842547 -0.02353785 -0.01368441 -0.00759441 -0.00404262 -0.00207258 -0.00102698];
                     HRF15 = [0,    0.0706,    0.5041,    0.8541,    0.8018,    0.5384,    0.2745,    0.0808,   -0.0449,   -0.1162,   -0.1440,   -0.1397,   -0.1167,   -0.0870,   -0.0591,   -0.0372,   -0.0218,   -0.0121,   -0.0064,   -0.0032,   -0.0015,   -0.0007];
+                    HRF182= [0     0.13481237  0.69897055  0.8594537   0.58043504  0.25921938 0.03935679 -0.08612782 -0.13969577 -0.14094824 -0.11285704 -0.07681557 -0.0459992  -0.02478097 -0.01220739 -0.00556831 -0.00237559 -0.00095566];
                     HRF2  = [0,    0.1804,    0.7814,    0.8018,    0.4445,    0.1371,   -0.0449,   -0.1298,   -0.1439,   -0.1167,   -0.0772,   -0.0437,   -0.0218,   -0.0098,   -0.0040,   -0.0015];
                     switch hrf.TR
                         case 1
                             hrf.values = HRF1;
+                        case 1.4
+                            hrf.values = HRF14;
                         case 1.5
                             hrf.values = HRF15;
+                        case 1.82
+                            hrf.values = HRF182;
                         case 2
                             hrf.values = HRF2;
                         otherwise
@@ -310,7 +316,9 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     % TR >>> There was a bugs
                     
                     HRF1  = double(py.popeye.utilities.double_gamma_hrf(0,1,1.0,''));
+                    HRF14 = double(py.popeye.utilities.double_gamma_hrf(0,1.4,1.0,''));
                     HRF15 = double(py.popeye.utilities.double_gamma_hrf(0,1.5,1.0,''));
+                    HRF182 = double(py.popeye.utilities.double_gamma_hrf(0,1.82,1.0,''));
                     HRF2  = double(py.popeye.utilities.double_gamma_hrf(0,2,1.0,''));
                     timeS1  = 0: 1  : 1  *(length(HRF1 )-1);
                     timeS15 = 0: 1.5: 1.5*(length(HRF15)-1);
@@ -425,6 +433,7 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
         end
         % Plot it
         function p = plot(hrf,varargin)
+            hrf.compute;
             % Default xlim
             defx = length(hrf.values) * hrf.TR;
             % Read the inputs
