@@ -87,6 +87,8 @@ switch prfimplementation
 end
 
 COMBINE_PARAMETERS.HRF           = HRF;
+Noise(1).seed                    = 'none';
+COMBINE_PARAMETERS.Noise         = Noise;
 synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats', 1);
 synthDT = pmForwardModelCalculate(synthDT);
 % Visually check that all the combinations we specified are there

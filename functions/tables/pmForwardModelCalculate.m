@@ -11,9 +11,8 @@ function DT = pmForwardModelCalculate(DT)
 % 
 %  GLU Vistalab 2019.05
 
-
-
-for ii=1:height(DT)
+allpms = cell(height(DT),1);
+parfor ii=1:height(DT)
     % Do it row to row and parameter to parameter first, for debugging
     disp([num2str(ii) ' -- ' num2str(height(DT))])
     %% Initialize the basic model with defaults
@@ -89,8 +88,17 @@ for ii=1:height(DT)
     % Just do it once here. 
     pm.compute;
     
-    %% Write back the updated pm model
-    DT.pm(ii) = pm;
+    %% Assign it to the cell array
+    allpms{ii} = pm;
     
+    %% Write back the updated pm model
+    % Parfor doesn't like this table
+    % DT.pm(ii) = pm;
+    
+end
+
+%% Assign it back to the table before returning it.
+for ii=1:height(DT)
+    DT.pm(ii) = allpms{ii};
 end
 
