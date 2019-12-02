@@ -32,11 +32,13 @@ else
     end
 end
 tic
-parfor nn=1:length(DTcc)
+parfor nn=1:nchcks
     DT = DTcc{nn};
     for ii=1:height(DT)
         % Do it row to row and parameter to parameter first, for debugging
-        disp([num2str(ii) ' -- ' num2str(height(DT))])
+        if mod(ii,100)==0
+            disp([num2str(nn) ' -- ' num2str(ii) ' -- ' num2str(height(DT))])
+        end
         %% Initialize the basic model with defaults
         dt     = DT(ii,:);
         % we need a fresh copy of the prfModel class here, otherwise it references
