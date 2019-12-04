@@ -243,22 +243,22 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     
                     % I cannot make this work in GCP, so going back to hardocded
                     % Values copies from tests below
-%                     
-                    HRF1  = [0,    0.0153,    0.1804,    0.5041,    0.7814,    0.8771,    0.8018,    0.6336,    0.4445,    0.2745,    0.1371,    0.0320,   -0.0449,   -0.0977,   -0.1298,   -0.1440,   -0.1439,   -0.1335,   -0.1167,   -0.0970,   -0.0772,   -0.0591,   -0.0437,   -0.0314,   -0.0218,   -0.0148,   -0.0098,   -0.0064,   -0.0040,   -0.0025,   -0.0015,   -0.0009];
-                    HRF15 = [0,    0.0706,    0.5041,    0.8541,    0.8018,    0.5384,    0.2745,    0.0808,   -0.0449,   -0.1162,   -0.1440,   -0.1397,   -0.1167,   -0.0870,   -0.0591,   -0.0372,   -0.0218,   -0.0121,   -0.0064,   -0.0032,   -0.0015,   -0.0007];
-                    HRF2  = [0,    0.1804,    0.7814,    0.8018,    0.4445,    0.1371,   -0.0449,   -0.1298,   -0.1439,   -0.1167,   -0.0772,   -0.0437,   -0.0218,   -0.0098,   -0.0040,   -0.0015];
-                    switch hrf.TR
-                        case 1
-                            hrf.values = HRF1;
-                        case 1.5
-                            hrf.values = HRF15;
-                        case 2
-                            hrf.values = HRF2;
-                        otherwise
-                            error('the HRF for this TR has not been generated')
-                    end
+                     
+                    %HRF1  = [0,    0.0153,    0.1804,    0.5041,    0.7814,    0.8771,    0.8018,    0.6336,    0.4445,    0.2745,    0.1371,    0.0320,   -0.0449,   -0.0977,   -0.1298,   -0.1440,   -0.1439,   -0.1335,   -0.1167,   -0.0970,   -0.0772,   -0.0591,   -0.0437,   -0.0314,   -0.0218,   -0.0148,   -0.0098,   -0.0064,   -0.0040,   -0.0025,   -0.0015,   -0.0009];
+                    %HRF15 = [0,    0.0706,    0.5041,    0.8541,    0.8018,    0.5384,    0.2745,    0.0808,   -0.0449,   -0.1162,   -0.1440,   -0.1397,   -0.1167,   -0.0870,   -0.0591,   -0.0372,   -0.0218,   -0.0121,   -0.0064,   -0.0032,   -0.0015,   -0.0007];
+                    %HRF2  = [0,    0.1804,    0.7814,    0.8018,    0.4445,    0.1371,   -0.0449,   -0.1298,   -0.1439,   -0.1167,   -0.0772,   -0.0437,   -0.0218,   -0.0098,   -0.0040,   -0.0015];
+                    %switch hrf.TR
+                    %    case 1
+                    %        hrf.values = HRF1;
+                    %    case 1.5
+                    %        hrf.values = HRF15;
+                    %    case 2
+                    %        hrf.values = HRF2;
+                    %    otherwise
+                    %        error('the HRF for this TR has not been generated')
+                    %end
                     
-                    % hrf.values = double(py.popeye.utilities.double_gamma_hrf(0,hrf.TR));
+                    hrf.values = double(py.popeye.utilities.double_gamma_hrf(0, hrf.TR));
                     % Check what is this function returning
                     %{
                     % I don't think this is right, I need to ask the developer
