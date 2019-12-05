@@ -1,15 +1,20 @@
-niftiBOLDfile = '/data/localhome/glerma/toolboxes/PRFmodel/local/output/alex/BIDS/sub-SynthAlex/ses-prfsynthStim5_time01/func/sub-SynthAlex_ses-prfsynthStim5_time01_task-prf_acq-normal_run-01_bold.nii.gz'
+niftiBOLDfile = ['/data/localhome/glerma/toolboxes/PRFmodel/local/output/alex/BIDS/sub-SynthAlex/'...
+       'ses-prfsynthStim5_time01/func/sub-SynthAlex_ses-prfsynthStim5_time01_task-prf_acq-normal_run-01_bold.nii.gz'];
 
-jsonSynthFile  = '/data/localhome/glerma/toolboxes/PRFmodel/local/output/alex/BIDS/derivatives/prfsynth/sub-SynthAlex/ses-prfsynthStim5_time01/sub-SynthAlex_ses-prfsynthStim5_time01_task-prf_acq-normal_run-01_bold.json';
+jsonSynthFile  = ['/data/localhome/glerma/toolboxes/PRFmodel/local/output/alex/BIDS/derivatives/prfsynth/sub-SynthAlex/'...
+        'ses-prfsynthStim5_time01/sub-SynthAlex_ses-prfsynthStim5_time01_task-prf_acq-normal_run-01_bold.json'];
 
-stimNiftiFname = '/data/localhome/glerma/toolboxes/PRFmodel/local/output/alex/BIDS/stimuli/sub-SynthAlex_ses-prfsynthStim5_time01_task-prf_apertures.nii.gz';
+stimNiftiFname = ['/data/localhome/glerma/toolboxes/PRFmodel/local/output/alex/BIDS/stimuli/'...
+         'sub-SynthAlex_ses-prfsynthStim5_time01_task-prf_apertures.nii.gz'];
 
 inputNiftis = {niftiBOLDfile, jsonSynthFile, stimNiftiFname};
 
-vistaandhrfresultfName = fullfile(pmRootPath,'local',['alex5_result_vistaandhrf.mat'])
+vistaandhrfresultfName5 = fullfile(pmRootPath,'local','alex5_result_vistaandhrf.mat')
 
-results = pmModelFit(inputNiftis, 'mrvista','model','one gaussian', ...
+results5 = pmModelFit(inputNiftis, 'mrvista','model','one gaussian', ...
                     'grid', false, 'wSearch', 'coarse to fine and hrf');
+save(vistaandhrfresultfName5, 'results5')
+
 
 
 
