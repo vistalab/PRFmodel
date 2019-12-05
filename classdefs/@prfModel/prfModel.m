@@ -510,7 +510,7 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
                 case 'both'
                     pm.compute;
                     if w;mrvNewGraphWin([pm.Type 'Synthetic BOLD signals']);end
-                    plot(pm.timePointsSeries, pm.BOLD,'color','k'); hold on;
+                    plot(pm.timePointsSeries, pm.BOLD,'--','color','k'); hold on;
                     plot(pm.timePointsSeries, pm.BOLDnoise,'color',c);
                     legend({'No Noise BOLD','With Noise BOLD'})
                 case 'all'

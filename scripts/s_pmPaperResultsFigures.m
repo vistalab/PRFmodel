@@ -17,8 +17,10 @@ createComptTables        = true;
 plotGroupAnalysis        = false;
 plotCloudPoints          = false;
 plotHRFwidthtestsREALS   = false;
-plotHRFwidthtestsBOYNTON = true;
+plotHRFwidthtestsBOYNTON = false;
 plotHRFwidthtestsVISTA   = false;
+ForwardModelSteps        = false;
+AppendixNoiseElements    = true;
 
 %% defineFileNames
 if defineFileNames
@@ -413,7 +415,7 @@ saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
 end
 
 %% plotHRFwidthtestsREALS
-if plotHRFwidthtests
+if plotHRFwidthtestsREALS
     COMBINE_PARAMETERS                       = struct();
     COMBINE_PARAMETERS.RF.Centerx0           = [3];
     COMBINE_PARAMETERS.RF.Centery0           = [3];  
@@ -504,9 +506,8 @@ if plotHRFwidthtests
     legend({'timeseries','vista\_twogammas','popeye\_twogammas'})
 end
 
-
 %% plotHRFwidthtestsBOYNTON
-if plotHRFwidthtests
+if plotHRFwidthtestsBOYNTON
     COMBINE_PARAMETERS                       = struct();
     COMBINE_PARAMETERS.RF.Centerx0           = [3];
     COMBINE_PARAMETERS.RF.Centery0           = [3];  
@@ -607,7 +608,6 @@ if plotHRFwidthtests
     
     
 end
-
 
 %% plotHRFwidthtestsVISTA
 if plotHRFwidthtestsVISTA
@@ -716,41 +716,107 @@ if plotHRFwidthtestsVISTA
     
 end
 
+%% ForwardModelSteps
+if ForwardModelSteps
+    pm = prfModel;
+    pm.compute;
+    % Make the RF independent as a figure, otherwise it breaks Designer
+    rfrf = mrvNewGraphWin('RF');
+    set(rfrf,'Position',[0.007 0.62  .7  .7]);
+    pm.RF.plot('window',false); view([5 5 13])
+    grid off; set(gca, 'xtick',[],'ytick',[])
+    colormap('gray')
+    fnameRoot = ['ForwardModel_justRF'];
+    saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.png')),'png');
+    
+    nrows = 4; ncols = 3;
+    xx = mrvNewGraphWin('ForwardModel','wide');
+    set(xx,'Position',[0.007 0.62  1  1]);
+    subplot(nrows,ncols,1)
+    subplot(nrows,ncols,2)
+    pm.Stimulus.plot('window',false)
+    grid off; set(gca, 'xtick',[],'ytick',[])
+    subplot(nrows,ncols,3)
+    pm.HRF.plot('window',false,'dots',false,'color','k');
+    grid off; set(gca, 'xtick',[],'ytick',[])
+    subplot(nrows,ncols,4)
+    pm.plot('window',false,'what','timeseries','color','k');
+    grid off; set(gca, 'xtick',[],'ytick',[])
+    subplot(nrows,ncols,5)
+    pm.plot('what','noiseless','window',false,'color','k')
+    grid off; set(gca, 'xtick',[],'ytick',[])
+    subplot(nrows,ncols,6)
+    pm.plot('what','withnoise','window',false,'color','k')
+    grid off; set(gca, 'xtick',[],'ytick',[])
+    subplot(nrows,ncols,7)
+    pm.Noise.plot('window',false,'color','k')
+    grid off; set(gca, 'xtick',[],'ytick',[])
+    
+    fnameRoot = ['ForwardModel'];
+    saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
+end
 
-%% 
-pm = prfModel;
-pm.compute;
-% Make the RF independent as a figure, otherwise it breaks Designer
-rfrf = mrvNewGraphWin('RF');
-set(rfrf,'Position',[0.007 0.62  .7  .7]);
-pm.RF.plot('window',false); view([5 5 13])
-grid off; set(gca, 'xtick',[],'ytick',[])
-colormap('gray')
-fnameRoot = ['ForwardModel_justRF'];
-saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.png')),'png');
-
-nrows = 4; ncols = 3;
-xx = mrvNewGraphWin('ForwardModel','wide');
-set(xx,'Position',[0.007 0.62  1  1]);
-subplot(nrows,ncols,1)
-subplot(nrows,ncols,2)
-pm.Stimulus.plot('window',false)
-grid off; set(gca, 'xtick',[],'ytick',[])
-subplot(nrows,ncols,3)
-pm.HRF.plot('window',false,'dots',false,'color','k');
-grid off; set(gca, 'xtick',[],'ytick',[])
-subplot(nrows,ncols,4)
-pm.plot('window',false,'what','timeseries','color','k');
-grid off; set(gca, 'xtick',[],'ytick',[])
-subplot(nrows,ncols,5)
-pm.plot('what','noiseless','window',false,'color','k')
-grid off; set(gca, 'xtick',[],'ytick',[])
-subplot(nrows,ncols,6)
-pm.plot('what','withnoise','window',false,'color','k')
-grid off; set(gca, 'xtick',[],'ytick',[])
-subplot(nrows,ncols,7)
-pm.Noise.plot('window',false,'color','k')
-grid off; set(gca, 'xtick',[],'ytick',[])
-
-fnameRoot = ['ForwardModel'];
-saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
+%% AppendixNoiseElements
+if AppendixNoiseElements
+    pm = prfModel;
+    pm.compute;
+    pm.Noise.seed = 5555; % Reproducibility
+    nrows = 4; ncols = 2;
+    ylims = [-.1,.18];
+    
+    xx = mrvNewGraphWin('Noise Components','wide');
+    set(xx,'Position',[0.007 0.62  1  1]);
+    
+    subplot(nrows,ncols,1)
+    pm.Noise.setVoxelDefaults('mid')
+    pm.Noise.white_amplitude=0;
+    pm.Noise.cardiac_amplitude=0;
+    pm.Noise.respiratory_amplitude=0;
+    pm.Noise.compute;
+    pm.Noise.plot('window',false,'color','b')
+    grid off; set(gca, 'xtick',[],'ytick',[]);ylim(ylims)
+    
+    subplot(nrows,ncols,2)
+    pm.plot('window',false)
+    grid off; set(gca, 'xtick',[],'ytick',[]);ylim(ylims)
+    
+    subplot(nrows,ncols,3)
+    pm.Noise.setVoxelDefaults('mid')
+    pm.Noise.white_amplitude=0;
+    pm.Noise.lowfrequ_amplitude=0;
+    pm.Noise.compute;
+    pm.Noise.plot('window',false,'color','b')
+    grid off; set(gca, 'xtick',[],'ytick',[]);ylim(ylims)
+    
+    subplot(nrows,ncols,4)
+    pm.plot('window',false)
+    grid off; set(gca, 'xtick',[],'ytick',[]);ylim(ylims)
+    
+    subplot(nrows,ncols,5)
+    pm.Noise.setVoxelDefaults('mid')
+    pm.Noise.lowfrequ_amplitude=0;
+    pm.Noise.cardiac_amplitude=0;
+    pm.Noise.respiratory_amplitude=0;
+    pm.Noise.compute;
+    pm.Noise.plot('window',false,'color','b')
+    grid off; set(gca, 'xtick',[],'ytick',[]);ylim(ylims)
+    
+    subplot(nrows,ncols,6)
+    pm.plot('window',false)
+    grid off; set(gca, 'xtick',[],'ytick',[]);ylim(ylims)
+    
+    subplot(nrows,ncols,7)
+    pm.Noise.setVoxelDefaults('mid')
+    pm.Noise.compute;
+    pm.Noise.plot('window',false,'color','b')
+    grid off; set(gca, 'xtick',[],'ytick',[]);ylim(ylims)
+    
+    subplot(nrows,ncols,8)
+    pm.plot('window',false)
+    grid off; set(gca, 'xtick',[],'ytick',[]);ylim(ylims)
+    
+    fnameRoot = ['NoiseComponentsAndBOLD'];
+    saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg'); 
+    
+    
+end
