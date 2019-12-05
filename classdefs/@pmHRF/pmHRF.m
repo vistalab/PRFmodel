@@ -245,17 +245,13 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     % Be careful here. getcanonicalhrf has the following params:
                     % thrf = getcanonicalhrf(hrf.params.stimDuration, hrf.TR);
                     % But when solving the 
-                    thrf = getcanonicalhrf(hrf.TR, hrf.TR);
-                    
-                    
+                    hrf.values = getcanonicalhrf(hrf.TR, hrf.TR);
                     
                     % To be decided:
                     %   - do we want to be a fixed number of points?
                     %   - I can plot it correctly knowing the TR, but will it be
                     %     interpreted correctly by the different programs?
                     
-                    % Add it to the output
-                    hrf.values = thrf;
                 case {'vista_twogammas'}
                     % This is the default inside the function
                     vistaParams     = [5.4 5.2 10.8 7.35 0.35];
@@ -282,38 +278,39 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                       pm.HRF.Type = 'friston';pm.HRF.plot('window',false);xlim([0,20]);
                     %}
                 case {'popeye_twogammas'}
-                    % We obtain the values from python
+                    % We obtain the values from python directly
+                    hrf.values = double(py.popeye.utilities.double_gamma_hrf(0,hrf.TR));
                     
+                    % Tests and others
+                    %{
                     % I cannot make this work in Linux with Anaconda, so going back to hardocded
                     % Values copies from tests below
                     % It works now in the Docker container, go back to the generation
-                    HRF1  = [0,    0.0153,    0.1804,    0.5041,    0.7814,    0.8771,    0.8018,    0.6336,    0.4445,    0.2745,    0.1371,    0.0320,   -0.0449,   -0.0977,   -0.1298,   -0.1440,   -0.1439,   -0.1335,   -0.1167,   -0.0970,   -0.0772,   -0.0591,   -0.0437,   -0.0314,   -0.0218,   -0.0148,   -0.0098,   -0.0064,   -0.0040,   -0.0025,   -0.0015,   -0.0009];
-                    HRF14 = [0     0.05526074  0.43606779  0.81654094  0.84784607  0.63361741 0.37297531  0.16187114  0.01455621 -0.07927074 -0.1297508  -0.14545027 -0.13620241 -0.11285704 -0.08499068 -0.05912214 -0.03842547 -0.02353785 -0.01368441 -0.00759441 -0.00404262 -0.00207258 -0.00102698];
-                    HRF15 = [0,    0.0706,    0.5041,    0.8541,    0.8018,    0.5384,    0.2745,    0.0808,   -0.0449,   -0.1162,   -0.1440,   -0.1397,   -0.1167,   -0.0870,   -0.0591,   -0.0372,   -0.0218,   -0.0121,   -0.0064,   -0.0032,   -0.0015,   -0.0007];
-                    HRF182= [0     0.13481237  0.69897055  0.8594537   0.58043504  0.25921938 0.03935679 -0.08612782 -0.13969577 -0.14094824 -0.11285704 -0.07681557 -0.0459992  -0.02478097 -0.01220739 -0.00556831 -0.00237559 -0.00095566];
-                    HRF2  = [0,    0.1804,    0.7814,    0.8018,    0.4445,    0.1371,   -0.0449,   -0.1298,   -0.1439,   -0.1167,   -0.0772,   -0.0437,   -0.0218,   -0.0098,   -0.0040,   -0.0015];
-                    switch hrf.TR
-                        case 1
-                            hrf.values = HRF1;
-                        case 1.4
-                            hrf.values = HRF14;
-                        case 1.5
-                            hrf.values = HRF15;
-                        case 1.82
-                            hrf.values = HRF182;
-                        case 2
-                            hrf.values = HRF2;
-                        otherwise
-                            error('the HRF for this TR has not been generated')
-                    end
-                    
-                    % hrf.values = double(py.popeye.utilities.double_gamma_hrf(0,hrf.TR));
+                    % HRF1  = [0,    0.0153,    0.1804,    0.5041,    0.7814,    0.8771,    0.8018,    0.6336,    0.4445,    0.2745,    0.1371,    0.0320,   -0.0449,   -0.0977,   -0.1298,   -0.1440,   -0.1439,   -0.1335,   -0.1167,   -0.0970,   -0.0772,   -0.0591,   -0.0437,   -0.0314,   -0.0218,   -0.0148,   -0.0098,   -0.0064,   -0.0040,   -0.0025,   -0.0015,   -0.0009];
+                    % HRF14 = [0     0.05526074  0.43606779  0.81654094  0.84784607  0.63361741 0.37297531  0.16187114  0.01455621 -0.07927074 -0.1297508  -0.14545027 -0.13620241 -0.11285704 -0.08499068 -0.05912214 -0.03842547 -0.02353785 -0.01368441 -0.00759441 -0.00404262 -0.00207258 -0.00102698];
+                    % HRF15 = [0,    0.0706,    0.5041,    0.8541,    0.8018,    0.5384,    0.2745,    0.0808,   -0.0449,   -0.1162,   -0.1440,   -0.1397,   -0.1167,   -0.0870,   -0.0591,   -0.0372,   -0.0218,   -0.0121,   -0.0064,   -0.0032,   -0.0015,   -0.0007];
+                    % HRF182= [0     0.13481237  0.69897055  0.8594537   0.58043504  0.25921938 0.03935679 -0.08612782 -0.13969577 -0.14094824 -0.11285704 -0.07681557 -0.0459992  -0.02478097 -0.01220739 -0.00556831 -0.00237559 -0.00095566];
+                    % HRF2  = [0,    0.1804,    0.7814,    0.8018,    0.4445,    0.1371,   -0.0449,   -0.1298,   -0.1439,   -0.1167,   -0.0772,   -0.0437,   -0.0218,   -0.0098,   -0.0040,   -0.0015];
+                    % switch hrf.TR
+                    %     case 1
+                    %         hrf.values = HRF1;
+                    %     case 1.4
+                    %         hrf.values = HRF14;
+                    %     case 1.5
+                    %         hrf.values = HRF15;
+                    %     case 1.82
+                    %         hrf.values = HRF182;
+                    %     case 2
+                    %         hrf.values = HRF2;
+                    %     otherwise
+                    %         error('the HRF for this TR has not been generated')
+                    % end
                     % Check what is this function returning
-                    %{
+                    
                     % I don't think this is right, I need to ask the developer
                     % if this is the expected behavior. 
                     % The shape of the hrf is very different just changing the
-                    % TR >>> There was a bugs
+                    % TR >>> There were a bugs >>> They have been fixed
                     
                     HRF1  = double(py.popeye.utilities.double_gamma_hrf(0,1,1.0,''));
                     HRF14 = double(py.popeye.utilities.double_gamma_hrf(0,1.4,1.0,''));
@@ -330,7 +327,7 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                         'data',['TR' num2str(hrf.TR) '_conv.ref.GAM.1D']);
                     if ~exist(hrfFileName,'file')
                         % Default GAM normalized to 1
-                        system(['3dDeconvolve ' ...
+                        system([fullfile(pmRootPath,'data','3dDeconvolve ') ...
                             '-nodata 50 ' num2str(hrf.TR) ' ' ...
                             '-polort -1 ' ... % Do not calculate detrending polinomials
                             '-num_stimts 1 ' ...
@@ -343,7 +340,7 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     hrfFileName = fullfile(pmRootPath,...
                               'data',['TR' num2str(hrf.TR) 'sisar.conv.ref.SPMG1.1D']);
                     if ~exist(hrfFileName,'file')
-                        system(['3dDeconvolve ' ...
+                        system([fullfile(pmRootPath,'data','3dDeconvolve ') ...
                             '-nodata 50 ' num2str(hrf.TR) ' ' ...
                             '-polort -1 ' ...
                             '-num_stimts 1 ' ...
