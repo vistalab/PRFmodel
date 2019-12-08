@@ -11,10 +11,19 @@ function DTDT = pmForwardModelCalculate(DTDT)
 % 
 %  GLU Vistalab 2019.05
 
-% allpms = cell(height(DT),1);
-% TODO: calculate chunksize dependnig on amount of cores parfor can take,
-% with a maximum of 20000
-chksize = 5000;
+%%%%%   CLUSTER PARPOOL    %%%%%%
+myclusterLocal = parcluster('local');
+NumWorkers = myclusterLocal.NumWorkers;
+% [st, re] = system('qstat -g c | grep matlab.q');
+% [Tok, Rem] = strtok(re);
+% [Tok, Rem] = strtok(Rem);
+% [Tok, Rem] = strtok(Rem);
+% [Tok, Rem] = strtok(Rem);
+% [available] = strtok(Rem)
+% parpool('ips_base', str2num(available))
+%%%%% END CLUSTER PARPOOL  %%%%%%
+
+chksize = ceil(height(DTDT) / NumWorkers);
 
 if height(DTDT) < chksize
     DTcc{1} = DTDT;  
