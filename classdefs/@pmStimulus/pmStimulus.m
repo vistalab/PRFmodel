@@ -317,7 +317,6 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             grid off; axis equal off; 
             aa = gca;text(1,aa.YLim(2)*(1.05),sprintf('%3.0fx%3.0fx%3.0f',sz1,sz2,sz3));
         end
-        % TODO: add here the code to make it a video out of it.
         function toVideo(stim,varargin)
              % Read the inputs
             varargin = mrvParamFormat(varargin);
