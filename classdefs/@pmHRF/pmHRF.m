@@ -69,7 +69,7 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
     methods (Static)
         function d = defaultsGet
             % Defaults for all different models
-            d.Type                = 'friston';  % 'canonical'
+            d.Type                = 'vista_twogammas';  % 'canonical'
             d.Duration            = 20;
             d.normalize           = 'none';
             % Default params for friston
@@ -124,13 +124,6 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
             % Now with the new type, do the calculations. 
             switch hrf.Type
                 case {'friston'}
-                    % params
-                    %   peak1 = params(1);
-                    %   fwhm1 = params(2);
-                    %   peak2 = params(3);
-                    %   fwhm2 = params(4);
-                    %   dip   = params(5);
-                    
                     % TODO: use a function under @HRF again, remove code from here.
                     a = hrf.params.a;
                     b = hrf.params.b;
@@ -144,6 +137,69 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     % Calculate actual values
                     hrf.values = (t/d(1)).^a(1)   .* exp(-(t - d(1))/b(1)) ...
                         - c*(t/d(2)).^a(2) .* exp(-(t-d(2))/b(2));
+                    % Additionnaly, instead of using the exponential formula we
+                    %   could have used the gammas distribution function from matlab
+                    %{
+                    t = 1:1:20;
+                    a = [6 12];
+                    b = [.9 .9];
+                    c = 0.35;
+                    for ii = 1:2; d(ii) = a(ii)*b(ii); end
+                    friston = (t/d(1)).^a(1)   .* exp(-(t - d(1))/b(1)) - c*(t/d(2)).^a(2) .* exp(-(t-d(2))/b(2));
+                    friston = friston/max(friston);
+                    
+                    % with gamma distributions
+                    gamma1     = makedist('Gamma','a',6,'b',.9);
+                    gamma2     = makedist('Gamma','a',12,'b',.9);
+                    gammadistr = gamma1.pdf(t) - 0.35 * gamma2.pdf(t);
+                    gammadistr = gammadistr/max(gammadistr);
+                    
+                    % Test if the result is the same
+                    plot(t,friston,'b',t,gammadistr,'r')
+                    isclose(friston,gammadistr,'tolerance',0.01)
+                    %}
+                case {'vista_twogammas'}
+                    % This is the default inside the function
+                    % params
+                    %   peak1 = params(1);
+                    %   fwhm1 = params(2);
+                    %   peak2 = params(3);
+                    %   fwhm2 = params(4);
+                    %   dip   = params(5);
+                    vistaParams     = [5.4 5.2 10.8 7.35 0.35];
+                    hrf.values      = rmHrfTwogammas(hrf.tSteps, vistaParams);
+                    % plot examples
+                    %{
+                    % Test that gives the same results to friston implementation
+                    t = 1:1:20;
+                    a = [6 12];
+                    b = [.9 .9];
+                    c = 0.35;
+                    for ii = 1:2; d(ii) = a(ii)*b(ii); end
+                    friston = (t/d(1)).^a(1)   .* exp(-(t - d(1))/b(1)) - c*(t/d(2)).^a(2) .* exp(-(t-d(2))/b(2));
+                    %
+                    vista2gammas_a= rmHrfTwogammas(t, [5.4 5.2 10.8 7.35 0.35]);
+                    isclose(friston, vista2gammas_a,'tolerance',0.01)
+                    
+                      pm = prfModel;  
+                      subplot(3,1,1);
+                      figure(2);
+                      pm.HRF.Type = 'vista_twogammas';
+                      pm.TR = 1  ;pm.HRF.compute; a=pm.HRF.values;
+                      pm.HRF.plot('window',false);xlim([0,20]);hold on;
+                      pm.HRF.Type = 'friston';pm.HRF.compute; pm.HRF.plot('window',false);xlim([0,20]);
+                      b= pm.HRF.values; isclose(a,b,'tolerance',0.01)
+                    
+                      subplot(3,1,2)
+                      pm.HRF.Type = 'vista_twogammas';
+                      pm.TR = 1.5; pm.HRF.compute;pm.HRF.plot('window',false);xlim([0,20]);hold on;
+                      pm.HRF.Type = 'friston';pm.HRF.compute;pm.HRF.plot('window',false);xlim([0,20]);
+                    
+                      subplot(3,1,3)
+                      pm.HRF.Type = 'vista_twogammas';
+                      pm.TR = 2  ; pm.HRF.compute;pm.HRF.plot('window',false);xlim([0,20]);hold on;
+                      pm.HRF.Type = 'friston';pm.HRF.plot('window',false);xlim([0,20]);
+                    %}
                 case {'boynton'}
                     % TODO: use a function under @HRF again, remove code from here.
                     params = hrf.params;
@@ -252,34 +308,10 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     %   - I can plot it correctly knowing the TR, but will it be
                     %     interpreted correctly by the different programs?
                     
-                case {'vista_twogammas'}
-                    % This is the default inside the function
-                    vistaParams     = [5.4 5.2 10.8 7.35 0.35];
-                    hrf.values      = rmHrfTwogammas(hrf.tSteps, vistaParams);
-                    % plot examples
-                    %{
-                      pm = prfModel;  
-                      subplot(3,1,1);
-                      figure(2);
-                      pm.HRF.Type = 'vista_twogammas';
-                      pm.TR = 1  ;pm.HRF.compute; a=pm.HRF.values;
-                      pm.HRF.plot('window',false);xlim([0,20]);hold on;
-                      pm.HRF.Type = 'friston';pm.HRF.compute; pm.HRF.plot('window',false);xlim([0,20]);
-                      b= pm.HRF.values; isclose(a,b,'tolerance',0.01)
-                    
-                      subplot(3,1,2)
-                      pm.HRF.Type = 'vista_twogammas';
-                      pm.TR = 1.5; pm.HRF.compute;pm.HRF.plot('window',false);xlim([0,20]);hold on;
-                      pm.HRF.Type = 'friston';pm.HRF.compute;pm.HRF.plot('window',false);xlim([0,20]);
-                    
-                      subplot(3,1,3)
-                      pm.HRF.Type = 'vista_twogammas';
-                      pm.TR = 2  ; pm.HRF.compute;pm.HRF.plot('window',false);xlim([0,20]);hold on;
-                      pm.HRF.Type = 'friston';pm.HRF.plot('window',false);xlim([0,20]);
-                    %}
                 case {'popeye_twogammas'}
                     % We obtain the values from python directly
-                    % hrf.values = double(py.popeye.utilities.double_gamma_hrf(0,hrf.TR));
+                    temp = py.popeye.utilities.double_gamma_hrf(0,hrf.TR);
+                    hrf.values = double(py.array.array('d', py.numpy.nditer(temp)));
                     
                     % Tests and others
                     %{
