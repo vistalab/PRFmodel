@@ -1,0 +1,176 @@
+#! /bin/bash
+#
+# The run script for the prfreport docker.
+################################################################################
+set +o verbose   # Command echo off
+
+# If run in debug mode, just exec bash:
+if [ "$1" = "DEBUG" ]
+then exec /bin/bash
+else . /etc/profile.d/conda.sh
+     conda activate base
+fi
+
+# Some variables and functions #################################################
+
+CONTAINER="[garikoitz/prfreport]"
+MCR_ROOT=/opt/mcr/v95/
+# Built to flywheel-v0 spec.
+FLYWHEEL_BASE=/flywheel/v0
+OUTPUT_DIR="$FLYWHEEL_BASE"/output
+INPUT_DIR="$FLYWHEEL_BASE"/input
+CONFIG_FILE="$INPUT_DIR"/config.json
+# How we print to stdout:
+function note {
+    echo "$CONTAINER" "   " "$*"
+}
+function die {
+    echo "<ERROR>" "$CONTAINER" "   " "$*"
+    exit 1
+}
+# How we get the tr-len out of a nifti:
+function getTRLEN {
+    TRLEN="`python -c \"import neuropythy as ny, pimms; im = ny.load('$1', to='image'); print(pimms.mag(ny.to_image_spec(im)['voxel_duration'], 'seconds')); exit();\"`"
+}
+function getFRAMES {
+    FRAMES="`python -c \"import neuropythy as ny; im = ny.load('$1', to='image'); print(np.squeeze(im.dataobj).shape[-1]); exit();\"`"
+}
+function getSLICES {
+    SLICES="`python -c \"import neuropythy as ny; im = ny.load('$1', to='image'); print(im.shape[2]); exit();\"`"
+}
+function writeEventsFile {
+    EVENTS_FILE="$1" STIM_FILE="$2" STIMNAME="`basename \"$2\"`" python <<EOF
+from __future__ import print_function
+import neuropythy as ny, sys, os, pimms, numpy as np
+stimfl = os.environ['STIM_FILE']
+lstimfl = os.environ['STIMNAME']
+im = ny.load(stimfl, to='image')
+rows = np.squeeze(im.dataobj).shape[-1]
+trlen = pimms.mag(ny.to_image_spec(im)['voxel_duration'], 'seconds')
+with open(os.environ['EVENTS_FILE'], 'w') as f:
+    print('onset','duration','stim_file','stim_file_index', sep='\t', file=f)
+    for ii in range(rows):
+        print('%7.3f\t%7.3f\t%s\t%d' % (trlen * ii, trlen, lstimfl, ii+1), file=f)
+sys.exit(0)
+EOF
+}
+
+
+# The Script ###################################################################
+
+# Announce ourselves:
+note "Initialized."
+# Make sure that /output directory exists
+[ -d "$OUTPUT_DIR" ] || die "Output directory ($OUTPUT_DIR) not found!"
+# Run the Matlab executable
+time /compiled/run_prfReportWrapper.sh "${MCR_ROOT}" "${CONFIG_FILE}" "${OUTPUT_DIR}"
+# Check exit status
+[ $? = 0 ] || die "An error occurred during execution of the Matlab executable. Exiting!"
+# Get a list of the files in the output directory
+outputs=$(find "$OUTPUT_DIR" -type f -name '*_Stim.nii.gz')
+[ -z "$outputs" ] && {
+    find "$OUTPUT_DIR" -type d -exec chmod 777 '{}' ';'
+    find "$OUTPUT_DIR" -type f -exec chmod 666 '{}' ';'
+    die "No results found in output directory... Exiting"
+}
+# Make sure there's a BIDS directory:
+[ -d "$OUTPUT_DIR"/BIDS ] || {
+    note "Making BIDS directory: $OUTPUT_DIR/BIDS"
+    mkdir -p "$OUTPUT_DIR"/BIDS/
+}
+BIDS_DIR="$OUTPUT_DIR/BIDS"
+# synth datasets are identified by the _Stim.nii.gz extension; not sure we
+# are planning to support names with spaces in them anyway, but this code
+# will prevent wierd name mangling in that case:
+TMPFL="`mktemp`"
+find "$OUTPUT_DIR" -name '*_Stim.nii.gz' -type f -exec echo '{}' ';' > "$TMPFL"
+OIFS="$IFS"
+IFS=$'\n' read -d '' -r -a STIMFILES < "$TMPFL"
+IFS="$OIFS"
+
+if [ ${#STIMFILES[@]} = 0 ]
+then note "No potential synth datasets found."
+else note "Available synth datasets: ${STIMFILES[@]}"
+     DDFL="$BIDS_DIR"/"dataset_description.json"
+     if [ -a "$DDFL" ]
+     then note "  * (Found existing dataset_description.json; this file left untouched)"
+     else # Go ahead and make a dataset description:
+          mkdir -p "$BIDS_DIR"
+          echo '{' > "$DDFL"
+          echo '   "Name": "PRFSynth Dataset",' >> "$DDFL"
+          echo '   "BIDSVersion": "1.0.1",' >> "$DDFL"
+          echo '   "Authors": ["Garikoitz Lerma-Usabiaga",' >> "$DDFL"
+          echo '               "Noah C. Benson",' >> "$DDFL"
+          echo '               "Jonathan Winawer",' >> "$DDFL"
+          echo '               "Brian Wandell"]' >> "$DDFL"
+          echo '}' >> "$DDFL"
+     fi
+     # Also make a README
+     if [ -a "$BIDS_DIR"/README ]
+     then note "  * (Found existing README; this file left untouched)"
+     else echo 'This BIDS directory contains synthesized PRF data for use' > "$BIDS_DIR"/README
+          echo 'in testing PRF models. These data and this file were' >> "$BIDS_DIR"/README
+          echo 'automatically generated using the prfSynth docker image.' >> "$BIDS_DIR"/README
+     fi
+fi
+# Actually go through the datasets:
+for SF in "${STIMFILES[@]}"
+do # Get the actual dataset name...
+   name="`basename \"$SF\" _Stim.nii.gz`"
+   ddir="`dirname \"$SF\"`"
+   dname="`basename \"$ddir\"`"
+   tt="${dname:$(( ${#name} + 1 ))}"
+   note "BIDS-ifying Dataset ${name} ($tt)..."
+   # Make a subject and session directory and put the functional simulations
+   sub="`echo $name | tr ' ' '+'`"
+   ses="prfsynth${tt}"
+   # Move the BOLD nifti to the appropriate spot
+   BOLDFL="${BIDS_DIR}/sub-${sub}/ses-${ses}/func/sub-${sub}_ses-${ses}_task-prf_acq-normal_run-01_bold.nii.gz"
+   mkdir -p "$BIDS_DIR"/sub-${sub}/ses-${ses}/func \
+    && mv "$ddir"/"${name}.nii.gz" "$BOLDFL"
+   # Make a stimulus directory and put the stimulus there
+   STIMFL="$BIDS_DIR/stimuli/sub-${sub}_ses-${ses}_task-prf_apertures.nii.gz"
+   mkdir -p "$BIDS_DIR"/stimuli \
+    && mv "$SF" "$STIMFL"
+   # Make the BOLD JSON sidecar file
+   JSONFL="$BIDS_DIR/sub-${sub}/ses-${ses}/func/sub-${sub}_ses-${ses}_task-prf_acq-normal_run-01_bold.json"
+   getTRLEN "$BOLDFL"
+   echo '{' > "$JSONFL"
+   echo "   \"RepetitionTime\": ${TRLEN}," >> "$JSONFL"
+   echo -n '   "SliceTiming": [' >> "$JSONFL"
+   getSLICES "$BOLDFL"
+   for ii in $(seq $SLICES)
+   do if [ $ii = 1 ]
+      then echo -n "0" >> "$JSONFL"
+      else echo -n ", 0" >> "$JSONFL"
+      fi
+   done
+   echo '],' >> "$JSONFL"
+   echo '   "TaskName": "prf"' >> "$JSONFL"
+   echo '}' >> "$JSONFL"
+   # Make a derivatives directory and put the extra json there
+   mkdir -p "${BIDS_DIR}/derivatives/prfsynth/sub-${sub}/ses-${ses}" \
+    && mv "$ddir"/"${name}.json" "$BIDS_DIR"/derivatives/prfsynth/sub-${sub}/ses-${ses}/sub-${sub}_ses-${ses}_task-prf_acq-normal_run-01_bold.json
+   # Make an events file for the stimulus
+   EVENTSFL="${BIDS_DIR}/sub-${sub}/ses-${ses}/func/sub-${sub}_ses-${ses}_task-prf_events.tsv"
+   writeEventsFile "$EVENTSFL" "$STIMFL" "$BIDS_DIR"
+   # Also write out an accompanying events json file
+   EVJSONFL="${BIDS_DIR}/sub-${sub}/ses-${ses}/func/sub-${sub}_ses-${ses}_task-prf_events.json"
+   echo '{' > "$EVJSONFL"
+   echo '   "stim_file_index": {' >> "$EVJSONFL"
+   echo '      "Description": "1-based index into the stimulus file of the relevant stimulus"' >> "$EVJSONFL"
+   echo '   }' >> "$EVJSONFL"
+   echo '}' >> "$EVJSONFL"
+   # If we've arrived here; we can cleanup the previous directories
+   rmdir "$ddir"
+   # That's all!
+done
+
+# Handle permissions of the outputs
+find "$OUTPUT_DIR" -type d -exec chmod 777 '{}' ';'
+find "$OUTPUT_DIR" -type f -exec chmod 666 '{}' ';'
+#chmod -R 755 "$OUTPUT_DIR"/*
+note "$CONTAINER  Done!"
+
+# Exit
+exit 0

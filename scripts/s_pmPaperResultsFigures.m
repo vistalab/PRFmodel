@@ -24,11 +24,11 @@ AppendixNoiseElements    = true;
 
 %% defineFileNames
 if defineFileNames
-    % INPUTS
+    % INPUTS TO prfsynth
     inputJSON    = fullfile(pmRootPath, 'local/output/paper', ...
                            'params_big_test_for_paper_3-3_v02BOLD.json');
     outputFolder = fullfile(pmRootPath, 'local/output/paper');
-    
+    % OUTPUT FROM prfsynth & INPUT TO prfanalyze
     niftiBOLDfile  = fullfile(outputFolder, ...
         'BIDS/sub-paperResults/ses-prfsynthBOLDx3y3V02/func',...
         'sub-paperResults_ses-prfsynthBOLDx3y3V02_task-prf_acq-normal_run-01_bold.nii.gz');
@@ -39,7 +39,7 @@ if defineFileNames
         'BIDS','stimuli',...
         'sub-paperResults_ses-prfsynthBOLDx3y3V02_task-prf_apertures.nii.gz');
     inputNiftis = {niftiBOLDfile, jsonSynthFile, stimNiftiFname};
-    % OUTPUTS
+    % OUTPUTS FROM prfanalyze and input to prfreport
     aprfcssresultfName     = fullfile(pmRootPath,'local',['paper04_result_aprfcss.mat']);
     aprfresultfName        = fullfile(pmRootPath,'local',['paper04_result_aprf.mat']);
     vistaresultfName       = fullfile(pmRootPath,'local',['paper04_result_vista.mat']); % 2 is BOLD, 1 is contrast
