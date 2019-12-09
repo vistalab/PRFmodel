@@ -37,8 +37,38 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
        assert(pm.BOLDcontrast/100 == noiselessRange/pm.BOLDmeanValue)
        pm.plot
     %}
-  
+    %{ 
+        % Test if the contrast scaling thing is working or not
+        pm = prfModel;
+        pm.Noise.seed = 'none';
+        pm.BOLDcontrast  = 10;
+        pm.RF.Centerx0   = 10;
+        pm.RF.Centery0   = 10;
+        pm.RF.sigmaMajor = 2;
+        pm.RF.sigmaMinor = 2;
+        pm.BOLDcontrast
+        pm.plot
+        pm.scaleContrast = true;
+        pm.compute
+        pm.BOLDcontrast
+        pm.plot
+        % If we add noise, we see how in the scaled case, there is no signal, just noise
+        pm = prfModel;
+        pm.Noise.seed = 12345;
+        pm.BOLDcontrast  = 10;
+        pm.RF.Centerx0   = 10;
+        pm.RF.Centery0   = 10;
+        pm.RF.sigmaMajor = 2;
+        pm.RF.sigmaMinor = 2;
+        pm.BOLDcontrast
+        pm.plot
+        pm.scaleContrast = true;
+        pm.compute
+        pm.BOLDcontrast
+        pm.plot
     
+        close all;
+    %}
     properties (Access = private)
         % What do we need to create our synthetic bold series
         % The main model will have other subclasses with the required
@@ -60,6 +90,7 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
         signalPercentage ; % Provide results in signal percentage or real units (default true)
         BOLDmeanValue    ; % Required mean value of the synthetic BOLD signal (default 10000)
         BOLDcontrast     ; % Contrast of the synthetic BOLD signal, in % (default 8%)
+        scaleContrast    ; % If we want to scale contrast to the max possible value
         timeSeries       ;
         % BOLD signal value (before noise)
         BOLD             ;
@@ -82,6 +113,7 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             d.Type             = 'basic';
             d.signalPercentage = true;
             d.BOLDcontrast     = 8;    % Percent. So this will be 0.08
+            d.scaleContrast    = false;    % Logical
             d.BOLDmeanValue    = 10000; % Mean BOLD, set signalPercentage to false
             % Convert to table and return
             d = struct2table(d,'AsArray',true);
@@ -102,7 +134,8 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             p.addParameter('signalpercentage', d.signalPercentage, @islogical);
             p.addParameter('boldmeanvalue'   , d.BOLDmeanValue   , @isnumeric);
             p.addParameter('boldcontrast'    , d.BOLDcontrast    , @isnumeric);
-            
+            p.addParameter('scalecontrast'   , d.scaleContrast   , @islogical);
+
             p.parse(varargin{:});
             % Assign defaults/parameters to class/variables
             pm.TR               = p.Results.tr;
@@ -110,6 +143,7 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             pm.signalPercentage = p.Results.signalpercentage;
             pm.BOLDmeanValue    = p.Results.boldmeanvalue;
             pm.BOLDcontrast     = p.Results.boldcontrast;  % In percentage
+            pm.scaleContrast    = p.Results.scalecontrast;
             
             % Create the classes, and initialize a prfModel inside it
             pm.Stimulus         = pmStimulus(pm);
@@ -237,6 +271,35 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
                     error('Model %s not implemented, select basic or CSS', pm.Type)
             end
             % Scale the signal so that it has the required mean and contrast
+            
+            % We need to know if the user wants to scale it to the max possible
+            % signal first. We will edit the contrast if it is the case,
+            % therefore the value of the set contrast will change
+            if pm.scaleContrast
+               pm.Stimulus.compute;
+               maxcenter     = pm.Stimulus.maxStimCenter;
+               % Create an pmRF class but with the same values coming from the main pm
+               pmMax = pmRF(pm);
+               % Change the center and rfsize, to calculate the max, maintain the rest
+               pmMax.Type           = pm.RF.Type;
+               pmMax.Centerx0       = maxcenter(1);
+               pmMax.Centery0       = maxcenter(2);
+               pmMax.sigmaMajor     = pm.RF.sigmaMajor;
+               pmMax.sigmaMinor     = pm.RF.sigmaMinor;
+               pmMax.Theta          = pm.RF.Theta;
+               pmMax.dog_sigmaMajor = pm.RF.dog_sigmaMajor;
+               pmMax.dog_sigmaMinor = pm.RF.dog_sigmaMinor;
+               pmMax.dog_Theta      = pm.RF.dog_Theta;
+               pmMax.dog_Scale      = pm.RF.dog_Scale;
+               
+               pmMax.compute;
+               
+               maxTimeSeries    = max(spaceStim' * pmMax.values(:));
+               myMaxTimeSeries  = max(pm.timeSeries);
+               % Scale the contrast value
+               pm.BOLDcontrast = pm.BOLDcontrast * myMaxTimeSeries / maxTimeSeries;
+            end
+            
             if pm.signalPercentage
                 pm.BOLD  = pm.unitless2contrast(pm.BOLD, pm.BOLDcontrast,true);
             else
@@ -425,6 +488,22 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             v           = (scaledBOLD - mean(scaledBOLD)) + meanBOLD;
         end
         function v = unitless2contrast(pm, signal, contrast, centerzero)
+            
+            % TODO: the contrast we set, is the max contrast we would get when
+            % the stimuli hits the center of the RF.
+            % If the stimuli doesn't hit it, then the unitless max values that we are
+            % goint to obtain from the matrix multiplication, are going to be
+            % smaller. Right now, in the normalization process, it creates the
+            % same amplitude for all. First aproximation to solve this problem
+            % is that we are going to use the scale that it is coming from the
+            % unitless timeseries. 
+            
+            
+            
+            
+            
+            
+            
             % Normalize to 0-1, so that min(normBOLD) == 0
             normBOLD    = (signal - min(signal))/(max(signal) - min(signal));
             % Calculate the max value, so that the relation between the
@@ -487,8 +566,10 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
                 case 'timeseries'
                     pm.computeBOLD
                     if w;mrvNewGraphWin([pm.Type 'timeseries']);end
-                    plot(pm.timePointsSeries, pm.unitless2contrast(pm.timeSeries, ...
-                         pm.BOLDcontrast,true),'-','color',c,'LineWidth',2);
+                    % plot(pm.timePointsSeries, pm.unitless2contrast(pm.timeSeries, ...
+                    %      pm.BOLDcontrast,true),'-o','color',c,'LineWidth',2);
+                    plot(pm.timePointsSeries, pm.timeSeries, ...
+                         '-o','color','b','LineWidth',2);
                     legend({'Time Series'})
                 case 'nonoisetimeseries'
                     pm.computeBOLD

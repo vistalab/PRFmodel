@@ -148,6 +148,7 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
         timePointsN      ;
         timePointsSeries ;
         Name             ;
+        maxStimCenter    ;
     end
     properties(Dependent= true, SetAccess = private, GetAccess = public)
         TR;            % Seconds, it will be read from the parent class pm
@@ -275,8 +276,41 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
         function timePointsSeries = get.timePointsSeries(stim)
             timePointsSeries = pmTimePointsSeries(stim.TR, stim.timePointsN);
         end
-        
-        
+        function imageCentroid = get.maxStimCenter(stim)
+            % If we want to normalize the contrast value between voxels, we need
+            % to know what it the possible max value for our rfsize
+            % To maintain the voxel calculations independent, we can calculate
+            % it on the fly every time (TODO: check performance issues...)
+            % This function will return the center of the maximum stimuls time
+            % point, so that we can center an RF and do a calculation there
+            
+            % Get stimuli
+            vals = stim.getStimValues;
+            % Get the image with the most nonzeros
+            [~,maxindx] = max(squeeze(sum(sum(vals))));
+            % Select that image and get it
+            maximage = vals(:,:,maxindx);
+            % Get the centroid of the image
+            imageCentroid = regionprops(maximage,'centroid');
+            % Round the values, these are cols and rows
+            imageCentroid = round(imageCentroid.Centroid);
+            % Change from rows and columns to degrees
+            % First, center it
+            if all(iseven(stim.ResizedHorz))
+                imageCentroid(2) = imageCentroid(2) - stim.ResizedHorz/2;
+            else
+                imageCentroid(2) = imageCentroid(2) - ((stim.ResizedHorz-1)/2 + 1);
+            end
+            if iseven(stim.ResizedVert)
+                imageCentroid(1) = imageCentroid(1) - stim.ResizedVert/2;
+            else
+                imageCentroid(1) = imageCentroid(1) - ((stim.ResizedVert-1)/2 + 1);
+            end
+            % Then convert it
+            imageCentroid(2)     = (stim.spatialSampleHorz * imageCentroid(2));
+            imageCentroid(1)     = (stim.spatialSampleVert * imageCentroid(1));
+        end
+       
         % COMPUTE
         function compute(stim)
             % If it does not exist, create the stim file.
