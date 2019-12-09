@@ -139,6 +139,7 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
         niftiFileName    ;
         DataPath         ;
         LocalPath        ;
+        userVals         ;  % No calculation required, accept values directly. Empty by default. 
     end
     
     properties (Dependent = true, Access = public)
@@ -169,6 +170,7 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             d.barWidth        = 2;     % Degrees. TODO
             d.durationSecs    = 200;   % Seconds
             d.frameduration   = 4;   
+            d.userVals        = [];
             
             % Convert to table and return
             d = struct2table(d,'AsArray',true);
@@ -194,6 +196,7 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             p.addParameter('barwidth'       ,d.barWidth       , @isnumeric);
             p.addParameter('durationsecs'   ,d.durationSecs   , @isnumeric);
             p.addParameter('frameduration'  ,d.frameduration  , @isnumeric);
+            p.addParameter('uservals'       ,d.userVals       , @isnumeric);
             p.parse(pm,varargin{:});
             
             % Initialize the PM model
@@ -209,23 +212,33 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             stim.barWidth        = p.Results.barwidth;
             stim.durationSecs    = p.Results.durationsecs;
             stim.frameduration   = p.Results.frameduration;
-            % If it does not exist, create the stim file.
-            % Always store just the path and the name
-            stim.LocalPath     = fullfile(pmRootPath,'local');
-            stim.DataPath      = fullfile(pmRootPath,'data','stimulus');
-            stimNameWithPath   = fullfile(stim.DataPath, [stim.Name '.mat']);
-            if ~exist(stimNameWithPath, 'file')
-                % TODO: add all parameters, see .compute below
-                pmStimulusGenerate('filename', stimNameWithPath,...
-                    'totalduration',stim.durationSecs, ...
-                    'TR', stim.TR, ...
-                    'frameduration',stim.frameduration);
+            stim.userVals        = p.Results.uservals;
+            
+            % If we pass uservales, override the calculations
+            if iscell(stim.userVals)
+                uv = stim.userVals{:};
+            else
+                uv = stim.userVals;
             end
-            stim.values        =  char(stimNameWithPath);
-            % Default fileName if we want to write a video of the stimuli
-            stim.videoFileName = fullfile(stim.LocalPath,[stim.Name '.avi']);
-            % Default fileName if we want to write a nifti of the stimuli
-            stim.niftiFileName = fullfile(stim.LocalPath,[stim.Name '.nii.gz']);
+            if isempty(uv)
+                % If it does not exist, create the stim file.
+                % Always store just the path and the name
+                stim.LocalPath       = fullfile(pmRootPath,'local');
+                stim.DataPath        = fullfile(pmRootPath,'data','stimulus');
+                stimNameWithPath     = fullfile(stim.DataPath, [stim.Name '.mat']);
+                if ~exist(stimNameWithPath, 'file')
+                    % TODO: add all parameters, see .compute below
+                    pmStimulusGenerate('filename', stimNameWithPath,...
+                        'totalduration',stim.durationSecs, ...
+                        'TR', stim.TR, ...
+                        'frameduration',stim.frameduration);
+                end
+                stim.values        =  char(stimNameWithPath);
+                % Default fileName if we want to write a video of the stimuli
+                stim.videoFileName = fullfile(stim.LocalPath,[stim.Name '.avi']);
+                % Default fileName if we want to write a nifti of the stimuli
+                stim.niftiFileName = fullfile(stim.LocalPath,[stim.Name '.nii.gz']);
+            end
         end
         function Name = get.Name(stim)
             Name = [...
@@ -249,10 +262,16 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
         end
         function stimValues = getStimValues(stim)
             % Obtain the values if it is a path
-            % TODO: does storing it as a property occupy more space? Right now
-            % it is being used as a method that obtains the values on demand
-            % reading from the file system
-            stimValues      = pmStimulusRead(stim.values);
+            if iscell(stim.userVals);
+                sv = stim.userVals{:};
+            else
+                sv = stim.userVals;
+            end
+            if isempty(sv)
+                stimValues = pmStimulusRead(stim.values);
+            else
+                stimValues = sv;
+            end
         end
         function spatialSampleHorz = get.spatialSampleHorz(stim)
             spatialSampleHorz = stim.fieldofviewHorz/size(stim.getStimValues,2);
@@ -314,18 +333,27 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
         % COMPUTE
         function compute(stim)
             % If it does not exist, create the stim file.
-            % Always store just the path and the name
-            stimNameWithPath = fullfile(stim.DataPath, [stim.Name '.mat']);
-            if ~exist(stimNameWithPath, 'file')
-                fprintf('Computing and storing new stimulus file in %s',stimNameWithPath)
-                % TODO: pass all the variables and make it more flexible
-                pmStimulusGenerate('filename', stimNameWithPath,...
-                                    'totalduration',stim.durationSecs, ...
-                                    'TR', stim.TR, ...
-                                    'frameduration',stim.frameduration);
+            % Store just the path and the name
+            
+            % If the user passed its values, override this and maintain the default
+            if iscell(stim.userVals)
+                uv = stim.userVals{:};
+            else
+                uv = stim.userVals;
             end
-            % fprintf('Retrieving stimulus file in %s',stimNameWithPath)
-            stim.values        =  char(stimNameWithPath);
+            if isempty(uv)
+                stimNameWithPath = fullfile(stim.DataPath, [stim.Name '.mat']);
+                if ~exist(stimNameWithPath, 'file')
+                    fprintf('Computing and storing new stimulus file in %s',stimNameWithPath)
+                    % TODO: pass all the variables and make it more flexible
+                    pmStimulusGenerate('filename', stimNameWithPath,...
+                                        'totalduration',stim.durationSecs, ...
+                                        'TR', stim.TR, ...
+                                        'frameduration',stim.frameduration);
+                end
+                % fprintf('Retrieving stimulus file in %s',stimNameWithPath)
+                stim.values        =  char(stimNameWithPath);
+            end
         end
         
   

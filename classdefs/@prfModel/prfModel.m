@@ -92,6 +92,7 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
         BOLDcontrast     ; % Contrast of the synthetic BOLD signal, in % (default 8%)
         scaleContrast    ; % If we want to scale contrast to the max possible value
         timeSeries       ;
+        computeSubclasses; % Logical
         % BOLD signal value (before noise)
         BOLD             ;
         % The result: synthetic BOLD series (1 dim array of doubles)
@@ -109,12 +110,13 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
         function d = defaultsGet
             % This provides the defaults of this class, which is the only one at
             % the top level. 
-            d.TR               = 1;
-            d.Type             = 'basic';
-            d.signalPercentage = true;
-            d.BOLDcontrast     = 8;    % Percent. So this will be 0.08
-            d.scaleContrast    = false;    % Logical
-            d.BOLDmeanValue    = 10000; % Mean BOLD, set signalPercentage to false
+            d.TR                = 1;
+            d.Type              = 'basic';
+            d.signalPercentage  = true;
+            d.BOLDcontrast      = 8;    % Percent. So this will be 0.08
+            d.scaleContrast     = false;    % Logical
+            d.BOLDmeanValue     = 10000; % Mean BOLD, set signalPercentage to false
+            d.computeSubclasses = true;
             % Convert to table and return
             d = struct2table(d,'AsArray',true);
         end
@@ -129,27 +131,29 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             varargin = mrvParamFormat(varargin);
             % Parse the inputs/assign default values
             p = inputParser;
-            p.addParameter('tr'              , d.TR              , @isnumeric);
-            p.addParameter('type'            , d.Type{:}         , @ischar);
-            p.addParameter('signalpercentage', d.signalPercentage, @islogical);
-            p.addParameter('boldmeanvalue'   , d.BOLDmeanValue   , @isnumeric);
-            p.addParameter('boldcontrast'    , d.BOLDcontrast    , @isnumeric);
-            p.addParameter('scalecontrast'   , d.scaleContrast   , @islogical);
-
+            p.addParameter('tr'               , d.TR               , @isnumeric);
+            p.addParameter('type'             , d.Type{:}          , @ischar);
+            p.addParameter('signalpercentage' , d.signalPercentage , @islogical);
+            p.addParameter('boldmeanvalue'    , d.BOLDmeanValue    , @isnumeric);
+            p.addParameter('boldcontrast'     , d.BOLDcontrast     , @isnumeric);
+            p.addParameter('scalecontrast'    , d.scaleContrast    , @islogical);
+            p.addParameter('computesubclasses', d.computeSubclasses, @islogical);
+            
             p.parse(varargin{:});
             % Assign defaults/parameters to class/variables
-            pm.TR               = p.Results.tr;
-            pm.Type             = p.Results.type;
-            pm.signalPercentage = p.Results.signalpercentage;
-            pm.BOLDmeanValue    = p.Results.boldmeanvalue;
-            pm.BOLDcontrast     = p.Results.boldcontrast;  % In percentage
-            pm.scaleContrast    = p.Results.scalecontrast;
+            pm.TR                = p.Results.tr;
+            pm.Type              = p.Results.type;
+            pm.signalPercentage  = p.Results.signalpercentage;
+            pm.BOLDmeanValue     = p.Results.boldmeanvalue;
+            pm.BOLDcontrast      = p.Results.boldcontrast;  % In percentage
+            pm.scaleContrast     = p.Results.scalecontrast;
+            pm.computeSubclasses = p.Results.computesubclasses;
             
             % Create the classes, and initialize a prfModel inside it
-            pm.Stimulus         = pmStimulus(pm);
-            pm.HRF              = pmHRF(pm); 
-            pm.RF               = pmRF(pm);
-            pm.Noise            = pmNoise(pm);
+            pm.Stimulus          = pmStimulus(pm);
+            pm.HRF               = pmHRF(pm); 
+            pm.RF                = pmRF(pm);
+            pm.Noise             = pmNoise(pm);
         end
         % Functions that apply the setting of main parameters to subclasses
         function set.TR(pm, tr)
@@ -200,10 +204,11 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             % First, compute the values in the required sub-classes
             % TODO: optimize this to not repeat operations, add flags or
             %       automate them depending the case
-            pm.Stimulus.compute;
-            pm.RF.compute;
-            pm.HRF.compute;
-                        
+            if pm.computeSubclasses
+                pm.Stimulus.compute;
+                pm.RF.compute;
+                pm.HRF.compute;
+            end            
             % Load stimulus
             stimValues = pm.Stimulus.getStimValues;
             
@@ -213,7 +218,7 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             switch pm.Type
                 case 'basic'
                     % Calculate time series
-                    pm.timeSeries = spaceStim' * pm.RF.values(:);   
+                    pm.timeSeries = spaceStim' * pm.RF.values(:);
                     convValues    = conv(pm.timeSeries',pm.HRF.values);
                     % Create the bold signal with the correct size
                     % TODO: make all vectors columns whenever possible. Time vertical
@@ -276,8 +281,7 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             % signal first. We will edit the contrast if it is the case,
             % therefore the value of the set contrast will change
             if pm.scaleContrast
-               pm.Stimulus.compute;
-               maxcenter     = pm.Stimulus.maxStimCenter;
+               maxcenter            = pm.Stimulus.maxStimCenter;
                % Create an pmRF class but with the same values coming from the main pm
                pmMax = pmRF(pm);
                % Change the center and rfsize, to calculate the max, maintain the rest
@@ -522,12 +526,14 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
         % Compute synthetic BOLD with noise in top of the BOLD signal
         function compute(pm)
             % Computes the mean BOLD response and then adds noise.
-            
-            % First, compute the values in the required sub-classes
-            pm.Stimulus.compute;
-            pm.RF.compute;
-            pm.HRF.compute;
-            pm.Noise.compute;
+            if pm.computeSubclasses
+                % First, compute the values in the required sub-classes
+                pm.Stimulus.compute;
+                pm.RF.compute;
+                pm.HRF.compute;
+                pm.Noise.compute;
+                
+            end
             % Compute BOLD signal
             pm.computeBOLD;
             % Add the noise component. We want them to be separated. 
