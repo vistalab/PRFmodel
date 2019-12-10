@@ -23,8 +23,7 @@ NumWorkers = myclusterLocal.NumWorkers;
 % parpool('ips_base', str2num(available))
 %%%%% END CLUSTER PARPOOL  %%%%%%
 
-chksize = ceil(height(DTDT) / NumWorkers);
-
+chksize = ceil(height(DTDT) / (NumWorkers));
 if height(DTDT) < chksize
     DTcc{1} = DTDT;  
     nchcks  = 1;
@@ -41,8 +40,7 @@ else
     end
 end
 tic
-%par
-for nn=1:nchcks
+parfor nn=1:nchcks
     DT = DTcc{nn};
     % Initialize prev variables, for parallel toolbox
     dtprev = [];
