@@ -196,7 +196,7 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             p.addParameter('barwidth'       ,d.barWidth       , @isnumeric);
             p.addParameter('durationsecs'   ,d.durationSecs   , @isnumeric);
             p.addParameter('frameduration'  ,d.frameduration  , @isnumeric);
-            p.addParameter('uservals'       ,d.userVals       , @isnumeric);
+            p.addParameter('uservals'       ,d.userVals{:}    , @isnumeric);
             p.parse(pm,varargin{:});
             
             % Initialize the PM model
@@ -215,12 +215,7 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             stim.userVals        = p.Results.uservals;
             
             % If we pass uservales, override the calculations
-            if iscell(stim.userVals)
-                uv = stim.userVals{:};
-            else
-                uv = stim.userVals;
-            end
-            if isempty(uv)
+            if isempty(stim.userVals)
                 % If it does not exist, create the stim file.
                 % Always store just the path and the name
                 stim.LocalPath       = fullfile(pmRootPath,'local');

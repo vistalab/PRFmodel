@@ -31,7 +31,7 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
        pm.plot;
        noiselessRange = (max(pm.BOLD)-min(pm.BOLD))/2;  % should be 0.16
        assert(pm.BOLDcontrast/100 == noiselessRange)
-       pm.signalPercentage = false; % Give real signal with a mean of BOLDmeanValue
+       pm.signalPercentage = bold; % Give real signal with a mean of BOLDmeanValue
        pm.compute;
        noiselessRange = (max(pm.BOLD)-min(pm.BOLD))/2;  % should be 0.16
        assert(pm.BOLDcontrast/100 == noiselessRange/pm.BOLDmeanValue)
@@ -87,7 +87,7 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
         HRF              ;
         Noise            ;
         % Other required options (double)
-        signalPercentage ; % Provide results in signal percentage or real units (default true)
+        signalPercentage ; % Provide results in BOLD signal (bold), in signal percent change (spc) or unitless (none) (default bold)
         BOLDmeanValue    ; % Required mean value of the synthetic BOLD signal (default 10000)
         BOLDcontrast     ; % Contrast of the synthetic BOLD signal, in % (default 8%)
         scaleContrast    ; % If we want to scale contrast to the max possible value
@@ -112,10 +112,10 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             % the top level. 
             d.TR                = 1;
             d.Type              = 'basic';
-            d.signalPercentage  = true;
+            d.signalPercentage  = 'bold';
             d.BOLDcontrast      = 8;    % Percent. So this will be 0.08
             d.scaleContrast     = false;    % Logical
-            d.BOLDmeanValue     = 10000; % Mean BOLD, set signalPercentage to false
+            d.BOLDmeanValue     = 10000; % Mean BOLD, set signalPercentage to bold to use this
             d.computeSubclasses = true;
             % Convert to table and return
             d = struct2table(d,'AsArray',true);
@@ -131,13 +131,13 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             varargin = mrvParamFormat(varargin);
             % Parse the inputs/assign default values
             p = inputParser;
-            p.addParameter('tr'               , d.TR               , @isnumeric);
-            p.addParameter('type'             , d.Type{:}          , @ischar);
-            p.addParameter('signalpercentage' , d.signalPercentage , @islogical);
-            p.addParameter('boldmeanvalue'    , d.BOLDmeanValue    , @isnumeric);
-            p.addParameter('boldcontrast'     , d.BOLDcontrast     , @isnumeric);
-            p.addParameter('scalecontrast'    , d.scaleContrast    , @islogical);
-            p.addParameter('computesubclasses', d.computeSubclasses, @islogical);
+            p.addParameter('tr'               , d.TR                  , @isnumeric);
+            p.addParameter('type'             , d.Type{:}             , @ischar);
+            p.addParameter('signalpercentage' , d.signalPercentage{:} , @islogical);
+            p.addParameter('boldmeanvalue'    , d.BOLDmeanValue       , @isnumeric);
+            p.addParameter('boldcontrast'     , d.BOLDcontrast        , @isnumeric);
+            p.addParameter('scalecontrast'    , d.scaleContrast       , @islogical);
+            p.addParameter('computesubclasses', d.computeSubclasses   , @islogical);
             
             p.parse(varargin{:});
             % Assign defaults/parameters to class/variables
@@ -202,8 +202,6 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             showconv = p.Results.showconv;
             
             % First, compute the values in the required sub-classes
-            % TODO: optimize this to not repeat operations, add flags or
-            %       automate them depending the case
             if pm.computeSubclasses
                 pm.Stimulus.compute;
                 pm.RF.compute;
@@ -303,11 +301,17 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
                % Scale the contrast value
                pm.BOLDcontrast = pm.BOLDcontrast * myMaxTimeSeries / maxTimeSeries;
             end
-            
-            if pm.signalPercentage
-                pm.BOLD  = pm.unitless2contrast(pm.BOLD, pm.BOLDcontrast,true);
-            else
-                pm.BOLD  = pm.contrast2BOLD(pm.BOLD, pm.BOLDcontrast, pm.BOLDmeanValue);
+            % Convert the output is requested in pm.signalPercentage 
+            switch pm.signalPercentage
+                 case {'spc'}
+                    % The last true means that we want to center in 0, it is nicer for visualization
+                    pm.BOLD  = pm.unitless2contrast(pm.BOLD, pm.BOLDcontrast,true);
+                case {'bold'}
+                    pm.BOLD  = pm.contrast2BOLD(pm.BOLD, pm.BOLDcontrast, pm.BOLDmeanValue);
+                case {'none'}
+                    % Do nothing, pm.BOLD remains unaltered in this step
+                otherwise
+                   error('%s provided, valid values are spc, none and bold', pm.signalPercentage)
             end
         end
         function showConvolution(pm)
@@ -537,15 +541,28 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             % Compute BOLD signal
             pm.computeBOLD;
             % Add the noise component. We want them to be separated. 
-            if pm.signalPercentage
-                % Both are in the same contrast scale, with zero mean
-                pm.BOLDnoise = pm.BOLD + pm.Noise.values;
-            else
-                % De-scale the BOLD to contrast, add noise, and re-scale it back
-                signal         = (pm.BOLD - mean(pm.BOLD)) ./ mean(pm.BOLD);
-                signalAndNoise = signal + pm.Noise.values;
-                pm.BOLDnoise   = pm.contrast2BOLD(signalAndNoise, ...
+            % Depending on how the pm.BOLD is going, we need to do a separate thing with the noise
+            switch pm.signalPercentage
+                case {'spc'} 
+                    % Both are in the same contrast scale, with zero mean
+                    % We can add noise directly
+                    pm.BOLDnoise = pm.BOLD + pm.Noise.values;
+                case {'bold'}
+                    % De-scale the BOLD to contrast, add noise, and re-scale it back
+                    signal         = (pm.BOLD - mean(pm.BOLD)) ./ mean(pm.BOLD);
+                    signalAndNoise = signal + pm.Noise.values;
+                    pm.BOLDnoise   = pm.contrast2BOLD(signalAndNoise, ...
                                              pm.BOLDcontrast, pm.BOLDmeanValue); 
+               case {'none'}
+                   % Now this is the trickiest one. I need to scale the noise to the unitless arbitrary values coming from the convolution.
+                   % Maybe not the most elegant, but I'll use the same approach as above
+                    contrast       = (max(pm.BOLD)-min(pm.BOLD))/(2*100);
+                    signal         = (pm.BOLD - mean(pm.BOLD)) ./ mean(pm.BOLD);
+                    signalAndNoise = signal + pm.Noise.values;
+                    pm.BOLDnoise   = pm.contrast2BOLD(signalAndNoise, ...
+                                             contrast, mean(pm.BOLD)); 
+               otherwise
+                   error('%s provided, valid values are spc, none and bold', pm.signalPercentage)
             end
             
         end

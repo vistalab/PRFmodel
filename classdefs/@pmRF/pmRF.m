@@ -80,7 +80,7 @@ classdef pmRF <   matlab.mixin.SetGet & matlab.mixin.Copyable
             p.addParameter('dog_sigmaminor', d.dog_sigmaMinor, @isnumeric);
             p.addParameter('dog_theta'     , d.dog_Theta     , @isnumeric);
             p.addParameter('dog_scale'     , d.dog_Scale     , @isnumeric);
-            p.addParameter('type'          , d.Type          , @ischar);
+            p.addParameter('type'          , d.Type{:}       , @ischar);
             p.parse(pm,varargin{:});
             
             % Initialize the pm model and hrf model parameters
@@ -132,7 +132,7 @@ classdef pmRF <   matlab.mixin.SetGet & matlab.mixin.Copyable
                     X        = XY{1};
                     Y        = XY{2};
                     x0       = rf.Centerx0;
-                    y0       = rf.Centery0
+                    y0       = rf.Centery0;
                     smaj     = rf.sigmaMajor;
                     smin     = rf.sigmaMinor;
                     theta    = rf.Theta;
