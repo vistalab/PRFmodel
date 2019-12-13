@@ -3,6 +3,11 @@ function prfanalyze_aprf(json_file, bold_file, stim_file, output_dir)
 % (C) Vista Lab, Stanford University, 2019
 % 
 
+    disp(json_file);
+    disp(bold_file);
+    disp(stim_file);
+    disp('---------')
+    
 %% Initial checks
 
 % If nothing was passed in, display help and return
@@ -79,7 +84,11 @@ if exist(stim_file, 'file') ~= 2
 end
 
 %% Call pmModelFit!
-[pmEstimates, results] = pmModelFit({bold_file, stim_file, json_file}, 'aprf');
+    disp(json_file);
+    disp(bold_file);
+    disp(stim_file);
+    disp('---------')
+[pmEstimates, results] = pmModelFit({bold_file, json_file, stim_file}, 'aprf');
 
 %% Write out the results
 estimates_file = fullfile(output_dir, 'estimates.mat');
