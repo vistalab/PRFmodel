@@ -69,11 +69,11 @@ else
 end
 
 %% check that the other relevant files eist
-if exist(bold_file, 'file') != 2
+if exist(bold_file, 'file') ~= 2
     disp(sprintf('Given BOLD 4D nifti file does not exist: %s', bold_file))
     return
 end
-if exist(stim_file, 'file') != 2
+if exist(stim_file, 'file') ~= 2
     disp(sprintf('Given stimulus 3D nifti file does not exist: %s', stim_file))
     return
 end
