@@ -83,7 +83,8 @@ end
 
 %% Write out the results
 estimates_file = fullfile(output_dir, 'estimates.mat');
-save(estimates_file, 'pmEstimates');
+estimates = struct(estimates);
+save(estimates_file, 'estimates', 'pmEstimates');
 results_file = fullfile(output_dir, 'results.mat');
 save(results_file, 'results');
 
