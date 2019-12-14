@@ -68,7 +68,7 @@ ses=${ses:4}
 sub=$(basename $subdir)
 sub=${sub:4}
 
-# For any nifti file in the output directory, we want to BIDSify it:
+# For any nifti, mat, or JSON file in the output directory, we want to BIDSify it:
 if compgen -G "/running/output_bids/*.nii" > /dev/null
 then for fl in /running/output_bids/*.nii
      do bnm="`basename $fl .nii`"
@@ -81,6 +81,20 @@ then for fl in /running/output_bids/*.nii.gz
      do bnm="`basename $fl .nii.gz`"
         dnm="`dirname $fl`"
         mv "$fl" "${dnm}/sub-${sub}_ses-${ses}_task-prf_${bnm}.nii.gz"
+     done
+fi
+if compgen -G "/running/output_bids/*.mat" > /dev/null
+then for fl in /running/output_bids/*.mat
+     do bnm="`basename $fl .mat`"
+        dnm="`dirname $fl`"
+        mv "$fl" "${dnm}/sub-${sub}_ses-${ses}_task-prf_${bnm}.mat"
+     done
+fi
+if compgen -G "/running/output_bids/*.json" > /dev/null
+then for fl in /running/output_bids/*.json
+     do bnm="`basename $fl .json`"
+        dnm="`dirname $fl`"
+        mv "$fl" "${dnm}/sub-${sub}_ses-${ses}_task-prf_${bnm}.json"
      done
 fi
 

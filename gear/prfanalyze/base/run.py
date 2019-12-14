@@ -89,9 +89,33 @@ except Exception:
 
 # okay, we have the files; run the solver script!
 try:
-    os.execl("/solve.sh", "/solve.sh", opts_file, bold_image, stim_file, stimjs_file, outbids_dir)
+    pid = os.fork()
+    if pid == 0:
+        os.execl("/solve.sh", "/solve.sh",
+                 opts_file, bold_image, stim_file, stimjs_file, outbids_dir)
+    else:
+        os.wait()
 except Exception:
     die("Failed to exec /solve.sh script!")
 
-# if we make it here, something went wrong
-sys.exit(1)
+# If there are things to cleanup, specifically, if there is an estimates.mat file, we process that
+estfl = '/running/output_bids/estimates.mat'
+if os.path.isfile(estfl):
+    from scipy.io import loadmat
+    import nibabel as nib, numpy as np
+    dat = loadmat(estfl)
+    # decode the data...
+    dat = dat['estimates'][0,0][4][0]
+    (testdat, x0, y0, th, sigmin, sigmaj, pred) = [np.squeeze(u) for u in dat]
+    # write out niftis
+    nii_base = nib.load(bold_image)
+    for (k,d) in zip(['testdata','modelpred'], [testdat, pred]):
+        im = nib.Nifti1Image(np.reshape(d, (d.shape[0], 1, 1, d.shape[-1])),
+                             nii_base.affine, nii_base.header)
+        im.to_filename('/running/output_bids/' + k + '.nii.gz')
+    for (k,d) in zip(['x0','y0','theta','sigmamajor','sigmaminor'], [x0,y0,th,sigmin,sigmaj]):
+        im = nib.Nifti1Image(np.reshape(d, (-1, 1, 1, 1)), nii_base.affine, nii_base.header)
+        im.to_filename('/running/output_bids/' + k + '.nii.gz')
+    
+# exit happily
+sys.exit(0)
