@@ -2,11 +2,6 @@ function prfanalyze_aprf(json_file, bold_file, stim_file, output_dir)
 % 
 % (C) Vista Lab, Stanford University, 2019
 % 
-
-    disp(json_file);
-    disp(bold_file);
-    disp(stim_file);
-    disp('---------')
     
 %% Initial checks
 
@@ -84,17 +79,13 @@ if exist(stim_file, 'file') ~= 2
 end
 
 %% Call pmModelFit!
-    disp(json_file);
-    disp(bold_file);
-    disp(stim_file);
-    disp('---------')
 [pmEstimates, results] = pmModelFit({bold_file, json_file, stim_file}, 'aprf');
 
 %% Write out the results
 estimates_file = fullfile(output_dir, 'estimates.mat');
-save(estimates_file, '-struct', 'pmEstimates');
+save(estimates_file, 'pmEstimates');
 results_file = fullfile(output_dir, 'results.mat');
-save(results_file, '-struct', 'results');
+save(results_file, 'results');
 
 % Permissions
 fileattrib(output_dir,'+w +x', 'o'); 
