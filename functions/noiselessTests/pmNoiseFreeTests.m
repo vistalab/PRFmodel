@@ -61,12 +61,12 @@ plotit   = p.Results.plotit;
 COMBINE_PARAMETERS.RF.Centerx0        = [0,5,-5]; % [-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
 COMBINE_PARAMETERS.RF.Centery0        = [0,5,-5];
 COMBINE_PARAMETERS.RF.Theta           = [0]; %, deg2rad(45)];
-COMBINE_PARAMETERS.RF.sigmaMinor      = [2];
-COMBINE_PARAMETERS.RF.sigmaMajor      = [2];
+COMBINE_PARAMETERS.RF.sigmaMinor      = [.5];
+COMBINE_PARAMETERS.RF.sigmaMajor      = [.5];
 
 switch prfimplementation
     case {'aprf','analyzeprf','aprfcss'}
-        COMBINE_PARAMETERS.TR                   = [1.5];
+        COMBINE_PARAMETERS.TR                   = [1];
         HRF(1).Type = 'canonical';
     case {'afni_4','afni_6','afni'}
         COMBINE_PARAMETERS.TR                   = [1.5];

@@ -18,9 +18,10 @@ plotGroupAnalysis        = false;
 plotCloudPoints          = false;
 plotHRFwidthtestsREALS   = false;
 plotHRFwidthtestsBOYNTON = false;
+plotHRFwidthtestsBOYNTONslow = true;
 plotHRFwidthtestsVISTA   = false;
 ForwardModelSteps        = false;
-AppendixNoiseElements    = true;
+AppendixNoiseElements    = false;
 
 %% defineFileNames
 if defineFileNames
@@ -558,6 +559,117 @@ if plotHRFwidthtestsBOYNTON
     
     
 end
+
+
+%% plotHRFwidthtestsBOYNTONslow
+if plotHRFwidthtestsBOYNTONslow
+    COMBINE_PARAMETERS                       = struct();
+    COMBINE_PARAMETERS.RF.Centerx0           = [3];
+    COMBINE_PARAMETERS.RF.Centery0           = [3];  
+    COMBINE_PARAMETERS.RF.sigmaMajor         = [2];  
+    COMBINE_PARAMETERS.RF.sigmaMinor         = 'same';
+    COMBINE_PARAMETERS.TR                    = 1;
+
+    HRF                                      = struct();
+    HRF(1).Type                              = 'boynton';  
+    HRF(1).normalize                         = 'height'; 
+    HRF(1).params.n = 3;
+    HRF(1).params.tau = 1.08;
+    HRF(1).params.delay = 2.05;
+        
+    HRF(2).Type                              = 'boynton';
+    HRF(2).normalize                         = 'height'; 
+    HRF(2).params.n = 3;
+    HRF(2).params.tau = 1.38;
+    HRF(2).params.delay = 2;
+    
+    HRF(3).Type                              = 'boynton';
+    HRF(3).normalize                         = 'height'; 
+    HRF(3).params.n = 3;
+    HRF(3).params.tau = 1.68;
+    HRF(3).params.delay = 1.75;
+    
+    HRF(4).Type                              = 'boynton';
+    HRF(4).normalize                         = 'height'; 
+    HRF(4).params.n = 3;
+    HRF(4).params.tau = 1.935;
+    HRF(4).params.delay = 1.65;
+    
+    HRF(5).Type                              = 'canonical'; 
+    HRF(5).normalize                         = 'height'; 
+    
+    COMBINE_PARAMETERS.HRF                   = HRF;
+        Noise                                = struct();
+        Noise(1).seed                        = 'none';
+    COMBINE_PARAMETERS.Noise                 = Noise;
+    
+    % This is the same one as before, but now we want to do the slow stimuli version
+    % by Jon's suggestion
+    
+    
+    
+    synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats',1);
+    synthDT = pmForwardModelCalculate(synthDT);
+    sDT = synthDT;
+    
+    %% Solve it
+    boyntonresults = pmModelFit(sDT, 'aprf');
+    
+    %% Create comptTable
+    boyntoncompTable  = pmResultsCompare(sDT, {'aprf'}, {boyntonresults}, ...
+        'params', paramDefaults, ...
+        'shorten names',true, ...
+        'dotSeries', false);
+    
+    %% Plot it
+    hh = mrvNewGraphWin('HRF comparison');
+    set(hh,'Position',[0.007 0.62  0.8  0.8]);
+
+    Cs  = 0.65 * distinguishable_colors(6,'w');
+    
+    % Create the fit plots with the ground truth
+    tools  = {'aprf'}; nslvl  = 'none';
+    HRFs   = {'boynton','boynton','boynton','boynton','canonical'};
+    for ii=1:height(boyntoncompTable)
+        subplot(2,5,ii)
+        useHRF = HRFs{ii};
+        ttable = boyntoncompTable(ii,:);
+        pmCloudOfResults(ttable   , tools ,'onlyCenters',false ,'userfsize' , 4, ...
+            'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-','color',Cs(ii+1,:), ...
+            'lineWidth' , 2     ,'noiselevel' ,nslvl , ...
+            'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+    end
+    
+    subplot(2,5,[6:10])
+    a   = [];
+    leg = [];
+    for ii = 1:height(sDT)
+        thispm = sDT.pm(ii);
+        if ii~=5
+            line='-';
+            % thisleg = {sprintf('Boynton %i (width=%1d)',ii,thispm.HRF.width)};
+            thisleg = {sprintf('Boynton %i',ii)};
+        else
+            % thisleg = {sprintf('aPRF canonical (width=%1d)',thispm.HRF.width)};
+            thisleg = {sprintf('aPRF canonical')};
+            line='-.';
+        end
+        a = [a;thispm.HRF.plot('window',false,'dots',false,'addwidth',false,...
+            'xlims',[0,20],'color',Cs(ii+1,:),'line',line)];
+        leg = [leg;thisleg];
+    end
+    legend(a,{'Boynton 1','Boynton 2','Boynton 3','Boynton 4','aprf\_canonical'})
+    legend(a,leg)
+    title('Boynton HRFs modulated in width and canonical aprf')
+    xticks([0:20])
+    
+    fnameRoot = 'HRF_and_width_BoyntonSlow';
+    saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
+    
+    
+    
+end
+
 
 %% plotHRFwidthtestsVISTA
 if plotHRFwidthtestsVISTA
