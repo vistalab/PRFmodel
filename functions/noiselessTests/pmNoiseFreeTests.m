@@ -58,15 +58,15 @@ plotit   = p.Results.plotit;
 
 
 %% Create the test data
-COMBINE_PARAMETERS.RF.Centerx0        = [0,5,-5]; % [-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
-COMBINE_PARAMETERS.RF.Centery0        = [0,5,-5];
+COMBINE_PARAMETERS.RF.Centerx0        = [-3:0.2:3]; % [-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
+COMBINE_PARAMETERS.RF.Centery0        = [-3:0.2:3];
 COMBINE_PARAMETERS.RF.Theta           = [0]; %, deg2rad(45)];
-COMBINE_PARAMETERS.RF.sigmaMinor      = [2];
-COMBINE_PARAMETERS.RF.sigmaMajor      = [2];
+COMBINE_PARAMETERS.RF.sigmaMajor      = [0.5:0.5:5];
+COMBINE_PARAMETERS.RF.sigmaMinor      = "same";
 
 switch prfimplementation
     case {'aprf','analyzeprf','aprfcss'}
-        COMBINE_PARAMETERS.TR                   = [1.5];
+        COMBINE_PARAMETERS.TR                   = [2];
         HRF(1).Type = 'canonical';
     case {'afni_4','afni_6','afni'}
         COMBINE_PARAMETERS.TR                   = [1.5];
@@ -127,7 +127,7 @@ if ~exist(jsonSynthFile, 'file')
     %}
 end
 
-
+%{
 stimNiftiFname = fullfile(pmRootPath,'local', ['defaultStim_TR' num2str(COMBINE_PARAMETERS.TR) '.nii.gz']);
 if ~exist(stimNiftiFname, 'file')
     pm1            = prfModel; 
@@ -135,7 +135,7 @@ if ~exist(stimNiftiFname, 'file')
     pm1.compute;
     stimNiftiFname = pm1.Stimulus.toNifti('fname',stimNiftiFname);
 end
-
+%}
 
 
 

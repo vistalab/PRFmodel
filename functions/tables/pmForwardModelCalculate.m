@@ -12,8 +12,8 @@ function DTDT = pmForwardModelCalculate(DTDT)
 %  GLU Vistalab 2019.05
 
 %%%%%   CLUSTER PARPOOL    %%%%%%
-myclusterLocal = parcluster('local');
-NumWorkers = myclusterLocal.NumWorkers;
+% myclusterLocal = parcluster('local');
+% NumWorkers = myclusterLocal.NumWorkers;
 % [st, re] = system('qstat -g c | grep matlab.q');
 % [Tok, Rem] = strtok(re);
 % [Tok, Rem] = strtok(Rem);
@@ -23,25 +23,29 @@ NumWorkers = myclusterLocal.NumWorkers;
 % parpool('ips_base', str2num(available))
 %%%%% END CLUSTER PARPOOL  %%%%%%
 
-chksize = ceil(height(DTDT) / (NumWorkers));
-if height(DTDT) < chksize
-    DTcc{1} = DTDT;  
-    nchcks  = 1;
-else
-    nchcks = ceil(height(DTDT) / chksize);
-    for nn=1:nchcks
-        startindex = (nn*chksize) + 1 - chksize;
-        if nn == nchcks
-            endindex   = height(DTDT);
-        else
-            endindex   = nn*chksize;
-        end
-        DTcc{nn}   = DTDT(startindex:endindex,:);
-    end
-end
+% chksize = ceil(height(DTDT) / (NumWorkers));
+% if height(DTDT) < chksize
+%     DTcc{1} = DTDT;  
+%     nchcks  = 1;
+% else
+%     nchcks = ceil(height(DTDT) / chksize);
+%     for nn=1:nchcks
+%         startindex = (nn*chksize) + 1 - chksize;
+%         if nn == nchcks
+%             endindex   = height(DTDT);
+%         else
+%             endindex   = nn*chksize;
+%         end
+%         DTcc{nn}   = DTDT(startindex:endindex,:);
+%     end
+% end
+fprintf('There are %d voxels \n', height(DTDT))
 tic
-parfor nn=1:nchcks
-    DT = DTcc{nn};
+% par
+% for nn=1:nchcks
+    nn=1;
+    % DT = DTcc{nn};
+    DT = DTDT;
     % Initialize prev variables, for parallel toolbox
     dtprev = [];
     pmprev = [];
@@ -152,8 +156,8 @@ parfor nn=1:nchcks
         
         
     end
-    DTcc{nn} = DT;
-end
+%     DTcc{nn} = DT;
+% end
 toc
 %% Assign it back to the table before returning it.
 % for ii=1:height(DT)
@@ -161,13 +165,13 @@ toc
 % end
 
 %% Concatenate back
-DTDT = DTcc{1};
-if nchcks > 1
-    for nn=2:nchcks
-        DTDT = [DTDT; DTcc{1}];
-    end
-end
-
+% DTDT = DTcc{1};
+% if nchcks > 1
+%     for nn=2:nchcks
+%         DTDT = [DTDT; DTcc{1}];
+%     end
+% end
+DTDT=DT;
 
 
 end
