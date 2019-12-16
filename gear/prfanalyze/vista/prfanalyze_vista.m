@@ -79,6 +79,12 @@ if exist(stim_file, 'file') ~= 2
 end
 
 %% Call pmModelFit!
+disp('================================================================================');
+disp(bold_file);
+disp(json_file);
+disp(stim_file);
+disp('--------------------------------------------------------------------------------');
+
 [pmEstimates, results] = pmModelFit({bold_file, json_file, stim_file}, 'vistasoft');
 
 %% Write out the results
