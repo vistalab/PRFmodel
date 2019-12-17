@@ -30,6 +30,7 @@ if len(stim_json) != bold.shape[0]:
     raise ValueError('BOLD Image and Stimulus JSON do not have the same number of data points')
 fields = ('theta', 'rho', 'sigma', 'hrfdelay', 'beta', 'baseline')
 res = {k:[] for k in fields}
+res['pred'] = []
 for (ii, vx,js) in zip(range(len(bold)), bold, stim_json):
     stdat = js['Stimulus']
     if pimms.is_list(stdat): stdat = stdat[0]
@@ -68,11 +69,25 @@ for (ii, vx,js) in zip(range(len(bold)), bold, stim_json):
                          voxel_index=(ii, 1, 1), auto_fit=True, verbose=2)
     for (k,v) in zip(fields, fit.overloaded_estimate):
         res[k].append(v)
-
+    res['pred'].append(fit.prediction)
+# Update the results to match the x0/y0, sigma style used by prfanalyze
+rr = {}
+rr['x0'] = np.cos(res['theta']) * res['rho']
+rr['y0'] = np.sin(res['theta']) * res['rho']
+rr['sigmamajor'] = res['sigma']
+rr['sigmaminor'] = res['sigma']
+rr['beta'] = res['beta']
+rr['baseline'] = res['baseline']
+rr['hrfdelay'] = res['hrfdelay']
 # Export the files
-for (k,v) in six.iteritems(res):
+for (k,v) in six.iteritems(rr):
     im = nib.Nifti1Image(np.reshape(v, bold_im.shape[:-1]), bold_im.affine)
     im.to_filename(os.path.join(outdir, k + '.nii.gz'))
+# Also export the prediction and testdata
+im = nib.Nifti1Image(np.reshape(bold, bold_im.shape), bold_im.affine)
+im.to_filename(os.path.join(outdir, 'testdata.nii.gz'))
+im = nib.Nifti1Image(np.reshape(res['pred'], bold_im.shape), bold_im.affine)
+im.to_filename(os.path.join(outdir, k + 'modelpred.nii.gz'))
 
 # That's it!
 print("Popeye finished succesfully.")
