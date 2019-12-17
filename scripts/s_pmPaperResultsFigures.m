@@ -5,15 +5,17 @@
 % Create the names that will be used in this script
 
 close all;clear all;clc
-tbUse prfmodel;
+% tbUse prfmodel;
+saveTo = '/Users/glerma/gDrive/STANFORD/PROJECTS/2019_PRF_Validation_methods_(Gari)/__PUBLISH__/PAPER_SUBMISSION01/Figures/RAW';
+
 
 % Control execution of the script file
-defineFileNames          = true;
+defineFileNames          = false;
 generateInputFiles       = false;
 uploadInputFiles         = false;
 analysisInputFiles       = false;
-downloadLoadFiles        = true;
-createComptTables        = true;
+downloadLoadFiles        = false;
+createComptTables        = false;
 plotGroupAnalysis        = false;
 plotCloudPoints          = false;
 plotHRFwidthtestsREALS   = false;
@@ -54,6 +56,7 @@ if defineFileNames
         vistaresultfName,vistaandhrfresultfName, ...
         popresultfName, popnohrfresultfName, ...
         afni4resultfName, afni6resultfName};
+    
     % Connect to fw
     st   = scitran('stanfordlabs'); st.verify;
     cc   = st.search('collection','collection label exact','PRF_StimDependence');
@@ -560,7 +563,6 @@ if plotHRFwidthtestsBOYNTON
     
 end
 
-
 %% plotHRFwidthtestsBOYNTONslow
 if plotHRFwidthtestsBOYNTONslow
     COMBINE_PARAMETERS                       = struct();
@@ -605,8 +607,7 @@ if plotHRFwidthtestsBOYNTONslow
     
     % This is the same one as before, but now we want to do the slow stimuli version
     % by Jon's suggestion
-    
-    
+    COMBINE_PARAMETERS.Stimulus.durationSecs = 400;
     
     synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats',1);
     synthDT = pmForwardModelCalculate(synthDT);
@@ -616,6 +617,7 @@ if plotHRFwidthtestsBOYNTONslow
     boyntonresults = pmModelFit(sDT, 'aprf');
     
     %% Create comptTable
+    paramDefaults = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
     boyntoncompTable  = pmResultsCompare(sDT, {'aprf'}, {boyntonresults}, ...
         'params', paramDefaults, ...
         'shorten names',true, ...
@@ -634,7 +636,7 @@ if plotHRFwidthtestsBOYNTONslow
         subplot(2,5,ii)
         useHRF = HRFs{ii};
         ttable = boyntoncompTable(ii,:);
-        pmCloudOfResults(ttable   , tools ,'onlyCenters',false ,'userfsize' , 4, ...
+        pmCloudOfResults(ttable   , tools ,'onlyCenters',false ,'userfsize' , 2, ...
             'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-','color',Cs(ii+1,:), ...
             'lineWidth' , 2     ,'noiselevel' ,nslvl , ...
             'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
@@ -663,13 +665,12 @@ if plotHRFwidthtestsBOYNTONslow
     title('Boynton HRFs modulated in width and canonical aprf')
     xticks([0:20])
     
-    fnameRoot = 'HRF_and_width_BoyntonSlow';
+    fnameRoot = 'HRF_and_width_BoyntonSlow_400';
     saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
     
     
     
 end
-
 
 %% plotHRFwidthtestsVISTA
 if plotHRFwidthtestsVISTA

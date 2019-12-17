@@ -24,8 +24,8 @@ p.addParameter('addcibar'     , false    , @islogical);
 p.addParameter('addtext'      , true     , @islogical);
 p.addParameter('xlims'        , [1,5]    , @isnumeric);
 p.addParameter('ylims'        , [1,5]    , @isnumeric);
-p.addParameter('xtick'        , [1:3]    , @isnumeric);
-p.addParameter('ytick'        , [1:3]    , @isnumeric);
+p.addParameter('xtick'        , [2:4]    , @isnumeric);
+p.addParameter('ytick'        , [2:4]    , @isnumeric);
 % Parse. Assign result inside each case
 p.parse(compTable, tools, varargin{:});
 % Read here only the generic ones
