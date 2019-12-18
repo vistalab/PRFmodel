@@ -1,4 +1,4 @@
-FROM afni/afni:latest
+FROM garikoitz/prfanalyze-base:1.0.0
 
 MAINTAINER Garikoitz Lerma-Usabiaga <glerma@stanford.edu>
 
@@ -19,9 +19,10 @@ RUN apt-get install -y \
             rsync tcsh vim wget xvfb
 RUN mkdir -p /opt/code && cd /opt/code && git clone https://github.com/afni/afni
 RUN cd /opt/code/afni/src \
- && cat Makefile.linux_ubuntu_16_64 | sed -E 's|INSTALLDIR = .+|INSTALLDIR = /compiled/data|g' > Makefile \
+ && cat Makefile.linux_ubuntu_16_64 | sed -E 's|INSTALLDIR = .+|INSTALLDIR = /opt/afni|g' > Makefile \
  && make all \
  && make install
+RUN echo 'export PATH="$PATH:/opt/afni"' >> ~/.bashrc
 
 # the solve script and related files
 COPY solve.sh /solve.sh
