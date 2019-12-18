@@ -19,6 +19,10 @@ RUN /bin/bash ~/miniconda.sh -b -p /opt/conda \
 RUN { . /opt/conda/etc/profile.d/conda.sh; conda update -n base -y conda; }
 RUN { . /opt/conda/etc/profile.d/conda.sh; conda activate base; conda install -y numpy scipy cython; pip install neuropythy popeye; }
 
+# Install AFNI: #TODO
+#RUN cd /opt && git clone https://github.com/afni/afni
+#RUN 
+
 # Make directory for flywheel spec (v0)
 ENV FLYWHEEL /flywheel/v0
 RUN mkdir -p ${FLYWHEEL}
