@@ -71,7 +71,8 @@ outputs=$(find "$OUTPUT_DIR" -type f -name '*_Stim.nii.gz')
 [ -z "$outputs" ] && {
     find "$OUTPUT_DIR" -type d -exec chmod 777 '{}' ';'
     find "$OUTPUT_DIR" -type f -exec chmod 666 '{}' ';'
-    die "No results found in output directory... Exiting"
+    note "No results found in output directory... Exiting"
+    exit 0
 }
 # Make sure there's a BIDS directory:
 [ -d "$OUTPUT_DIR"/BIDS ] || {
@@ -123,7 +124,7 @@ do # Get the actual dataset name...
    note "BIDS-ifying Dataset ${name} ($tt)..."
    # Make a subject and session directory and put the functional simulations
    sub="`echo $name | tr ' ' '+'`"
-   ses="prfsynth${tt}"
+   ses="${tt}"
    # Move the BOLD nifti to the appropriate spot
    BOLDFL="${BIDS_DIR}/sub-${sub}/ses-${ses}/func/sub-${sub}_ses-${ses}_task-prf_acq-normal_run-01_bold.nii.gz"
    mkdir -p "$BIDS_DIR"/sub-${sub}/ses-${ses}/func \

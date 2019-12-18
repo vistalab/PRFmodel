@@ -1,0 +1,9 @@
+{
+    "subjectName": "editThis",
+    "sessionName": "editThis",
+    "solver": "popeye",
+    "options": {
+        "seed": 2764932,
+        "grid_density": 3
+    }
+}

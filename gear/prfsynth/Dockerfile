@@ -19,6 +19,26 @@ RUN /bin/bash ~/miniconda.sh -b -p /opt/conda \
 RUN { . /opt/conda/etc/profile.d/conda.sh; conda update -n base -y conda; }
 RUN { . /opt/conda/etc/profile.d/conda.sh; conda activate base; conda install -y numpy scipy cython; pip install neuropythy popeye; }
 
+# Install AFNI:
+RUN apt-get install -y \
+            make cmake \
+            zlib1g-dev libxt-dev libxtst-dev \
+            build-essential bzip2 ca-certificates \
+            curl freeglut3-dev g++ gcc git \
+            libglew-dev libglib2.0-dev libglu1-mesa-dev \
+            libglw1-mesa-dev libgsl-dev libjpeg62 \
+            libmotif-dev libnetcdf-dev libtool libxi-dev \
+            libxmhtml-dev libxmu-dev libxpm-dev libxt-dev \
+            m4 ncurses-dev ninja-build pkg-config r-base \
+            rsync tcsh vim wget xvfb
+RUN mkdir -p /opt/code && cd /opt/code && git clone https://github.com/afni/afni
+RUN cd /opt/code/afni/src \
+ && cat Makefile.linux_ubuntu_16_64 | sed -E 's|INSTALLDIR = .+|INSTALLDIR = /opt/afni|g' > Makefile \
+ && make all \
+ && make install
+RUN echo 'export PATH="/opt/afni:$PATH"' >> ~/.bashrc
+
+
 # Make directory for flywheel spec (v0)
 ENV FLYWHEEL /flywheel/v0
 RUN mkdir -p ${FLYWHEEL}

@@ -310,8 +310,8 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     
                 case {'popeye_twogammas'}
                     % We obtain the values from python directly
-                    % temp = py.popeye.utilities.double_gamma_hrf(0,hrf.TR);
-                    % hrf.values = double(py.array.array('d', py.numpy.nditer(temp)));
+                    %temp = py.popeye.utilities.double_gamma_hrf(0,hrf.TR);
+                    %hrf.values = double(py.array.array('d', py.numpy.nditer(temp)));
                     
                     % Tests and others
                     % {
