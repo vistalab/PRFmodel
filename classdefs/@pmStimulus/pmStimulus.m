@@ -170,7 +170,6 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             d.barWidth        = 2;     % Degrees. TODO
             d.durationSecs    = 200;   % Seconds
             d.frameduration   = 4;   
-            d.userVals        = [];
             
             % Convert to table and return
             d = struct2table(d,'AsArray',true);
@@ -196,7 +195,7 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             p.addParameter('barwidth'       ,d.barWidth       , @isnumeric);
             p.addParameter('durationsecs'   ,d.durationSecs   , @isnumeric);
             p.addParameter('frameduration'  ,d.frameduration  , @isnumeric);
-            p.addParameter('uservals'       ,d.userVals{:}    , @isnumeric);
+            p.addParameter('uservals'       ,[]               , @isnumeric);
             p.parse(pm,varargin{:});
             
             % Initialize the PM model

@@ -169,6 +169,7 @@ end
 PARAMETERS.Noise     = [PARAMETERS.Noise{:}];
 % Convert some char-s to string-s, char-s are treated as individual elements...
 PARAMETERS.Type             = string(PARAMETERS.Type);
+PARAMETERS.signalPercentage = string(PARAMETERS.signalPercentage);
 PARAMETERS.RF.Type          = string(PARAMETERS.RF.Type);
 PARAMETERS.Stimulus.expName = string(PARAMETERS.Stimulus.expName);
 

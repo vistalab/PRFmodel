@@ -302,8 +302,8 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     addnoise = false;
                 case 'random'
                     % Initialize with a random seed, say time
-                    % rng('shuffle')
-                    rng('default')
+                    rng('shuffle')
+                    % rng('default')
                     addnoise = true;
                 otherwise
                     addnoise = true;

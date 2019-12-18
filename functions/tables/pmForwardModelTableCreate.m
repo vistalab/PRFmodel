@@ -95,19 +95,19 @@ for ii=1:length(fieldsToCombine)
                 for ii=1:length(subFieldsToCombine)
                     % Construct fieldname
                     subFieldName  = subFieldsToCombine{ii};
-                    fieldValues   = getfield(COMBINE_PARAMETERS,fieldName,subFieldName);
-                    if strcmp(subFieldName,'sigmaMinor') && strcmp(fieldValues,'same')
-                        fieldValues = getfield(COMBINE_PARAMETERS,fieldName,'sigmaMajor');
+                    fieldValues2   = getfield(COMBINE_PARAMETERS,fieldName,subFieldName);
+                    if strcmp(subFieldName,'sigmaMinor') && strcmp(fieldValues2,'same')
+                        fieldValues2 = getfield(COMBINE_PARAMETERS,fieldName,'sigmaMajor');
                     end
-                    if ~isstruct(fieldValues)
+                    if ~isstruct(fieldValues2)
                         % Change the default if provided
                         % if strcmp(fieldName,'Noise')
                             
                         % else
-                            synthDT.(fieldName).(subFieldsToCombine{ii}) = fieldValues(1);
+                            synthDT.(fieldName).(subFieldsToCombine{ii}) = fieldValues2(1);
                         % end
                         % If it is only one value, add it to defaults and delete it
-                        if length(fieldValues)==1
+                        if length(fieldValues2)==1
                             tmpStruct = REDUCED_COMBINE_PARAMETERS.(fieldName);
                             tmpStruct = rmfield(tmpStruct, subFieldsToCombine{ii});
                             REDUCED_COMBINE_PARAMETERS.(fieldName) = tmpStruct;
