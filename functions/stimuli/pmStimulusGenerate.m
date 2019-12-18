@@ -19,6 +19,10 @@ p.addParameter('savestimmat'   , true , @islogical); % To save images in fileNam
 p.addParameter('barwidth'      , 2    , @isnumeric); % Width of bar in deg
 p.addParameter('filename'      , './stimulus.mat' , @ischar); % filename
 
+p.addParameter('totalduration' , 300    , @isnumeric); % Duration in seconds
+p.addParameter('tr'            , 2      , @isnumeric); % TR
+p.addParameter('frameduration' , 4      , @isnumeric); % 
+
 p.parse(varargin{:});
             
 
@@ -34,6 +38,10 @@ binarize        = p.Results.binarize;
 saveStimMat     = p.Results.savestimmat;
 fileName        = p.Results.filename;
 barWidth        = p.Results.barwidth;
+
+totalDuration   = p.Results.totalduration;
+TR              = p.Results.tr;
+frameduration   = p.Results.frameduration;
 
 %% Generate stimuli
 % TODO: simplify pmShowmulticlass to take just the stimuli we are interested with,
@@ -57,7 +65,7 @@ load(masks,'maskimages');
 
 % loads the variable spatialoverlay
 fixation = fullfile(pmRootPath,'data','images','fixationgrid.mat');
-a1 = load(fixation);
+a1       = load(fixation);
 
 % provide the dir with the simuli, log is written here. 
 stimulusdir = fullfile(pmRootPath,'data');
@@ -67,7 +75,7 @@ grayval = uint8(127);
 
 % how many frames we want a refresh to last. default: 15. previously: 4. 
 % the lower the faster
-frameduration = 4;
+% frameduration = 4;
 
 dres    = [];           % <dres> (optional) is
                         %   [A B] where this is the desired resolution to imresize the images to (using bicubic interpolation).
@@ -153,15 +161,11 @@ end
 if wantDownsample
     % TODO: create a version depending on refresh rate, tr-s and number of images
     % Parameters
-    totalDuration      = 300;  % seconds
-    imagesPerSecond    = size(frameorder,2)/totalDuration;
-    TR                 = 2;
-    numOfScans         = totalDuration/TR;
-    howManyImagesPerTR = TR * imagesPerSecond;
-    % Create index based on tr
-    imgIndx            = [howManyImagesPerTR:howManyImagesPerTR:size(stim,3)];
+    numOfScans   = round(totalDuration/TR);    
+    % Create index
+    imgIndx      = round(linspace(1, size(frameorder,2), numOfScans));
     % Downsample
-    stim           = stim(:,:,imgIndx);
+    stim         = stim(:,:,imgIndx);
 end
 if checkImages
     figure(3); image(stim(:,:,66)); colormap gray; axis equal tight off;
@@ -204,6 +208,10 @@ end
 
 
 if saveStimMat
+    [p,f,e] = fileparts(fileName);
+    if ~exist(p,'dir')
+        mkdir(p)
+    end
     save(fileName, 'stim');
 end
 

@@ -101,8 +101,23 @@ if iscell(input)
     % 1: nifti with the synthetic BOLD series
     data     = niftiRead(BOLDname);
     TRdata   = data.pixdim(4);
-    data     = squeeze(data.data);
-    
+    % Synthetic datasets larger than 32000 rows come in more dimensions
+    % Convert it to 2D again concatenating
+    [s1,s2,s3,s4] = size(data.data);
+    if s1>1 && s2 == 1 && s3==1 && s4>1
+        data = squeeze(data.data);
+    elseif s1>1 && s2 > 1 && s3==1 && s4>1
+        % A reshape might do, but just wanted control...
+        tmp = zeros(s1*s2,s4);
+        for jj=1:s2
+            tmp(((jj*s1) - s1 + 1):(jj*s1),:) = squeeze(data.data(:,jj,s3,:));
+        end
+        % We will have many 0 time series, delete them
+        nonzeroindx = ~(sum(tmp,2) == 0);
+        data = tmp(nonzeroindx,:);
+    else
+        error('The dimension of nifti is not recognized')
+    end
     % 2: json with the metadata
     synthDT  = struct2table(jsonread(JSONname));
     for na=1:width(synthDT)
@@ -124,8 +139,11 @@ if iscell(input)
     
     % Obtain the main parameters required for analysis
     % TR
-    if (TRdata==TRstim && TRstim==TRsynth), TR = TRdata;
-    else, error('Data and stimulus have different TR'),end
+    if isclose(TRdata,TRstim,'tolerance',0.001) && isclose(TRstim,TRsynth,'tolerance',0.001)
+        TR = TRdata;
+    else
+        error('Data and stimulus have different TR')
+    end
     % Stimulus related
     Stimulus.ResizedHorz = unique(synthDT.Stimulus.ResizedHorz); if (length(Stimulus.ResizedHorz) ~= 1),error('More than 1 ResizedHorz in synth json'),end
     Stimulus.ResizedVert = unique(synthDT.Stimulus.ResizedVert); if (length(Stimulus.ResizedVert) ~= 1),error('More than 1 ResizedVert in synth json'),end

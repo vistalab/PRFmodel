@@ -1,0 +1,72 @@
+# <matrix
+#  ni_type = "double"
+#  ni_dimen = "50"
+#  ColumnLabels = "Stim#1#0"
+#  ColumnGroups = "1"
+#  RowTR = "1.82"
+#  GoodList = "0..49"
+#  NRowFull = "50"
+#  RunStart = "0"
+#  Nstim = "1"
+#  StimBots = "0"
+#  StimTops = "0"
+#  StimLabels = "Stim#1"
+#  BasisNstim = "1"
+#  BasisOption_000001 = "-stim_times"
+#  BasisName_000001 = "Stim#1"
+#  BasisFormula_000001 = "SPMG1(0)"
+#  BasisColumns_000001 = "0:0"
+#  CommandLine = "3dDeconvolve -nodata 50 1.82 -polort -1 -num_stimts 1 -stim_times 1 1D:0 &apos;SPMG1(0)&apos; -x1D /data/localhome/glerma/toolboxes/PRFmodel/data/TR1.82sisar.conv.ref.SPMG1.1D"
+# >
+ 0
+ 0.15368388593197
+ 0.79681879281998
+ 0.98004537820816
+ 0.66511088609695
+ 0.31127640604973
+ 0.084234826266766
+ -0.033776674419641
+ -0.081911474466324
+ -0.087350182235241
+ -0.070949412882328
+ -0.04851195961237
+ -0.029098054394126
+ -0.015686079859734
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+# </matrix>
+

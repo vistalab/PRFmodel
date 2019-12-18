@@ -184,36 +184,36 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
             switch strrep(lower(d.voxel),' ','')
                 case {'mid','midnoise'}
                     % White Noise
-                    d.white_amplitude    = 0.017; % white noise constant to relate to random number generator
+                    d.white_amplitude    = 0.032; % white noise constant to relate to random number generator
                     % Cardiac
-                    d.cardiac_amplitude  = 0.005;
+                    d.cardiac_amplitude  = 0.01;
                     d.cardiac_frequency  = 1.05;
                     % Respiratory
-                    d.respiratory_amplitude  = 0.005;
+                    d.respiratory_amplitude  = 0.01;
                     d.respiratory_frequency  = 0.3;
                     % Low frequency drift
-                    d.lowfrequ_amplitude     = 0.004;
+                    d.lowfrequ_amplitude     = 0.01;
                     d.lowfrequ_frequ         = 120;  % Seconds
                 case {'good','low','lownoise'}
                     % White Noise
-                    d.white_amplitude    = 0.008; % white noise constant to relate to random number generator
+                    d.white_amplitude    = 0.016; % white noise constant to relate to random number generator
                     % Cardiac
-                    d.cardiac_amplitude  = 0.002;
+                    d.cardiac_amplitude  = 0.004;
                     d.cardiac_frequency  = 1.05;
                     % Respiratory
-                    d.respiratory_amplitude  = 0.002;
+                    d.respiratory_amplitude  = 0.004;
                     d.respiratory_frequency  = 0.28;
                     % Low frequency drift
-                    d.lowfrequ_amplitude     = 0.002;
+                    d.lowfrequ_amplitude     = 0.004;
                     d.lowfrequ_frequ         = 120;  % Seconds
                 case {'bad','high','highnoise'}
                     % White Noise
-                    d.white_amplitude    = 0.045; % white noise constant to relate to random number generator
+                    d.white_amplitude    = 0.05; % white noise constant to relate to random number generator
                     % Cardiac
-                    d.cardiac_amplitude  = 0.02;
+                    d.cardiac_amplitude  = 0.025;
                     d.cardiac_frequency  = 1.055;
                     % Respiratory
-                    d.respiratory_amplitude  = 0.008;
+                    d.respiratory_amplitude  = 0.01;
                     d.respiratory_frequency  = 0.3;
                     % Low frequency drift
                     d.lowfrequ_amplitude     = 0.015;
@@ -302,7 +302,8 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     addnoise = false;
                 case 'random'
                     % Initialize with a random seed, say time
-                    rng('shuffle')
+                    % rng('shuffle')
+                    rng('default')
                     addnoise = true;
                 otherwise
                     addnoise = true;
@@ -398,14 +399,22 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
         
         
         % Plot it
-        function plot(noise)
-            % I think we don't want this to be stored in the object.
-            % Calculate it and return every time we need it.
-            mrvNewGraphWin('Noise');
+        function plot(noise,varargin)
+            % Read the inputs
+            varargin = mrvParamFormat(varargin);
+            p = inputParser;
+            p.addRequired ('noise'  ,  @(x)(isa(x,'pmNoise')));
+            p.addParameter('window',true, @islogical);
+            p.addParameter('color','b');
+            p.parse(noise,varargin{:});
+            w = p.Results.window;
+            c = p.Results.color;
+            
+            if w; mrvNewGraphWin('Noise'); end
             noise.compute;
             % Plot it
-            subplot(2,1,1)
-            plot(noise.PM.timePointsSeries, noise.values);hold on;
+            if w; subplot(2,1,1); end
+            plot(noise.PM.timePointsSeries, noise.values,'-','color',c);hold on;
             grid on; xlabel('Time (sec)'); ylabel('Relative amplitude');
             title(['Noise: time domain (not scaled to BOLD), TR=' num2str(noise.TR)])
             % If it is not even we cannot plot the half of it, so remove the last time point
@@ -415,30 +424,34 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
                 timePoints = timePoints - 1;
                 timeValues = timeValues(1:timePoints);
             end
-                
-            subplot(2,1,2)
-            % Obtain the FFT of the signal
-            P = abs(fft(timeValues)/timePoints);
-            % Halve it
-            % {
-                F = P(1:timePoints/2);
-                % The amplitude is divided in the two halfs, so we take one half and
-                % multiply the amplitude by two
-                F(2:end-1) = 2*F(2:end-1);
-                % Get the frequency vector (for the half points)
-                f = (1/noise.PM.TR)*(0:(timePoints/2)-1)./timePoints;
-            %}
+
             
-            % Do not halve it (but double it for the amplitude)
-            %{
-                F = P;
-                F(2:end-1) = 2*F(2:end-1);
-                % Obtain the frequency vector
-                f = (1/noise.PM.TR)*(1:(noise.PM.timePointsN))/noise.PM.timePointsN;
-            %}
-            plot(f, F);hold on;
-            grid on; xlabel('f[Hz]'); ylabel('Relative amplitude');
-            title(['Noise: frequ domain (not scaled to BOLD), TR=' num2str(noise.TR)])
+            % Only plot frequ domain if in our own window
+            if w
+                subplot(2,1,2)
+                % Obtain the FFT of the signal
+                P = abs(fft(timeValues)/timePoints);
+                % Halve it
+                % {
+                    F = P(1:timePoints/2);
+                    % The amplitude is divided in the two halfs, so we take one half and
+                    % multiply the amplitude by two
+                    F(2:end-1) = 2*F(2:end-1);
+                    % Get the frequency vector (for the half points)
+                    f = (1/noise.PM.TR)*(0:(timePoints/2)-1)./timePoints;
+                %}
+
+                % Do not halve it (but double it for the amplitude)
+                %{
+                    F = P;
+                    F(2:end-1) = 2*F(2:end-1);
+                    % Obtain the frequency vector
+                    f = (1/noise.PM.TR)*(1:(noise.PM.timePointsN))/noise.PM.timePointsN;
+                %}
+                plot(f, F);hold on;
+                grid on; xlabel('f[Hz]'); ylabel('Relative amplitude');
+                title(['Noise: frequ domain (not scaled to BOLD), TR=' num2str(noise.TR)])
+            end
         end
     end
     

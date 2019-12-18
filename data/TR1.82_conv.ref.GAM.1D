@@ -1,0 +1,72 @@
+# <matrix
+#  ni_type = "double"
+#  ni_dimen = "50"
+#  ColumnLabels = "Stim#1#0"
+#  ColumnGroups = "1"
+#  RowTR = "1.82"
+#  GoodList = "0..49"
+#  NRowFull = "50"
+#  RunStart = "0"
+#  Nstim = "1"
+#  StimBots = "0"
+#  StimTops = "0"
+#  StimLabels = "Stim#1"
+#  BasisNstim = "1"
+#  BasisOption_000001 = "-stim_times"
+#  BasisName_000001 = "Stim#1"
+#  BasisFormula_000001 = "GAM"
+#  BasisColumns_000001 = "0:0"
+#  CommandLine = "3dDeconvolve -nodata 50 1.82 -polort -1 -num_stimts 1 -stim_times 1 1D:0 GAM -x1D /data/localhome/glerma/toolboxes/PRFmodel/data/TR1.82_conv.ref.GAM.1D"
+# >
+ 0
+ 0.055356249213219
+ 0.77094429731369
+ 0.90449512004852
+ 0.38536950945854
+ 0.09425450116396
+ 0.016227768734097
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+# </matrix>
+

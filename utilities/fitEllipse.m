@@ -1,4 +1,4 @@
-function [X0,Y0] = fitEllipse(x,y,color)
+function [X0,Y0] = fitEllipse(x,y,color,CI)
 data =[x,y];
 data(any(isnan(data),2),:) = [];
 
@@ -35,7 +35,16 @@ end
 avg = mean(data);
 
 % Get the 95% confidence interval error ellipse
-chisquare_val = 2.4477;
+% chisquare_val = 2.4477;
+% GLU: This was harcoded for 95%, calculate it
+if CI > 1; CI = CI/100; end 
+chisquare_val = sqrt(chi2inv(CI,2));
+% TEST: if we pass 95, this value should be 2.4477, the hardcoded one
+if CI==0.95
+    if ~isclose(chisquare_val,2.4477,'tolerance',0.0001)
+        error('For 95% CI the value shuold be 2.4477')
+    end
+end
 
 theta_grid = linspace(0,2*pi);
 phi = angle;
@@ -55,8 +64,16 @@ R = [ cos(phi) sin(phi); -sin(phi) cos(phi) ];
 r_ellipse = [ellipse_x_r;ellipse_y_r]' * R;
 
 % Draw the error ellipse
-plot(r_ellipse(:,1) + X0,r_ellipse(:,2) + Y0,'-.','color',color,'LineWidth',2)
-hold on;
+filled=true;
+if filled
+    plot(r_ellipse(:,1) + X0,r_ellipse(:,2) + Y0,'-.','color',color,'LineWidth',2); hold on;
+else
+    plot(r_ellipse(:,1) + X0,r_ellipse(:,2) + Y0,'-.','color',color,'LineWidth',2); hold on;
+    
+    % Plot the eigenvectors
+    quiver(X0, Y0, largest_eigenvec(1)*sqrt(largest_eigenval), largest_eigenvec(2)*sqrt(largest_eigenval), 0,'-', 'LineWidth',2,'color',color);
+    quiver(X0, Y0, smallest_eigenvec(1)*sqrt(smallest_eigenval), smallest_eigenvec(2)*sqrt(smallest_eigenval),0, '-', 'LineWidth',2,'color',color);
+end
 
 % Plot the original data
 % plot(data(:,1), data(:,2), '.');
@@ -66,9 +83,8 @@ hold on;
 % Ylim([mindata-3, maxdata+3]);
 % hold on;
 
-% Plot the eigenvectors
-quiver(X0, Y0, largest_eigenvec(1)*sqrt(largest_eigenval), largest_eigenvec(2)*sqrt(largest_eigenval), 0,'-', 'LineWidth',2,'color',color);
-quiver(X0, Y0, smallest_eigenvec(1)*sqrt(smallest_eigenval), smallest_eigenvec(2)*sqrt(smallest_eigenval),0, '-', 'LineWidth',2,'color',color);
+
+
 % hold on;
 
 % Set the axis labels

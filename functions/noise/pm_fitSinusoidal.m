@@ -1,4 +1,4 @@
-function diff = pm_fitSinusoidal(tSeries, period, varargin)
+function [diff,fit] = pm_fitSinusoidal(tSeries, period, varargin)
 %PM_FITSINUSOIDAL Fit sinusoidal knowing the period and return the difference
 
 
@@ -47,5 +47,6 @@ function diff = pm_fitSinusoidal(tSeries, period, varargin)
     end
     % Calculate the difference (noise) and return it
     diff = y - yhat;
+    fit  = yhat;
 end
 
