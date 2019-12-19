@@ -38,7 +38,6 @@ RUN cd /opt/code/afni/src \
  && make install
 RUN echo 'export PATH="/opt/afni:$PATH"' >> ~/.bashrc
 
-
 # Make directory for flywheel spec (v0)
 ENV FLYWHEEL /flywheel/v0
 RUN mkdir -p ${FLYWHEEL}

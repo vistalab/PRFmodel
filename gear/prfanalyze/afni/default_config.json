@@ -1,6 +1,6 @@
 {
     "subjectName": "editThis",
     "sessionName": "editThis",
-    "solver": "vista",
+    "solver": "afni",
     "options": {}
 }
