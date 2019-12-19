@@ -113,7 +113,7 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             d.TR                = 1;
             d.Type              = 'basic';
             d.signalPercentage  = 'bold';
-            d.BOLDcontrast      = 8;    % Percent. So this will be 0.08
+            d.BOLDcontrast      = 5;    % Percent. So this will be 0.08
             d.scaleContrast     = false;    % Logical
             d.BOLDmeanValue     = 10000; % Mean BOLD, set signalPercentage to bold to use this
             d.computeSubclasses = true;

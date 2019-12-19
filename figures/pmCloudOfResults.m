@@ -21,6 +21,7 @@ p.addParameter('saveto'       , ''       , @ischar);
 p.addParameter('savetotype'   , 'png'    , @ischar);
 p.addParameter('color'        , 'old'             );
 p.addParameter('addcibar'     , false    , @islogical);
+p.addParameter('useellipse'   , false    , @islogical);
 p.addParameter('addtext'      , true     , @islogical);
 p.addParameter('xlims'        , [1,5]    , @isnumeric);
 p.addParameter('ylims'        , [1,5]    , @isnumeric);
@@ -41,6 +42,7 @@ saveTo        = p.Results.saveto;
 saveToType    = p.Results.savetotype; 
 color         = p.Results.color; 
 addcibar      = p.Results.addcibar; 
+useEllipse    = p.Results.useellipse; 
 addtext       = p.Results.addtext; 
 xlims         = p.Results.xlims; 
 ylims         = p.Results.ylims; 
@@ -90,21 +92,33 @@ for nt=1:length(tools)
     X0      = dt.(tool).x0;
     Y0      = dt.(tool).y0;
     Sizes   = dt.(tool).sMaj;
+    Sizemin = dt.(tool).sMin;
+    Thetas  = dt.(tool).Th;
     B       = prctile(Sizes,[twoTailedRange, 100-twoTailedRange]);
     inRange = Sizes>=B(1) & Sizes<=B(2);
     % Apply
     X0      = X0(inRange);
     Y0      = Y0(inRange);
     Sizes   = Sizes(inRange);
+    Sizemin = Sizemin(inRange);
+    Thetas  = Thetas(inRange);
 
     if onlyCenters
         % This will plot just the centers
         scatter(X0, Y0, 20, Cs(nt+1,:));
     else
-        % Plot circunferences
-        centers = [X0,Y0];
-        radii   = Sizes/2; % Viscircles needs radius and sigma-s are diameters
-        viscircles(centers,radii,'LineWidth',lineWidth,'LineStyle',lineStyle,'Color',Cs(nt+1,:));
+        % Plot circunferences or ellipses
+        if useEllipse
+            for ne = 1:length(Sizes)                
+                h = drawellipse(X0(ne),Y0(ne),Thetas(ne),Sizes(ne),Sizemin(ne));
+                set(h,'LineWidth',lineWidth,'LineStyle',lineStyle,'Color',Cs(nt+1,:));
+                hold on
+            end
+        else
+            centers = [X0,Y0];
+            radii   = Sizes/2; % Viscircles needs radius and sigma-s are diameters
+            viscircles(centers,radii,'LineWidth',lineWidth,'LineStyle',lineStyle,'Color',Cs(nt+1,:));
+        end
     end
     hold on; grid on;axis equal
     % Edit the legend to understand how many values went in
@@ -142,7 +156,10 @@ end
 
 % If only plotting one circle, we want it to be on top, redraw it
 if strcmp(noiseLevel, "none")
-    viscircles(centers,radii,'LineWidth',lineWidth,'LineStyle',lineStyle,'Color',Cs(nt+1,:));
+    if useEllipse
+    else
+        viscircles(centers,radii,'LineWidth',lineWidth,'LineStyle',lineStyle,'Color',Cs(nt+1,:));
+    end
 end
 
 % If we are plotting noise and addcibar is true, plot a bar showing the size
