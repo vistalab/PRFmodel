@@ -27,14 +27,16 @@ if ischar(json_file)
 end
 
 % read in the opts file
-opts = {}
+opts = {};
 if ~isempty(opts_file)
     tmp = loadjson(opts_file);
-    tmp = tmp.options;
-    fs = fields(tmp);
-    for ii = 1:numel(fs)
-        opts{end+1} = fs{ii};
-        opts{end+1} = getfield(tmp, fs{ii});
+    if ~isempty(tmp)
+        tmp = tmp.options;
+        fs = fields(tmp);
+        for ii = 1:numel(fs)
+            opts{end+1} = fs{ii};
+            opts{end+1} = getfield(tmp, fs{ii});
+        end
     end
 end
 
