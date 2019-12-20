@@ -31,10 +31,10 @@ if ~isempty(opts_file)
     tmp = loadjson(opts_file);
     if ~isempty(tmp)
         opts = tmp.options;
+        opts = {'options', opts};
     else
-        opts = [];
+        opts = {};
     end
-    opts = {'options', opts};
 else
     opts = {};
 end
