@@ -58,15 +58,15 @@ plotit   = p.Results.plotit;
 
 
 %% Create the test data
-COMBINE_PARAMETERS.RF.Centerx0        = [3]; % [-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
-COMBINE_PARAMETERS.RF.Centery0        = [3];
+COMBINE_PARAMETERS.RF.Centerx0        = [-3,0,3]; % [-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
+COMBINE_PARAMETERS.RF.Centery0        = [-3,0,3];
 COMBINE_PARAMETERS.RF.Theta           = [0]; %, deg2rad(45)];
-COMBINE_PARAMETERS.RF.sigmaMajor      = [2];
+COMBINE_PARAMETERS.RF.sigmaMajor      = [1,2];
 COMBINE_PARAMETERS.RF.sigmaMinor      = "same";
 
 switch prfimplementation
     case {'aprf','analyzeprf','aprfcss'}
-        COMBINE_PARAMETERS.TR                   = [2];
+        COMBINE_PARAMETERS.TR                   = [1.5];
         HRF(1).Type = 'canonical';
     case {'afni_4','afni_6','afni'}
         COMBINE_PARAMETERS.TR                   = [1.5];
@@ -89,7 +89,7 @@ end
 COMBINE_PARAMETERS.HRF           = HRF;
 Noise(1).seed                    = 'none';
 COMBINE_PARAMETERS.Noise         = Noise;
-synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats', 1);
+synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats', 2);
 synthDT = pmForwardModelCalculate(synthDT);
 % Visually check that all the combinations we specified are there
 % [synthDT.RF(:,{'Centerx0','Centery0','Theta','sigmaMajor','sigmaMinor'}), ...
