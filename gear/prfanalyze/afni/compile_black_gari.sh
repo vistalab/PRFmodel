@@ -11,7 +11,7 @@ addpath(genpath('/data/localhome/glerma/toolboxes/JSONio'));
 addpath(genpath('/data/localhome/glerma/toolboxes/freesurfer_mrtrix_afni_matlab_tools'));
 addpath(genpath('/data/localhome/glerma/toolboxes/PRFmodel'));
 
-mcc -m -R -nodisplay -a /data/localhome/glerma/toolboxes/PRFmodel/data -d compiled prfanalyze_vista.m 
+mcc -m -R -nodisplay -a /data/localhome/glerma/toolboxes/PRFmodel/data -d compiled prfanalyze_afni.m 
 exit
 END
 /software/matlab/r2018b/bin/matlab -nodisplay -nosplash -r build && rm build.m

@@ -55,7 +55,7 @@ end
     end
     
     % Create a cube of timeSeries
-    data = zeros(dim1,dim2,1,Ntime);
+    data = 1000 * ones(dim1,dim2,1,Ntime);
     index = 0;
     for jj=1:dim2
         for ii=1:dim1

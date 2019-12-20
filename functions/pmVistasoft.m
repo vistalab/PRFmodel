@@ -45,6 +45,14 @@ detrend       = p.Results.detrend;
 keepAllPoints = p.Results.keepAllPoints;
 numberStimulusGridPoints = p.Results.numberStimulusGridPoints;
 
+% Disp the input files for debugging
+fprintf('This is homedir: %s\n',homedir)
+fprintf('This is stimfile: %s\n',stimfile)
+fprintf('This is datafile: %s\n',datafile)
+fprintf('This is stimradius: %i\n',stimradius)
+
+
+
 % TODO: write all options for wSearch and model
 
 %   wSearch     : 1 = grid search only ("coarse"),

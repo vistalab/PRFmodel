@@ -1,4 +1,4 @@
-function [pmEstimates, results] = pmModelFit(input, prfimplementation, varargin)
+    function [pmEstimates, results] = pmModelFit(input, prfimplementation, varargin)
 % Select and apply a PRF model to estimate model parameters
 % 
 % Syntax:
@@ -51,7 +51,7 @@ p.addRequired('prfimplementation',@ischar);
 p.addParameter('useparallel'    ,  true        , @islogical);
 
 % This options structs are defaults for analyzePRF
-options  = struct('seedmode', [0 1], 'display' , 'off');
+options  = struct('seedmode', [0 1 2], 'display' , 'off');
 % Implementation specifics
 % AnalyzePRF
 p.addParameter('options'    ,  options        , @isstruct);

@@ -2,6 +2,12 @@ function prfanalyze_vista(json_file, bold_file, stim_file, output_dir)
 % 
 % (C) Vista Lab, Stanford University, 2019
 % 
+%{
+bold_file  = '/data/localhome/glerma/toolboxes/PRFmodel/local/output/alex/BIDS/sub-alexsynth/ses-stim5v02/func/sub-alexsynth_ses-stim5v02_task-prf_acq-normal_run-01_bold.nii.gz';
+json_file  = '/data/localhome/glerma/toolboxes/PRFmodel/local/output/alex/BIDS/derivatives/prfsynth/sub-alexsynth/ses-stim5v02/sub-alexsynth_ses-stim5v02_task-prf_acq-normal_run-01_bold.json';
+stim_file  = '/data/localhome/glerma/toolboxes/PRFmodel/local/output/alex/BIDS/stimuli/sub-alexsynth_ses-stim5v02_task-prf_apertures.nii.gz';
+output_dir = '/data/localhome/glerma/toolboxes/PRFmodel/local/output/alex';
+%}
     
 %% Initial checks
 
@@ -30,6 +36,7 @@ end
 mkdir(output_dir);
 
 %% Parse the JSON file or object
+%{
 % Create a pm instance, we will use it in both cases
 pm = prfModel;
 % Check if we need to read a json or provide a default one
@@ -67,6 +74,8 @@ else
     disp('defaultParams_ToBeEdited.json written, edit it and pass it to the container to generate synthetic data.')
     return
 end
+%}
+
 
 %% check that the other relevant files eist
 if exist(bold_file, 'file') ~= 2
@@ -85,7 +94,7 @@ disp(json_file);
 disp(stim_file);
 disp('--------------------------------------------------------------------------------');
 
-[pmEstimates, results] = pmModelFit({bold_file, json_file, stim_file}, 'vistasoft');
+[pmEstimates, results] = pmModelFit({bold_file, json_file, stim_file}, 'vista');
 
 %% Write out the results
 estimates_file = fullfile(output_dir, 'estimates.mat');
