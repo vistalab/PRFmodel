@@ -1,4 +1,4 @@
-function DTDT = pmForwardModelCalculate(DTDT)
+function DTcalc = pmForwardModelCalculate(DTDT)
 % Creates a table with all parameters (defaults) required to perform a forward
 % calculation
 % 
@@ -25,23 +25,32 @@ NumWorkers = myclusterLocal.NumWorkers;
 
 % chksize = ceil(height(DTDT) / (NumWorkers));
 % Optimize for Matlab memory problems
-chksize = 1000;
+chksize = 3000;
 if height(DTDT) < chksize
-    DTcc{1} = DTDT;  
-    nchcks  = 1;
+    DTcc{1}       = DTDT;  
+    nchcks        = 1;
+    startindex{1} = 1;
+    endindex{1}   = height(DTDT);
+    DTheight{1}   = height(DTDT);
 else
     nchcks = ceil(height(DTDT) / chksize);
     for nn=1:nchcks
-        startindex = (nn*chksize) + 1 - chksize;
+        startindex{nn} = (nn*chksize) + 1 - chksize;
         if nn == nchcks
-            endindex   = height(DTDT);
+            endindex{nn}   = height(DTDT);
         else
-            endindex   = nn*chksize;
+            endindex{nn}   = nn*chksize;
         end
-        DTcc{nn}   = DTDT(startindex:endindex,:);
+        DTcc{nn}     = DTDT(startindex{nn}:endindex{nn},:);
+        DTheight{nn} = length(startindex{nn}:endindex{nn});
     end
 end
 fprintf('There are %d voxels \n', height(DTDT))
+
+%% Create temp folders
+tmpName = tempname(fullfile(pmRootPath,'local'));
+mkdir(tmpName);
+        
 tic
 % par
 for nn=1:nchcks
@@ -49,7 +58,7 @@ for nn=1:nchcks
     % Initialize prev variables, for parallel toolbox
     dtprev = [];
     pmprev = [];
-    for ii=1:height(DT)
+    for ii=1:DTheight{nn}
         
         %%  Do it row to row and parameter to parameter first, for debugging
         dispat = 100; if height(DT)<dispat;dispat=2;end
@@ -112,7 +121,6 @@ for nn=1:nchcks
         end
         pm.HRF.compute;
         
-        
         %% Noise
         for jj=1:width(dt.Noise)
             paramName            = dt.Noise.Properties.VariableNames{jj};
@@ -144,9 +152,7 @@ for nn=1:nchcks
         pm.compute;
         
         %% Assign it to the cell array (or Write back the updated pm model)
-        % Parfor doesn't like this table
-        % allpms{ii} = pm;
-        DT.pm(ii) = copy(pm);
+        DT.pm(ii) = pm;
         
         %% Save as the previous one
         dtprev = dt;
@@ -154,8 +160,11 @@ for nn=1:nchcks
         
         
     end
-%     DTcc{nn} = DT;
-% end
+    %% Write the result to file
+    %  DTcc{nn} = DT;
+    fName = fullfile(tmpName, sprintf('tmpDT_%04i.mat',nn));
+    save(fName,'DT');
+end
 toc
 %% Assign it back to the table before returning it.
 % for ii=1:height(DT)
@@ -163,13 +172,22 @@ toc
 % end
 
 %% Concatenate back
+DTcalc = table();
+for nn=1:nchcks
+    fName = fullfile(tmpName, sprintf('tmpDT_%04i.mat',nn));
+    tmp   = load(fName,'DT');
+    DTcalc = [DTcalc; tmp.DT];
+end
+
 % DTDT = DTcc{1};
 % if nchcks > 1
 %     for nn=2:nchcks
 %         DTDT = [DTDT; DTcc{1}];
 %     end
 % end
-DTDT=DT;
+% DTDT=DT;
 
+%% Remove tmp dir
+rmdir(tmpName,'s')
 
 end
