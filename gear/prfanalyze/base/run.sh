@@ -46,7 +46,7 @@ function die {
 
 # If no input is given, we dump the default config and exit
 [ -r "$CONFIG_FILE" ] || {
-    note "No config file found. Writing default config and exiting."
+    note "No config file found. Writing default config.json and exiting."
     cp /opt/default_config.json "$OUTPUT_DIR"/config.json
     exit 0
 }
@@ -57,7 +57,7 @@ mkdir -p /running
 python /scripts/run.py || die "Python startup script failed!"
 # At this point, the files should have been exported to the appropriate directory,
 # which should be linked to /running/output_bids
-[ -d /running/output_bids ] || die "Pythin startup script failed to make output link!"
+[ -d /running/output_bids ] || die "Python startup script failed to make output link!"
 
 # go to the output_bids path and extract subject and session...
 cd -P /running/output_bids
