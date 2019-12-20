@@ -1,4 +1,4 @@
-function [pmEstimates, results] = pmModelFit(input, prfimplementation, varargin)
+    function [pmEstimates, results] = pmModelFit(input, prfimplementation, varargin)
 % Select and apply a PRF model to estimate model parameters
 % 
 % Syntax:

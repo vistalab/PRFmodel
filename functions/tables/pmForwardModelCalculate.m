@@ -12,8 +12,8 @@ function DTDT = pmForwardModelCalculate(DTDT)
 %  GLU Vistalab 2019.05
 
 %%%%%   CLUSTER PARPOOL    %%%%%%
-% myclusterLocal = parcluster('local');
-% NumWorkers = myclusterLocal.NumWorkers;
+myclusterLocal = parcluster('local');
+NumWorkers = myclusterLocal.NumWorkers;
 % [st, re] = system('qstat -g c | grep matlab.q');
 % [Tok, Rem] = strtok(re);
 % [Tok, Rem] = strtok(Rem);
@@ -24,28 +24,28 @@ function DTDT = pmForwardModelCalculate(DTDT)
 %%%%% END CLUSTER PARPOOL  %%%%%%
 
 % chksize = ceil(height(DTDT) / (NumWorkers));
-% if height(DTDT) < chksize
-%     DTcc{1} = DTDT;  
-%     nchcks  = 1;
-% else
-%     nchcks = ceil(height(DTDT) / chksize);
-%     for nn=1:nchcks
-%         startindex = (nn*chksize) + 1 - chksize;
-%         if nn == nchcks
-%             endindex   = height(DTDT);
-%         else
-%             endindex   = nn*chksize;
-%         end
-%         DTcc{nn}   = DTDT(startindex:endindex,:);
-%     end
-% end
+% Optimize for Matlab memory problems
+chksize = 1000;
+if height(DTDT) < chksize
+    DTcc{1} = DTDT;  
+    nchcks  = 1;
+else
+    nchcks = ceil(height(DTDT) / chksize);
+    for nn=1:nchcks
+        startindex = (nn*chksize) + 1 - chksize;
+        if nn == nchcks
+            endindex   = height(DTDT);
+        else
+            endindex   = nn*chksize;
+        end
+        DTcc{nn}   = DTDT(startindex:endindex,:);
+    end
+end
 fprintf('There are %d voxels \n', height(DTDT))
 tic
 % par
-% for nn=1:nchcks
-    nn=1;
-    % DT = DTcc{nn};
-    DT = DTDT;
+for nn=1:nchcks
+    DT = DTcc{nn};
     % Initialize prev variables, for parallel toolbox
     dtprev = [];
     pmprev = [];
@@ -62,7 +62,6 @@ tic
         % the same one and changes are not persistent
         pm     = prfModel;
         
-        
         %% High Level Variables
         isprfmodel = @(x)(isa(x,'prfModel'));
         for vn = dt.Properties.VariableNames
@@ -74,7 +73,6 @@ tic
                 end
             end
         end
-        
         
         %% Stimulus
         for jj=1:width(dt.Stimulus)
