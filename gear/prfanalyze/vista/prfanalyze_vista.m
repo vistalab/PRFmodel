@@ -100,7 +100,7 @@ disp(json_file);
 disp(stim_file);
 disp('--------------------------------------------------------------------------------');
 disp(opts);
-disp(numel(opts);
+disp(numel(opts));
 [pmEstimates, results] = pmModelFit({bold_file, json_file, stim_file}, 'vistasoft', opts);
 
 %% Write out the results
