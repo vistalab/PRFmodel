@@ -23,7 +23,7 @@ function die {
 export PRF_SOLVER="aprf"
 MCR_ROOT=/opt/mcr/v95/
 
-time /compiled/run_prfanalyze_aprf.sh "$MCR_ROOT" "$4" "$2" "$3" "$5"
+time /compiled/run_prfanalyze_aprf.sh "$MCR_ROOT" "$1" "$4" "$2" "$3" "$5"
 # Check exit status
 [ $? = 0 ] || die "An error occurred during execution of the Matlab executable. Exiting!"
 
