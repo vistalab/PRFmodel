@@ -2,7 +2,7 @@ function [compTable, tSeries] = pmNoiseFreeTests(prfImplementation, varargin)
 % Try to create perfect solutions for evey tool using synthetic data.
 % 
 % Syntax:
-%    prfImplementation = 'popeye' %'afni' 'popeye' % 'vista' % 'aprf';
+%    prfImplementation = 'vista' %'afni' 'popeye' % 'vista' % 'aprf';
 %    [compTable, tSeries] = pmNoiseFreeTests(prfImplementation);
 %  
 % Brief description:
@@ -70,7 +70,8 @@ switch prfimplementation
         HRF(1).Type = 'canonical';
     case {'afni_4','afni_6','afni'}
         COMBINE_PARAMETERS.TR                   = [1.5];
-        HRF(1).Type = 'afni_spm';
+        % HRF(1).Type = 'afni_spm';
+        HRF(1).Type = 'vista_twogammas';
     case {'vista','mrvista','vistasoft'}
         COMBINE_PARAMETERS.TR                   = [1.5];
         HRF(1).Type = 'vista_twogammas';
@@ -80,7 +81,8 @@ switch prfimplementation
         COMBINE_PARAMETERS.TR                   = [1.5]; % before it had to be one because the hrf was hardcoded
         % amazing, TR:1 and 3, all ok, for TR:2, the last test fails and it is
         % not capable of predicting anything. 
-        HRF(1).Type = 'popeye_twogammas';
+        % HRF(1).Type = 'popeye_twogammas';
+        HRF(1).Type = 'vista_twogammas';
         HRF(2).Type = 'canonical';
     otherwise
         error('%s not yet implemented',prfimplementation);

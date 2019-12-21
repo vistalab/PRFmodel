@@ -52,8 +52,7 @@ tmpName = tempname(fullfile(pmRootPath,'local'));
 mkdir(tmpName);
         
 tic
-% par
-for nn=1:nchcks
+parfor nn=1:nchcks
     DT = DTcc{nn};
     % Initialize prev variables, for parallel toolbox
     dtprev = [];
@@ -163,8 +162,11 @@ for nn=1:nchcks
     %% Write the result to file
     %  DTcc{nn} = DT;
     fName = fullfile(tmpName, sprintf('tmpDT_%04i.mat',nn));
-    save(fName,'DT');
+    m     = matfile(fName,'writable',true);
+    m.DT  = DT;
+        
 end
+
 toc
 %% Assign it back to the table before returning it.
 % for ii=1:height(DT)
