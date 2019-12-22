@@ -79,8 +79,11 @@ if exist(stim_file, 'file') ~= 2
 end
 
 %% Call pmModelFit!
+fprintf('[prfAnalyze_prf] Calling pmModelFit with analyzePRF and the following files:\nBOLD file: %s\nJSON: %s\nSTIM: %s\n',bold_file,json_file,stim_file)
+tic
 [pmEstimates, results] = pmModelFit({bold_file, json_file, stim_file}, 'aprf');
-
+toc
+disp('[prfAnalyze_prf] Writing results')
 %% Write out the results
 estimates_file = fullfile(output_dir, 'estimates.mat');
 estimates = struct(pmEstimates);

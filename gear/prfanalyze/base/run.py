@@ -94,6 +94,7 @@ try:
         os.execl("/solve.sh", "/solve.sh",
                  opts_file, bold_image, stim_file, stimjs_file, outbids_dir)
     else:
+        print("[base/run.py] in os.wait(), pid is ", pid)
         os.wait()
 except Exception:
     die("Failed to exec /solve.sh script!")
