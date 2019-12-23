@@ -22,7 +22,10 @@ CONTAINER="[garikoitz/prfanalyze]"
 FLYWHEEL_BASE=/flywheel/v0
 OUTPUT_DIR="$FLYWHEEL_BASE"/output
 INPUT_DIR="$FLYWHEEL_BASE"/input
-CONFIG_FILE="$INPUT_DIR"/config.json
+if [ -z "$1" ]
+then CONFIG_FILE="$INPUT_DIR"/config.json
+else CONFIG_FILE="$1"
+fi
 # How we print to stdout:
 function note {
     echo "$CONTAINER" "   " "$*"
@@ -46,15 +49,15 @@ function die {
 
 # If no input is given, we dump the default config and exit
 [ -r "$CONFIG_FILE" ] || {
-    note "No config file found. Writing default config.json and exiting."
-    cp /opt/default_config.json "$OUTPUT_DIR"/config.json
+    note "No config file found. Writing default JSON file and exiting."
+    cp /opt/default_config.json "$CONFIG_FILE"
     exit 0
 }
 
 # otherwise, we run the following python code to parse the json and run the
 # /solve.sh script!
 mkdir -p /running
-python /scripts/run.py || die "Python startup script failed!"
+python /scripts/run.py "$CONFIG_FILE" || die "Python startup script failed!"
 # At this point, the files should have been exported to the appropriate directory,
 # which should be linked to /running/output_bids
 [ -d /running/output_bids ] || die "Python startup script failed to make output link!"
