@@ -121,18 +121,51 @@ end; end
 
 % Find and load the result file
 resultsFile = {};
+resultsNames= {};
 for nr=1:length(J.analyze)
-    antype    = J.analyze{nr}.Type;
-    resultDir = fullfile(BIDSdir,'derivatives',['prfanalyze_' antype],...
+    antype           = J.analyze{nr}.Type;
+    resultsNames{nr} = antype; 
+    % I asked noah to change the name, revert this back
+    % resultDir = fullfile(BIDSdir,'derivatives',['prfanalyze_' antype],...
+    resultDir = fullfile(BIDSdir,'derivatives',[antype],...
                                   ['sub-' J.subjectName],['ses-' J.sessionName]);
     if ~exist(resultDir,'dir');error("Can't find results directory %s",resultDir);end
-    files = dir(fullfile(resultDir,'*.mat'));
-    resultsFile{nr} = files.name; % Change when we use real prfanalyze
-    % disp(['Trying to read result ' ]);
-    if ~exist(fullfile(resultDir,resultsFile{nr}),'file');error("Can't find results files %s in %s",resultsFile{nr},resultDir);end
-    results      = load(fullfile(resultDir,resultsFile{nr}));
-    resnames     = fieldnames(results);
-    res.(antype) = results.(resnames{1});
+    cd(resultDir)
+	
+    %% Read the results back to Matlab
+    % Read all the nifti-s for this type of tool 
+	niftis = dir('*.nii.gz');
+    if length(niftis) < 6
+		error('Not enough nifti result files in output, at least there should be x0,y0,sigmamajor,sigmaminor,theta and modelpred')
+	end
+	filesRead = 0;
+    
+    pmEstimates = table();
+	for nn=1:length(niftis)
+		fname = niftis(nn).name;
+	    % Assume always it will be .nii.gz and that the . has not been used in the filename
+		trunkname = split(fname,'.');
+		if length(trunkname) ~= 3; error('%s should be a filename with no dots and .nii.gz',fname);end	
+		trunkname = trunkname{1};
+		resname   = split(trunkname, '_');
+        resname   = resname{end};
+		% read the nifti and squeeze the result matrix
+		tmp       = niftiRead(fname);
+        data      = squeeze(tmp.data);	
+	    % asign it to the table
+        % Noah used other names in the filenames, leave this hardcoded here until we decide what to do
+        % noahnames = {'modelpred', 'sigmamajor','sigmaminor', 'testdata', 'theta', 'x0' ,'y0'};
+        % {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'}
+		switch resname
+            case 'sigmaminor',resname='sigmaMinor';
+            case 'sigmamajor',resname='sigmaMajor';
+            case 'theta',resname='Theta';
+            case 'x0',resname='Centerx0';
+            case 'y0',resname='Centery0';
+        end
+        pmEstimates.(resname) = data;	
+	end
+    resultsFile{nr} = pmEstimates;
 end
 
 %% Obtain the result files
@@ -157,12 +190,12 @@ end
 
 %% Concatenate synthetic data params and the actual results
 % Define how to manage this, as input in the config?
-anNames = fieldnames(res);
+% anNames = fieldnames(res);
 % Select the result files
-ress = [{res.(anNames{1})}];
-for an =2:length(anNames)
-    ress = [ress, {res.(anNames{an})}];
-end
+% ress = [{res.(anNames{1})}];
+% for an =2:length(anNames)
+%     ress = [ress, {res.(anNames{an})}];
+% end
 
 paramDefaults = {};
 for np=1:length(J.resultParams)
@@ -171,8 +204,7 @@ end
 
 
 
-
-compTable  = pmResultsCompare(SynthDT, anNames, ress, ...
+compTable  = pmResultsCompare(SynthDT, resultsNames, resultsFile, ...
     'params', paramDefaults, ...
     'shorten names', J.shortenParamNames, ...
     'dotSeries', J.doTSeries);
@@ -187,17 +219,34 @@ if ~exist(reportDir,'dir');mkdir(reportDir);end
 reportFile = fullfile(reportDir,['results.mat']);
 save(reportFile, 'compTable')
 
+% Save it as  json file as well
+% Select filename to be saved
+fname = fullfile(reportDir, 'results.json');
+% Encode json
+jsonString = jsonencode(compTable);
+% Format a little bit
+jsonString = strrep(jsonString, ',', sprintf(',\n'));
+jsonString = strrep(jsonString, '[{', sprintf('[\n{\n'));
+jsonString = strrep(jsonString, '}]', sprintf('\n}\n]'));
+
+% Write it
+fid = fopen(fname,'w');if fid == -1,error('Cannot create JSON file');end
+fwrite(fid, jsonString,'char');fclose(fid);
+% Permissions
+fileattrib(fname,'+w +x', 'o g');
+
+
 
 
 % Can we save .svg plots
 % MID NOISE, ALL MIXED HRFs
-% {
+%{
 mm = pmNewGraphWin('MidNoiseMixHRFCloudPoints',[],'off');
 % Fig size is relative to the screen used. This is for laptop at 1900x1200
 set(mm,'Position',[0.007 0.62  0.8  0.3]);
-tools   = anNames;% {'vista','afni4','popnohrf','aprf'};
+tools   =  resultsNames;
 useHRF  = 'mix';
-nslvl   = 'mid';
+nslvl   = {'high'};
 np      = 0;
 for tool = tools
     np=np+1;
