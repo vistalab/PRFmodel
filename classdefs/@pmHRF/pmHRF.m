@@ -113,8 +113,8 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
             hrf.params   = pmParamsCompletenessCheck(p.Results.params,d.params);
         end
         function v = get.Types(hrf)
-            v = {'friston','boynton','canonical', 'vista_twogammas', ...
-                         'popeye_twogammas', 'afni_gam','afni_spm'};
+            v = {'friston','boynton','canonical', 'vista_twogammas'}; %, ...
+                         % 'popeye_twogammas', 'afni_gam','afni_spm'};
         end
         function compute(hrf)
             switch hrf.Type
@@ -307,7 +307,7 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     %   - do we want to be a fixed number of points?
                     %   - I can plot it correctly knowing the TR, but will it be
                     %     interpreted correctly by the different programs?
-                    
+               %{  
                 case {'popeye_twogammas'}
                     % We obtain the values from python directly
                     %temp = py.popeye.utilities.double_gamma_hrf(0,hrf.TR);
@@ -353,7 +353,7 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     % timeS15 = 0: 1.5: 1.5*(length(HRF15)-1);
                     % timeS2  = 0: 2  : 2  *(length(HRF2 )-1);
                     % figure(99); plot(timeS1,HRF1); hold on; plot(timeS15,HRF15);plot(timeS2,HRF2);
-                    %}
+                    % }
                 case {'afni_gam'}
                     hrfFileName = fullfile(pmRootPath,...
                         'data',['TR' num2str(hrf.TR) '_conv.ref.GAM.1D']);
@@ -382,6 +382,7 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     end
                     [~, hrf.values, ~, ~] = Read_1D(hrfFileName);
                     hrf.values = hrf.values';
+                %}
                 otherwise
                     error('HRF method %s not implemented or valid.',hrf.Type);
             end

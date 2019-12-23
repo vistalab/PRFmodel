@@ -5,6 +5,7 @@ cat > build.m <<END
 % We do not want ToolboxToolbox to mess up the compiling
 restoredefaultpath();
 addpath(genpath('/data/localhome/glerma/toolboxes/jsonlab_v1.2'));
+addpath(genpath('/data/localhome/glerma/toolboxes/vistasoft'));
 addpath(genpath('/data/localhome/glerma/toolboxes/JSONio'));
 addpath(genpath('/data/localhome/glerma/toolboxes/PRFmodel'));
 

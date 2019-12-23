@@ -92,9 +92,10 @@ else
     DEFAULTS.subjectName = "editDefaultSubjectName";
     DEFAULTS.sessionName = "editDefaultSessionName";
     DEFAULTS.repeats  = 2;
+    DEFAULTS.useparallel= true;
     % Reorder fieldnames
     DEF_colnames = DEFAULTS.Properties.VariableNames;
-    DEF_colnames = DEF_colnames([end-2:end,1:end-3]);
+    DEF_colnames = DEF_colnames([end-3:end,1:end-4]);
     DEFAULTS     = DEFAULTS(:,DEF_colnames);
     % Select filename to be saved
     fname = fullfile(output_dir, 'defaultParams_ToBeEdited.json');
@@ -141,6 +142,7 @@ PARAMETERS = J;
 PARAMETERS = rmfield(PARAMETERS,'subjectName');
 PARAMETERS = rmfield(PARAMETERS,'sessionName');
 PARAMETERS = rmfield(PARAMETERS,'repeats');
+PARAMETERS = rmfield(PARAMETERS,'useparallel');
 % Add first the simple parameters
 
 % Add now the sub-table params
@@ -175,33 +177,45 @@ PARAMETERS.Stimulus.expName = string(PARAMETERS.Stimulus.expName);
 
 % Generate the same thing from the json file
 synthDT = pmForwardModelTableCreate(PARAMETERS, 'repeats', J.repeats);
-synthDT = pmForwardModelCalculate(synthDT);
-
+% I am having trouble with the parallel toolbox in docker, it takes too much memory. I am going to stablish a limit of 32000 for now
+if height(synthDT) > 32000
+	error('In this version, the maximum file size we can generate is of 32000 voxels')
+end
+pmForwardModelCalculate(synthDT, 'useparallel',J.useparallel,'writefiles',true,'outputdir',output_dir,'subjectname',J.subjectName); 
 %% Generate the files
 
-% Save the default niftis with different TR and HRF to be used as tests later on
 
-% BOLD FILE
-cd(output_dir)
-fname = [J.subjectName '.nii.gz'];
-pmForwardModelToNifti(synthDT, 'fname',fname, 'demean',false);
 
-% JSON FILE
-jsonSynthFile = [J.subjectName '.json'];
-% Encode json
-jsonString = jsonencode(synthDT(:,1:(end-1)));
-% Format a little bit
-jsonString = strrep(jsonString, ',', sprintf(',\n'));
-jsonString = strrep(jsonString, '[{', sprintf('[\n{\n'));
-jsonString = strrep(jsonString, '}]', sprintf('\n}\n]'));
-% Write it
-fid = fopen(jsonSynthFile,'w');if fid == -1,error('Cannot create JSON file');end
-fwrite(fid, jsonString,'char');fclose(fid);
 
-% STIM FILE
-stimNiftiFname = [J.subjectName '_Stim.nii.gz'];
-pm1            = synthDT.pm(1);
-stimNiftiFname = pm1.Stimulus.toNifti('fname',stimNiftiFname);
+
+% We are not doing this here anymore, ew need to do it step by steps otherwise we run into memory problems
+% DELETE THIS AFTERWARDS
+%{
+	% BOLD FILE
+	cd(output_dir)
+	fname = [J.subjectName '.nii.gz'];
+	pmForwardModelToNifti(synthDT, 'fname',fname, 'demean',false);
+	
+	% JSON FILE
+	jsonSynthFile = [J.subjectName '.json'];
+	% Encode json
+	jsonString = jsonencode(synthDT(:,1:(end-1)));
+	% Format a little bit
+	jsonString = strrep(jsonString, ',', sprintf(',\n'));
+	jsonString = strrep(jsonString, '[{', sprintf('[\n{\n'));
+	jsonString = strrep(jsonString, '}]', sprintf('\n}\n]'));
+	% Write it
+	fid = fopen(jsonSynthFile,'w');if fid == -1,error('Cannot create JSON file');end
+	fwrite(fid, jsonString,'char');fclose(fid);
+	
+	% STIM FILE
+	stimNiftiFname = [J.subjectName '_Stim.nii.gz'];
+	pm1            = synthDT.pm(1);
+	stimNiftiFname = pm1.Stimulus.toNifti('fname',stimNiftiFname);
+%}
+
+
+
 
 % Permissions
 fileattrib(output_dir,'+w +x', 'o'); 

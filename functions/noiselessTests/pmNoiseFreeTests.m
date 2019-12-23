@@ -2,7 +2,7 @@ function [compTable, tSeries] = pmNoiseFreeTests(prfImplementation, varargin)
 % Try to create perfect solutions for evey tool using synthetic data.
 % 
 % Syntax:
-%    prfImplementation = 'popeye' %'afni' 'popeye' % 'vista' % 'aprf';
+%    prfImplementation = 'vista' %'afni' 'popeye' % 'vista' % 'aprf';
 %    [compTable, tSeries] = pmNoiseFreeTests(prfImplementation);
 %  
 % Brief description:
@@ -58,19 +58,20 @@ plotit   = p.Results.plotit;
 
 
 %% Create the test data
-COMBINE_PARAMETERS.RF.Centerx0        = [3]; % [-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
-COMBINE_PARAMETERS.RF.Centery0        = [3];
+COMBINE_PARAMETERS.RF.Centerx0        = [-3,0,3]; % [-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
+COMBINE_PARAMETERS.RF.Centery0        = [-3,0,3];
 COMBINE_PARAMETERS.RF.Theta           = [0]; %, deg2rad(45)];
-COMBINE_PARAMETERS.RF.sigmaMajor      = [2];
+COMBINE_PARAMETERS.RF.sigmaMajor      = [1,2];
 COMBINE_PARAMETERS.RF.sigmaMinor      = "same";
 
 switch prfimplementation
     case {'aprf','analyzeprf','aprfcss'}
-        COMBINE_PARAMETERS.TR                   = [2];
+        COMBINE_PARAMETERS.TR                   = [1.5];
         HRF(1).Type = 'canonical';
     case {'afni_4','afni_6','afni'}
         COMBINE_PARAMETERS.TR                   = [1.5];
-        HRF(1).Type = 'afni_spm';
+        % HRF(1).Type = 'afni_spm';
+        HRF(1).Type = 'vista_twogammas';
     case {'vista','mrvista','vistasoft'}
         COMBINE_PARAMETERS.TR                   = [1.5];
         HRF(1).Type = 'vista_twogammas';
@@ -80,7 +81,8 @@ switch prfimplementation
         COMBINE_PARAMETERS.TR                   = [1.5]; % before it had to be one because the hrf was hardcoded
         % amazing, TR:1 and 3, all ok, for TR:2, the last test fails and it is
         % not capable of predicting anything. 
-        HRF(1).Type = 'popeye_twogammas';
+        % HRF(1).Type = 'popeye_twogammas';
+        HRF(1).Type = 'vista_twogammas';
         HRF(2).Type = 'canonical';
     otherwise
         error('%s not yet implemented',prfimplementation);
@@ -89,7 +91,7 @@ end
 COMBINE_PARAMETERS.HRF           = HRF;
 Noise(1).seed                    = 'none';
 COMBINE_PARAMETERS.Noise         = Noise;
-synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats', 1);
+synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats', 2);
 synthDT = pmForwardModelCalculate(synthDT);
 % Visually check that all the combinations we specified are there
 % [synthDT.RF(:,{'Centerx0','Centery0','Theta','sigmaMajor','sigmaMinor'}), ...

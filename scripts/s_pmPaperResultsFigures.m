@@ -883,3 +883,101 @@ if AppendixNoiseElements
     
     
 end
+
+%% CircularVsElliptical
+if CircularVsElliptical
+        COMBINE_PARAMETERS                       = struct();
+        COMBINE_PARAMETERS.RF.Centerx0           = [3];
+        COMBINE_PARAMETERS.RF.Centery0           = [3];  
+        COMBINE_PARAMETERS.RF.sigmaMajor         = [2];  
+        COMBINE_PARAMETERS.RF.sigmaMinor         = 'same';
+        COMBINE_PARAMETERS.TR                    = 1.5;
+
+        HRF                                      = struct();
+        HRF(1).Type                              = 'vista_twogammas'; 
+        HRF(1).normalize                         = 'height'; 
+        HRF(2).Type                              = 'afni_spm'; 
+        HRF(2).normalize                         = 'height'; 
+
+        COMBINE_PARAMETERS.HRF                   = HRF;
+            Noise                                = struct();
+            Noise(1).voxel                       = 'low';
+            Noise(1).seed                        = 'none';
+            Noise(1).jitter                      = [0, 0];  % [0.1, 0.1];
+        COMBINE_PARAMETERS.Noise                 = Noise;
+
+        % This is the same one as before, but now we want to do the slow stimuli version
+        % by Jon's suggestion
+        COMBINE_PARAMETERS.Stimulus.durationSecs = 300;
+
+        synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats',10);
+        synthDT = pmForwardModelCalculate(synthDT);
+        sDT = synthDT;
+
+        %% Solve it with ellipticals
+
+        mrvista_results = pmModelFit(sDT, 'vista','model','onegaussian');
+        afni4_results   = pmModelFit(sDT, 'afni_4');
+        afni6_results   = pmModelFit(sDT, 'afni_6');
+        mrvistaoval_results = pmModelFit(sDT, 'vista','model','oneovalgaussian');
+        
+
+        %% Create comptTable
+        paramDefaults = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
+        compTable  = pmResultsCompare(sDT, {'vista','afni_4','vistaoval','afni_6'}, ...
+                                           {mrvista_results, afni4_results, mrvistaoval_results, afni6_results}, ...
+            'params', paramDefaults, ...
+            'shorten names',true, ...
+            'dotSeries', false);
+
+        %% Plot it
+        hh = mrvNewGraphWin('circularElliptical');
+        set(hh,'Position',[0.007 0.62  0.4  0.8]);
+        nrows=2; ncols=2;
+        Cs  = 0.65 * distinguishable_colors(6,'w');
+        xlims = [-2,8];
+        ylims = xlims;
+        nlvl  = 'none';
+
+        subplot(nrows,ncols,1)
+        pmCloudOfResults(compTable   , {'vista'} ,'onlyCenters',false ,'userfsize' , 2, ...
+                     'centerPerc', 90    ,'useHRF'     ,'vista_twogammas' ,'lineStyle' , '-', ...
+                     'lineWidth' , .7     ,'noiselevel' ,nlvl , 'addtext',true, ...
+                     'color', [0.5,0.5,0.5], 'xlims',xlims,'ylims',ylims,...
+                     'xtick',[1:5],'ytick',[1:5], 'addcibar', false, 'useEllipse', false, ...
+                     'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+        title('vista circular')
+
+        subplot(nrows,ncols,2)
+        pmCloudOfResults(compTable   , {'afni_4'} ,'onlyCenters',false ,'userfsize' , 2, ...
+                     'centerPerc', 90    ,'useHRF'     ,'afni_spm' ,'lineStyle' , '-', ...
+                     'lineWidth' , .7     ,'noiselevel' ,nlvl , 'addtext',true, ...
+                     'color', [0.5,0.5,0.5], 'xlims',xlims,'ylims',ylims,...
+                     'xtick',[1:5],'ytick',[1:5], 'addcibar', false, 'useEllipse', false, ...
+                     'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+        title('afni circular')
+
+        subplot(nrows,ncols,3)
+        pmCloudOfResults(compTable   , {'vistaoval'} ,'onlyCenters',false ,'userfsize' , 2, ...
+                     'centerPerc', 90    ,'useHRF'     ,'vista_twogammas' ,'lineStyle' , '-', ...
+                     'lineWidth' , .7     ,'noiselevel' ,nlvl , 'addtext',true, ...
+                     'color', [0.5,0.5,0.5], 'xlims',xlims,'ylims',ylims,...
+                     'xtick',[1:5],'ytick',[1:5], 'addcibar', false, 'useEllipse', true, ...
+                     'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+        title('vista elliptical')
+
+        subplot(nrows,ncols,4)
+        pmCloudOfResults(compTable   , {'afni_6'} ,'onlyCenters',false ,'userfsize' , 2, ...
+                     'centerPerc', 90    ,'useHRF'     ,'afni_spm' ,'lineStyle' , '-', ...
+                     'lineWidth' , .7     ,'noiselevel' ,nlvl , 'addtext',true, ...
+                     'color', [0.5,0.5,0.5], 'xlims',xlims,'ylims',ylims,...
+                     'xtick',[1:5],'ytick',[1:5], 'addcibar', false, 'useEllipse', true, ...
+                     'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+        title('afni elliptical')
+    
+    
+    fnameRoot = 'CircularElliptical';
+    saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
+    
+    
+end

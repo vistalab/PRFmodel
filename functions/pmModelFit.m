@@ -1,4 +1,4 @@
-function [pmEstimates, results] = pmModelFit(input, prfimplementation, varargin)
+    function [pmEstimates, results] = pmModelFit(input, prfimplementation, varargin)
 % Select and apply a PRF model to estimate model parameters
 % 
 % Syntax:
@@ -51,7 +51,7 @@ p.addRequired('prfimplementation',@ischar);
 p.addParameter('useparallel'    ,  true        , @islogical);
 
 % This options structs are defaults for analyzePRF
-options  = struct('seedmode', [0 1], 'display' , 'off');
+options  = struct('seedmode', [0 1 2], 'display' , 'off');
 % Implementation specifics
 % AnalyzePRF
 p.addParameter('options'    ,  options        , @isstruct);
@@ -521,8 +521,13 @@ switch prfimplementation
             niftiBOLDfile  = fullfile(tmpName, 'tmp.nii.gz');         
             copyfile(BOLDname,niftiBOLDfile)
             
-            % Demean it if pm.signalPercent=false
-            if signalPercentage; demean = false; else, demean = true;end
+            % Demean it if pm.signalPercent == 'bold'
+            switch signalPercentage
+                case {'bold'}
+                    demean = true;
+                otherwise
+                    demean = false;
+            end
             if demean
                 demeanData = data;
                 for ii=1:size(data,1)
@@ -539,11 +544,15 @@ switch prfimplementation
             warning('For AFNI analysis, be sure that all options have the same TR and the same stimulus')
             % Create a tmp nifti file and convert it to a tmp AFNI format
             pm1            = input.pm(1);
-            if signalPercentage; demean = false; else,demean = true;end
+            switch signalPercentage
+                case {'bold'}
+                    demean = true;
+                otherwise
+                    demean = false;
+            end
             niftiBOLDfile  = pmForwardModelToNifti(input, ...
                 'fname',fullfile(tmpName,'tmp.nii.gz'), ...
                 'demean',demean);
-
         end
         
         % Create an AFNI file
