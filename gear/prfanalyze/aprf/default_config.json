@@ -2,5 +2,8 @@
     "subjectName": "editThis",
     "sessionName": "editThis",
     "solver": "aprf",
-    "options": {}
+    "options": {
+        "display": "off",
+        "seedmode": [0, 1, 2]
+    }
 }

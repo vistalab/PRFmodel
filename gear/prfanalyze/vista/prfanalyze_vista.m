@@ -1,4 +1,4 @@
-function prfanalyze_vista(json_file, bold_file, stim_file, output_dir)
+function prfanalyze_vista(opts_file, json_file, bold_file, stim_file, output_dir)
 % 
 % (C) Vista Lab, Stanford University, 2019
 % 
@@ -29,6 +29,20 @@ if ischar(json_file)
             || strcmpi(json_file, '-h') ...
             || strcmpi(json_file, '--help')
         help(mfilename);
+    end
+end
+
+% read in the opts file
+opts = {};
+if ~isempty(opts_file)
+    tmp = loadjson(opts_file);
+    if ~isempty(tmp)
+        tmp = tmp.options;
+        fs = fields(tmp);
+        for ii = 1:numel(fs)
+            opts{end+1} = fs{ii};
+            opts{end+1} = getfield(tmp, fs{ii});
+        end
     end
 end
 
@@ -89,12 +103,13 @@ end
 
 %% Call pmModelFit!
 disp('================================================================================');
+disp(opts_file);
 disp(bold_file);
 disp(json_file);
 disp(stim_file);
 disp('--------------------------------------------------------------------------------');
 
-[pmEstimates, results] = pmModelFit({bold_file, json_file, stim_file}, 'vista');
+[pmEstimates, results] = pmModelFit({bold_file, json_file, stim_file}, 'vista', opts{:});
 
 %% Write out the results
 estimates_file = fullfile(output_dir, 'estimates.mat');

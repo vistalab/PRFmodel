@@ -10,6 +10,10 @@ config_file = os.path.join(input_dir, 'config.json')
 bids_dir    = os.path.join(input_dir, 'BIDS')
 opts_file   = '/running/options.json'
 
+# check for a separate config file
+if len(sys.argv) > 1:
+    config_file = sys.argv[1]
+
 def die(*args):
     print(*args)
     sys.exit(1)
@@ -72,6 +76,8 @@ solver_name = os.environ.get('PRF_SOLVER', None)
 if solver_name is None:
     print("WARNING: The PRF_SOLVER environment variable is not set; using 'prfanalyze'")
     solver_name = 'prfanalyze'
+elif not solver_name.startswith('prfanalyze-'):
+    solver_name = 'prfanalyze-' + solver_name
 outbids_dir = os.path.join(output_dir, 'BIDS', 'derivatives', solver_name, 'sub-'+sub, 'ses-'+ses)
 try:
     if not os.path.isdir(outbids_dir):

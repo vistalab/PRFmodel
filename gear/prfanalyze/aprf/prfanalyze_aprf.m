@@ -1,4 +1,4 @@
-function prfanalyze_aprf(json_file, bold_file, stim_file, output_dir)
+function prfanalyze_aprf(opts_file, json_file, bold_file, stim_file, output_dir)
 % 
 % (C) Vista Lab, Stanford University, 2019
 % 
@@ -24,6 +24,19 @@ if ischar(json_file)
             || strcmpi(json_file, '--help')
         help(mfilename);
     end
+end
+
+% read in the opts file
+if ~isempty(opts_file)
+    tmp = loadjson(opts_file);
+    if ~isempty(tmp)
+        opts = tmp.options;
+        opts = {'options', opts};
+    else
+        opts = {};
+    end
+else
+    opts = {};
 end
 
 % Make the output directory
@@ -79,11 +92,8 @@ if exist(stim_file, 'file') ~= 2
 end
 
 %% Call pmModelFit!
-fprintf('[prfAnalyze_prf] Calling pmModelFit with analyzePRF and the following files:\nBOLD file: %s\nJSON: %s\nSTIM: %s\n',bold_file,json_file,stim_file)
-tic
-[pmEstimates, results] = pmModelFit({bold_file, json_file, stim_file}, 'aprf');
-toc
-disp('[prfAnalyze_prf] Writing results')
+[pmEstimates, results] = pmModelFit({bold_file, json_file, stim_file}, 'aprf', opts{:});
+
 %% Write out the results
 estimates_file = fullfile(output_dir, 'estimates.mat');
 estimates = struct(pmEstimates);
