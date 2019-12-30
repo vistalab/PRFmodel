@@ -28,9 +28,12 @@ end
 
 % read in the opts file
 if ~isempty(opts_file)
+	fprintf('This is the config.json file being read: %s\n',opts_file)
     tmp = loadjson(opts_file);
+	disp('These are the contents of the json file:')
+	tmp
     if ~isempty(tmp)
-        opts = tmp.options;
+        opts = tmp;
         opts = {'options', opts};
     else
         opts = {};
