@@ -1,4 +1,4 @@
-    function [pmEstimates, results] = pmModelFit(input, prfimplementation, varargin)
+function [pmEstimates, results] = pmModelFit(input, prfimplementation, varargin)
 % Select and apply a PRF model to estimate model parameters
 % 
 % Syntax:
@@ -879,6 +879,10 @@ switch prfimplementation
     otherwise
         error('Method %s not implemented yet.', prfimplementation)
 end
+
+% Make the order of pmEstimates is always the same, this is required for the unpacking python function in prfanalyze
+% TODO: make it order and count independent
+pmEstimates = pmEstimates(:,{'testdata','Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor','modelpred'});
 
 
 end
