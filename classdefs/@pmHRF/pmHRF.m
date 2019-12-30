@@ -307,7 +307,7 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     %   - do we want to be a fixed number of points?
                     %   - I can plot it correctly knowing the TR, but will it be
                     %     interpreted correctly by the different programs?
-               %{  
+               % {  
                 case {'popeye_twogammas'}
                     % We obtain the values from python directly
                     %temp = py.popeye.utilities.double_gamma_hrf(0,hrf.TR);
@@ -335,7 +335,7 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                         case 2
                             hrf.values = HRF2;
                         otherwise
-                            error('the HRF for this TR has not been generated')
+                            error('The HRF for this TR has not been generated, use 1, 1.4, 1.5, 1.82 or 2 seconds')
                     end
                     % Check what is this function returning
                     
@@ -355,6 +355,17 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     % figure(99); plot(timeS1,HRF1); hold on; plot(timeS15,HRF15);plot(timeS2,HRF2);
                     % }
                 case {'afni_gam'}
+                    % Afni works when called from matlab, but we were not able
+                    % to make it run inside a docker container.
+                    % We pregenerated several .1D files with some TRs, if the TR
+                    % requested has not been pregenerated, throw an error. 
+                    switch hrf.TR
+                        case {1, 1.4, 1.5, 1.82, 2}
+                        otherwise
+                            error('The HRF for this TR has not been generated, use 1, 1.4, 1.5, 1.82 or 2 seconds')
+                    end
+                    
+                    
                     hrfFileName = fullfile(pmRootPath,...
                         'data',['TR' num2str(hrf.TR) '_conv.ref.GAM.1D']);
                     if ~exist(hrfFileName,'file')
@@ -370,6 +381,15 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     [~, hrf.values, ~, ~] = Read_1D(hrfFileName);
                     hrf.values = hrf.values';
                 case {'afni_spm'}
+                    % Afni works when called from matlab, but we were not able
+                    % to make it run inside a docker container.
+                    % We pregenerated several .1D files with some TRs, if the TR
+                    % requested has not been pregenerated, throw an error. 
+                    switch hrf.TR
+                        case {1, 1.4, 1.5, 1.82, 2}
+                        otherwise
+                            error('The HRF for this TR has not been generated, use 1, 1.4, 1.5, 1.82 or 2 seconds')
+                    end
                     hrfFileName = fullfile(pmRootPath,...
                               'data',['TR' num2str(hrf.TR) 'sisar.conv.ref.SPMG1.1D']);
                     if ~exist(hrfFileName,'file')
