@@ -51,6 +51,7 @@ function die {
 [ -r "$CONFIG_FILE" ] || {
     note "No config file found. Writing default JSON file and exiting."
     cp /opt/default_config.json "$CONFIG_FILE"
+    chmod 666 "$CONFIG_FILE"
     exit 0
 }
 
@@ -100,6 +101,11 @@ then for fl in /running/output_bids/*.json
         mv "$fl" "${dnm}/sub-${sub}_ses-${ses}_task-prf_${bnm}.json"
      done
 fi
+
+# Handle permissions of the outputs
+cd /flywheel/v0/output
+find "$OUTPUT_DIR" -type d -exec chmod 777 '{}' ';'
+find "$OUTPUT_DIR" -type f -exec chmod 666 '{}' ';'
 
 # we don't have any post-processing to do at this point (but later we might)
 exit 0
