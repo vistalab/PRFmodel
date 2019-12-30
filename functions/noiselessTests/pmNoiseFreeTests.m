@@ -58,8 +58,8 @@ plotit   = p.Results.plotit;
 
 
 %% Create the test data
-COMBINE_PARAMETERS.RF.Centerx0        = [-3,0,3]; % [-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
-COMBINE_PARAMETERS.RF.Centery0        = [-3,0,3];
+COMBINE_PARAMETERS.RF.Centerx0        = [0,3]; % [-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
+COMBINE_PARAMETERS.RF.Centery0        = [0,3];
 COMBINE_PARAMETERS.RF.Theta           = [0]; %, deg2rad(45)];
 COMBINE_PARAMETERS.RF.sigmaMajor      = [1,2];
 COMBINE_PARAMETERS.RF.sigmaMinor      = "same";
@@ -100,34 +100,34 @@ synthDT = pmForwardModelCalculate(synthDT);
 % ]
 
 % Save the default niftis with different TR and HRF to be used as tests later on
-niftiBOLDfile = fullfile(pmRootPath,'local', ...
-    ['defaultSynth_TR' num2str(COMBINE_PARAMETERS.TR) '_HRF-' HRF(1).Type '.nii.gz']);
-if ~exist(niftiBOLDfile, 'file')
-    pmForwardModelToNifti(synthDT,'fname',niftiBOLDfile, 'demean',false);
-end
+% niftiBOLDfile = fullfile(pmRootPath,'local', ...
+%     ['defaultSynth_TR' num2str(COMBINE_PARAMETERS.TR) '_HRF-' HRF(1).Type '.nii.gz']);
+% if ~exist(niftiBOLDfile, 'file')
+%     pmForwardModelToNifti(synthDT,'fname',niftiBOLDfile, 'demean',false);
+% end
 
-jsonSynthFile = fullfile(pmRootPath,'local', ...
-    ['defaultSynth_TR' num2str(COMBINE_PARAMETERS.TR) '_HRF-' HRF(1).Type '.json']);
-if ~exist(jsonSynthFile, 'file')
-    % Encode json
-    jsonString = jsonencode(synthDT(:,1:(end-1)));
-    % Format a little bit
-    jsonString = strrep(jsonString, ',', sprintf(',\r'));
-    jsonString = strrep(jsonString, '[{', sprintf('[\r{\r'));
-    jsonString = strrep(jsonString, '}]', sprintf('\r}\r]'));
-    % Write it
-    fid = fopen(jsonSynthFile, 'w');if fid == -1,error('Cannot create JSON file');end
-    fwrite(fid, jsonString, 'char');fclose(fid);
-    % Read the json
-    %{
-    A = struct2table(jsonread(jsonSynthFile));
-    for na=1:width(A)
-        if isstruct(A{:,na})
-            A.(A.Properties.VariableNames{na}) = struct2table(A{:,na});
-        end
-    end
-    %}
-end
+% jsonSynthFile = fullfile(pmRootPath,'local', ...
+%     ['defaultSynth_TR' num2str(COMBINE_PARAMETERS.TR) '_HRF-' HRF(1).Type '.json']);
+% if ~exist(jsonSynthFile, 'file')
+%     % Encode json
+%     jsonString = jsonencode(synthDT(:,1:(end-1)));
+%     % Format a little bit
+%     jsonString = strrep(jsonString, ',', sprintf(',\r'));
+%     jsonString = strrep(jsonString, '[{', sprintf('[\r{\r'));
+%     jsonString = strrep(jsonString, '}]', sprintf('\r}\r]'));
+%     % Write it
+%     fid = fopen(jsonSynthFile, 'w');if fid == -1,error('Cannot create JSON file');end
+%     fwrite(fid, jsonString, 'char');fclose(fid);
+%     % Read the json
+%     %{
+%     A = struct2table(jsonread(jsonSynthFile));
+%     for na=1:width(A)
+%         if isstruct(A{:,na})
+%             A.(A.Properties.VariableNames{na}) = struct2table(A{:,na});
+%         end
+%     end
+%     %}
+% end
 
 %{
 stimNiftiFname = fullfile(pmRootPath,'local', ['defaultStim_TR' num2str(COMBINE_PARAMETERS.TR) '.nii.gz']);
@@ -168,8 +168,8 @@ switch prfimplementation
             'grid', false, ... % if true, returns gFit
             'wSearch', 'coarse to fine', ...
             'detrend', 0, ...
-            'keepAllPoints', true, ...
-            'numberStimulusGridPoints', 50);  %  We need to remove it otherwise it will find an average HRF for all of them
+            'keepAllPoints', true); % , ...
+            % 'numberStimulusGridPoints', 50);  %  We need to remove it otherwise it will find an average HRF for all of them
     case {'popeye','pop'}
         results  = pmModelFit(input,'popeye');
     case {'popnoherf','popeyenohrf'}

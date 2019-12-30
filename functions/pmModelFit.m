@@ -440,10 +440,9 @@ switch prfimplementation
         pmEstimates.sigmaMajor = results.model{1}.sigma.major';
         pmEstimates.sigmaMinor = results.model{1}.sigma.minor';
         % Add the time series as well
-
         if niftiInputs
-            data     = niftiRead(BOLDname);
-            pmEstimates.testdata = squeeze(data.data);
+            data                   = niftiRead(BOLDname);
+            pmEstimates.testdata   = squeeze(data.data);
         else
             pmEstimates.testdata   = repmat(ones([1,pm1.timePointsN]), ...
                 [height(pmEstimates),1]);

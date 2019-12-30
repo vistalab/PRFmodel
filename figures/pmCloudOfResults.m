@@ -21,6 +21,7 @@ p.addParameter('saveto'       , ''       , @ischar);
 p.addParameter('savetotype'   , 'png'    , @ischar);
 p.addParameter('color'        , 'old'             );
 p.addParameter('addcibar'     , false    , @islogical);
+p.addParameter('addcihist'    , false    , @islogical);
 p.addParameter('useellipse'   , false    , @islogical);
 p.addParameter('addtext'      , true     , @islogical);
 p.addParameter('xlims'        , [1,5]    , @isnumeric);
@@ -42,6 +43,7 @@ saveTo        = p.Results.saveto;
 saveToType    = p.Results.savetotype; 
 color         = p.Results.color; 
 addcibar      = p.Results.addcibar; 
+addcihist     = p.Results.addcihist; 
 useEllipse    = p.Results.useellipse; 
 addtext       = p.Results.addtext; 
 xlims         = p.Results.xlims; 
@@ -212,6 +214,13 @@ if addcibar && ~strcmp(noiseLevel, "none")
         plot([xlims(1)+0.4,xlims(1)+0.4],[linestarts, lineends],'-','color',color*0.1,'LineWidth',4);hold on
 
     %}
+end
+
+if addcihist && ~strcmp(noiseLevel, "none")
+    [pdfsizes,xsizes] = ksdensity(Sizes);
+    plot(xsizes,pdfsizes,'Color','k','LineStyle','-','LineWidth',1.5); hold on;
+    [~,groundtruthloc]  = min(abs(xsizes - (unique(dt.synth.sMaj)  * ones(size(xsizes)))));
+    hmin = plot(unique(dt.synth.sMaj)*[1,1],[0 pdfsizes(groundtruthloc)],'Color','b','LineStyle','-','LineWidth',2);hold on;
 end
 
 if addtext
