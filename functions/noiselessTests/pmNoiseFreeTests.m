@@ -1,4 +1,4 @@
-function [compTable, tSeries] = pmNoiseFreeTests(prfImplementation, varargin)
+function [compTable, tSeries, results] = pmNoiseFreeTests(prfImplementation, varargin)
 % Try to create perfect solutions for evey tool using synthetic data.
 % 
 % Syntax:
@@ -73,7 +73,7 @@ switch prfimplementation
         % HRF(1).Type = 'afni_spm';
         HRF(1).Type = 'vista_twogammas';
     case {'vista','mrvista','vistasoft'}
-        COMBINE_PARAMETERS.TR                   = [1.5];
+        COMBINE_PARAMETERS.TR                   = [1.4];
         HRF(1).Type = 'vista_twogammas';
         % COMBINE_PARAMETERS.Stimulus.ResizedHorz = [100];
         % COMBINE_PARAMETERS.Stimulus.ResizedVert = [100];
