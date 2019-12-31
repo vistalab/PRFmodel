@@ -1,1 +1,1 @@
-docker build --tag garikoitz/prfanalyze-vista:1.0.0 ./
+docker build --tag garikoitz/prfanalyze-vista:1.0.1 ./

@@ -126,8 +126,7 @@ for nr=1:length(J.analyze)
     antype           = J.analyze{nr}.Type;
     resultsNames{nr} = antype; 
     % I asked noah to change the name, revert this back
-    % resultDir = fullfile(BIDSdir,'derivatives',['prfanalyze_' antype],...
-    resultDir = fullfile(BIDSdir,'derivatives',[antype],...
+    resultDir = fullfile(BIDSdir,'derivatives',['prfanalyze-' antype],...
                                   ['sub-' J.subjectName],['ses-' J.sessionName]);
     if ~exist(resultDir,'dir');error("Can't find results directory %s",resultDir);end
     cd(resultDir)
