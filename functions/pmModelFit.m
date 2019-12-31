@@ -521,6 +521,7 @@ switch prfimplementation
             copyfile(BOLDname,niftiBOLDfile)
             
             % Demean it if pm.signalPercent == 'bold'
+            if iscell(signalPercentage);signalPercentage=signalPercentage{:};end
             switch signalPercentage
                 case {'bold'}
                     demean = true;
@@ -543,6 +544,7 @@ switch prfimplementation
             warning('For AFNI analysis, be sure that all options have the same TR and the same stimulus')
             % Create a tmp nifti file and convert it to a tmp AFNI format
             pm1            = input.pm(1);
+            if iscell(signalPercentage);signalPercentage=signalPercentage{:};end
             switch signalPercentage
                 case {'bold'}
                     demean = true;
