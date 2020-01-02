@@ -1,4 +1,4 @@
-# PRF-VALIDATION FRAMEWOORK
+# PRF-VALIDATION FRAMEWORK
 This repository creates stimuli and BOLD time series to test PRF analytical methods.  It will serve as a place where we create these stimuli based on known PRF models and see how well we can recover the PRF parameters from the synthetic test stimuli.
 
 ![prf-Validation Framework](https://github.com/vistalab/PRFmodel/blob/master/workflow_HighLevel-Page-1.png)
