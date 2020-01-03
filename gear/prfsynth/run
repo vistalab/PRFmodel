@@ -62,6 +62,8 @@ EOF
 note "Initialized."
 # Make sure that /output directory exists
 [ -d "$OUTPUT_DIR" ] || die "Output directory ($OUTPUT_DIR) not found!"
+# Give link to the instructions
+note "See detailed usage here: https://github.com/vistalab/PRFmodel/wiki/prf-Synthesize:-how-to-edit-json-file"
 # Run the Matlab executable
 time /compiled/run_synthBOLDgenerator.sh "${MCR_ROOT}" "${CONFIG_FILE}" "${OUTPUT_DIR}"
 # Check exit status

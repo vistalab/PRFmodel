@@ -15,5 +15,5 @@ ADD /compiled /compiled
 COPY solve.sh /solve.sh
 RUN chmod 755 /solve.sh
 COPY default_config.json /opt/default_config.json
-ENV PRF_SOLVER vistasoft
+ENV PRF_SOLVER vista
 
