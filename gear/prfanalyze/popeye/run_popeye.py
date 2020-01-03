@@ -87,7 +87,7 @@ for (k,v) in six.iteritems(rr):
 im = nib.Nifti1Image(np.reshape(bold, bold_im.shape), bold_im.affine)
 im.to_filename(os.path.join(outdir, 'testdata.nii.gz'))
 im = nib.Nifti1Image(np.reshape(res['pred'], bold_im.shape), bold_im.affine)
-im.to_filename(os.path.join(outdir, k + 'modelpred.nii.gz'))
+im.to_filename(os.path.join(outdir, 'modelpred.nii.gz'))
 
 # That's it!
 print("Popeye finished succesfully.")
