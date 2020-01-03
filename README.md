@@ -1,5 +1,7 @@
-# PRF model
+# PRF-VALIDATION FRAMEWORK
 This repository creates stimuli and BOLD time series to test PRF analytical methods.  It will serve as a place where we create these stimuli based on known PRF models and see how well we can recover the PRF parameters from the synthetic test stimuli.
+
+![prf-Validation Framework](https://github.com/vistalab/PRFmodel/blob/master/workflow_HighLevel-Page-1.png)
 
 We expect to produce increasing complex simulations of the bold time series, adding different PRF model shapes, noise properties, eye movement properties, and HRF models.  We will use these time series of stimuli and BOLD signals as inputs to test different pRF analytical software models.  We hope others can take advantage of the repository and the data - which we will share on a Flywheel or other open site - to test their implementations as well.  
 
@@ -37,83 +39,12 @@ We will evaluate the models by creating repeats of the same model with different
 
 # Data sharing
 
-We aren't yet sure where we will post these data and the algorithms.
-
-Probably in Flywheel as data and Gears.
-
-We may also put them on the Stanford Digital repository and Dockerhub.
-
-# INSTALLATION
+Code will be available in Github (link).
+Containers will be available in Dockerhub (link).
+Test files and generated files will be available in OSF (link).
 
 
+# INSTALLATION AND USER GUIDE
 
-
-
-# HOW TO USE
-
-## Running with existing data
-
-
-## Synthetic data generation
-Edit a json file with all the parameters required to generate a synthetic BOLD signal.
-This is the template json:
-```
-{ 
-   "TR":1,
-   "Type":"basic",
-   "BOLDmeanValue":10000,
-   "BOLDcontrast":8,
-   "HRF":[ 
-      { 
-         "Type":"friston",
-         "Duration":20,
-         "params":{ 
-            "a":[ 
-               6,
-               12
-            ],
-            "b":[ 
-               0.9,
-               0.9
-            ],
-            "c":0.35,
-            "n":3,
-            "tau":1.08,
-            "delay":2.05,
-            "stimDuration":1
-         }
-      }
-   ],
-   "RF":[ 
-      { 
-         "Centerx0":0,
-         "Centery0":0,
-         "Theta":0,
-         "sigmaMajor":1,
-         "sigmaMinor":1,
-         "Type":"mrvista"
-      }
-   ],
-   "Stimulus":[ 
-      { 
-         "fieldofviewHorz":20,
-         "fieldofviewVert":20,
-         "expName":"103",
-         "Binary":true,
-         "Resize":true,
-         "ResizedHorz":101,
-         "ResizedVert":101,
-         "barWidth":2
-      }
-   ],
-   "Noise":[ 
-      { 
-         "noise2signal":0,
-         "amplitude":0.1,
-         "frequency":1.25
-      }
-   ]
-}
-```
-
+Link to the wiki page:  https://github.com/vistalab/PRFmodel/wiki
 
