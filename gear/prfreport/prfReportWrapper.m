@@ -162,30 +162,16 @@ for nr=1:length(J.analyze)
             case 'x0',resname='Centerx0';
             case 'y0',resname='Centery0';
         end
-        pmEstimates.(resname) = data;	
-	end
+        pmEstimates.(resname) = data;	        
+    end
+    
+    % We are always going to add by default the R2
+    % This will be calculated between the testdata and modelpred
+    pmEstimates.R2 = calccod(pmEstimates.testdata,  pmEstimates.modelpred,2);
+    
+    % Return the pmEstimates for this tool
     resultsFile{nr} = pmEstimates;
 end
-
-%% Obtain the result files
-% Right now is reading the matlab .mat, but when the prfanalyze is
-% implemented, here we will do the conversion to the .mat from the result
-% niftis
-% res = struct();
-% for outputNifti=outputNiftis
-%     rname = outputNifti{:}(1:end-4);
-%     rname = split(rname,'_');
-%     rname = rname{end,:};
-%     if exist(outputNifti{:},'file')
-%         load(outputNifti{:});
-%     else
-%         % TODO Check that the data is there before trying to download
-%         [~,fname,ext] = fileparts(outputNifti{:});
-%         load(st.fw.downloadFileFromCollection(cc{1}.collection.id,...
-%             [fname ext],outputNifti{:}));
-%     end
-%     res.(rname) = results;
-% end
 
 %% Concatenate synthetic data params and the actual results
 % Define how to manage this, as input in the config?
@@ -196,7 +182,7 @@ end
 %     ress = [ress, {res.(anNames{an})}];
 % end
 
-paramDefaults = {};
+paramDefaults = {'R2'};
 for np=1:length(J.resultParams)
     paramDefaults{np} = J.resultParams{np}.name;
 end
@@ -215,12 +201,14 @@ if ~exist(reportDir,'dir');mkdir(reportDir);end
 
 %% Generate the output files
 % The .mat files first. Decide final format. I think json. 
-reportFile = fullfile(reportDir,['results.mat']);
+fname_trunk = ['sub-' J.subjectName '_ses-' J.sessionName '-prf_acq-normal_run-01_bold'];
+
+reportFile  = fullfile(reportDir,[fname_trunk '.mat']);
 save(reportFile, 'compTable')
 
 % Save it as  json file as well
 % Select filename to be saved
-fname = fullfile(reportDir, 'results.json');
+fname = fullfile(reportDir, [fname_trunk '.json']);
 % Encode json
 jsonString = jsonencode(compTable);
 % Format a little bit
@@ -236,30 +224,183 @@ fileattrib(fname,'+w +x', 'o g');
 
 
 
-
+%% Generate the output figures
 % Can we save .svg plots
 % MID NOISE, ALL MIXED HRFs
-%{
-mm = pmNewGraphWin('MidNoiseMixHRFCloudPoints',[],'off');
+% {
+
+% load(fullfile(pmRootPath,'local','results.mat'));
+
+%% FIGURE 5
+kk = mrvNewGraphWin('NoiselessCloudPoints','wide');
 % Fig size is relative to the screen used. This is for laptop at 1900x1200
-set(mm,'Position',[0.007 0.62  0.8  0.3]);
-tools   =  resultsNames;
-useHRF  = 'mix';
-nslvl   = {'high'};
+set(kk,'Position',[0.007 0.62  0.8  0.3]);
+subplot(1,4,1)
+tools  = {'vista'};
+useHRF = 'vista_twogammas';
+nslvl  = 'none';
+pmCloudOfResults(compTable   , tools ,'onlyCenters',false ,'userfsize' , 2, ...
+                 'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
+                 'lineWidth' , 2     ,'noiselevel' ,nslvl , ...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+
+subplot(1,4,2)
+tools  = {'afni'};
+useHRF = 'afni_spm';
+nslvl  = 'none';
+pmCloudOfResults(compTable   , tools ,'onlyCenters',false ,'userfsize' , 2, ...
+                 'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
+                 'lineWidth' , 2     ,'noiselevel' ,nslvl , ...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+
+subplot(1,4,3)
+% tools  = {'popnohrf'};
+% useHRF = 'popeye_twogammas';
+% nslvl  = 'none';
+% pmCloudOfResults(compTable   , tools ,'onlyCenters',false ,'userfsize' , 2, ...
+%                  'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
+%                  'lineWidth' , 2     ,'noiselevel' ,nslvl , ...
+%                  'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+
+subplot(1,4,4)
+tools  = {'aprf'};
+useHRF = 'canonical';
+nslvl  = 'none';
+pmCloudOfResults(compTable   , tools ,'onlyCenters',false ,'userfsize' , 2, ...
+                 'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
+                 'lineWidth' , 1.5   ,'noiselevel' ,nslvl , ...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+
+fnameRoot = 'Noisefree_accuracy';
+saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
+
+
+
+%% FIGURE 7
+% LOW NOISE
+mm = mrvNewGraphWin('NoiselessCloudPoints');
+% Fig size is relative to the screen used. This is for laptop at 1900x1200
+set(mm,'Position',[0.007 0.62  0.8  0.8]);
+tools   = {'vista','afni','popeye','aprf'};
+tools   = {'vista','afni','aprf'};
+useHRFs = {'vista_twogammas','afni_spm','popeye_twogammas','canonical'};
+nslvl   = 'low';
 np      = 0;
-for tool = tools
+for tool = tools; for useHRF = useHRFs
     np=np+1;
-    subplot(1,length(tools),np)
+    subplot(4,4,np)
+    pmCloudOfResults(compTable   , tool ,'onlyCenters',false ,'userfsize' , 2, ...
+                 'centerPerc', 90    ,'useHRF'     ,useHRF{:},'lineStyle' , '-', ...
+                 'lineWidth' , .7     ,'noiselevel' ,nslvl , 'addtext',false, ...
+                 'color', [0.5,0.5,0.5], 'xlims',[.5, 5.5],'ylims',[.5, 5.5],...
+                 'xtick',[1:5],'ytick',[1:5], 'addcibar', false, ...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+end;end
+fnameRoot = ['CloudPlots_4x4_Noise_' nslvl];
+saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
+
+
+% MID NOISE
+mm = mrvNewGraphWin('NoiselessCloudPoints');
+% Fig size is relative to the screen used. This is for laptop at 1900x1200
+set(mm,'Position',[0.007 0.62  0.8  0.8]);
+tools   = {'vista','afni','popnohrf','aprf'};
+tools   = {'vista','afni','aprf'};
+useHRFs = {'vista_twogammas','afni_spm','popeye_twogammas','canonical'};
+
+useHRFs = {'vista_twogammas','afni_spm','canonical'};
+nslvl   = 'mid';
+np      = 0;
+for useHRF = useHRFs; for tool = tools
+    np=np+1;
+    subplot(3,3,np)
     % figure
-    pmCloudOfResults(compTable   , tool ,'onlyCenters',false , ...% 'userfsize' , 2, ...
-                 'centerPerc', 90    ,'useHRF'     ,useHRF ,'lineStyle' , '-', ...
-                 'lineWidth' , .7     ,'noiselevel' ,nslvl , 'addtext',true, ...
+    pmCloudOfResults(compTable   , tool ,'onlyCenters',false ,'userfsize' , 2, ...
+                 'centerPerc', 50    ,'useHRF'     ,useHRF{:},'lineStyle' , '-', ...
+                 'lineWidth' , .7     ,'noiselevel' ,nslvl , 'addtext',false, ...
+                 'color', [0.5,0.5,0.5], 'xlims',[.5, 5.5],'ylims',[.5, 5.5],...
+                 'xtick',[1:5],'ytick',[1:5], 'addcibar', false, ...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+end;end
+fnameRoot = ['CloudPlots_4x4_Noise_' nslvl];
+saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
+
+
+% HIGH NOISE
+mm = mrvNewGraphWin('NoiselessCloudPoints');
+% Fig size is relative to the screen used. This is for laptop at 1900x1200
+set(mm,'Position',[0.007 0.62  0.8  0.8]);
+tools   = {'vista','afni','popnohrf','aprf'};
+tools   = {'vista','afni','aprf'};
+useHRFs = {'vista_twogammas','afni_spm','popeye_twogammas','canonical'};
+nslvl   = 'high';
+np      = 0;
+for tool = tools; for useHRF = useHRFs
+    np=np+1;
+    subplot(4,4,np)
+    pmCloudOfResults(compTable   , tool ,'onlyCenters',false ,'userfsize' , 2, ...
+                 'centerPerc', 90    ,'useHRF'     ,useHRF{:},'lineStyle' , '-', ...
+                 'lineWidth' , .7     ,'noiselevel' ,nslvl , 'addtext',false, ...
                  'color', [0.5,0.5,0.5], 'xlims',[.5, 5.5],'ylims',[.5, 5.5],...
                  'xtick',[1:5],'ytick',[1:5], 'addcibar', true, ...
                  'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+end;end
+fnameRoot = ['CloudPlots_4x4_Noise_' nslvl];
+saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
+
+
+
+
+%% FIGURE 8
+% MID NOISE, ALL MIXED HRFs
+mm = mrvNewGraphWin('MidNoiseMixHRFCloudPoints');
+% Fig size is relative to the screen used. This is for laptop at 1900x1200
+set(mm,'Position',[0.007 0.62  0.8  0.3]);
+tools   = {'vista','afni','popeye','aprf'};
+tools   = {'vista','afni','aprf'};
+useHRF  = 'mix';
+nslvl   = 'low';
+np      = 0;
+for tool = tools
+    np=np+1;
+    subplot(1,4,np)
+    % figure
+    pmCloudOfResults(compTable   , tool ,'onlyCenters',false ,'userfsize' , 2, ...
+                 'centerPerc', 90    ,'useHRF'     ,useHRF ,'lineStyle' , '-', ...
+                 'lineWidth' , .7     ,'noiselevel' ,nslvl , 'addtext',true, ...
+                 'color', [0.5,0.5,0.5], 'xlims',[0, 5.5],'ylims',[0, 5.5],...
+                 'xtick',[1:5],'ytick',[1:5], 'addcihist', true, ...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
 end
-fnameRoot = ['CloudPlots_MixHRF_Noise_' nslvl];
-saveas(gcf,fullfile(reportDir, strcat(fnameRoot,'.svg')),'svg');
+fnameRoot = ['CloudPlots_MixHRF_Noise_HIST' nslvl];
+saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 %}
 
 
