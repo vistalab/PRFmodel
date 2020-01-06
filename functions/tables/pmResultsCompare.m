@@ -22,6 +22,7 @@ paramDefaults = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
 shortDefaults = {'x0','y0','Th','sMin','sMaj'};
 p.addParameter('params'         , paramDefaults , @iscell);
 p.addParameter('shortennames'   , false         , @islogical);
+p.addParameter('shortnames'     , shortDefaults , @iscell);
 p.addParameter('addisclosecol'  , false         , @islogical);
 p.addParameter('tolerance'      , 0.0001        , @isnumeric);
 p.addParameter('dotseries'      , true         , @islogical);
@@ -32,6 +33,7 @@ shortenNames = p.Results.shortennames;
 addIscloseCol= p.Results.addisclosecol;
 tolerance    = p.Results.tolerance;
 dotSeries    = p.Results.dotseries;
+shortNames   = p.Results.shortnames;
 
 
 %% Calculate
@@ -42,9 +44,9 @@ dotSeries    = p.Results.dotseries;
 % Later decide if this function returns another table with just the results
 
 newDT   = table();
-newDT.synth = synthDT.RF(:,params);
-if shortenNames && isequal(params,paramDefaults)
-    newDT.synth.Properties.VariableNames = shortDefaults;
+newDT.synth = synthDT.RF(:,params(~contains(params,'R2')));
+if shortenNames 
+    newDT.synth.Properties.VariableNames = shortNames(~contains(params,'R2'));
 end
 % Add the HRF type
 newDT.HRFtype   = synthDT.HRF.Type;
@@ -58,7 +60,7 @@ newDT.noiseLevel(synthDT.Noise.seed=="none") = repmat({'none'},[length(newDT.noi
 
 for ii=1:length(resNames)
     newDT.(resNames{ii}) = resDT{ii}(:,params);
-    newDT.(resNames{ii}).Properties.VariableNames = shortDefaults;
+    newDT.(resNames{ii}).Properties.VariableNames = shortNames;
 end
 
 % Add the isclose col for the perfect prediction case if required.
