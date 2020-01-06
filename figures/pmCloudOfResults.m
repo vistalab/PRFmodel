@@ -15,6 +15,7 @@ p.addParameter('centerperc'   , 50       , @isnumeric);
 p.addParameter('usehrf'       , 'mix'    , @ischar);
 p.addParameter('linestyle'    , '-'      , @ischar);
 p.addParameter('linewidth'    , .7       , @isnumeric);
+p.addParameter('fontsize'     , 14       , @isnumeric);
 p.addParameter('newwin'       , true     , @islogical);
 p.addParameter('noiselevel'   , 'none'   , @ischar);
 p.addParameter('saveto'       , ''       , @ischar);
@@ -37,6 +38,7 @@ centerPerc    = p.Results.centerperc;
 useHRF        = p.Results.usehrf;
 lineStyle     = p.Results.linestyle;
 lineWidth     = p.Results.linewidth;
+fontsize      = p.Results.fontsize;
 newWin        = p.Results.newwin;
 noiseLevel    = p.Results.noiselevel; noiseLevel  = string(noiseLevel);  
 saveTo        = p.Results.saveto;
@@ -96,7 +98,7 @@ for nt=1:length(tools)
     Sizes   = dt.(tool).sMaj;
     Sizemin = dt.(tool).sMin;
     Thetas  = dt.(tool).Th;
-    B       = prctile(Sizes,[twoTailedRange, 100-twoTailedRange]);
+    B       = prctile(Sizes, [twoTailedRange, 100 - twoTailedRange]);
     inRange = Sizes>=B(1) & Sizes<=B(2);
     % Apply
     X0      = X0(inRange);
@@ -132,11 +134,11 @@ for nt=1:length(tools)
 end
 
 % Plot Centers in top of the circles
-a = [scatter(unique(dt.synth.x0), unique(dt.synth.y0),100,Cs(1,:),'filled')]; hold on
+a = [scatter(unique(dt.synth.x0), unique(dt.synth.y0),40,Cs(1,:),'filled')]; hold on
 if onlyCenters
     for nt=1:length(tools)
         tool = tools{nt};
-        a = [a; scatter(median(dt.(tool).x0), median(dt.(tool).y0),150,Cs(nt+1,:),'filled')]; hold on
+        a = [a; scatter(median(dt.(tool).x0), median(dt.(tool).y0),60,Cs(nt+1,:),'filled')]; hold on
     end
 else
     viscircles([unique(dt.synth.x0),unique(dt.synth.y0)],userfsize/2,...
@@ -264,7 +266,7 @@ yticks(ytick)
 xlim(xlims); 
 ylim(ylims);  
 
-set(gca, 'FontSize', 16)
+set(gca, 'FontSize', fontsize)
 if addtext, title({['Tool: ' tools{:} ', HRF: ' strrep(useHRF,'_','\_')],['Noise: ' char(noiseLevel) ]}),end
 fnameRoot = [tools{:} '_' useHRF '_noise_' char(noiseLevel) ];
 

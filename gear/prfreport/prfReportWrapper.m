@@ -21,7 +21,7 @@ function prfReportWrapper(json, output_dir)
 % Use this command to launch in matlab
 %{
     % Create files
-    jsonPath   = fullfile(pmRootPath,'local','paper01','prfreport_paper1.json');
+    jsonPath   = fullfile(pmRootPath,'local','paper01','prfreport_paper2.json');
     output_dir = fullfile(pmRootPath,'local','paper01');
     prfReportWrapper(jsonPath, output_dir);
 
@@ -68,19 +68,26 @@ else
     DEFAULTS.sessionName = "editDefaultSessionName";
     % But we can compare several diferent analyses to the same data
         analyze             = struct(); 
-        analyze(1).Type     = "valid: aprf popeye mrvista afni";
-        analyze(2).Type     = "example_afni_or_mrvista";
+        analyze(1).Type     = "valid: aprf popeye vista afni";
+        analyze(2).Type     = "there can be more than one";
     DEFAULTS.analyze        = analyze;
     % Other params
         resultParams        = struct();
-        resultParams(1).name   = "Centerx0";
-        resultParams(2).name   = "Centery0";
-        resultParams(3).name   = "Theta";
-        resultParams(4).name   = "sigmaMinor";
-        resultParams(5).name   = "sigmaMajor";
-    DEFAULTS.resultParams   = resultParams;    
+        resultParams(1).name = "Centerx0";
+        resultParams(2).name = "Centery0";
+        resultParams(3).name = "Theta";
+        resultParams(4).name = "sigmaMinor";
+        resultParams(5).name = "sigmaMajor";
+        resultParams(6).name = "R2";
+        resultParamsShort(1).shortname = "x0";
+        resultParamsShort(2).shortname = "y0";
+        resultParamsShort(3).shortname = "Th";
+        resultParamsShort(4).shortname = "sMin";
+        resultParamsShort(5).shortname = "sMaj";
+        resultParamsShort(6).shortname = "R2";
+    DEFAULTS.resultParams      = resultParams;    
     DEFAULTS.shortenParamNames = true;
-    DEFAULTS.doTSeries      = false;
+    DEFAULTS.doTSeries         = false;
     % pmCloudOfResults params
         pmCloudOfResultsParams = struct();
         pmCloudOfResultsParams.onlyCenters = false;
@@ -89,6 +96,7 @@ else
         pmCloudOfResultsParams.useHRF      = "{}";
         pmCloudOfResultsParams.lineStyle   = "-";
         pmCloudOfResultsParams.lineWidth   = 0.7;
+        pmCloudOfResultsParams.fontsize    = 14;
         pmCloudOfResultsParams.noiselevel  = "mid";
         pmCloudOfResultsParams.addtext     = true;
         pmCloudOfResultsParams.color       = [0.5,0.5,0.5];
@@ -102,7 +110,7 @@ else
         pmCloudOfResultsParams.saveToType  = 'svg';
     DEFAULTS.pmCloudOfResultsParams        = pmCloudOfResultsParams;  
     % Select filename to be saved
-    fname = fullfile(output_dir, 'defaultParams_ToBeEdited.json');
+    fname = fullfile(output_dir, 'prfreport-configuration-defaults.json');
     % Encode json
     jsonString = jsonencode(DEFAULTS);
     % Format a little bit
@@ -117,7 +125,7 @@ else
     if isdeployed
         fileattrib(fname,'+w +x', 'o g'); 
     end
-    disp('defaultParams_ToBeEdited.json written, edit it and pass it to the container to generate synthetic data.')
+    disp('prfreport-configuration-defaults.json written, edit it and pass it to the prfreport container as the configuration json.')
     return
 end
 
@@ -148,7 +156,6 @@ resultsNames= {};
 for nr=1:length(J.analyze)
     antype           = J.analyze{nr}.Type;
     resultsNames{nr} = antype; 
-    % I asked noah to change the name, revert this back
     resultDir = fullfile(BIDSdir,'derivatives',['prfanalyze-' antype],...
                                   ['sub-' J.subjectName],['ses-' J.sessionName]);
     if ~exist(resultDir,'dir');error("Can't find results directory %s",resultDir);end
@@ -179,20 +186,26 @@ for nr=1:length(J.analyze)
         % noahnames = {'modelpred', 'sigmamajor','sigmaminor', 'testdata', 'theta', 'x0' ,'y0'};
         % {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'}
 		switch resname
-            case 'sigmaminor',resname='sigmaMinor';
-            case 'sigmamajor',resname='sigmaMajor';
-            case 'theta',resname='Theta';
-            case 'x0',resname='Centerx0';
-            case 'y0',resname='Centery0';
+            case 'sigmaminor', resname = 'sigmaMinor';
+            case 'sigmamajor', resname = 'sigmaMajor';
+            case 'theta'     , resname = 'Theta';
+            case 'x0'        , resname = 'Centerx0';
+            case 'y0'        , resname = 'Centery0';
         end
-        pmEstimates.(resname) = data;	        
+        % Popeye is flipping y, change it back when it is fixed
+        if strcmp(resname,'Centery0') && strcmp(antype,'popeye')
+            pmEstimates.(resname) = -data;	        
+        else
+            pmEstimates.(resname) = data;	        
+        end
     end
     
     % We are always going to add by default the R2
     % This will be calculated between the testdata and modelpred
     pmEstimates.R2 = calccod(pmEstimates.testdata,  pmEstimates.modelpred,2);
  
-    % If one of the elements is missing, fill it with zeros. Popeye was not providing Theta.
+    % If one of the elements is missing, fill it with zeros. 
+    % Popeye was not providing Theta.
     if ~contains('Theta', pmEstimates.Properties.VariableNames)
         pmEstimates.Theta = zeros(size(pmEstimates.Centerx0));
     end
@@ -201,7 +214,7 @@ for nr=1:length(J.analyze)
     % Return the pmEstimates for this tool
     resultsFile{nr} = pmEstimates;
 end
-fprintf('...files loaded and table created.\n')
+fprintf('files loaded and table created.\n')
 
 
 
@@ -214,21 +227,20 @@ fprintf('...files loaded and table created.\n')
 %     ress = [ress, {res.(anNames{an})}];
 % end
 fprintf('[prfreport] Concatenating results from tools with synthetic ground-truth...')
-paramDefaults = {'R2'};
+if length(J.resultParams) ~= length(J.resultParamsShort)
+    error('The number of long and short names needs to be same and in the same order.')
+end
 for np=1:length(J.resultParams)
     paramDefaults{np} = J.resultParams{np}.name;
+    shortnames{np}    = J.resultParamsShort{np}.shortname;
 end
-
-
 
 compTable  = pmResultsCompare(SynthDT, resultsNames, resultsFile, ...
     'params', paramDefaults, ...
     'shorten names', J.shortenParamNames, ...
+    'short names', shortnames, ...
     'dotSeries', J.doTSeries);
 fprintf('done\n')
-
-
-
 
 %% Generate the output directory
 fprintf('[prfreport] Generating output directory and saving files...')
@@ -264,54 +276,77 @@ fprintf('done\n')
 
 
 %% Generate the output figures
-% Can we save .svg plots
+% Change some defaults for the plots
+set(0,'defaultAxesFontName', 'Helvetica')
+set(0,'defaultTextFontName', 'Helvetica')
 % MID NOISE, ALL MIXED HRFs
 % {
 fprintf('[prfreport] Generating and saving output figures...')
+% Generic values coming from the config.json
+% TODO: add defaults if variables not set in the json file
+onlyCenters = J.pmCloudOfResultsParams.onlyCenters;
+userfsize   = J.pmCloudOfResultsParams.userfsize;
+useHRF      = J.pmCloudOfResultsParams.useHRF;
+centerPerc  = J.pmCloudOfResultsParams.centerPerc;
+lineStyle   = J.pmCloudOfResultsParams.lineStyle;
+lineWidth   = J.pmCloudOfResultsParams.lineWidth;
+fontsize    = J.pmCloudOfResultsParams.fontsize;
+noiselevel  = J.pmCloudOfResultsParams.noiselevel;
+addtext     = J.pmCloudOfResultsParams.addtext;
+color       = J.pmCloudOfResultsParams.color;
+xlims       = J.pmCloudOfResultsParams.xlims;
+ylims       = J.pmCloudOfResultsParams.ylims;
+xtick       = J.pmCloudOfResultsParams.xtick;
+ytick       = J.pmCloudOfResultsParams.ytick;
+addcihist   = J.pmCloudOfResultsParams.addcihist;
+addcibar    = J.pmCloudOfResultsParams.addcibar;
+saveToType  = J.pmCloudOfResultsParams.saveToType;
 % load(fullfile(pmRootPath,'local','results.mat'));
 saveTo = reportDir;
 %% FIGURE 5
 kk = mrvNewGraphWin('NoiselessCloudPoints','wide','off');
 % Fig size is relative to the screen used. This is for laptop at 1900x1200
-set(kk,'Position',[0.007 0.62  0.8  0.3]);
+% set(kk,'Position',[0.007 0.62  0.8  0.3]);
+set(kk,'Units','centimeters','Position',[0 0 20 5.5]);
 subplot(1,4,1)
 tools  = {'vista'};
 useHRF = 'vista_twogammas';
 nslvl  = 'none';
-pmCloudOfResults(compTable   , tools ,'onlyCenters',false ,'userfsize' , 2, ...
-                 'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
-                 'lineWidth' , 2     ,'noiselevel' ,nslvl , ...
-                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+pmCloudOfResults(compTable   , tools ,'onlyCenters',onlyCenters ,'userfsize' , userfsize, ...
+                 'centerPerc', centerPerc ,'useHRF'     ,useHRF,'lineStyle' , lineStyle, ...
+                 'lineWidth' , lineWidth, 'noiselevel' ,nslvl , 'fontsize', fontsize, ...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType', saveToType)
 
 subplot(1,4,2)
 tools  = {'afni'};
 useHRF = 'afni_spm';
 nslvl  = 'none';
-pmCloudOfResults(compTable   , tools ,'onlyCenters',false ,'userfsize' , 2, ...
-                 'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
-                 'lineWidth' , 2     ,'noiselevel' ,nslvl , ...
-                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+pmCloudOfResults(compTable   , tools ,'onlyCenters',onlyCenters ,'userfsize' , userfsize, ...
+                 'centerPerc', centerPerc    ,'useHRF'     ,useHRF,'lineStyle' , lineStyle, ...
+                 'lineWidth' , lineWidth     ,'noiselevel' ,nslvl , 'fontsize', fontsize, ...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType',saveToType)
 
 subplot(1,4,3)
 tools  = {'popeye'};
 useHRF = 'popeye_twogammas';
 nslvl  = 'none';
-pmCloudOfResults(compTable   , tools ,'onlyCenters',false ,'userfsize' , 2, ...
-                 'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
-                 'lineWidth' , 2     ,'noiselevel' ,nslvl , ...
-                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+pmCloudOfResults(compTable   , tools ,'onlyCenters',onlyCenters ,'userfsize' , userfsize, ...
+                 'centerPerc', centerPerc    ,'useHRF'     ,useHRF,'lineStyle' , lineStyle, ...
+                 'lineWidth' , lineWidth     ,'noiselevel' ,nslvl , 'fontsize', fontsize, ...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType',saveToType)
 
 subplot(1,4,4)
 tools  = {'aprf'};
 useHRF = 'canonical';
 nslvl  = 'none';
-pmCloudOfResults(compTable   , tools ,'onlyCenters',false ,'userfsize' , 2, ...
-                 'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
-                 'lineWidth' , 1.5   ,'noiselevel' ,nslvl , ...
-                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+pmCloudOfResults(compTable   , tools ,'onlyCenters',onlyCenters ,'userfsize' , userfsize, ...
+                 'centerPerc', centerPerc    ,'useHRF'     ,useHRF,'lineStyle' , lineStyle, ...
+                 'lineWidth' , 1   ,'noiselevel' ,nslvl , 'fontsize', fontsize, ...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType',saveToType)
 
 fnameRoot = 'Noisefree_accuracy';
-saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
+set(gca,'FontName', 'Helvetica')
+saveas(kk,fullfile(saveTo, strcat(fnameRoot,'.',saveToType)),saveToType);
 
 
 
@@ -319,7 +354,8 @@ saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
 % LOW NOISE
 mm = mrvNewGraphWin('NoiselessCloudPoints',[],'off');
 % Fig size is relative to the screen used. This is for laptop at 1900x1200
-set(mm,'Position',[0.007 0.62  0.8  0.8]);
+%set(mm,'Position',[0.007 0.62  0.8  0.8]);
+set(mm,'Units','centimeters','Position',[0 0 20 22]);
 tools   = {'vista','afni','popeye','aprf'};
 useHRFs = {'vista_twogammas','afni_spm','popeye_twogammas','canonical'};
 nslvl   = 'low';
@@ -327,21 +363,23 @@ np      = 0;
 for tool = tools; for useHRF = useHRFs
     np=np+1;
     subplot(4,4,np)
-    pmCloudOfResults(compTable   , tool ,'onlyCenters',false ,'userfsize' , 2, ...
-                 'centerPerc', 90    ,'useHRF'     ,useHRF{:},'lineStyle' , '-', ...
-                 'lineWidth' , .7     ,'noiselevel' ,nslvl , 'addtext',false, ...
-                 'color', [0.5,0.5,0.5], 'xlims',[.5, 5.5],'ylims',[.5, 5.5],...
-                 'xtick',[1:5],'ytick',[1:5], 'addcibar', false, ...
-                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+    pmCloudOfResults(compTable   , tool ,'onlyCenters',onlyCenters ,'userfsize' , userfsize, ...
+                 'centerPerc', 90    ,'useHRF'     ,useHRF{:},'lineStyle' , lineStyle, ...
+                 'lineWidth' , .7     ,'noiselevel' ,nslvl , 'addtext',addtext, ...
+                 'color', color, 'xlims',xlims,'ylims',ylims,'fontsize', fontsize, ...
+                 'xtick',xtick,'ytick',ytick, 'addcibar', addcibar,'addcihist', addcihist,  ...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType',saveToType)
 end;end
 fnameRoot = ['CloudPlots_4x4_Noise_' nslvl];
-saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
+set(gca,'FontName', 'Helvetica')
+saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.',saveToType)),saveToType);
 
 
 % MID NOISE
 mm = mrvNewGraphWin('NoiselessCloudPoints',[],'off');
 % Fig size is relative to the screen used. This is for laptop at 1900x1200
-set(mm,'Position',[0.007 0.62  0.8  0.8]);
+%set(mm,'Position',[0.007 0.62  0.8  0.8]);
+set(mm,'Units','centimeters','Position',[0 0 20 22]);
 tools   = {'vista','afni','popeye','aprf'};
 useHRFs = {'vista_twogammas','afni_spm','popeye_twogammas','canonical'};
 nslvl   = 'mid';
@@ -350,22 +388,24 @@ for useHRF = useHRFs; for tool = tools
     np=np+1;
     subplot(4,4,np)
     % figure
-    pmCloudOfResults(compTable   , tool ,'onlyCenters',false ,'userfsize' , 2, ...
-                 'centerPerc', 50    ,'useHRF'     ,useHRF{:},'lineStyle' , '-', ...
-                 'lineWidth' , .7     ,'noiselevel' ,nslvl , 'addtext',false, ...
-                 'color', [0.5,0.5,0.5], 'xlims',[.5, 5.5],'ylims',[.5, 5.5],...
-                 'xtick',[1:5],'ytick',[1:5], 'addcibar', false, ...
-                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+    pmCloudOfResults(compTable   , tool ,'onlyCenters',onlyCenters ,'userfsize' , userfsize, ...
+                 'centerPerc', centerPerc    ,'useHRF'     ,useHRF{:},'lineStyle' , lineStyle, ...
+                'lineWidth' , .7     ,'noiselevel' ,nslvl , 'addtext',addtext, ...
+                'xtick',xtick,'ytick',ytick, ...
+                 'color', color, 'xlims',xlims,'ylims',ylims,'fontsize', fontsize,'addcihist', addcihist,  ...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType',saveToType)
 end;end
 fnameRoot = ['CloudPlots_4x4_Noise_' nslvl];
-saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
+set(gca,'FontName', 'Helvetica')
+saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.',saveToType)),saveToType);
 
 
 % HIGH NOISE
 %{
 mm = mrvNewGraphWin('NoiselessCloudPoints');
 % Fig size is relative to the screen used. This is for laptop at 1900x1200
-set(mm,'Position',[0.007 0.62  0.8  0.8]);
+% set(mm,'Position',[0.007 0.62  0.8  0.8]);
+set(mm,'Units','centimeters','Position',[0 0 20 22]);
 tools   = {'vista','afni','popnohrf','aprf'};
 tools   = {'vista','afni','aprf'};
 useHRFs = {'vista_twogammas','afni_spm','popeye_twogammas','canonical'};
@@ -374,14 +414,15 @@ np      = 0;
 for tool = tools; for useHRF = useHRFs
     np=np+1;
     subplot(4,4,np)
-    pmCloudOfResults(compTable   , tool ,'onlyCenters',false ,'userfsize' , 2, ...
-                 'centerPerc', 90    ,'useHRF'     ,useHRF{:},'lineStyle' , '-', ...
-                 'lineWidth' , .7     ,'noiselevel' ,nslvl , 'addtext',false, ...
-                 'color', [0.5,0.5,0.5], 'xlims',[.5, 5.5],'ylims',[.5, 5.5],...
-                 'xtick',[1:5],'ytick',[1:5], 'addcibar', true, ...
-                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+    pmCloudOfResults(compTable   , tool ,'onlyCenters',onlyCenters ,'userfsize' , userfsize, ...
+                 'centerPerc', centerPerc    ,'useHRF'     ,useHRF{:},'lineStyle' , lineStyle, ...
+                 'lineWidth' , lineWidth     ,'noiselevel' ,nslvl , 'addtext',addtext, ...
+                 'color', color, 'xlims',xlims,'ylims',ylims,'fontsize', fontsize, ...
+                 'xtick',xtick,'ytick',ytick, 'addcibar', addcibar, ...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType',saveToType)
 end;end
 fnameRoot = ['CloudPlots_4x4_Noise_' nslvl];
+set(gca,'FontName', 'Helvetica')
 saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
 %}
 
@@ -391,24 +432,26 @@ saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
 % MID NOISE, ALL MIXED HRFs
 mm = mrvNewGraphWin('MidNoiseMixHRFCloudPoints',[],'off');
 % Fig size is relative to the screen used. This is for laptop at 1900x1200
-set(mm,'Position',[0.007 0.62  0.8  0.3]);
+% set(mm,'Position',[0.007 0.62  0.8  0.3]);
+set(mm,'Units','centimeters','Position',[0 0 20 5.5]);
 tools   = {'vista','afni','popeye','aprf'};
 useHRF  = 'mix';
-nslvl   = 'low';
+nslvl   = 'mid';
 np      = 0;
 for tool = tools
     np=np+1;
     subplot(1,4,np)
     % figure
-    pmCloudOfResults(compTable   , tool ,'onlyCenters',false ,'userfsize' , 2, ...
-                 'centerPerc', 90    ,'useHRF'     ,useHRF ,'lineStyle' , '-', ...
-                 'lineWidth' , .7     ,'noiselevel' ,nslvl , 'addtext',true, ...
-                 'color', [0.5,0.5,0.5], 'xlims',[0, 5.5],'ylims',[0, 5.5],...
-                 'xtick',[1:5],'ytick',[1:5], 'addcihist', true, ...
-                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+    pmCloudOfResults(compTable   , tool ,'onlyCenters',onlyCenters ,'userfsize' , userfsize, ...
+                 'centerPerc', 90    ,'useHRF'     ,useHRF ,'lineStyle' , lineStyle, ...
+                 'lineWidth' , lineWidth     ,'noiselevel' ,nslvl , 'addtext',addtext, ...
+                 'color', color, 'xlims',xlims,'ylims',ylims,'fontsize', fontsize, ...
+                 'xtick',xtick,'ytick',ytick, 'addcihist', addcihist, ...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType',saveToType)
 end
 fnameRoot = ['CloudPlots_MixHRF_Noise_HIST' nslvl];
-saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
+set(gca,'FontName', 'Helvetica')
+saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.',saveToType)),saveToType);
 fprintf('done\n')
 
 %% Change file attributes and close
@@ -416,7 +459,7 @@ if isdeployed
     fprintf('[prfreport] Changing file attributes and exiting...')
     fileattrib(fullfile(BIDSdir,'derivatives','prfreport'),'+w +x', 'o'); 
     fileattrib(reportDir,'+w +x', 'o'); 
-    fprintf('done.\n]')
+    fprintf('done.\n')
 end
 fprintf('[prfreport] Exiting.\n')
 return 
