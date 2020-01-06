@@ -140,7 +140,7 @@ if onlyCenters
     end
 else
     viscircles([unique(dt.synth.x0),unique(dt.synth.y0)],userfsize/2,...
-        'LineWidth',4,'Color',Cs(1,:),'LineStyle','--');
+        'LineWidth',2.5,'Color',Cs(1,:),'LineStyle','--');
     % Instead of the centers (see above), plot the ellipses showing the distribution of the
     % centers
     for nt=1:length(tools)
@@ -217,10 +217,38 @@ if addcibar && ~strcmp(noiseLevel, "none")
 end
 
 if addcihist && ~strcmp(noiseLevel, "none")
+    % Create new axes
+    bigax = xlims(2)-xlims(1);
+    smax  = 0.3 * bigax;
+    startx = xlims(1)+0.12*smax;
+    starty = ylims(1)+0.12*smax;
+    endx   = xlims(1)+smax;
+    endy   = ylims(1)+smax;
+    textx  = mean([startx,endx]);
+    texty  = mean([starty,ylims(1)]);
+    hax = plot([startx, endx],starty*[1,1],'Color','k','LineStyle','-','LineWidth',1);hold on;
+    vax = plot(startx*[1,1],[starty, endy],'Color','k','LineStyle','-','LineWidth',1);
+    % Calculate the size density function
     [pdfsizes,xsizes] = ksdensity(Sizes);
+    % Store the limits
+    origStartx = xsizes(1);
+    origEndx   = xsizes(end);
+    % Find ground truth location
+    gt                  = unique(dt.synth.sMaj);
+    [~,groundtruthloc]  = min(abs(xsizes - (gt  * ones(size(xsizes)))));
+    % Rescale the values to be inside the new axes
+    xsizes   = rescale(xsizes,startx,endx);
+    pdfsizes = rescale(pdfsizes,starty,endy);
+    % Calculate rescaled gt
+    rgt     = xsizes(groundtruthloc);
+    % Plot it
     plot(xsizes,pdfsizes,'Color','k','LineStyle','-','LineWidth',1.5); hold on;
-    [~,groundtruthloc]  = min(abs(xsizes - (unique(dt.synth.sMaj)  * ones(size(xsizes)))));
-    hmin = plot(unique(dt.synth.sMaj)*[1,1],[0 pdfsizes(groundtruthloc)],'Color','b','LineStyle','-','LineWidth',2);hold on;
+    % Add line where the ground truth is
+    hmin = plot(rgt*[1,1],[starty pdfsizes(groundtruthloc)],'Color','b','LineStyle','-','LineWidth',2);hold on;
+    % Add a text with the ground truth value
+    text(startx, texty, sprintf('%g',origStartx));
+    text(endx, texty, sprintf('%g deg',origEndx));
+    text(rgt, texty, sprintf('%g',gt));
 end
 
 if addtext
