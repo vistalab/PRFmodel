@@ -46,12 +46,16 @@ if useparallel
 	% [available] = strtok(Rem)
 	% parpool('ips_base', str2num(available))
 	%%%%% END CLUSTER PARPOOL  %%%%%%
+	% Calculate the chunksize that optimizes the workers the most
+	chksize = ceil(height(DTDT) / (NumWorkers));
+	if chksize > 3000
+		chksize = 3000;
+	end 
 else
 	NumWorkers = 0;
+	chksize    = 3000;
 end
-% chksize = ceil(height(DTDT) / (NumWorkers));
 % Optimize for Matlab memory problems
-chksize = 3000;
 if height(DTDT) < chksize
     DTcc{1}       = DTDT;  
     nchcks        = 1;
