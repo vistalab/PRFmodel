@@ -239,18 +239,18 @@ if addcihist && ~strcmp(noiseLevel, "none")
     gt                  = unique(dt.synth.sMaj);
     [~,groundtruthloc]  = min(abs(xsizes - (gt  * ones(size(xsizes)))));
     % Rescale the values to be inside the new axes
-    xsizes   = rescale(xsizes,startx,endx);
-    pdfsizes = rescale(pdfsizes,starty,endy);
+    rxsizes   = rescale(xsizes,startx,endx);
+    rpdfsizes = rescale(pdfsizes,starty,endy);
     % Calculate rescaled gt
-    rgt     = xsizes(groundtruthloc);
+    rgt     = rxsizes(groundtruthloc);
     % Plot it
-    plot(xsizes,pdfsizes,'Color','k','LineStyle','-','LineWidth',1.5); hold on;
+    plot(rxsizes,rpdfsizes,'Color','k','LineStyle','-','LineWidth',1.5); hold on;
     % Add line where the ground truth is
-    hmin = plot(rgt*[1,1],[starty pdfsizes(groundtruthloc)],'Color','b','LineStyle','-','LineWidth',2);hold on;
+    hmin = plot(rgt*[1,1],[starty rpdfsizes(groundtruthloc)],'Color','b','LineStyle','-','LineWidth',2);hold on;
     % Add a text with the ground truth value
-    text(startx, texty, sprintf('%g',origStartx));
-    text(endx, texty, sprintf('%g deg',origEndx));
-    text(rgt, texty, sprintf('%g',gt));
+    text(startx, texty, sprintf('%.2g',origStartx));
+    text(rgt, texty, sprintf('%.2g',gt));
+    text(endx, texty, sprintf('%.2g deg (RF size), Ratio(mean(fit./gt)): %.2g',origEndx, mean(Sizes./gt)));
 end
 
 if addtext
