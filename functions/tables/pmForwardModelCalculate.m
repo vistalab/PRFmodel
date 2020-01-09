@@ -51,6 +51,8 @@ if useparallel
 	if chksize > 3000
 		chksize = 3000;
 	end 
+	% Open the parpool and name it so that we can close it later
+	p = parpool(NumWorkers);
 else
 	NumWorkers = 0;
 	chksize    = 3000;
@@ -223,7 +225,11 @@ parfor (nn=1:nchcks, NumWorkers)
 end
 
 toc
-disp('The parfor par has been finished')
+if useparallel
+	disp('The parfor par has been finished')
+	disp('Close parpool')
+	delete(p)
+end
 
 %% Concatenate back, either files or final table
 if writefiles

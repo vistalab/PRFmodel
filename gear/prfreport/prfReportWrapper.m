@@ -23,6 +23,8 @@ function prfReportWrapper(json, output_dir)
     % Create files
     jsonPath   = fullfile(pmRootPath,'local','paper01','prfreport_paper2.json');
     output_dir = fullfile(pmRootPath,'local','paper01');
+    jsonPath   = fullfile(pmRootPath,'local','ellipse','prfreport-configuration-ellipse-sess02.json');
+    output_dir = fullfile(pmRootPath,'local','ellipse');
     prfReportWrapper(jsonPath, output_dir);
 
 %}
@@ -79,13 +81,14 @@ else
         resultParams(4).name = "sigmaMinor";
         resultParams(5).name = "sigmaMajor";
         resultParams(6).name = "R2";
+    DEFAULTS.resultParams      = resultParams;    
         resultParamsShort(1).shortname = "x0";
         resultParamsShort(2).shortname = "y0";
         resultParamsShort(3).shortname = "Th";
         resultParamsShort(4).shortname = "sMin";
         resultParamsShort(5).shortname = "sMaj";
         resultParamsShort(6).shortname = "R2";
-    DEFAULTS.resultParams      = resultParams;    
+    DEFAULTS.resultParamsShort = resultParamsShort;    
     DEFAULTS.shortenParamNames = true;
     DEFAULTS.doTSeries         = false;
     % pmCloudOfResults params
@@ -99,6 +102,7 @@ else
         pmCloudOfResultsParams.fontsize    = 14;
         pmCloudOfResultsParams.noiselevel  = "mid";
         pmCloudOfResultsParams.addtext     = true;
+        pmCloudOfResultsParams.useellipse  = false;
         pmCloudOfResultsParams.color       = [0.5,0.5,0.5];
         pmCloudOfResultsParams.xlims       = [0, 5.5];
         pmCloudOfResultsParams.ylims       = [0, 5.5];
@@ -275,7 +279,10 @@ end
 fprintf('done\n')
 
 
+
+
 %% Generate the output figures
+if J.createplots
 % Change some defaults for the plots
 set(0,'defaultAxesFontName', 'Helvetica')
 set(0,'defaultTextFontName', 'Helvetica')
@@ -293,6 +300,7 @@ lineWidth   = J.pmCloudOfResultsParams.lineWidth;
 fontsize    = J.pmCloudOfResultsParams.fontsize;
 noiselevel  = J.pmCloudOfResultsParams.noiselevel;
 addtext     = J.pmCloudOfResultsParams.addtext;
+useellipse  = J.pmCloudOfResultsParams.useellipse;
 color       = J.pmCloudOfResultsParams.color;
 xlims       = J.pmCloudOfResultsParams.xlims;
 ylims       = J.pmCloudOfResultsParams.ylims;
@@ -307,16 +315,31 @@ saveTo = reportDir;
 kk = mrvNewGraphWin('NoiselessCloudPoints','wide','off');
 % Fig size is relative to the screen used. This is for laptop at 1900x1200
 % set(kk,'Position',[0.007 0.62  0.8  0.3]);
-set(kk,'Units','centimeters','Position',[0 0 20 5.5]);
-subplot(1,4,1)
-tools  = {'vista'};
-useHRF = 'vista_twogammas';
+numanalysis = length(J.analyze);
+set(kk,'Units','centimeters','Position',[0 0 5*numanalysis 5.5]);
 nslvl  = 'none';
-pmCloudOfResults(compTable   , tools ,'onlyCenters',onlyCenters ,'userfsize' , userfsize, ...
+for na=1:numanalysis
+    subplot(1,numanalysis,na)
+    tools  = J.analyze{na}.Type;
+    switch tools
+        case {'vista','mrvista','vistasoft'}
+            useHRF = 'vista_twogammas';
+        case {'pop','popeye'}
+            useHRF = 'popeye_twogammas';
+        case {'afni','afni4','afni6','afnidog'}
+            useHRF = 'afni_spm';
+        case {'aprf','analyzeprf'}
+            useHRF = 'canonical';
+        otherwise
+            warning('%s not recorded, using vista_twogammas as default',J.analyze{na})
+    end    
+    pmCloudOfResults(compTable   , {tools} ,'onlyCenters',onlyCenters ,'userfsize' , userfsize, ...
                  'centerPerc', centerPerc ,'useHRF'     ,useHRF,'lineStyle' , lineStyle, ...
                  'lineWidth' , lineWidth, 'noiselevel' ,nslvl , 'fontsize', fontsize, ...
+                 'useellipse', useellipse, ...
                  'newWin'    , false ,'saveTo'     ,'','saveToType', saveToType)
-
+end
+%{
 subplot(1,4,2)
 tools  = {'afni'};
 useHRF = 'afni_spm';
@@ -343,7 +366,7 @@ pmCloudOfResults(compTable   , tools ,'onlyCenters',onlyCenters ,'userfsize' , u
                  'centerPerc', centerPerc    ,'useHRF'     ,useHRF,'lineStyle' , lineStyle, ...
                  'lineWidth' , 1   ,'noiselevel' ,nslvl , 'fontsize', fontsize, ...
                  'newWin'    , false ,'saveTo'     ,'','saveToType',saveToType)
-
+%}
 fnameRoot = 'Noisefree_accuracy';
 set(gca,'FontName', 'Helvetica')
 saveas(kk,fullfile(saveTo, strcat(fnameRoot,'.',saveToType)),saveToType);
@@ -355,17 +378,37 @@ saveas(kk,fullfile(saveTo, strcat(fnameRoot,'.',saveToType)),saveToType);
 mm = mrvNewGraphWin('NoiselessCloudPoints',[],'off');
 % Fig size is relative to the screen used. This is for laptop at 1900x1200
 %set(mm,'Position',[0.007 0.62  0.8  0.8]);
-set(mm,'Units','centimeters','Position',[0 0 20 22]);
-tools   = {'vista','afni','popeye','aprf'};
-useHRFs = {'vista_twogammas','afni_spm','popeye_twogammas','canonical'};
+set(mm,'Units','centimeters','Position',[0 0 5*numanalysis 5.5*numanalysis]);
+tools   = {};
+useHRFs = {};
+for nj=1:length(J.analyze)
+    tool = J.analyze{nj}.Type;
+    switch tool
+        case {'vista','mrvista','vistasoft'}
+            useHRF = 'vista_twogammas';
+        case {'pop','popeye'}
+            useHRF = 'popeye_twogammas';
+        case {'afni','afni4','afni6','afnidog'}
+            useHRF = 'afni_spm';
+        case {'aprf','analyzeprf'}
+            useHRF = 'canonical';
+        otherwise
+            warning('%s not recorded, using vista_twogammas as default',J.analyze{na})
+    end    
+    tools{nj}   = tool;
+    useHRFs{nj} = useHRF;
+end
+% tools   = {'vista','afni','popeye','aprf'};
+% useHRFs = {'vista_twogammas','afni_spm','popeye_twogammas','canonical'};
 nslvl   = 'low';
 np      = 0;
 for tool = tools; for useHRF = useHRFs
     np=np+1;
-    subplot(4,4,np)
+    subplot(numanalysis,numanalysis,np)
     pmCloudOfResults(compTable   , tool ,'onlyCenters',onlyCenters ,'userfsize' , userfsize, ...
-                 'centerPerc', 90    ,'useHRF'     ,useHRF{:},'lineStyle' , lineStyle, ...
-                 'lineWidth' , .7     ,'noiselevel' ,nslvl , 'addtext',addtext, ...
+                 'centerPerc', centerPerc    ,'useHRF'     ,useHRF{:},'lineStyle' , lineStyle, ...
+                 'lineWidth' , lineWidth     ,'noiselevel' ,nslvl , 'addtext',addtext, ...
+                 'useellipse', useellipse, ...
                  'color', color, 'xlims',xlims,'ylims',ylims,'fontsize', fontsize, ...
                  'xtick',xtick,'ytick',ytick, 'addcibar', addcibar,'addcihist', addcihist,  ...
                  'newWin'    , false ,'saveTo'     ,'','saveToType',saveToType)
@@ -380,18 +423,18 @@ mm = mrvNewGraphWin('NoiselessCloudPoints',[],'off');
 % Fig size is relative to the screen used. This is for laptop at 1900x1200
 %set(mm,'Position',[0.007 0.62  0.8  0.8]);
 set(mm,'Units','centimeters','Position',[0 0 20 22]);
-tools   = {'vista','afni','popeye','aprf'};
-useHRFs = {'vista_twogammas','afni_spm','popeye_twogammas','canonical'};
+% tools   = {'vista','afni','popeye','aprf'};
+% useHRFs = {'vista_twogammas','afni_spm','popeye_twogammas','canonical'};
 nslvl   = 'mid';
 np      = 0;
 for useHRF = useHRFs; for tool = tools
     np=np+1;
-    subplot(4,4,np)
+    subplot(numanalysis,numanalysis,np)
     % figure
     pmCloudOfResults(compTable   , tool ,'onlyCenters',onlyCenters ,'userfsize' , userfsize, ...
                  'centerPerc', centerPerc    ,'useHRF'     ,useHRF{:},'lineStyle' , lineStyle, ...
-                'lineWidth' , .7     ,'noiselevel' ,nslvl , 'addtext',addtext, ...
-                'xtick',xtick,'ytick',ytick, ...
+                'lineWidth' , lineWidth     ,'noiselevel' ,nslvl , 'addtext',addtext, ...
+                'xtick',xtick,'ytick',ytick, 'useellipse', useellipse, ...
                  'color', color, 'xlims',xlims,'ylims',ylims,'fontsize', fontsize,'addcihist', addcihist,  ...
                  'newWin'    , false ,'saveTo'     ,'','saveToType',saveToType)
 end;end
@@ -433,19 +476,20 @@ saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
 mm = mrvNewGraphWin('MidNoiseMixHRFCloudPoints',[],'off');
 % Fig size is relative to the screen used. This is for laptop at 1900x1200
 % set(mm,'Position',[0.007 0.62  0.8  0.3]);
-set(mm,'Units','centimeters','Position',[0 0 20 5.5]);
-tools   = {'vista','afni','popeye','aprf'};
+set(mm,'Units','centimeters','Position',[0 0 5*numanalysis 5.5]);
+%tools   = {'vista','afni','popeye','aprf'};
 useHRF  = 'mix';
 nslvl   = 'mid';
 np      = 0;
 for tool = tools
     np=np+1;
-    subplot(1,4,np)
+    subplot(1,numanalysis,np)
     % figure
     pmCloudOfResults(compTable   , tool ,'onlyCenters',onlyCenters ,'userfsize' , userfsize, ...
-                 'centerPerc', 90    ,'useHRF'     ,useHRF ,'lineStyle' , lineStyle, ...
+                 'centerPerc', centerPerc    ,'useHRF'     ,useHRF ,'lineStyle' , lineStyle, ...
                  'lineWidth' , lineWidth     ,'noiselevel' ,nslvl , 'addtext',addtext, ...
                  'color', color, 'xlims',xlims,'ylims',ylims,'fontsize', fontsize, ...
+                 'useellipse', useellipse, ...
                  'xtick',xtick,'ytick',ytick, 'addcihist', addcihist, ...
                  'newWin'    , false ,'saveTo'     ,'','saveToType',saveToType)
 end
@@ -453,6 +497,8 @@ fnameRoot = ['CloudPlots_MixHRF_Noise_HIST' nslvl];
 set(gca,'FontName', 'Helvetica')
 saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.',saveToType)),saveToType);
 fprintf('done\n')
+end  % createplots
+
 
 %% Change file attributes and close
 if isdeployed
