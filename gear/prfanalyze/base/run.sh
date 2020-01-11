@@ -18,25 +18,52 @@ fi
 # Some variables and functions #################################################
 
 CONTAINER="[garikoitz/prfanalyze]"
+VERBOSE=0
+FORCE=0 # 1 for force overwrite
 # Built to flywheel-v0 spec.
 FLYWHEEL_BASE=/flywheel/v0
 OUTPUT_DIR="$FLYWHEEL_BASE"/output
 INPUT_DIR="$FLYWHEEL_BASE"/input
-if [ -z "$1" ]
-then CONFIG_FILE="$INPUT_DIR"/config.json
-else CONFIG_FILE="$1"
-fi
+DEFAULT_CONFIG_FILE="$INPUT_DIR"/config.json
+CONFIG_FILE=""
+
 # How we print to stdout:
 function note {
-    echo "$CONTAINER" "   " "$*"
+    [ "$VERBOSE" = 1 ] && echo "$CONTAINER" "   " "$*"
 }
 function err {
-    echo "<ERROR>" "$CONTAINER" "   " "$*"
+    echo "<ERROR>" "$CONTAINER" "   " "$*" >2
 }
 function die {
-    echo "<ERROR>" "$CONTAINER" "   " "$*"
+    echo "<ERROR>" "$CONTAINER" "   " "$*" >2
     exit 1
 }
+
+
+# Process Arguments ############################################################
+
+while [ "$#" -gt 0 ]
+do   case "$1"
+     in "--help"|"-h")
+            cat /opt/help.txt
+            exit 0
+            ;;
+        "--force"|"-f")
+            FORCE=1
+            ;;
+        "--verbose"|"-v")
+            VERBOSE=1
+            ;;
+        *)
+            if [ -z "$CONFIG_FILE" ]
+            then CONFIG_FILE="$1"
+            else die "Too many arguments given to docker"
+            fi
+            ;;
+     esac
+     shift
+done
+[ -z "$CONFIG_FILE" ] && CONFIG_FILE="$DEFAULT_CONFIG_FILE"
 
 
 # Main Script ##################################################################
@@ -58,6 +85,8 @@ function die {
 # otherwise, we run the following python code to parse the json and run the
 # /solve.sh script!
 mkdir -p /running
+export FORCE
+export VERBOSE
 python /scripts/run.py "$CONFIG_FILE" || die "Python startup script failed!"
 # At this point, the files should have been exported to the appropriate directory,
 # which should be linked to /running/output_bids
@@ -73,32 +102,34 @@ sub=$(basename $subdir)
 sub=${sub:4}
 
 # For any nifti, mat, or JSON file in the output directory, we want to BIDSify it:
+prefix="sub-${sub}_ses-${ses}_task-prf"
+nn=${#prefix}
 if compgen -G "/running/output_bids/*.nii" > /dev/null
 then for fl in /running/output_bids/*.nii
      do bnm="`basename $fl .nii`"
         dnm="`dirname $fl`"
-        mv "$fl" "${dnm}/sub-${sub}_ses-${ses}_task-prf_${bnm}.nii"
+        [ "${bnm:0:$nn}" = "$prefix" ] || mv "$fl" "${dnm}/${prefix}_${bnm}.nii"
      done
 fi
 if compgen -G "/running/output_bids/*.nii.gz" > /dev/null
 then for fl in /running/output_bids/*.nii.gz
      do bnm="`basename $fl .nii.gz`"
         dnm="`dirname $fl`"
-        mv "$fl" "${dnm}/sub-${sub}_ses-${ses}_task-prf_${bnm}.nii.gz"
+        [ "${bnm:0:$nn}" = "$prefix" ] || mv "$fl" "${dnm}/${prefix}_${bnm}.nii.gz"
      done
 fi
 if compgen -G "/running/output_bids/*.mat" > /dev/null
 then for fl in /running/output_bids/*.mat
      do bnm="`basename $fl .mat`"
         dnm="`dirname $fl`"
-        mv "$fl" "${dnm}/sub-${sub}_ses-${ses}_task-prf_${bnm}.mat"
+        [ "${bnm:0:$nn}" = "$prefix" ] || mv "$fl" "${dnm}/${prefix}_${bnm}.mat"
      done
 fi
 if compgen -G "/running/output_bids/*.json" > /dev/null
 then for fl in /running/output_bids/*.json
      do bnm="`basename $fl .json`"
         dnm="`dirname $fl`"
-        mv "$fl" "${dnm}/sub-${sub}_ses-${ses}_task-prf_${bnm}.json"
+        [ "${bnm:0:$nn}" = "$prefix" ] || mv "$fl" "${dnm}/${prefix}_${bnm}.json"
      done
 fi
 
