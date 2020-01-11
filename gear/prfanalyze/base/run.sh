@@ -20,6 +20,7 @@ fi
 CONTAINER="[garikoitz/prfanalyze]"
 VERBOSE=0
 FORCE=0 # 1 for force overwrite
+FIELDS="task-prf_acq-normal" # default BIDS fields in the filenames
 # Built to flywheel-v0 spec.
 FLYWHEEL_BASE=/flywheel/v0
 OUTPUT_DIR="$FLYWHEEL_BASE"/output
@@ -54,6 +55,11 @@ do   case "$1"
         "--verbose"|"-v")
             VERBOSE=1
             ;;
+        "--bids-fields"|"-b")
+            [ "$#" -gt 2 ] || die "Option $1 requires an argument."
+            shift
+            FIELDS="$1"
+            ;;
         *)
             if [ -z "$CONFIG_FILE" ]
             then CONFIG_FILE="$1"
@@ -64,6 +70,7 @@ do   case "$1"
      shift
 done
 [ -z "$CONFIG_FILE" ] && CONFIG_FILE="$DEFAULT_CONFIG_FILE"
+([ "$FIELDS" = "-" ] || [ "$FIELDS" = "_" ] || [ "$FIELDS" = " " ]) && FIELDS=""
 
 
 # Main Script ##################################################################
@@ -89,11 +96,11 @@ export FORCE
 export VERBOSE
 python /scripts/run.py "$CONFIG_FILE" || die "Python startup script failed!"
 # At this point, the files should have been exported to the appropriate directory,
-# which should be linked to /running/output_bids
-[ -d /running/output_bids ] || die "Python startup script failed to make output link!"
+# which should be linked to /running/out
+[ -d /running/out ] || die "Python startup script failed to make output link!"
 
 # go to the output_bids path and extract subject and session...
-cd -P /running/output_bids
+cd -P /running/out
 sesdir=$PWD
 subdir=$(dirname $sesdir)
 ses=$(basename $sesdir)
@@ -102,34 +109,39 @@ sub=$(basename $subdir)
 sub=${sub:4}
 
 # For any nifti, mat, or JSON file in the output directory, we want to BIDSify it:
-prefix="sub-${sub}_ses-${ses}_task-prf"
+prefix="sub-${sub}_ses-${ses}"
+[ -n "$FIELDS" ] && prefix="${prefix}_${FIELDS}"
+
 nn=${#prefix}
-if compgen -G "/running/output_bids/*.nii" > /dev/null
-then for fl in /running/output_bids/*.nii
+if compgen -G "/running/out/*.nii" > /dev/null
+then for fl in /running/out/*.nii
      do bnm="`basename $fl .nii`"
         dnm="`dirname $fl`"
         [ "${bnm:0:$nn}" = "$prefix" ] || mv "$fl" "${dnm}/${prefix}_${bnm}.nii"
      done
 fi
-if compgen -G "/running/output_bids/*.nii.gz" > /dev/null
-then for fl in /running/output_bids/*.nii.gz
+if compgen -G "/running/out/*.nii.gz" > /dev/null
+then for fl in /running/out/*.nii.gz
      do bnm="`basename $fl .nii.gz`"
         dnm="`dirname $fl`"
         [ "${bnm:0:$nn}" = "$prefix" ] || mv "$fl" "${dnm}/${prefix}_${bnm}.nii.gz"
      done
 fi
-if compgen -G "/running/output_bids/*.mat" > /dev/null
-then for fl in /running/output_bids/*.mat
+if compgen -G "/running/out/*.mat" > /dev/null
+then for fl in /running/out/*.mat
      do bnm="`basename $fl .mat`"
         dnm="`dirname $fl`"
         [ "${bnm:0:$nn}" = "$prefix" ] || mv "$fl" "${dnm}/${prefix}_${bnm}.mat"
      done
 fi
-if compgen -G "/running/output_bids/*.json" > /dev/null
-then for fl in /running/output_bids/*.json
+if compgen -G "/running/out/*.json" > /dev/null
+then for fl in /running/out/*.json
      do bnm="`basename $fl .json`"
         dnm="`dirname $fl`"
-        [ "${bnm:0:$nn}" = "$prefix" ] || mv "$fl" "${dnm}/${prefix}_${bnm}.json"
+        [ "${bnm:0:$nn}" = "$prefix" ] || {
+            cat "$fl" | python -m json.tool > "${dnm}/${prefix}_${bnm}.json"
+            rm "$fl"
+        }
      done
 fi
 
