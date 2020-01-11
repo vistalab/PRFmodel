@@ -6,12 +6,22 @@
 function help {
     cat <<EOF
 SYNTAX: tag-all.sh <version>
-For example, `tag-all.sh 1.0.4`
+For example, tag-all.sh 1.0.4
 Creates tagged images with the given version number out of all the latest docker
 container images. The latest images are not deleted or changed. If images with
 the tag latest have not been built, this script will fail.
 EOF
 }
+
+[ "$#" = 1 ] || {
+    help
+    exit 1
+}
+([ "$1" = "-h" ] || [ "$1" = "--help" ]) && {
+    help
+    exit 0
+}
+ver="$1"
 
 # First, find the directory that this script is in:
 path="$(cd "$(dirname "$0")" && pwd -P)"
