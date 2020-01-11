@@ -414,10 +414,13 @@ saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
 % No need to create noise free signal and substract. Our noise is already fMRI
 % BOLD signal percent change
 % Create generic
-pm                 = prfModel;
-pm.TR              = 1.5;
-pm.BOLDcontrast    = 10;
-pm.Noise.jitter    = [0,0]; % [freq, ampl]
+pm                       = prfModel;
+pm.TR                    = 1.5;
+pm.BOLDcontrast          = 10;
+pm.Noise.jitter          = [0,0]; % [freq, ampl]
+pm.signalPercentage      = 'spc';
+pm.Stimulus.durationSecs = 250;
+pm.compute;
 
 % PLOT IT
 sfrequency      = ((1/pm.TR)*(0:(pm.timePointsN/2)-1)/pm.timePointsN)';
@@ -442,7 +445,7 @@ title('LOW NOISE VOXEL')
 
 subplot(2,3,2)
 % Change for mid voxel
-pm.Noise.setVoxelDefaults('mid noise');
+pm.Noise.setVoxelDefaults('mid');
 pm.Noise.seed   = 12347;
 pm.Noise.compute;
 diffmid = pm.Noise.values;
@@ -465,7 +468,7 @@ diffhigh = pm.Noise.values;
 Fsynth          = abs(fft(pm.Noise.values)/pm.timePointsN)';
 Fsynth(2:end-1) = 2*Fsynth(2:end-1);
 Fsynth          = Fsynth(1:(pm.timePointsN/2));
-Fsynthmin       = Fsynth;ylim([-0.2,03])
+Fsynthmin       = Fsynth;
 pm.plot('what','both','window',false,'addtext',false,'color',rcolor);
 ylim([-0.2,0.3])
 xlabel('Time [sec]'), set(gca,'FontSize',16)
@@ -479,7 +482,7 @@ plot(sfrequency(2:end,:),Fsynthmax(2:end,:),'-','color',gcolor);hold on;
 % legend({'Low noise (synth)','Low noise (real)'},'location','best')
 ylabel('Noise amplitude spectrum')
 xlabel('f [Hz]'); set(gca,'FontSize',14)
-ylim([0,0.03])
+ylim([0,0.03]); xlim([0,0.33])
 % title('Noise spectrum of the real and synth voxels')
 
 subplot(2,3,5)
@@ -487,7 +490,7 @@ plot(sfrequency(2:end,:),Fsynthmid(2:end,:),'-','color',bcolor);hold on;
 % plot(frequency(2:end,:),realFallmid(2:end,:),'-.','color',[0.8 0.8 1],'linewidth',2);  
 % legend({'Mid noise (synth)','Mid noise (real)'},'location','best')
 xlabel('f [Hz]'); set(gca,'FontSize',14)
-ylim([0,0.03])
+ylim([0,0.03]); xlim([0,0.33])
 
 subplot(2,3,6)
 plot(sfrequency(2:end,:),Fsynthmin(2:end,:),'-','color',rcolor);hold on;
@@ -495,7 +498,7 @@ plot(sfrequency(2:end,:),Fsynthmin(2:end,:),'-','color',rcolor);hold on;
 % legend({'High noise (synth)','High noise (real)'},'location','best')
 xlabel('f [Hz]'); 
 set(gca,'FontSize',14)
-ylim([0,0.03])
+ylim([0,0.03]); xlim([0,0.33])
 fnameRoot = 'SyntheticVoxelTimeSeriesAndSpectrum';
 saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
 
@@ -516,3 +519,134 @@ set(gca,'FontSize',14)
 fnameRoot = 'SyntheticVoxels_NoiseDistribution_TOGETHER';
 saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
 
+%% Create the fig for sup mat asked by jon
+A = load('/Users/glerma/gDrive/STANFORD/PROJECTS/2019_PRF_Validation_methods_(Gari)/__PUBLISH__/PAPER_SUBMISSION01/Figures/RAW/sub-paper_ses-sess01-prf_acq-normal_run-01_bold.mat');
+kk = mrvNewGraphWin('NoiselessCloudPoints3sizes','wide');
+% Fig size is relative to the screen used. This is for laptop at 1900x1200
+set(kk,'Position',[0.007 0.62  0.8  0.9]);
+
+% Apply params to all
+nslvl  = 'low';
+addcihist = true;
+
+% Plot individuals
+subplot(3,4,1)
+tools  = {'vista'};
+useHRF = 'vista_twogammas';
+pmCloudOfResults(A.compTable   , tools ,'onlyCenters',false ,'userfsize' , 0.25, ...
+                 'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
+                 'lineWidth' , 2     ,'noiselevel' ,nslvl , 'addcihist', addcihist,...
+                ... 'xlims',[2.75, 3.25],'ylims',[2.75, 3.25], 'xtick',[2.5:.125:3.5],'ytick',[2.5:.125:3.5], ...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+
+subplot(3,4,2)
+tools  = {'afni'};
+useHRF = 'afni_spm';
+% nslvl  = 'none';
+pmCloudOfResults(A.compTable   , tools ,'onlyCenters',false ,'userfsize' , 0.25, ...
+                 'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
+                 'lineWidth' , 2     ,'noiselevel' ,nslvl , 'addcihist', addcihist,...
+                 ... 'xlims',[2.75, 3.25],'ylims',[2.75, 3.25], 'xtick',[2.5:.125:3.5],'ytick',[2.5:.125:3.5], ...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+
+subplot(3,4,3)
+tools  = {'popeye'};
+useHRF = 'popeye_twogammas';
+% nslvl  = 'none';
+pmCloudOfResults(A.compTable   , tools ,'onlyCenters',false ,'userfsize' , 0.25, ...
+                 'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
+                 'lineWidth' , 2     ,'noiselevel' ,nslvl , 'addcihist', addcihist,...
+                 ... 'xlims',[2.75, 3.25],'ylims',[2.75, 3.25], 'xtick',[2.5:.125:3.5],'ytick',[2.5:.125:3.5], ...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+
+subplot(3,4,4)
+tools  = {'aprf'};
+useHRF = 'canonical';
+% nslvl  = 'none';
+pmCloudOfResults(A.compTable   , tools ,'onlyCenters',false ,'userfsize' , 0.25, ...
+                 'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
+                 'lineWidth' , 1.5   ,'noiselevel' ,nslvl , 'addcihist', addcihist,...
+                 ... 'xlims',[2.75, 3.25],'ylims',[2.75, 3.25], 'xtick',[2.5:.125:3.5],'ytick',[2.5:.125:3.5], ...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+
+subplot(3,4,5)
+tools  = {'vista'};
+useHRF = 'vista_twogammas';
+% nslvl  = 'none';
+pmCloudOfResults(A.compTable   , tools ,'onlyCenters',false ,'userfsize' , 1, ...
+                 'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
+                 'lineWidth' , 2     ,'noiselevel' ,nslvl , 'addcihist', addcihist,...
+                ...  'xlims',[2, 4],'ylims',[2, 4], 'xtick',[2:.5:4],'ytick',[2:.5:4], ...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+
+subplot(3,4,6)
+tools  = {'afni'};
+useHRF = 'afni_spm';
+% nslvl  = 'none';
+pmCloudOfResults(A.compTable   , tools ,'onlyCenters',false ,'userfsize' , 1, ...
+                 'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
+                 'lineWidth' , 2     ,'noiselevel' ,nslvl , 'addcihist', addcihist,...
+                ...  'xlims',[2, 4],'ylims',[2, 4], 'xtick',[2:.5:4],'ytick',[2:.5:4], ...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+
+subplot(3,4,7)
+tools  = {'popeye'};
+useHRF = 'popeye_twogammas';
+% nslvl  = 'none';
+pmCloudOfResults(A.compTable   , tools ,'onlyCenters',false ,'userfsize' , 1, ...
+                 'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
+                 'lineWidth' , 2     ,'noiselevel' ,nslvl , 'addcihist', addcihist,...
+                ...  'xlims',[2, 4],'ylims',[2, 4], 'xtick',[2:.5:4],'ytick',[2:.5:4], ...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+
+subplot(3,4,8)
+tools  = {'aprf'};
+useHRF = 'canonical';
+% nslvl  = 'none';
+pmCloudOfResults(A.compTable   , tools ,'onlyCenters',false ,'userfsize' , 1, ...
+                 'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
+                 'lineWidth' , 1.5   ,'noiselevel' ,nslvl , 'addcihist', addcihist,...
+                ...  'xlims',[2, 4],'ylims',[2, 4], 'xtick',[2:.5:4],'ytick',[2:.5:4], ...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+             
+             
+subplot(3,4,9)
+tools  = {'vista'};
+useHRF = 'vista_twogammas';
+% nslvl  = 'none';
+pmCloudOfResults(A.compTable   , tools ,'onlyCenters',false ,'userfsize' , 2, ...
+                 'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
+                 'lineWidth' , 2     ,'noiselevel' ,nslvl , 'addcihist', addcihist,...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+
+subplot(3,4,10)
+tools  = {'afni'};
+useHRF = 'afni_spm';
+% nslvl  = 'none';
+pmCloudOfResults(A.compTable   , tools ,'onlyCenters',false ,'userfsize' , 2, ...
+                 'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
+                 'lineWidth' , 2     ,'noiselevel' ,nslvl , 'addcihist', addcihist,...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+
+subplot(3,4,11)
+tools  = {'popeye'};
+useHRF = 'popeye_twogammas';
+% nslvl  = 'none';
+pmCloudOfResults(A.compTable   , tools ,'onlyCenters',false ,'userfsize' , 2, ...
+                 'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
+                 'lineWidth' , 2     ,'noiselevel' ,nslvl ,'addcihist', addcihist, ...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+
+subplot(3,4,12)
+tools  = {'aprf'};
+useHRF = 'canonical';
+% nslvl  = 'none';
+pmCloudOfResults(A.compTable   , tools ,'onlyCenters',false ,'userfsize' , 2, ...
+                 'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
+                 'lineWidth' , 1.5   ,'noiselevel' ,nslvl ,'addcihist', addcihist, ...
+                 'newWin'    , false ,'saveTo'     ,'','saveToType','svg')             
+             
+             
+             
+fnameRoot = 'Noisefree_accuracy_3sizes_lownoise';
+saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');

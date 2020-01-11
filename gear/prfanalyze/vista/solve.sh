@@ -20,7 +20,7 @@ function die {
 
 
 # all we have to do is exec python...
-export PRF_SOLVER="vistasoft"
+export PRF_SOLVER="vista"
 MCR_ROOT=/opt/mcr/v95/
 
 time /compiled/run_prfanalyze_vista.sh "$MCR_ROOT" "$1" "$4" "$2" "$3" "$5"

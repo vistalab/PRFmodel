@@ -98,7 +98,7 @@ else
     DEF_colnames = DEF_colnames([end-3:end,1:end-4]);
     DEFAULTS     = DEFAULTS(:,DEF_colnames);
     % Select filename to be saved
-    fname = fullfile(output_dir, 'defaultParams_ToBeEdited.json');
+    fname = fullfile(output_dir, 'prfsynth-config-defaults.json');
     % Encode json
     jsonString = jsonencode(DEFAULTS);
     % Format a little bit
@@ -111,7 +111,7 @@ else
     fwrite(fid, jsonString,'char');fclose(fid);
     % Permissions
     fileattrib(fname,'+w +x', 'o g'); 
-    disp('defaultParams_ToBeEdited.json written, edit it and pass it to the container to generate synthetic data.')
+    disp('prfsynth-config-defaults.json written, edit it and pass it to the container to generate synthetic data.')
     return
 end
 

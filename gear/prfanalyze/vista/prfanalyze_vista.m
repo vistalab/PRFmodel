@@ -37,7 +37,7 @@ opts = {};
 if ~isempty(opts_file)
     tmp = loadjson(opts_file);
     if ~isempty(tmp)
-        tmp = tmp.options;
+        % tmp = tmp.options;
         fs = fields(tmp);
         for ii = 1:numel(fs)
             opts{end+1} = fs{ii};

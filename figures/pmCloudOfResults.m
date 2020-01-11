@@ -15,12 +15,14 @@ p.addParameter('centerperc'   , 50       , @isnumeric);
 p.addParameter('usehrf'       , 'mix'    , @ischar);
 p.addParameter('linestyle'    , '-'      , @ischar);
 p.addParameter('linewidth'    , .7       , @isnumeric);
+p.addParameter('fontsize'     , 14       , @isnumeric);
 p.addParameter('newwin'       , true     , @islogical);
 p.addParameter('noiselevel'   , 'none'   , @ischar);
 p.addParameter('saveto'       , ''       , @ischar);
 p.addParameter('savetotype'   , 'png'    , @ischar);
 p.addParameter('color'        , 'old'             );
 p.addParameter('addcibar'     , false    , @islogical);
+p.addParameter('addcihist'    , false    , @islogical);
 p.addParameter('useellipse'   , false    , @islogical);
 p.addParameter('addtext'      , true     , @islogical);
 p.addParameter('xlims'        , [1,5]    , @isnumeric);
@@ -36,12 +38,14 @@ centerPerc    = p.Results.centerperc;
 useHRF        = p.Results.usehrf;
 lineStyle     = p.Results.linestyle;
 lineWidth     = p.Results.linewidth;
+fontsize      = p.Results.fontsize;
 newWin        = p.Results.newwin;
 noiseLevel    = p.Results.noiselevel; noiseLevel  = string(noiseLevel);  
 saveTo        = p.Results.saveto;
 saveToType    = p.Results.savetotype; 
 color         = p.Results.color; 
 addcibar      = p.Results.addcibar; 
+addcihist     = p.Results.addcihist; 
 useEllipse    = p.Results.useellipse; 
 addtext       = p.Results.addtext; 
 xlims         = p.Results.xlims; 
@@ -94,7 +98,7 @@ for nt=1:length(tools)
     Sizes   = dt.(tool).sMaj;
     Sizemin = dt.(tool).sMin;
     Thetas  = dt.(tool).Th;
-    B       = prctile(Sizes,[twoTailedRange, 100-twoTailedRange]);
+    B       = prctile(Sizes, [twoTailedRange, 100 - twoTailedRange]);
     inRange = Sizes>=B(1) & Sizes<=B(2);
     % Apply
     X0      = X0(inRange);
@@ -130,15 +134,15 @@ for nt=1:length(tools)
 end
 
 % Plot Centers in top of the circles
-a = [scatter(unique(dt.synth.x0), unique(dt.synth.y0),100,Cs(1,:),'filled')]; hold on
+a = [scatter(unique(dt.synth.x0), unique(dt.synth.y0),40,Cs(1,:),'filled')]; hold on
 if onlyCenters
     for nt=1:length(tools)
         tool = tools{nt};
-        a = [a; scatter(median(dt.(tool).x0), median(dt.(tool).y0),150,Cs(nt+1,:),'filled')]; hold on
+        a = [a; scatter(median(dt.(tool).x0), median(dt.(tool).y0),60,Cs(nt+1,:),'filled')]; hold on
     end
 else
     viscircles([unique(dt.synth.x0),unique(dt.synth.y0)],userfsize/2,...
-        'LineWidth',4,'Color',Cs(1,:),'LineStyle','--');
+        'LineWidth',2.5,'Color',Cs(1,:),'LineStyle','--');
     % Instead of the centers (see above), plot the ellipses showing the distribution of the
     % centers
     for nt=1:length(tools)
@@ -214,6 +218,41 @@ if addcibar && ~strcmp(noiseLevel, "none")
     %}
 end
 
+if addcihist && ~strcmp(noiseLevel, "none")
+    % Create new axes
+    bigax = xlims(2)-xlims(1);
+    smax  = 0.3 * bigax;
+    startx = xlims(1)+0.12*smax;
+    starty = ylims(1)+0.12*smax;
+    endx   = xlims(1)+smax;
+    endy   = ylims(1)+smax;
+    textx  = mean([startx,endx]);
+    texty  = mean([starty,ylims(1)]);
+    hax = plot([startx, endx],starty*[1,1],'Color','k','LineStyle','-','LineWidth',1);hold on;
+    vax = plot(startx*[1,1],[starty, endy],'Color','k','LineStyle','-','LineWidth',1);
+    % Calculate the size density function
+    [pdfsizes,xsizes] = ksdensity(Sizes);
+    % Store the limits
+    origStartx = xsizes(1);
+    origEndx   = xsizes(end);
+    % Find ground truth location
+    gt                  = unique(dt.synth.sMaj);
+    [~,groundtruthloc]  = min(abs(xsizes - (gt  * ones(size(xsizes)))));
+    % Rescale the values to be inside the new axes
+    rxsizes   = rescale(xsizes,startx,endx);
+    rpdfsizes = rescale(pdfsizes,starty,endy);
+    % Calculate rescaled gt
+    rgt     = rxsizes(groundtruthloc);
+    % Plot it
+    plot(rxsizes,rpdfsizes,'Color','k','LineStyle','-','LineWidth',1.5); hold on;
+    % Add line where the ground truth is
+    hmin = plot(rgt*[1,1],[starty rpdfsizes(groundtruthloc)],'Color','b','LineStyle','-','LineWidth',2);hold on;
+    % Add a text with the ground truth value
+    text(startx, texty, sprintf('%.2g',origStartx));
+    text(rgt, texty, sprintf('%.2g',gt));
+    text(endx, texty, sprintf('%.2g deg (RF size), Ratio(mean(fit./gt)): %.2g',origEndx, mean(Sizes./gt)));
+end
+
 if addtext
     % legend(a,toolLegend,'location','northeast')
     xlabel('degrees')
@@ -227,7 +266,7 @@ yticks(ytick)
 xlim(xlims); 
 ylim(ylims);  
 
-set(gca, 'FontSize', 16)
+set(gca, 'FontSize', fontsize)
 if addtext, title({['Tool: ' tools{:} ', HRF: ' strrep(useHRF,'_','\_')],['Noise: ' char(noiseLevel) ]}),end
 fnameRoot = [tools{:} '_' useHRF '_noise_' char(noiseLevel) ];
 

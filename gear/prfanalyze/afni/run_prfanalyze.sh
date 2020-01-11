@@ -1,4 +1,4 @@
-docker run --rm -it \
+docker run --rm -it $4 \
       -v $2:/flywheel/v0/input \
       -v $2:/flywheel/v0/output \
-      garikoitz/prfanalyze-aprf:$1 $3 $4
+      garikoitz/prfanalyze-afni:$1 $3

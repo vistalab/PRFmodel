@@ -1,4 +1,4 @@
-    function [pmEstimates, results] = pmModelFit(input, prfimplementation, varargin)
+function [pmEstimates, results] = pmModelFit(input, prfimplementation, varargin)
 % Select and apply a PRF model to estimate model parameters
 % 
 % Syntax:
@@ -440,10 +440,9 @@ switch prfimplementation
         pmEstimates.sigmaMajor = results.model{1}.sigma.major';
         pmEstimates.sigmaMinor = results.model{1}.sigma.minor';
         % Add the time series as well
-
         if niftiInputs
-            data     = niftiRead(BOLDname);
-            pmEstimates.testdata = squeeze(data.data);
+            data                   = niftiRead(BOLDname);
+            pmEstimates.testdata   = squeeze(data.data);
         else
             pmEstimates.testdata   = repmat(ones([1,pm1.timePointsN]), ...
                 [height(pmEstimates),1]);
@@ -522,6 +521,7 @@ switch prfimplementation
             copyfile(BOLDname,niftiBOLDfile)
             
             % Demean it if pm.signalPercent == 'bold'
+            if iscell(signalPercentage);signalPercentage=signalPercentage{:};end
             switch signalPercentage
                 case {'bold'}
                     demean = true;
@@ -544,6 +544,7 @@ switch prfimplementation
             warning('For AFNI analysis, be sure that all options have the same TR and the same stimulus')
             % Create a tmp nifti file and convert it to a tmp AFNI format
             pm1            = input.pm(1);
+            if iscell(signalPercentage);signalPercentage=signalPercentage{:};end
             switch signalPercentage
                 case {'bold'}
                     demean = true;
@@ -880,6 +881,10 @@ switch prfimplementation
     otherwise
         error('Method %s not implemented yet.', prfimplementation)
 end
+
+% Make the order of pmEstimates is always the same, this is required for the unpacking python function in prfanalyze
+% TODO: make it order and count independent
+pmEstimates = pmEstimates(:,{'testdata','Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor','modelpred'});
 
 
 end

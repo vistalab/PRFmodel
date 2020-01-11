@@ -20,8 +20,10 @@ function die {
 
 
 # all we have to do is exec python...
-export PRF_SOLVER="aprf"
+export PRF_SOLVER="afni"
 MCR_ROOT=/opt/mcr/v95/
+
+export PATH="$PATH:/opt/afni"
 
 time /compiled/run_prfanalyze_afni.sh "$MCR_ROOT" "$4" "$2" "$3" "$5"
 # Check exit status
