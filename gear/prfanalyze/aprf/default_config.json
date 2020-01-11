@@ -1,10 +1,10 @@
 {
     "subjectName": "editThis",
     "sessionName": "editThis",
-    "solver": "aprf",
+    "solver":      "aprf",
     "options": {
-        "usecss":true,
-        "display": "off",
+        "usecss":   true,
+        "display":  "off",
         "seedmode": [0, 1, 2]
     }
 }

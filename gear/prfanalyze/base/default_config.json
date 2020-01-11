@@ -1,6 +1,7 @@
 {
     "subjectName": "editThis",
     "sessionName": "editThis",
-    "solver": "nben/prfanalyze-popeye:latest",
-    "options": {}
+    "solver":      null,
+    "options": {
+    }
 }

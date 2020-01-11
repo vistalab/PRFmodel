@@ -1,6 +1,7 @@
 {
     "subjectName": "editThis",
     "sessionName": "editThis",
-    "solver": "afni",
-    "options": {}
+    "solver":      "afni",
+    "options": {
+    }
 }
