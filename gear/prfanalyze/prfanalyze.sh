@@ -83,7 +83,7 @@ function pipecmd {
 # `abspath x` puts the resulting filename in ABSPATH (but don't call it with the
 # ticks because it will put it in ABSPATH in the child script)
 function abspath {
-    ABSPATH="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
+    ABSPATH="$(cd "$(dirname "$1")" && pwd -P)/$(basename "$1")"
 }
 
 
