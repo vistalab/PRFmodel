@@ -78,7 +78,7 @@ done
 [ -r "$CONFIG_FILE" ] || {
     note "No config file found. Writing default JSON file and exiting."
     cp /opt/default_config.json "$CONFIG_FILE"
-    chmod 666 "$CONFIG_FILE"
+    chmod 777 "$CONFIG_FILE"
     exit 0
 }
 
