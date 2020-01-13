@@ -12,12 +12,17 @@ bids_link   = '/running/out'
 opts_file   = os.path.join(bids_link, 'options.json')
 verbose     = os.environ.get('VERBOSE', '0').strip() == '1'
 force       = os.environ.get('FORCE', '0').strip() == '1'
+bids_fields = os.environ.get('FIELDS', 'task-prf_acq-normal')
 solver_name = os.environ.get('PRF_SOLVER', None)
 if solver_name is None:
     print("WARNING: The PRF_SOLVER environment variable is not set; using 'base'")
     solver_name = 'base'
 if not solver_name.startswith('prfanalyze-'):
     solver_name = 'prfanalyze-' + solver_name
+bids_fieldmap = [ss.split('-') for ss in bids_fields.split('_')]
+bids_fields_noacq = '_'.join(['-'.join(ff) for ff in bids_fieldmap if ff[0] != 'acq'])
+if bids_fields != '': bids_fields = '' + '_'
+if bids_fields_noacq != '': bids_fields_noacq = '' + '_'
     
 # check for a separate config file
 if len(sys.argv) > 1:
@@ -59,7 +64,7 @@ note("  Options: %s" % (opts,))
 # find the relevant files in the BIDS dir; first, the BOLD image is easy to find:
 func_dir = os.path.join(bids_dir, 'sub-' + sub, 'ses-' + ses, 'func')
 # we get the stimulus filename from the events file:
-events_file = os.path.join(func_dir, 'sub-%s_ses-%s_task-prf_events.tsv' % (sub, ses))
+events_file = os.path.join(func_dir, 'sub-%s_ses-%s%s_events.tsv' % (sub, ses, bids_fields_noacq))
 try:
     with open(events_file, 'r') as fl:
         rr = csv.reader(fl, delimiter='\t', quotechar='"')
@@ -107,7 +112,7 @@ with open(opts_file, 'w') as fl:
     json.dump(opts, fl)
 
 # We may have any number of runs, find them all:
-bold_prefix = 'sub-%s_ses-%s_task-prf_acq-normal_run-' % (sub, ses)
+bold_prefix = 'sub-%s_ses-%s%s_run-' % (sub, ses, bids_fields)
 bold_suffix = '_bold.nii.gz'
 (pn,sn) = (len(bold_prefix), len(bold_suffix))
 processed = 0
@@ -118,7 +123,7 @@ for flnm in os.listdir(func_dir):
     # we also need the stimulus json file, which is in the derivatives directory
     stimjs_file = os.path.join(
         bids_dir, 'derivatives', 'prfsynth', 'sub-'+sub, 'ses-'+ses,
-        'sub-%s_ses-%s_task-prf_acq-normal_run-%s_bold.json' % (sub, ses, runid))
+        'sub-%s_ses-%s%s_run-%s_bold.json' % (sub, ses, runid, bids_fields))
     if not os.path.isfile(stimjs_file):
         die("Stimulus JSON file (%s) not found" % stimjs_file)
     # okay, we have the files; run the solver script!
