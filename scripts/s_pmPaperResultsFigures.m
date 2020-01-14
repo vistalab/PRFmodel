@@ -278,7 +278,7 @@ mm = mrvNewGraphWin('NoiselessCloudPoints');
 % Fig size is relative to the screen used. This is for laptop at 1900x1200
 set(mm,'Position',[0.007 0.62  0.8  0.8]);
 tools   = {'vista','afni4','popnohrf','aprf'};
-useHRFs = {'friston','afni_spm','popeye_twogammas','canonical'};
+useHRFs = {'friston','afni_spm','popeye_twogammas','canonical'};q
 nslvl   = 'low';
 np      = 0;
 for tool = tools; for useHRF = useHRFs
