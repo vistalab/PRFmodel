@@ -9,7 +9,9 @@ varargin = mrvParamFormat(varargin);
 p = inputParser;
 p.addRequired('compTable');
 p.addRequired('tools'                    , @iscell);
+p.addParameter('centerdistr'  , true    , @islogical);
 p.addParameter('onlycenters'  , false    , @islogical);
+p.addParameter('location'     , 'all');
 p.addParameter('userfsize'    , 2        , @isnumeric);
 p.addParameter('centerperc'   , 50       , @isnumeric);
 p.addParameter('usehrf'       , 'mix'    , @ischar);
@@ -33,6 +35,8 @@ p.addParameter('ytick'        , [2:4]    , @isnumeric);
 p.parse(compTable, tools, varargin{:});
 % Read here only the generic ones
 onlyCenters   = p.Results.onlycenters;
+location      = p.Results.location;
+centerDistr   = p.Results.centerdistr;
 userfsize     = p.Results.userfsize;
 centerPerc    = p.Results.centerperc;
 useHRF        = p.Results.usehrf;
@@ -77,9 +81,18 @@ twoTailedRange = (100 - centerPerc) / 2;
 
 % Filter the results table
 dt = compTable(compTable.synth.sMaj == userfsize , :);
+dt = dt(dt.synth.sMin == userfsize , :);
 
 % Filter only one noise level
 dt = dt(dt.noiseLevel == noiseLevel, :);
+
+% Filter the selected location
+if strcmp(location, 'all')
+    % Think what to do and how to split
+else
+    dt = dt(dt.synth.x0 == location(1), :);
+    dt = dt(dt.synth.y0 == location(2), :);
+end
 
 % Filter the selected HRF, if it is 'mix', use all HRFs together
 if ~strcmp(useHRF,'mix')
@@ -114,7 +127,7 @@ for nt=1:length(tools)
         % Plot circunferences or ellipses
         if useEllipse
             for ne = 1:length(Sizes)                
-                h = drawellipse(X0(ne),Y0(ne),Thetas(ne),Sizes(ne),Sizemin(ne));
+                h = drawellipse(X0(ne),Y0(ne),Thetas(ne),Sizes(ne)/2,Sizemin(ne)/2);
                 set(h,'LineWidth',lineWidth,'LineStyle',lineStyle,'Color',Cs(nt+1,:));
                 hold on
             end
@@ -141,10 +154,19 @@ if onlyCenters
         a = [a; scatter(median(dt.(tool).x0), median(dt.(tool).y0),60,Cs(nt+1,:),'filled')]; hold on
     end
 else
-    viscircles([unique(dt.synth.x0),unique(dt.synth.y0)],userfsize/2,...
-        'LineWidth',2.5,'Color',Cs(1,:),'LineStyle','--');
-    % Instead of the centers (see above), plot the ellipses showing the distribution of the
-    % centers
+    if (length(unique(dt.synth.x0)) == 1 && length(unique(dt.synth.y0)) == 1)
+        viscircles([unique(dt.synth.x0),unique(dt.synth.y0)],userfsize/2,...
+            'LineWidth',2.5,'Color',Cs(1,:),'LineStyle','--');
+    else
+        xys = unique(dt.synth(:,{'x0','y0'}));
+        for nx=1:height(xys)
+            viscircles([xys{nx,1}, xys{nx,2}],userfsize/2,...
+            'LineWidth',2.5,'Color',Cs(1,:),'LineStyle','--');
+        end
+    end
+end
+if centerDistr
+    % Instead of the centers (see above), plot the ellipses showing the distribution of the centers
     for nt=1:length(tools)
         tool = tools{nt};
         if addtext
@@ -156,7 +178,6 @@ else
         end
     end
 end
-
 
 % If only plotting one circle, we want it to be on top, redraw it
 if strcmp(noiseLevel, "none")
@@ -239,18 +260,18 @@ if addcihist && ~strcmp(noiseLevel, "none")
     gt                  = unique(dt.synth.sMaj);
     [~,groundtruthloc]  = min(abs(xsizes - (gt  * ones(size(xsizes)))));
     % Rescale the values to be inside the new axes
-    xsizes   = rescale(xsizes,startx,endx);
-    pdfsizes = rescale(pdfsizes,starty,endy);
+    rxsizes   = rescale(xsizes,startx,endx);
+    rpdfsizes = rescale(pdfsizes,starty,endy);
     % Calculate rescaled gt
-    rgt     = xsizes(groundtruthloc);
+    rgt     = rxsizes(groundtruthloc);
     % Plot it
-    plot(xsizes,pdfsizes,'Color','k','LineStyle','-','LineWidth',1.5); hold on;
+    plot(rxsizes,rpdfsizes,'Color','k','LineStyle','-','LineWidth',1.5); hold on;
     % Add line where the ground truth is
-    hmin = plot(rgt*[1,1],[starty pdfsizes(groundtruthloc)],'Color','b','LineStyle','-','LineWidth',2);hold on;
+    hmin = plot(rgt*[1,1],[starty rpdfsizes(groundtruthloc)],'Color','b','LineStyle','-','LineWidth',2);hold on;
     % Add a text with the ground truth value
-    text(startx, texty, sprintf('%g',origStartx));
-    text(endx, texty, sprintf('%g deg',origEndx));
-    text(rgt, texty, sprintf('%g',gt));
+    text(startx, texty, sprintf('%.2g',origStartx));
+    text(rgt, texty, sprintf('%.2g',gt));
+    text(endx, texty, sprintf('%.2g deg (RF size), Ratio(mean(fit./gt)): %.2g',origEndx, mean(Sizes./gt)));
 end
 
 if addtext
