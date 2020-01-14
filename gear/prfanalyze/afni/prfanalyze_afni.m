@@ -26,6 +26,26 @@ if ischar(json_file)
     end
 end
 
+
+% read in the opts file
+if ~isempty(opts_file)
+    fprintf('This is the config.json file being read: %s\n',opts_file)
+    tmp = loadjson(opts_file);
+    disp('These are the contents of the json file:')
+    tmp
+    if ~isempty(tmp)
+        opts = tmp;
+        opts = {'options', opts};
+    else
+        opts = {};
+    end
+else
+    opts = {};
+end
+
+
+
+
 % Make the output directory
 mkdir(output_dir);
 
@@ -51,7 +71,7 @@ else
     DEF_colnames = DEF_colnames([end-2:end,1:end-3]);
     DEFAULTS     = DEFAULTS(:,DEF_colnames);
     % Select filename to be saved
-    fname = fullfile(output_dir, 'defaultParams_ToBeEdited.json');
+    fname = fullfile(output_dir, 'prfanalyze-afni-configuration-default.json');
     % Encode json
     jsonString = jsonencode(DEFAULTS);
     % Format a little bit
@@ -79,7 +99,7 @@ if exist(stim_file, 'file') ~= 2
 end
 
 %% Call pmModelFit!
-[pmEstimates, results] = pmModelFit({bold_file, json_file, stim_file}, 'afni');
+[pmEstimates, results] = pmModelFit({bold_file, json_file, stim_file}, 'afni', opts{:});
 
 %% Write out the results
 estimates_file = fullfile(output_dir, 'estimates.mat');

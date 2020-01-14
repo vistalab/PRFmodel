@@ -1,4 +1,4 @@
-docker run --rm -it $4 \
+docker run --rm -it  \
       -v $2:/flywheel/v0/input \
       -v $2:/flywheel/v0/output \
-      garikoitz/prfanalyze-vista:$1 $3
+      garikoitz/prfanalyze-vista:$1 $3 
