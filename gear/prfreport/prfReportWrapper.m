@@ -196,12 +196,7 @@ for nr=1:length(J.analyze)
             case 'x0'        , resname = 'Centerx0';
             case 'y0'        , resname = 'Centery0';
         end
-        % Popeye is flipping y, change it back when it is fixed
-        if strcmp(resname,'Centery0') && strcmp(antype,'popeye')
-            pmEstimates.(resname) = -data;	        
-        else
-            pmEstimates.(resname) = data;	        
-        end
+        pmEstimates.(resname) = data;	        
     end
     
     % We are always going to add by default the R2
