@@ -1,12 +1,12 @@
 {
     "subjectName": "editThis",
     "sessionName": "editThis",
-    "solver": "vista",
+    "solver":      "vista",
     "options": {
-        "model": "one gaussian",
-        "grid": false,
-        "wsearch": "coarse to fine",
-        "detrend": 1,
+        "model":    "one gaussian",
+        "grid":     false,
+        "wsearch":  "coarse to fine",
+        "detrend":  1,
         "keepAllPoints": false,
         "numberStimulusGridPoints": 50
     }

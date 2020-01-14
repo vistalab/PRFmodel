@@ -1,9 +1,11 @@
 {
     "subjectName": "editThis",
     "sessionName": "editThis",
-    "solver": "popeye",
+    "solver":      "popeye",
     "options": {
-        "seed": 2764932,
-        "grid_density": 3
+        "seed":         2764932,
+        "grid_density": 3,
+        "fixed_hrf":    false,
+        "multiprocess": true
     }
 }

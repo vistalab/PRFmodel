@@ -1,4 +1,14 @@
 #! /bin/bash
 
-#docker build --no-cache --tag garikoitz/prfanalyze-base:1.0.0 ./
-docker build --tag garikoitz/prfanalyze-popeye:1.0.1 ./
+[ -z "$USERTAG" ] && USERTAG=garikoitz
+[ -z "$SOLVER"  ] && SOLVER=popeye
+[ -z "$VERSION" ] && VERSION=latest
+
+SCRIPTPATH="$( cd "$(dirname "$0")" && pwd -P )"
+
+echo "Building $USERTAG/prfanalyze-$SOLVER:$VERSION"
+echo "  Path: $SCRIPTPATH"
+echo "------------------------------------------------------------"
+echo ""
+
+docker build "$@" --tag "$USERTAG/prfanalyze-$SOLVER:$VERSION" "$SCRIPTPATH"

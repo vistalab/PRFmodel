@@ -1,6 +1,4 @@
-# FROM garikoitz/prfanalyze-base:1.0.0
-FROM nben/prfanalyze-afni:1.0.2
-RUN rm -rf /compiled
+FROM garikoitz/prfanalyze-base:latest
 
 MAINTAINER Garikoitz Lerma-Usabiaga <glerma@stanford.edu>
 
