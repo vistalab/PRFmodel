@@ -104,6 +104,30 @@ save(estimates_file, 'estimates', 'pmEstimates');
 results_file = fullfile(output_dir, 'results.mat');
 save(results_file, 'results');
 
+
+% Save it as  json file as well
+% Select filename to be saved
+fname = fullfile(output_dir, ['estimates.json']);
+% Encode json
+jsonString = jsonencode(pmEstimates);
+% Format a little bit
+jsonString = strrep(jsonString, ',', sprintf(',\n'));
+jsonString = strrep(jsonString, '[{', sprintf('[\n{\n'));
+jsonString = strrep(jsonString, '}]', sprintf('\n}\n]'));
+
+% Write it
+fid = fopen(fname,'w');if fid == -1,error('Cannot create JSON file');end
+fwrite(fid, jsonString,'char');fclose(fid);
+
+
+
+
+
+
+
+
+
+
 % Permissions
 fileattrib(output_dir,'+w +x', 'o'); 
 
