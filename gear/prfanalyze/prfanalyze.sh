@@ -221,8 +221,12 @@ fi
 ARGS_OUT=("-v" "${OUTPUT}:/flywheel/v0/output")
 if   [ $DEBUG = 1 ]
 then OPTS=("DEBUG" "${OPTS[@]}")
-elif [ $FORCE = 1 ]
-then OPTS=("--force" "${OPTS[@]}")
+else if [ $FORCE = 1 ]
+     then OPTS=("--force" "${OPTS[@]}")
+     fi
+     if [ $VERBOSE = 1 ]
+     then OPTS=("${OPTS[@]}" "--verbose")
+     fi
 fi
 # Put them all together:
 ARGS=("run" "--rm" "-it" "${ARGS_IN[@]}" "${ARGS_OUT[@]}" "$DOCKER" "${OPTS[@]}")
