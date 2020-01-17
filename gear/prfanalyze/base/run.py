@@ -148,17 +148,18 @@ for flnm in os.listdir(func_dir):
         with open(estfl, 'r') as fl:
             dat = json.load(fl)
         # decode the data...
-        for (k,v) in six.iteritems(dat):
-            v = np.asarray(v)
+        dat = {k: np.asarray([u[k] for u in dat]) for k in dat[0].keys()}
+        for (k,v) in dat.items():
             if len(v.shape) == 2:            
-                im = nib.Nifti1Image(np.reshape(v, (v.shape[0], 1, 1, v.shape[-1])),
+                im = nib.Nifti2Image(np.reshape(v, (v.shape[0], 1, 1, v.shape[-1])),
                                      nii_base.affine, nii_base.header)
             else:
-                im = nib.Nifti1Image(np.reshape(v, (-1, 1, 1, 1)),
+                im = nib.Nifti2Image(np.reshape(v, (-1, 1, 1, 1)),
                                      nii_base.affine, nii_base.header)
+            im.to_filename(os.path.join(bids_link, 'run-%s_%s.nii.gz' % (runid,k.lower())))
         os.rename(estfl, os.path.join(bids_link, 'run-%s_estimates.json' % (runid,)))
     else:
-        note("No estimates.mat file found.")
+        note("No estimates.json file found.")
     # also rename results,.mat if it's there
     resfli = os.path.join(bids_link, 'results.mat')
     resflo = os.path.join(bids_link, 'run-%s_results.mat' % (runid,))
