@@ -1,4 +1,4 @@
-function prfanalyze_afni(json_file, bold_file, stim_file, output_dir)
+function prfanalyze_afni(opt_file, json_file, bold_file, stim_file, output_dir)
 % 
 % (C) Vista Lab, Stanford University, 2019
 % 
