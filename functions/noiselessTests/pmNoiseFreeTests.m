@@ -40,6 +40,7 @@ p = inputParser;
 p.addRequired('prfimplementation',@ischar);
 p.addParameter('usenifti'   ,  false           , @islogical);
 p.addParameter('plotit'     ,  false           , @islogical);
+p.addParameter('ellipse'    ,  false           , @islogical);
 % Implementation specifics
 % AnalyzePRF
 options  = struct('seedmode', [0,1,2], 'display', 'off');
@@ -55,25 +56,34 @@ p.addParameter('wsearch'    , 'coarse to fine', @ischar);
 p.parse(prfimplementation,varargin{:});
 useNifti = p.Results.usenifti;
 plotit   = p.Results.plotit;
-
+ellipse   = p.Results.ellipse;
 
 %% Create the test data
-COMBINE_PARAMETERS.RF.Centerx0        = [0,3]; % [-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
-COMBINE_PARAMETERS.RF.Centery0        = [0,3];
-COMBINE_PARAMETERS.RF.Theta           = [0]; %, deg2rad(45)];
-COMBINE_PARAMETERS.RF.sigmaMajor      = [1,2];
-COMBINE_PARAMETERS.RF.sigmaMinor      = "same";
-
+if ellipse
+    COMBINE_PARAMETERS.RF                 = struct();
+    COMBINE_PARAMETERS.RF.Centerx0        = [3]; 
+    COMBINE_PARAMETERS.RF.Centery0        = [3];
+    COMBINE_PARAMETERS.RF.Theta           = [deg2rad(135)]; 
+    COMBINE_PARAMETERS.RF.sigmaMajor      = [1,2,3];
+    COMBINE_PARAMETERS.RF.sigmaMinor      = [1,2]; 
+else
+    COMBINE_PARAMETERS.RF                 = struct();
+    COMBINE_PARAMETERS.RF.Centerx0        = [3]; 
+    COMBINE_PARAMETERS.RF.Centery0        = [3];
+    COMBINE_PARAMETERS.RF.Theta           = [0]; %, deg2rad(45)];
+    COMBINE_PARAMETERS.RF.sigmaMajor      = [2];
+    COMBINE_PARAMETERS.RF.sigmaMinor      = "same";
+end
 switch prfimplementation
     case {'aprf','analyzeprf','aprfcss'}
         COMBINE_PARAMETERS.TR                   = [1.5];
         HRF(1).Type = 'canonical';
-    case {'afni_4','afni_6','afni'}
+    case {'afni_4','afni_6','afni','afni4','afni6'}
         COMBINE_PARAMETERS.TR                   = [1.5];
         % HRF(1).Type = 'afni_spm';
-        HRF(1).Type = 'vista_twogammas';
-    case {'vista','mrvista','vistasoft'}
-        COMBINE_PARAMETERS.TR                   = [1.4];
+        HRF(1).Type = 'afni_spm';
+    case {'vista','mrvista','vistasoft','vistaoval','vista4','vista6'}
+        COMBINE_PARAMETERS.TR                   = [1.5];
         HRF(1).Type = 'vista_twogammas';
         % COMBINE_PARAMETERS.Stimulus.ResizedHorz = [100];
         % COMBINE_PARAMETERS.Stimulus.ResizedVert = [100];
@@ -82,8 +92,8 @@ switch prfimplementation
         % amazing, TR:1 and 3, all ok, for TR:2, the last test fails and it is
         % not capable of predicting anything. 
         % HRF(1).Type = 'popeye_twogammas';
-        HRF(1).Type = 'vista_twogammas';
-        HRF(2).Type = 'canonical';
+        HRF(1).Type = 'popeye_twogammas';
+        % HRF(2).Type = 'canonical';
     otherwise
         error('%s not yet implemented',prfimplementation);
 end
@@ -91,7 +101,7 @@ end
 COMBINE_PARAMETERS.HRF           = HRF;
 Noise(1).seed                    = 'none';
 COMBINE_PARAMETERS.Noise         = Noise;
-synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats', 2);
+synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats', 1);
 synthDT = pmForwardModelCalculate(synthDT);
 % Visually check that all the combinations we specified are there
 % [synthDT.RF(:,{'Centerx0','Centery0','Theta','sigmaMajor','sigmaMinor'}), ...
@@ -155,21 +165,26 @@ end
 %% Launch the analysis
 switch prfimplementation
     case {'aprf','analyzeprf'}
-        options  = struct('seedmode',[0,1,2], 'display','off', 'maxpolydeg',0,'usecss',false);
+        options = struct('seedmode',[0,1,2], 'display','off', 'maxpolydeg',0,'usecss',false);
         results = pmModelFit(input,'analyzePRF','options',options);
     case {'aprfcss'}
-        options  = struct('seedmode',[0,1,2], 'display','off', 'maxpolydeg',0,'usecss',true);
+        options = struct('seedmode',[0,1,2], 'display','off', 'maxpolydeg',0,'usecss',true);
         results = pmModelFit(input,'analyzePRF','options',options);
-    case {'afni_4','afni_6','afni'}
-        results    = pmModelFit(input,'afni_4','afni_hrf','SPM');
-    case {'vista','mrvista','vistasoft'}
-        results      = pmModelFit(input,'vistasoft', ...
+    case {'afni_4','afni4','afni'}
+        results = pmModelFit(input,'afni_4','afni_hrf','SPM');
+    case {'afni_6','afni6'}
+        results = pmModelFit(input,'afni_6','afni_hrf','SPM');
+    case {'vista','mrvista','vistasoft','vista4'}
+        results = pmModelFit(input,'vistasoft', ...
             'model','one gaussian', ...
             'grid', false, ... % if true, returns gFit
             'wSearch', 'coarse to fine', ...
             'detrend', 0, ...
             'keepAllPoints', true); % , ...
             % 'numberStimulusGridPoints', 50);  %  We need to remove it otherwise it will find an average HRF for all of them
+    case {'vistaoval','vista6'}
+        results = pmModelFit(input,'vistasoft', ...
+            'model','one oval gaussian'); 
     case {'popeye','pop'}
         results  = pmModelFit(input,'popeye');
     case {'popnoherf','popeyenohrf'}

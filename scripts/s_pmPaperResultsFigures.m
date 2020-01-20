@@ -470,7 +470,7 @@ if plotHRFwidthtestsBOYNTON
     COMBINE_PARAMETERS                       = struct();
     COMBINE_PARAMETERS.RF.Centerx0           = [3];
     COMBINE_PARAMETERS.RF.Centery0           = [3];  
-    COMBINE_PARAMETERS.RF.sigmaMajor         = [4];  
+    COMBINE_PARAMETERS.RF.sigmaMajor         = [2];  
     COMBINE_PARAMETERS.RF.sigmaMinor         = 'same';
     COMBINE_PARAMETERS.TR                    = 1;
 
@@ -514,7 +514,8 @@ if plotHRFwidthtestsBOYNTON
     boyntonresults = pmModelFit(sDT, 'aprf');
     
     %% Create comptTable
-    boyntoncompTable  = pmResultsCompare(sDT, {'aprf'}, {boyntonresults}, ...
+        paramDefaults = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
+        boyntoncompTable  = pmResultsCompare(sDT, {'aprf'}, {boyntonresults}, ...
         'params', paramDefaults, ...
         'shorten names',true, ...
         'dotSeries', false);
@@ -532,7 +533,7 @@ if plotHRFwidthtestsBOYNTON
         subplot(2,5,ii)
         useHRF = HRFs{ii};
         ttable = boyntoncompTable(ii,:);
-        pmCloudOfResults(ttable   , tools ,'onlyCenters',false ,'userfsize' , 4, ...
+        pmCloudOfResults(ttable   , tools ,'onlyCenters',false ,'userfsize' , 2, ...
             'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-','color',Cs(ii+1,:), ...
             'lineWidth' , 2     ,'noiselevel' ,nslvl , ...
             'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
@@ -706,7 +707,11 @@ if plotNoiselessSizeTest
     HRF(3).params.tau = 1.68;
     HRF(3).params.delay = 1.75;
     
-
+    HRF(4).Type                              = 'boynton';
+    HRF(4).normalize                         = 'height'; 
+    HRF(4).params.n = 3;
+    HRF(4).params.tau = 1.935;
+    HRF(4).params.delay = 1.65;
     
     HRF(5).Type                              = 'canonical'; 
     HRF(5).normalize                         = 'height'; 

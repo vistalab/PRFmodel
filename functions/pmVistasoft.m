@@ -46,10 +46,10 @@ keepAllPoints = p.Results.keepAllPoints;
 numberStimulusGridPoints = p.Results.numberStimulusGridPoints;
 
 % Disp the input files for debugging
-fprintf('This is homedir: %s\n',homedir)
-fprintf('This is stimfile: %s\n',stimfile)
-fprintf('This is datafile: %s\n',datafile)
-fprintf('This is stimradius: %i\n',stimradius)
+fprintf('\n[pmVistasoft] This is homedir: %s\n',homedir)
+fprintf('\n[pmVistasoft] This is stimfile: %s\n',stimfile)
+fprintf('\n[pmVistasoft] This is datafile: %s\n',datafile)
+fprintf('\n[pmVistasoft] This is stimradius: %i\n',stimradius)
 
 
 
