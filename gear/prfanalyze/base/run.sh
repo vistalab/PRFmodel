@@ -27,6 +27,7 @@ OUTPUT_DIR="$FLYWHEEL_BASE"/output
 INPUT_DIR="$FLYWHEEL_BASE"/input
 DEFAULT_CONFIG_FILE="$INPUT_DIR"/config.json
 CONFIG_FILE=""
+[ -z "$PRF_SOLVER" ] && PRF_SOLVER="base"
 
 # How we print to stdout:
 function note {
@@ -84,6 +85,7 @@ done
 # If no input is given, we dump the default config and exit
 [ -r "$CONFIG_FILE" ] || {
     note "No config file found. Writing default JSON file and exiting."
+    CONFIG_FILE="$OUTPUT_DIR/prfanalyze-${PRF_SOLVER}-default-config.json"
     cp /opt/default_config.json "$CONFIG_FILE"
     chmod 777 "$CONFIG_FILE"
     exit 0
