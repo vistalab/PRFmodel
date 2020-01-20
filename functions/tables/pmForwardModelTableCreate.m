@@ -14,7 +14,33 @@ function synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS,varargin)
 % Outputs
 %  Matlab table
 %
-%
+% TESTS
+%{
+% Check sigmaMinor <= sigmaMajor
+    COMBINE_PARAMETERS                    = struct();
+    COMBINE_PARAMETERS.RF                 = struct();
+    COMBINE_PARAMETERS.RF.sigmaMajor      = [1,2,3];
+    COMBINE_PARAMETERS.RF.sigmaMinor      = [1,2]; 
+synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats', 1);
+synthDT.RF(:,{'sigmaMinor','sigmaMajor','Centerx0','Centery0'})
+%}
+%{
+% Check y = same works
+    COMBINE_PARAMETERS                    = struct();
+    COMBINE_PARAMETERS.RF                 = struct();
+    COMBINE_PARAMETERS.RF.sigmaMajor      = [1,2,3];
+    COMBINE_PARAMETERS.RF.sigmaMinor      = [1,2]; 
+    COMBINE_PARAMETERS.RF.Centerx0        = [1,2,3]; 
+    COMBINE_PARAMETERS.RF.Centery0        = "same";
+synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats', 1);
+synthDT.RF(:,{'sigmaMinor','sigmaMajor','Centerx0','Centery0'})
+%}
+%{
+%}
+%{
+%}
+
+% GLU Vistalab 2019-2020
 
 %% Read the inputs
 varargin = mrvParamFormat(varargin);
@@ -121,10 +147,25 @@ for ii=1:length(fieldsToCombine)
                     subFieldName  = subFieldsToCombine{ii};
                     fieldValues2   = getfield(COMBINE_PARAMETERS,fieldName,subFieldName);
                     % Check sigma values
-                    % If minor's value is 'same', make it happen
+                    % If minor's value is 'same', make it happen here
+                    
+                    % Check if we passed the sigmaMajor, otherwise take the default
+                    if ~isfield(COMBINE_PARAMETERS.RF,'sigmaMajor')
+                        COMBINE_PARAMETERS.RF.sigmaMajor = synthDT.RF.sigmaMajor;
+                    end
                     sMaj = getfield(COMBINE_PARAMETERS,fieldName,'sigmaMajor');
                     if strcmp(subFieldName,'sigmaMinor') && strcmp(fieldValues2,'same')
                         fieldValues2 = sMaj;
+                    end
+                    
+                    % Check x values
+                    % If y0's value is 'same', make it happen here
+                    if ~isfield(COMBINE_PARAMETERS.RF,'Centerx0')
+                        COMBINE_PARAMETERS.RF.Centerx0 = synthDT.RF.Centerx0;
+                    end
+                    x0 = getfield(COMBINE_PARAMETERS,fieldName,'Centerx0');
+                    if strcmp(subFieldName,'Centery0') && strcmp(fieldValues2,'same')
+                        fieldValues2 = x0;
                     end
                     if ~isstruct(fieldValues2)
                         % Change the default if provided
@@ -180,6 +221,11 @@ for ii=1:length(fieldsToCombine)
                     subFieldName          = [fieldName '.' subFieldsToCombine{ii}];
                     synthDT               = pmForwardModelAddRows(synthDT, subFieldName,fieldValues);
                     synthDT.RF.sigmaMinor = synthDT.RF.sigmaMajor;
+                elseif strcmp(subFieldName,'Centerx0') && strcmp(REDUCED_COMBINE_PARAMETERS.RF.Centery0,'same')
+                    % Add rows with the combinations of parameters we want to check
+                    subFieldName          = [fieldName '.' subFieldsToCombine{ii}];
+                    synthDT               = pmForwardModelAddRows(synthDT, subFieldName,fieldValues);
+                    synthDT.RF.Centery0   = synthDT.RF.Centerx0;
                 else
                     % Add rows with the combinations of parameters we want to check
                     subFieldName  = [fieldName '.' subFieldsToCombine{ii}];
