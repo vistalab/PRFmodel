@@ -50,8 +50,12 @@ p.addRequired('input');
 p.addRequired('prfimplementation',@ischar);
 p.addParameter('useparallel'    ,  true        , @islogical);
 
-% This options structs are defaults for analyzePRF
-options  = struct('seedmode', [0 1 2], 'display' , 'off');
+% This options structs are defaults for analyzePRF and afni
+% TODO: add mrVista options in the same to standardize code
+% TODO: preprend the name of the tool or create separate substructures
+options  = struct('seedmode', [0 1 2],  'display' , 'off', 'usecss',true, ... % analyzePRF
+                  'afni_model','afni4', 'afni_hrf', 'SPM', ... % AFNI
+                 );
 % Implementation specifics
 % AnalyzePRF
 p.addParameter('options'    ,  options        , @isstruct);
@@ -62,12 +66,6 @@ p.addParameter('wsearch'      , 'coarse to fine', @ischar);
 p.addParameter('detrend'      , 1               , @isnumeric);
 p.addParameter('keepAllPoints', false           , @islogical);
 p.addParameter('numberStimulusGridPoints', 50   , @isnumeric);
-
-% AFNI
-p.addParameter('afni_hrf'   , 'SPM'           , @ischar);
-% Popeye
-% p.addParameter('afni_hrf'   , 'SPM'           , @ischar);
-
 
 
 % Parse. Assign result inside each case
