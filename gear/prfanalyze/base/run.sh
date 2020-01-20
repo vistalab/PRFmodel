@@ -95,6 +95,7 @@ mkdir -p /running
 export FORCE
 export VERBOSE
 export FIELDS
+
 python /scripts/run.py "$CONFIG_FILE" || die "Python startup script failed!"
 # At this point, the files should have been exported to the appropriate directory,
 # which should be linked to /running/out
