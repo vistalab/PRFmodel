@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 import json, os, sys, csv, pimms
+import nibabel as nib
 
 output_dir  = '/flywheel/v0/output'
 input_dir   = '/flywheel/v0/input'
@@ -21,8 +22,8 @@ if not solver_name.startswith('prfanalyze-'):
     solver_name = 'prfanalyze-' + solver_name
 bids_fieldmap = [ss.split('-') for ss in bids_fields.split('_')]
 bids_fields_noacq = '_'.join(['-'.join(ff) for ff in bids_fieldmap if ff[0] != 'acq'])
-if bids_fields != '': bids_fields = '' + '_'
-if bids_fields_noacq != '': bids_fields_noacq = '' + '_'
+if bids_fields != '': bids_fields = '_' + bids_fields
+if bids_fields_noacq != '': bids_fields_noacq = '_' + bids_fields_noacq
     
 # check for a separate config file
 if len(sys.argv) > 1:
@@ -123,7 +124,7 @@ for flnm in os.listdir(func_dir):
     # we also need the stimulus json file, which is in the derivatives directory
     stimjs_file = os.path.join(
         bids_dir, 'derivatives', 'prfsynth', 'sub-'+sub, 'ses-'+ses,
-        'sub-%s_ses-%s%s_run-%s_bold.json' % (sub, ses, runid, bids_fields))
+        'sub-%s_ses-%s%s_run-%s_bold.json' % (sub, ses, bids_fields, runid))
     if not os.path.isfile(stimjs_file):
         die("Stimulus JSON file (%s) not found" % stimjs_file)
     # okay, we have the files; run the solver script!
@@ -138,30 +139,27 @@ for flnm in os.listdir(func_dir):
     except Exception:
         die("Failed to exec /solve.sh script!")
     
-    # If there are things to cleanup, specifically, if there is an estimates.mat file, we process that
-    estfl = os.path.join(bids_link, 'estimates.mat')
+    nii_base = nib.load(bold_image)
+    # If there are things to cleanup we do that; specifically, the estimates.json file:
+    estfl = os.path.join(bids_link, 'estimates.json')
     if os.path.isfile(estfl):
-        note("Processing estimates.mat file...")
-        from scipy.io import loadmat
+        note("Processing estimates.json file...")
         import nibabel as nib, numpy as np
-        dat = loadmat(estfl)
+        with open(estfl, 'r') as fl:
+            dat = json.load(fl)
         # decode the data...
-        dat = dat['estimates'][0,0][4][0]
-        (testdat, x0, y0, th, sigmin, sigmaj, pred) = [np.squeeze(u) for u in dat]
-        # write out niftis
-        nii_base = nib.load(bold_image)
-        for (k,d) in zip(['testdata','modelpred'], [testdat, pred]):
-            im = nib.Nifti1Image(np.reshape(d, (d.shape[0], 1, 1, d.shape[-1])),
-                                 nii_base.affine, nii_base.header)
-            im.to_filename(os.path.join(bids_link, 'run-%s_%s.nii.gz' % (runid, k)))
-            note("  * " + k + ".nii.gz")
-        for (k,d) in zip(['x0','y0','theta','sigmamajor','sigmaminor'], [x0,y0,th,sigmin,sigmaj]):
-            im = nib.Nifti1Image(np.reshape(d, (-1, 1, 1, 1)), nii_base.affine, nii_base.header)
-            im.to_filename(os.path.join(bids_link, 'run-%s_%s.nii.gz' % (runid, k)))
-            note("  * " + k + ".nii.gz")
-        os.rename(estfl, os.path.join(bids_link, 'run-%s_estimates.mat' % (runid,)))
+        dat = {k: np.asarray([u[k] for u in dat]) for k in dat[0].keys()}
+        for (k,v) in dat.items():
+            if len(v.shape) == 2:            
+                im = nib.Nifti2Image(np.reshape(v, (v.shape[0], 1, 1, v.shape[-1])),
+                                     nii_base.affine, nii_base.header)
+            else:
+                im = nib.Nifti2Image(np.reshape(v, (-1, 1, 1, 1)),
+                                     nii_base.affine, nii_base.header)
+            im.to_filename(os.path.join(bids_link, 'run-%s_%s.nii.gz' % (runid,k.lower())))
+        os.rename(estfl, os.path.join(bids_link, 'run-%s_estimates.json' % (runid,)))
     else:
-        note("No estimates.mat file found.")
+        note("No estimates.json file found.")
     # also rename results,.mat if it's there
     resfli = os.path.join(bids_link, 'results.mat')
     resflo = os.path.join(bids_link, 'run-%s_results.mat' % (runid,))

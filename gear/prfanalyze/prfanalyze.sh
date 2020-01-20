@@ -40,7 +40,7 @@ The syntax for running prfanalyze.sh is as follows:
 EOF
 }
 function error {
-    echo "$@" >2
+    echo "$@" >&2
 }
 function die {
     [ "$#" -gt 0 ] && error "$@"
@@ -168,8 +168,8 @@ done
     error 'The pRF solver is a required argument!'
     die 'Use --help flag to see usage documentation'
 }
-[ -z "$CONFIG" ] && {
-    error 'The configuration JSON file is a required argument!'
+[ -z "$OUTPUT" ] && {
+    error 'The output directory is a required argument!'
     die 'Use --help flag to see usage documentation'
 }
 
@@ -221,8 +221,12 @@ fi
 ARGS_OUT=("-v" "${OUTPUT}:/flywheel/v0/output")
 if   [ $DEBUG = 1 ]
 then OPTS=("DEBUG" "${OPTS[@]}")
-elif [ $FORCE = 1 ]
-then OPTS=("--force" "${OPTS[@]}")
+else if [ $FORCE = 1 ]
+     then OPTS=("--force" "${OPTS[@]}")
+     fi
+     if [ $VERBOSE = 1 ]
+     then OPTS=("${OPTS[@]}" "--verbose")
+     fi
 fi
 # Put them all together:
 ARGS=("run" "--rm" "-it" "${ARGS_IN[@]}" "${ARGS_OUT[@]}" "$DOCKER" "${OPTS[@]}")
