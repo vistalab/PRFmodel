@@ -1,4 +1,4 @@
-FROM garikoitz/prfanalyze-afni:latest
+FROM nben/prfanalyze-afni:latest
 
 MAINTAINER Garikoitz Lerma-Usabiaga <glerma@stanford.edu>
 
