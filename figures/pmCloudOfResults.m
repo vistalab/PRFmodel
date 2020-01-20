@@ -13,6 +13,7 @@ p.addParameter('centerdistr'  , true    , @islogical);
 p.addParameter('onlycenters'  , false    , @islogical);
 p.addParameter('location'     , 'all');
 p.addParameter('userfsize'    , 2        , @isnumeric);
+p.addParameter('userfsizemin' , 2        , @isnumeric);
 p.addParameter('centerperc'   , 50       , @isnumeric);
 p.addParameter('usehrf'       , 'mix'    , @ischar);
 p.addParameter('linestyle'    , '-'      , @ischar);
@@ -38,6 +39,11 @@ onlyCenters   = p.Results.onlycenters;
 location      = p.Results.location;
 centerDistr   = p.Results.centerdistr;
 userfsize     = p.Results.userfsize;
+if contains('userfsizemin',p.UsingDefaults)
+    userfsizemin  = userfsize;
+else
+   userfsizemin  = p.Results.userfsizemin; 
+end
 centerPerc    = p.Results.centerperc;
 useHRF        = p.Results.usehrf;
 lineStyle     = p.Results.linestyle;
@@ -81,7 +87,7 @@ twoTailedRange = (100 - centerPerc) / 2;
 
 % Filter the results table
 dt = compTable(compTable.synth.sMaj == userfsize , :);
-dt = dt(dt.synth.sMin == userfsize , :);
+dt = dt(dt.synth.sMin == userfsizemin , :);
 
 % Filter only one noise level
 dt = dt(dt.noiseLevel == noiseLevel, :);
@@ -154,14 +160,28 @@ if onlyCenters
         a = [a; scatter(median(dt.(tool).x0), median(dt.(tool).y0),60,Cs(nt+1,:),'filled')]; hold on
     end
 else
-    if (length(unique(dt.synth.x0)) == 1 && length(unique(dt.synth.y0)) == 1)
-        viscircles([unique(dt.synth.x0),unique(dt.synth.y0)],userfsize/2,...
-            'LineWidth',2.5,'Color',Cs(1,:),'LineStyle','--');
+    if useEllipse
+        if (length(unique(dt.synth.x0)) == 1 && length(unique(dt.synth.y0)) == 1)
+            h = drawellipse(unique(dt.synth.x0),unique(dt.synth.y0),unique(dt.synth.Th),...
+                        userfsize/2, userfsizemin/2);
+            set(h,'LineWidth',2.5,'LineStyle','--','Color',Cs(1,:));
+        else
+            % xys = unique(dt.synth(:,{'x0','y0'}));
+            % for nx=1:height(xys)
+            %     viscircles([xys{nx,1}, xys{nx,2}],userfsize/2,...
+            %     'LineWidth',2.5,'Color',Cs(1,:),'LineStyle','--');
+            % end
+        end
     else
-        xys = unique(dt.synth(:,{'x0','y0'}));
-        for nx=1:height(xys)
-            viscircles([xys{nx,1}, xys{nx,2}],userfsize/2,...
-            'LineWidth',2.5,'Color',Cs(1,:),'LineStyle','--');
+        if (length(unique(dt.synth.x0)) == 1 && length(unique(dt.synth.y0)) == 1)
+            viscircles([unique(dt.synth.x0),unique(dt.synth.y0)],userfsize/2,...
+                'LineWidth',2.5,'Color',Cs(1,:),'LineStyle','--');
+        else
+            xys = unique(dt.synth(:,{'x0','y0'}));
+            for nx=1:height(xys)
+                viscircles([xys{nx,1}, xys{nx,2}],userfsize/2,...
+                'LineWidth',2.5,'Color',Cs(1,:),'LineStyle','--');
+            end
         end
     end
 end
@@ -182,6 +202,9 @@ end
 % If only plotting one circle, we want it to be on top, redraw it
 if strcmp(noiseLevel, "none")
     if useEllipse
+        h = drawellipse(unique(dt.(tool).x0),unique(dt.(tool).y0),unique(dt.(tool).Th),...
+                        unique(dt.(tool).sMaj)/2, unique(dt.(tool).sMin)/2);
+        set(h,'LineWidth',lineWidth,'LineStyle',lineStyle,'Color',Cs(nt+1,:));
     else
         viscircles(centers,radii,'LineWidth',lineWidth,'LineStyle',lineStyle,'Color',Cs(nt+1,:));
     end
@@ -288,7 +311,8 @@ xlim(xlims);
 ylim(ylims);  
 
 set(gca, 'FontSize', fontsize)
-if addtext, title({['Tool: ' tools{:} ', HRF: ' strrep(useHRF,'_','\_')],['Noise: ' char(noiseLevel) ]}),end
+if addtext, title({['Tool: ' tools{:} ', HRF: ' strrep(useHRF,'_','\_')],...
+                   ['Noise: ' char(noiseLevel) ', Ratio: ' num2str(userfsize/userfsizemin) ]}),end
 fnameRoot = [tools{:} '_' useHRF '_noise_' char(noiseLevel) ];
 
 %% Save it
