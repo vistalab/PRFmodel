@@ -40,7 +40,7 @@ The syntax for running prfanalyze.sh is as follows:
 EOF
 }
 function error {
-    echo "$@" >2
+    echo "$@" >&2
 }
 function die {
     [ "$#" -gt 0 ] && error "$@"
@@ -168,8 +168,8 @@ done
     error 'The pRF solver is a required argument!'
     die 'Use --help flag to see usage documentation'
 }
-[ -z "$CONFIG" ] && {
-    error 'The configuration JSON file is a required argument!'
+[ -z "$OUTPUT" ] && {
+    error 'The output directory is a required argument!'
     die 'Use --help flag to see usage documentation'
 }
 
