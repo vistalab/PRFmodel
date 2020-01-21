@@ -26,10 +26,35 @@ function [compTable, tSeries, results] = pmNoiseFreeTests(prfImplementation, var
 %
 % 
 
-% Examples:
+% Tests:
 %{
-  pmCompute...
+pmNoiseFreeTests('afni')
 %}
+
+%{
+pmNoiseFreeTests('aprf')
+%}
+
+%{
+pmNoiseFreeTests('aprfcss')
+%}
+
+%{
+pmNoiseFreeTests('vista')
+%}
+
+%{
+pmNoiseFreeTests('afni6')
+%}
+
+%{
+pmNoiseFreeTests('vista6')
+%}
+
+
+
+
+
 
 %% Read the inputs
 % Make varargin lower case, remove white spaces...
@@ -42,21 +67,29 @@ p.addParameter('usenifti'   ,  false           , @islogical);
 p.addParameter('plotit'     ,  false           , @islogical);
 p.addParameter('ellipse'    ,  false           , @islogical);
 % Implementation specifics
-% AnalyzePRF
-options  = struct('seedmode', [0,1,2], 'display', 'off');
+    options       = struct();
+    options.aprf  = struct('seedmode', [0 1 2], ...
+                           'display' , 'off'  , ...
+                           'usecss'  , true  );
+    options.vista = struct('model'        ,'one gaussian'   , ...
+                           'grid'         , false           , ...
+                           'wsearch'      , 'coarse to fine', ...
+                           'detrend'      , 1               , ...
+                           'keepAllPoints', false           , ...
+                           'numberStimulusGridPoints',   50);
+    options.afni  = struct('model','afni4', ...
+                           'hrf'  , 'SPM');
 p.addParameter('options'    ,  options        , @isstruct);
-% Vistasoft
-p.addParameter('model'      , 'one gaussian'  , @ischar);
-p.addParameter('grid'       , false           , @islogical);
-p.addParameter('wsearch'    , 'coarse to fine', @ischar);
-% AFNI
-% p.addParameter('wsearch'  , 'coarse to fine', @ischar);
 
 % Parse. Assign result inside each case
 p.parse(prfimplementation,varargin{:});
-useNifti = p.Results.usenifti;
-plotit   = p.Results.plotit;
-ellipse   = p.Results.ellipse;
+useNifti    = p.Results.usenifti;
+plotit      = p.Results.plotit;
+ellipse     = p.Results.ellipse;
+allOptions  = p.Results.options;
+% We need to be sure that if only some of the params are passed, the rest will
+% be taken from the defaults 
+allOptions  = pmParamsCompletenessCheck(allOptions, options);
 
 %% Create the test data
 if ellipse
@@ -101,7 +134,7 @@ end
 COMBINE_PARAMETERS.HRF           = HRF;
 Noise(1).seed                    = 'none';
 COMBINE_PARAMETERS.Noise         = Noise;
-synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats', 1);
+synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats', 2);
 synthDT = pmForwardModelCalculate(synthDT);
 % Visually check that all the combinations we specified are there
 % [synthDT.RF(:,{'Centerx0','Centery0','Theta','sigmaMajor','sigmaMinor'}), ...
@@ -165,26 +198,40 @@ end
 %% Launch the analysis
 switch prfimplementation
     case {'aprf','analyzeprf'}
-        options = struct('seedmode',[0,1,2], 'display','off', 'maxpolydeg',0,'usecss',false);
-        results = pmModelFit(input,'analyzePRF','options',options);
+        options.aprf            = allOptions.aprf;
+        options.aprf.maxpolydeg = 0;
+        options.aprf.usecss     = false;
+        results                 = pmModelFit(input,'analyzePRF','options',options);
     case {'aprfcss'}
-        options = struct('seedmode',[0,1,2], 'display','off', 'maxpolydeg',0,'usecss',true);
-        results = pmModelFit(input,'analyzePRF','options',options);
+        options.aprf            = allOptions.aprf;
+        options.aprf.maxpolydeg = 0;
+        options.aprf.usecss     = true;
+        results                 = pmModelFit(input,'analyzePRF','options',options);
     case {'afni_4','afni4','afni'}
-        results = pmModelFit(input,'afni_4','afni_hrf','SPM');
+        options.afni            = allOptions.afni;
+        results                 = pmModelFit(input,'afni','options',options);
     case {'afni_6','afni6'}
-        results = pmModelFit(input,'afni_6','afni_hrf','SPM');
+        options.afni            = allOptions.afni;
+        options.afni.model      = 'afni6';
+        results                 = pmModelFit(input,'afni','options',options);
     case {'vista','mrvista','vistasoft','vista4'}
-        results = pmModelFit(input,'vistasoft', ...
-            'model','one gaussian', ...
-            'grid', false, ... % if true, returns gFit
-            'wSearch', 'coarse to fine', ...
-            'detrend', 0, ...
-            'keepAllPoints', true); % , ...
-            % 'numberStimulusGridPoints', 50);  %  We need to remove it otherwise it will find an average HRF for all of them
+        options.vista            = allOptions.vista;
+        options.vista.model      = 'one gaussian';
+        options.vista.grid       = false;  % if true, returns gFit
+        options.vista.wSearch    = 'coarse to fine'; 
+        options.vista.detrend    = 0;
+        options.vista.keepAllPoints            = true; 
+        options.vista.numberStimulusGridPoints =  50;  
+        results                  = pmModelFit(input,'vistasoft','options',options);    
     case {'vistaoval','vista6'}
-        results = pmModelFit(input,'vistasoft', ...
-            'model','one oval gaussian'); 
+        options.vista            = allOptions.vista;
+        options.vista.model      = 'one oval gaussian';
+        options.vista.grid       = false;  % if true, returns gFit
+        options.vista.wSearch    = 'coarse to fine'; 
+        options.vista.detrend    = 0;
+        options.vista.keepAllPoints            = true; 
+        options.vista.numberStimulusGridPoints =  50;  
+        results                  = pmModelFit(input,'vistasoft','options',options);
     case {'popeye','pop'}
         results  = pmModelFit(input,'popeye');
     case {'popnoherf','popeyenohrf'}
