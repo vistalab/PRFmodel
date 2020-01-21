@@ -24,8 +24,13 @@ export PRF_SOLVER="afni"
 MCR_ROOT=/opt/mcr/v95/
 
 export PATH="$PATH:/opt/afni"
-
-time /compiled/run_prfanalyze_afni.sh "$MCR_ROOT" "$4" "$2" "$3" "$5"
+echo "Calling run_prfanalyze_afni now with the following files:"
+echo $1
+echo $4
+echo $2
+echo $3
+echo $5
+time /compiled/run_prfanalyze_afni.sh "$MCR_ROOT" "$1" "$4" "$2" "$3" "$5"
 # Check exit status
 [ $? = 0 ] || die "An error occurred during execution of the Matlab executable. Exiting!"
 
