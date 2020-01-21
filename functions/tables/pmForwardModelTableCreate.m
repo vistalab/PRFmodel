@@ -221,7 +221,8 @@ for ii=1:length(fieldsToCombine)
                 % Check if sigmaMinor is 'same'. If it is do nothing
                 % here, but everytime sigmaMajor is changed, change
                 % minor too.
-                if strcmp(subFieldName,'sigmaMinor') && strcmp(fieldValues,'same')
+                if (strcmp(subFieldName,'sigmaMinor') && strcmp(fieldValues,'same')) || ...
+				   (strcmp(subFieldName,'Centery0') && strcmp(fieldValues,'same'))
                     continue
                 elseif strcmp(subFieldName,'sigmaMajor') && strcmp(REDUCED_COMBINE_PARAMETERS.RF.sigmaMinor,'same')
                     % Add rows with the combinations of parameters we want to check
