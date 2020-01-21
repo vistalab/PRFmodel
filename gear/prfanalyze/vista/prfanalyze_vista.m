@@ -33,6 +33,7 @@ if ischar(json_file)
 end
 
 % read in the opts file
+%{
 opts = {};
 if ~isempty(opts_file)
     tmp = loadjson(opts_file);
@@ -45,6 +46,26 @@ if ~isempty(opts_file)
         end
     end
 end
+%}
+
+% read in the opts file
+if ~isempty(opts_file)
+    fprintf('This is the config.json file being read: %s\n',opts_file)
+    tmp = loadjson(opts_file);
+    disp('These are the contents of the json file:')
+    tmp
+    if ~isempty(tmp)
+        opts.vista = tmp;
+        opts = {'options', opts};
+    else
+        opts = {};
+    end
+else
+    opts = {};
+end
+
+
+
 
 % Make the output directory
 mkdir(output_dir);
@@ -110,7 +131,6 @@ disp(stim_file);
 disp('--------------------------------------------------------------------------------');
 
 [pmEstimates, results] = pmModelFit({bold_file, json_file, stim_file}, 'vista', opts{:});
-
 %% Write out the results
 estimates_file = fullfile(output_dir, 'estimates.mat');
 estimates = struct(pmEstimates);

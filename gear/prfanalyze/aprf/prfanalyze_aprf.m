@@ -33,7 +33,7 @@ if ~isempty(opts_file)
 	disp('These are the contents of the json file:')
 	tmp
     if ~isempty(tmp)
-        opts = tmp;
+        opts.aprf = tmp;
         opts = {'options', opts};
     else
         opts = {};
