@@ -21,6 +21,18 @@ saveTo = '~/gDrive/STANFORD/PROJECTS/2019_PRF_Validation_methods_(Gari)/__PUBLIS
 %    can only accurately characterize pRF which are implausibly elongated, then
 %       it's not a very useful model.
 
+% Silson 2018 J Neuro uses
+%    - Bar sweeps: 38 sec
+%        This means that the stim duration needs to be:
+%        pm.Stimulus.durationSecs = 400 secs
+%    - TR = 2 sec
+%    - Eccentricities:
+%        vals = linspace(1,9,8);
+%        usevals = sqrt((vals.^2)/2)
+%        usevals = [0.7071,1.5152,2.3234,3.1315,3.9396,4.7477,5.5558,6.3640]; 
+% Use as a input
+    
+
 
 
 kk = mrvNewGraphWin('NoiselessCloudPoints','wide');
