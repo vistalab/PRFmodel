@@ -25,7 +25,7 @@ MCR_ROOT=/opt/mcr/v95/
 
 export PATH="$PATH:/opt/afni"
 
-time /compiled/run_prfanalyze_afni.sh "$MCR_ROOT" "$4" "$2" "$3" "$5"
+time /compiled/run_prfanalyze_afni.sh "$MCR_ROOT" "$1" "$4" "$2" "$3" "$5"
 # Check exit status
 [ $? = 0 ] || die "An error occurred during execution of the Matlab executable. Exiting!"
 
