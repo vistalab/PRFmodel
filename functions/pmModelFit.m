@@ -49,29 +49,27 @@ p = inputParser;
 p.addRequired('input');
 p.addRequired('prfimplementation',@ischar);
 p.addParameter('useparallel'    ,  true        , @islogical);
-
-% This options structs are defaults for analyzePRF and afni
-% TODO: add mrVista options in the same to standardize code
-% TODO: preprend the name of the tool or create separate substructures
-options  = struct('seedmode', [0 1 2],  'display' , 'off', 'usecss',true, ... % analyzePRF
-                  'afni_model','afni4', 'afni_hrf', 'SPM', ... % AFNI
-                 );
-% Implementation specifics
-% AnalyzePRF
-p.addParameter('options'    ,  options        , @isstruct);
-% Vistasoft
-p.addParameter('model'        , 'one gaussian'  , @ischar);
-p.addParameter('grid'         , false           , @islogical);
-p.addParameter('wsearch'      , 'coarse to fine', @ischar);
-p.addParameter('detrend'      , 1               , @isnumeric);
-p.addParameter('keepAllPoints', false           , @islogical);
-p.addParameter('numberStimulusGridPoints', 50   , @isnumeric);
-
-
+    options       = struct();
+    options.aprf  = struct('seedmode', [0 1 2], ...
+                           'display' , 'off'  , ...
+                           'usecss'  , true  );
+    options.vista = struct('model'        ,'one gaussian'   , ...
+                           'grid'         , false           , ...
+                           'wsearch'      , 'coarse to fine', ...
+                           'detrend'      , 1               , ...
+                           'keepAllPoints', false           , ...
+                           'numberStimulusGridPoints',   50);
+    options.afni  = struct('model','afni4', ...
+                           'hrf'  , 'SPM');
+p.addParameter('options', options, @isstruct);
 % Parse. Assign result inside each case
 p.parse(input,prfimplementation,varargin{:});
 % Read here only the generic ones
 useParallel = p.Results.useparallel;
+allOptions  = p.Results.options;
+% We need to be sure that if only some of the params are passed, the rest will
+% be taken from the defaults 
+allOptions  = pmParamsCompletenessCheck(allOptions, options);
 
 
 %% Convert the input
@@ -192,12 +190,13 @@ prfimplementation = mrvParamFormat(prfimplementation);
 
 switch prfimplementation
     case {'aprf','analyzeprf'}
-
+        % Read the options
+        options = allOptions.aprf;
+        
         %% Create and check tables
         % TODO: Let's define the format for the estimates so that this is
         %       the same for all the methods.
-        pmEstimates = table();   
-        options  = p.Results.options;
+        pmEstimates = table();           
         if useParallel
             pmEstimates.testdata = data;
             
@@ -238,7 +237,6 @@ switch prfimplementation
                 stimulus = double(pm.Stimulus.getStimValues);
                 data     = pm.BOLDnoise;
                 TR       = pm.TR;
-                options  = p.Results.options;
                 
                 % Calculate PRF
                 results  = analyzePRF({stimulus}, {data}, TR, options);
@@ -383,7 +381,8 @@ switch prfimplementation
         end
         
     case {'vista','mrvista','vistasoft'}
-
+        % Read the options
+        options = allOptions.vista;
         %% Create temp folders
         tmpName = tempname(fullfile(pmRootPath,'local'));
         mkdir(tmpName);
@@ -411,12 +410,12 @@ switch prfimplementation
         stimfile      = stimNiftiFname;
         datafile      = niftiBOLDfile;
         warning('mrvista is assuming all stimuli with same radius. Fix this')
-        model         = p.Results.model;
-        grid          = p.Results.grid;
-        wSearch       = p.Results.wsearch;
-        detrend       = p.Results.detrend;
-        keepAllPoints = p.Results.keepAllPoints;
-        numberStimulusGridPoints = p.Results.numberStimulusGridPoints;
+        model         = options.model;
+        grid          = options.grid;
+        wSearch       = options.wSearch;
+        detrend       = options.detrend;
+        keepAllPoints = options.keepAllPoints;
+        numberStimulusGridPoints = options.numberStimulusGridPoints;
         
         % Make the call to the function based on Jon's script
         
@@ -460,6 +459,8 @@ switch prfimplementation
     case {'afni', 'simpleafni', 'basicafni', 'afni_4', 'afni4', ...
             'afni6', 'afni_6','withsigmaratio', ...
             'afni_dog', 'afnidog', 'dog'}
+        % Read the options
+        options = allOptions.afni;
         %% AFNI doc: algorithm options (TODO: add other implementations)
         % Afni help commented below
         %{
@@ -592,7 +593,7 @@ switch prfimplementation
         %% HRF
         % Obtain the HRF: follow the steps on the 3dNLfim.help file
         % TODO: add to options what HRF to use
-        afni_hrf = p.Results.afni_hrf;
+        afni_hrf = options.hrf;
         switch afni_hrf
             % TODO: synch it with the HRF creation process in pmHRF.m 
             case {'GAM'}
@@ -661,8 +662,8 @@ switch prfimplementation
         % Use cd() and then launch the command
         cd(fullfile(tmpName))
         
-        switch prfimplementation
-            case {'afni', 'simpleafni', 'basicafni', 'afni_4', 'afni4'}
+        switch options.model
+            case {'afni', 'simpleafni', 'basicafni', 'afni_4', 'afni4','Conv_PRF'}
                 % 4-param pRF Field Model 
                 % (A, X, Y, sigma)
                 modelName   = 'Conv_PRF';
@@ -672,7 +673,7 @@ switch prfimplementation
                     '-sconstr 2  -1.0  1.0 ' ...
                     '-sconstr 3   0.0  1.0 ' ...
                     ];
-            case {'afni6', 'afni_6','withsigmaratio'}
+            case {'afni6', 'afni_6','withsigmaratio','Conv_PRF_6'}
                 % 6-param pRF Field Model 
                 % (A, X, Y, sigma, sigrat, theta)
                 % Theta in radiansm, constraints from -90 to +90
@@ -685,7 +686,7 @@ switch prfimplementation
                     '-sconstr 4   1.0 5.0 ' ...
                     '-sconstr 5  -1.571 1.570 ' ...
                     ];
-            case {'afni_dog', 'afnidog', 'dog'}
+            case {'afni_dog', 'afnidog', 'dog','Conv_PRF_DOG'}
                 % 6-param 'Difference of Gaussians' PRF Model
                 % As Conv_PRF, but with second A and sigma
                 % (A, X, Y, sig, A2, sig2)
@@ -699,7 +700,7 @@ switch prfimplementation
                     '-sconstr 5   0.0  1.0 ' ...
                     ];
             otherwise
-                error('%s not implemented yet',prfimplementation)
+                error('%s not implemented yet',options.model)
         end
         
         % Launch the command
@@ -769,21 +770,21 @@ switch prfimplementation
         pmEstimates.modelpred  = fitsScaledBack;
         
         
-        switch prfimplementation
-            case {'afni', 'simpleafni', 'basicafni', 'afni_4', 'afni4'}
+        switch options.model
+            case {'afni', 'simpleafni', 'basicafni', 'afni_4', 'afni4', 'Conv_PRF'}
                 % 4-param pRF Field Model
                 % (A, X, Y, sigma)
                 pmEstimates.Theta      = zeros(size(results(:,3)));
                 pmEstimates.sigmaMajor = results(:,4) * Stimulus.fieldofviewHorz/2;
                 pmEstimates.sigmaMinor = results(:,4) * Stimulus.fieldofviewVert/2;
-            case {'afni6', 'afni_6','withsigmaratio'}
+            case {'afni6', 'afni_6','withsigmaratio', 'Conv_PRF_6'}
                 % 6-param pRF Field Model
                 % (A, X, Y, sigma, sigrat, theta)
                 % Theta in radiansm, constraints from -90 to +90
                 pmEstimates.sigmaMajor = (results(:,4) .* results(:,5)) * Stimulus.fieldofviewHorz/2;
                 pmEstimates.sigmaMinor = results(:,4) * Stimulus.fieldofviewHorz/2;
                 pmEstimates.Theta      = results(:,6);
-            case {'afni_dog', 'afnidog', 'dog'}
+            case {'afni_dog', 'afnidog', 'dog', 'Conv_PRF_DOG'}
                 % 6-param 'Difference of Gaussians' PRF Model
                 % As Conv_PRF, but with second A and sigma
                 % (A, X, Y, sig, A2, sig2)
@@ -791,7 +792,7 @@ switch prfimplementation
                 pmEstimates.sigmaMajor = results(:,4) * Stimulus.fieldofviewHorz/2;
                 pmEstimates.sigmaMinor = results(:,6) * Stimulus.fieldofviewVert/2;
             otherwise
-                error('%s not implemented yet',prfimplementation)
+                error('%s not implemented yet',options.model)
         end
         
     case {'popeye','popeye_onegaussian','popeye_CSS','popnohrf','popeyenohrf'}
