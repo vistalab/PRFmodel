@@ -1,4 +1,4 @@
-function prfanalyze_afni(opt_file, json_file, bold_file, stim_file, output_dir)
+function prfanalyze_afni(opts_file, json_file, bold_file, stim_file, output_dir)
 % 
 % (C) Vista Lab, Stanford University, 2019
 % 
@@ -34,7 +34,7 @@ if ~isempty(opts_file)
     disp('These are the contents of the json file:')
     tmp
     if ~isempty(tmp)
-        opts = tmp;
+        opts.afni = tmp;
         opts = {'options', opts};
     else
         opts = {};
