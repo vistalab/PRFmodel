@@ -35,8 +35,17 @@ synthDT.RF(:,{'sigmaMinor','sigmaMajor','Centerx0','Centery0'})
 synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats', 1);
 synthDT.RF(:,{'sigmaMinor','sigmaMajor','Centerx0','Centery0'})
 %}
+
 %{
+% Check y = same works
+    COMBINE_PARAMETERS                    = struct();
+    COMBINE_PARAMETERS.RF                 = struct();
+    COMBINE_PARAMETERS.RF.Centerx0        = [1,2,3]; 
+    COMBINE_PARAMETERS.RF.Centery0        = "same";
+synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats', 1);
+synthDT.RF(:,{'sigmaMinor','sigmaMajor','Centerx0','Centery0'})
 %}
+
 %{
 %}
 
@@ -153,9 +162,8 @@ for ii=1:length(fieldsToCombine)
                     if ~isfield(COMBINE_PARAMETERS.RF,'sigmaMajor')
                         COMBINE_PARAMETERS.RF.sigmaMajor = synthDT.RF.sigmaMajor;
                     end
-                    sMaj = getfield(COMBINE_PARAMETERS,fieldName,'sigmaMajor');
                     if strcmp(subFieldName,'sigmaMinor') && strcmp(fieldValues2,'same')
-                        fieldValues2 = sMaj;
+                        fieldValues2 = getfield(COMBINE_PARAMETERS,fieldName,'sigmaMajor');
                     end
                     
                     % Check x values
@@ -163,9 +171,8 @@ for ii=1:length(fieldsToCombine)
                     if ~isfield(COMBINE_PARAMETERS.RF,'Centerx0')
                         COMBINE_PARAMETERS.RF.Centerx0 = synthDT.RF.Centerx0;
                     end
-                    x0 = getfield(COMBINE_PARAMETERS,fieldName,'Centerx0');
                     if strcmp(subFieldName,'Centery0') && strcmp(fieldValues2,'same')
-                        fieldValues2 = x0;
+                        fieldValues2 = getfield(COMBINE_PARAMETERS,fieldName,'Centerx0');
                     end
                     if ~isstruct(fieldValues2)
                         % Change the default if provided
