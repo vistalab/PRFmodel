@@ -21,8 +21,8 @@ function prfReportWrapper(json, output_dir)
 % Use this command to launch in matlab
 %{
     % Create files
-    jsonPath   = fullfile(pmRootPath,'local','paper01','prfreport_paper2.json');
-    output_dir = fullfile(pmRootPath,'local','paper01');
+    jsonPath   = fullfile(pmRootPath,'local','test2','prfreport-configuration-defaults.json');
+    output_dir = fullfile(pmRootPath,'local','test2');
     jsonPath   = fullfile(pmRootPath,'local','ellipse','prfreport-configuration-ellipse-sess02.json');
     output_dir = fullfile(pmRootPath,'local','ellipse');
     prfReportWrapper(jsonPath, output_dir);
@@ -73,6 +73,7 @@ else
         analyze(1).Type     = "valid: aprf popeye vista afni";
         analyze(2).Type     = "there can be more than one";
     DEFAULTS.analyze        = analyze;
+    DEFAULTS.createplots    = false;
     % Other params
         resultParams        = struct();
         resultParams(1).name = "Centerx0";
@@ -183,6 +184,7 @@ for nr=1:length(J.analyze)
 		resname   = split(trunkname, '_');
         resname   = resname{end};
 		% read the nifti and squeeze the result matrix
+        fprintf('Attempting to read %s\n',fname)
 		tmp       = niftiRead(fname);
         data      = squeeze(tmp.data);	
 	    % asign it to the table
@@ -193,8 +195,8 @@ for nr=1:length(J.analyze)
             case 'sigmaminor', resname = 'sigmaMinor';
             case 'sigmamajor', resname = 'sigmaMajor';
             case 'theta'     , resname = 'Theta';
-            case 'x0'        , resname = 'Centerx0';
-            case 'y0'        , resname = 'Centery0';
+            case 'centerx0'  , resname = 'Centerx0';
+            case 'centery0'  , resname = 'Centery0';
         end
         pmEstimates.(resname) = data;	        
     end
