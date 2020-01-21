@@ -412,7 +412,9 @@ switch prfimplementation
         warning('mrvista is assuming all stimuli with same radius. Fix this')
         model         = options.model;
         grid          = options.grid;
-        wSearch       = options.wSearch;
+        % TODO: fix this
+        if isfield(options, 'wSearch'); wSearch = options.wSearch;end
+        if isfield(options, 'wsearch'); wSearch = options.wsearch;end
         detrend       = options.detrend;
         keepAllPoints = options.keepAllPoints;
         numberStimulusGridPoints = options.numberStimulusGridPoints;
