@@ -179,7 +179,7 @@ PARAMETERS.Stimulus.expName = string(PARAMETERS.Stimulus.expName);
 synthDT = pmForwardModelTableCreate(PARAMETERS, 'repeats', J.repeats);
 % I am having trouble with the parallel toolbox in docker, it takes too much memory. I am going to stablish a limit of 32000 for now
 if height(synthDT) > 32000
-	error('In this version, the maximum file size we can generate is of 32000 voxels')
+    error("Attempting to write more than 32000 per dimension (%i). TODO: Matlab's niftiwrite will automatically use Nifti-2 to write 2^63 -1 (instead of the current 2^15 -1.", height(synthDT))
 end
 pmForwardModelCalculate(synthDT, 'useparallel',J.useparallel,'writefiles',true,'outputdir',output_dir,'subjectname',J.subjectName); 
 %% Generate the files
