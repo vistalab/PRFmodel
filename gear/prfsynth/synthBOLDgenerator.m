@@ -33,9 +33,9 @@ function synthBOLDgenerator(json, output_dir)
 % Use this command to launch in matlab
 %{
     % Create files
-    jsonPath   = fullfile(pmRootPath,'local','output','paper', ...
-                          'params_big_test_for_paper_3-3_v02BOLD.json');
-    output_dir = fullfile(pmRootPath,'local','output','paper');
+    jsonPath   = fullfile(pmRootPath,'local','ellipse', ...
+                          'prfsynth-config-ellipse-sess03.json');
+    output_dir = fullfile(pmRootPath,'local','ellipse');
     synthBOLDgenerator(jsonPath, output_dir);
 
 
