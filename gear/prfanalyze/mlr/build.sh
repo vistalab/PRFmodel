@@ -1,7 +1,7 @@
 #! /bin/bash
 
 [ -z "$USERTAG" ] && USERTAG=garikoitz
-[ -z "$SOLVER"  ] && SOLVER=vista
+[ -z "$SOLVER"  ] && SOLVER=mlr
 [ -z "$VERSION" ] && VERSION=latest
 
 SCRIPTPATH="$( cd "$(dirname "$0")" && pwd -P )"
