@@ -1001,100 +1001,221 @@ if AppendixNoiseElements
     
 end
 
-%% CircularVsElliptical
-if CircularVsElliptical
-        COMBINE_PARAMETERS                       = struct();
-        COMBINE_PARAMETERS.RF.Centerx0           = [3];
-        COMBINE_PARAMETERS.RF.Centery0           = [3];  
-        COMBINE_PARAMETERS.RF.sigmaMajor         = [2];  
-        COMBINE_PARAMETERS.RF.sigmaMinor         = 'same';
-        COMBINE_PARAMETERS.TR                    = 1.5;
+%% Jon's notes, another test to do
+% Another stimulus manipulation that would reduce or even eliminate tradeoffs
+% between the hrf and prf size is to randomize the sequence of bar positions.
+% Some groups do this (including our 2013 css paper). The downside to
+% randomizing the design is that it reduces SNR. This is because the hrf acts
+% like a low-pass filter, and slow sweeps concentrate power in low temporal
+% frequencies, whereas random designs smear the power across the spectrum, most
+% of which gets crushed by the hrf.
 
-        HRF                                      = struct();
-        HRF(1).Type                              = 'vista_twogammas'; 
-        HRF(1).normalize                         = 'height'; 
-        HRF(2).Type                              = 'afni_spm'; 
-        HRF(2).normalize                         = 'height'; 
+% I believe the validation framework we now have could effectively show both
+% effects: a random design would reduce bias in the prf size estimate, but make
+% the fits noisier. That is, the randomized design will increase accuracy but
+% reduce precision. One way to implement this would be to take the stimulus
+% sequence we have now, and simply shuffle the temporal order before generating
+% the synthetic prf time series. Everything would be identical except the
+% temporal order of bars.
 
-        COMBINE_PARAMETERS.HRF                   = HRF;
-            Noise                                = struct();
-            Noise(1).voxel                       = 'low';
-            Noise(1).seed                        = 'none';
-            Noise(1).jitter                      = [0, 0];  % [0.1, 0.1];
-        COMBINE_PARAMETERS.Noise                 = Noise;
+% What got me thinking about this is seeing Ione Fine on the email list. She
+% often likes to complain about sweep designs.
 
-        % This is the same one as before, but now we want to do the slow stimuli version
-        % by Jon's suggestion
-        COMBINE_PARAMETERS.Stimulus.durationSecs = 300;
 
-        synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats',10);
-        synthDT = pmForwardModelCalculate(synthDT);
-        sDT = synthDT;
+  COMBINE_PARAMETERS                       = struct();
+    COMBINE_PARAMETERS.RF.Centerx0           = [3];
+    COMBINE_PARAMETERS.RF.Centery0           = [3];  
+    COMBINE_PARAMETERS.RF.sigmaMajor         = [2];  
+    COMBINE_PARAMETERS.RF.sigmaMinor         = 'same';
+    COMBINE_PARAMETERS.TR                    = 1;
 
-        %% Solve it with ellipticals
-
-        mrvista_results = pmModelFit(sDT, 'vista','model','onegaussian');
-        afni4_results   = pmModelFit(sDT, 'afni_4');
-        afni6_results   = pmModelFit(sDT, 'afni_6');
-        mrvistaoval_results = pmModelFit(sDT, 'vista','model','oneovalgaussian');
+    HRF                                      = struct();
+    HRF(1).Type                              = 'boynton';  
+    HRF(1).normalize                         = 'height'; 
+    HRF(1).params.n = 3;
+    HRF(1).params.tau = 1.08;
+    HRF(1).params.delay = 2.05;
         
-
-        %% Create comptTable
-        paramDefaults = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
-        compTable  = pmResultsCompare(sDT, {'vista','afni_4','vistaoval','afni_6'}, ...
-                                           {mrvista_results, afni4_results, mrvistaoval_results, afni6_results}, ...
-            'params', paramDefaults, ...
-            'shorten names',true, ...
-            'dotSeries', false);
-
-        %% Plot it
-        hh = mrvNewGraphWin('circularElliptical');
-        set(hh,'Position',[0.007 0.62  0.4  0.8]);
-        nrows=2; ncols=2;
-        Cs  = 0.65 * distinguishable_colors(6,'w');
-        xlims = [-2,8];
-        ylims = xlims;
-        nlvl  = 'none';
-
-        subplot(nrows,ncols,1)
-        pmCloudOfResults(compTable   , {'vista'} ,'onlyCenters',false ,'userfsize' , 2, ...
-                     'centerPerc', 90    ,'useHRF'     ,'vista_twogammas' ,'lineStyle' , '-', ...
-                     'lineWidth' , .7     ,'noiselevel' ,nlvl , 'addtext',true, ...
-                     'color', [0.5,0.5,0.5], 'xlims',xlims,'ylims',ylims,...
-                     'xtick',[1:5],'ytick',[1:5], 'addcibar', false, 'useEllipse', false, ...
-                     'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
-        title('vista circular')
-
-        subplot(nrows,ncols,2)
-        pmCloudOfResults(compTable   , {'afni_4'} ,'onlyCenters',false ,'userfsize' , 2, ...
-                     'centerPerc', 90    ,'useHRF'     ,'afni_spm' ,'lineStyle' , '-', ...
-                     'lineWidth' , .7     ,'noiselevel' ,nlvl , 'addtext',true, ...
-                     'color', [0.5,0.5,0.5], 'xlims',xlims,'ylims',ylims,...
-                     'xtick',[1:5],'ytick',[1:5], 'addcibar', false, 'useEllipse', false, ...
-                     'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
-        title('afni circular')
-
-        subplot(nrows,ncols,3)
-        pmCloudOfResults(compTable   , {'vistaoval'} ,'onlyCenters',false ,'userfsize' , 2, ...
-                     'centerPerc', 90    ,'useHRF'     ,'vista_twogammas' ,'lineStyle' , '-', ...
-                     'lineWidth' , .7     ,'noiselevel' ,nlvl , 'addtext',true, ...
-                     'color', [0.5,0.5,0.5], 'xlims',xlims,'ylims',ylims,...
-                     'xtick',[1:5],'ytick',[1:5], 'addcibar', false, 'useEllipse', true, ...
-                     'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
-        title('vista elliptical')
-
-        subplot(nrows,ncols,4)
-        pmCloudOfResults(compTable   , {'afni_6'} ,'onlyCenters',false ,'userfsize' , 2, ...
-                     'centerPerc', 90    ,'useHRF'     ,'afni_spm' ,'lineStyle' , '-', ...
-                     'lineWidth' , .7     ,'noiselevel' ,nlvl , 'addtext',true, ...
-                     'color', [0.5,0.5,0.5], 'xlims',xlims,'ylims',ylims,...
-                     'xtick',[1:5],'ytick',[1:5], 'addcibar', false, 'useEllipse', true, ...
-                     'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
-        title('afni elliptical')
+    HRF(2).Type                              = 'boynton';
+    HRF(2).normalize                         = 'height'; 
+    HRF(2).params.n = 3;
+    HRF(2).params.tau = 1.38;
+    HRF(2).params.delay = 2;
+    
+    HRF(3).Type                              = 'boynton';
+    HRF(3).normalize                         = 'height'; 
+    HRF(3).params.n = 3;
+    HRF(3).params.tau = 1.68;
+    HRF(3).params.delay = 1.75;
+    
+    HRF(4).Type                              = 'boynton';
+    HRF(4).normalize                         = 'height'; 
+    HRF(4).params.n = 3;
+    HRF(4).params.tau = 1.935;
+    HRF(4).params.delay = 1.65;
+    
+    % HRF(5).Type                              = 'canonical'; 
+    % HRF(5).normalize                         = 'height'; 
+    
+    COMBINE_PARAMETERS.HRF                   = HRF;
+        Noise                                = struct();
+        Noise(1).seed                        = 'none';
+    COMBINE_PARAMETERS.Noise                 = Noise;
+    
+    % This is the same one as before, but now we want to do the slow stimuli version
+    % by Jon's suggestion
+    COMBINE_PARAMETERS.Stimulus.durationSecs = 200;
     
     
-    fnameRoot = 'CircularElliptical';
+    
+    % CREATE ANOTHER STIM RANDOMIZING THE BARS
+    synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats',1);
+    synthDT = pmForwardModelCalculate(synthDT);
+    sDT = synthDT;
+    
+    COMBINE_PARAMETERS                       = struct();
+    COMBINE_PARAMETERS.RF.Centerx0           = [3];
+    COMBINE_PARAMETERS.RF.Centery0           = [3];  
+    COMBINE_PARAMETERS.RF.sigmaMajor         = [2];  
+    COMBINE_PARAMETERS.RF.sigmaMinor         = 'same';
+    COMBINE_PARAMETERS.TR                    = 1;
+
+    HRF                                      = struct();
+    HRF(1).Type                              = 'boynton';  
+    HRF(1).normalize                         = 'height'; 
+    HRF(1).params.n = 3;
+    HRF(1).params.tau = 1.08;
+    HRF(1).params.delay = 2.05;
+        
+    HRF(2).Type                              = 'boynton';
+    HRF(2).normalize                         = 'height'; 
+    HRF(2).params.n = 3;
+    HRF(2).params.tau = 1.38;
+    HRF(2).params.delay = 2;
+    
+    HRF(3).Type                              = 'boynton';
+    HRF(3).normalize                         = 'height'; 
+    HRF(3).params.n = 3;
+    HRF(3).params.tau = 1.68;
+    HRF(3).params.delay = 1.75;
+    
+    HRF(4).Type                              = 'boynton';
+    HRF(4).normalize                         = 'height'; 
+    HRF(4).params.n = 3;
+    HRF(4).params.tau = 1.935;
+    HRF(4).params.delay = 1.65;
+    
+    % HRF(5).Type                              = 'canonical'; 
+    % HRF(5).normalize                         = 'height'; 
+    
+    COMBINE_PARAMETERS.HRF                   = HRF;
+        Noise                                = struct();
+        Noise(1).seed                        = 'none';
+    COMBINE_PARAMETERS.Noise                 = Noise;
+    
+    % This is the same one as before, but now we want to do the slow stimuli version
+    % by Jon's suggestion
+    COMBINE_PARAMETERS.Stimulus.durationSecs = 200;
+    
+    synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats',1);
+    synthDT = pmForwardModelCalculate(synthDT);
+    sDT = synthDT;
+    
+    %% Solve it
+    boyntonresults = pmModelFit(sDT, 'aprf');
+    
+    %% Create comptTable
+    paramDefaults = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
+    boyntoncompTable  = pmResultsCompare(sDT, {'aprf'}, {boyntonresults}, ...
+        'params', paramDefaults, ...
+        'shorten names',true, ...
+        'dotSeries', false);
+    
+    %% Plot it
+    hh = mrvNewGraphWin('HRF comparison');
+    set(hh,'Position',[0.007 0.62  0.6  0.8]);
+    nrows = 3; ncols = 4;
+
+    Cs  = 0.65 * distinguishable_colors(6,'w');
+    
+    subplot(nrows,ncols,[1:ncols])
+    a   = [];
+    leg = [];
+    for ii = 1:height(sDT)
+        thispm = sDT.pm(ii);
+        if ii~=5
+            line='-';
+            % thisleg = {sprintf('Boynton %i (width=%1d)',ii,thispm.HRF.width)};
+            thisleg = {sprintf('Boynton %i',ii)};
+        else
+            % thisleg = {sprintf('aPRF canonical (width=%1d)',thispm.HRF.width)};
+            thisleg = {sprintf('aPRF canonical')};
+            line='-.';
+        end
+        a = [a;thispm.HRF.plot('window',false,'dots',false,'addwidth',false,...
+            'xlims',[0,20],'color',Cs(ii+1,:),'line',line)];
+        leg = [leg;thisleg];
+    end
+    legend(a,{'Boynton 1','Boynton 2','Boynton 3','Boynton 4'})  % ,'aprf\_canonical'})
+    legend(a,leg)
+    title('Boynton HRFs modulated in width and canonical aprf')
+    xticks([0:20])
+    
+    % Create the fit plots with the ground truth
+    tools  = {'aprf'}; nslvl  = 'none';
+    HRFs   = {'boynton','boynton','boynton','boynton'}; % ,'canonical'};
+    for ii=1:height(boyntoncompTable)
+        subplot(nrows,ncols,ncols + ii)
+        useHRF = HRFs{ii};
+        ttable = boyntoncompTable(ii,:);
+        pmCloudOfResults(ttable   , tools ,'onlyCenters',false ,'userfsize' , 2, ...
+            'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-','color',Cs(ii+1,:), ...
+            'lineWidth' , 2     ,'noiselevel' ,nslvl , ...
+            'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+        axis equal
+    end
+    
+    % Create the fit plots with the ground truth
+    tools  = {'aprf'}; nslvl  = 'none';
+    HRFs   = {'boynton','boynton','boynton','boynton'}; % ,'canonical'};
+    for ii=1:height(boyntoncompTable)
+        subplot(nrows,ncols,2*ncols + ii)
+        useHRF = HRFs{ii};
+        ttable = boyntoncompTable(ii,:);
+        pmCloudOfResults(ttable   , tools ,'onlyCenters',false ,'userfsize' , 2, ...
+            'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-','color',Cs(ii+1,:), ...
+            'lineWidth' , 2     ,'noiselevel' ,nslvl , ...
+            'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+        axis equal
+    end
+    
+    
+    
+    
+    fnameRoot = 'HRF_and_width_BoyntonSlow_200';
     saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
-    
-    
-end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

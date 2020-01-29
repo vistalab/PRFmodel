@@ -19,7 +19,7 @@ p.addRequired ('DTDT'        , @istable);
 p.addParameter('fname'     , 'BOLDnoise.nii.gz', @ischar);
 p.addParameter('demean'    , false , @islogical);
 p.addParameter('writenifti', true  , @islogical);
-p.addParameter('maxrows'   , 32000 , @isnumeric);
+p.addParameter('maxrows'   , 500000 , @isnumeric);
 p.parse(DT,varargin{:});
 
 fname      = p.Results.fname;
@@ -28,8 +28,8 @@ writenifti = p.Results.writenifti;
 maxRows    = p.Results.maxrows;
 
 % Check size
-if height(DT) >= 32000^2
-    error('File too large, maximum accepted is 1024e6')
+if height(DT) >= maxRows
+    error('File too large, maximum accepted is %i', maxRows)
 end
 
 %% Calculate
@@ -44,18 +44,17 @@ end
     % If the file is larger than 32000, we need to use other dims, but we
     % will fill first the first dimension and keep from there
     
-    if Nvoxels < maxRows
-        dim1 = Nvoxels;
-        dim2 = 1;
-        dim3 = 1;
+    dim1 = Nvoxels;
+    dim2 = 1;
+    dim3 = 1;
+    if Nvoxels < 32767
+        niftiversion = 1;
     else
-        dim1   = maxRows;
-        dim2   = ceil(Nvoxels / maxRows);
-        dim3   = 1;
+        niftiversion = 2;
     end
     
     % Create a cube of timeSeries
-    data = 1000 * ones(dim1,dim2,1,Ntime);
+    data = 1000 * ones(dim1,dim2,dim3,Ntime);  % 
     index = 0;
     for jj=1:dim2
         for ii=1:dim1
@@ -73,7 +72,8 @@ end
     end
     if writenifti
         % Save it as a nifti
-        writeFileNifti(niftiCreate('data', data, 'tr', pm1.TR, ...
-            'fname',fname));
+        ni = niftiCreate('data',data, 'tr',pm1.TR, 'fname',fname);
+        ni.version = niftiversion;
+        niftiWrite(ni);
     end
 end 

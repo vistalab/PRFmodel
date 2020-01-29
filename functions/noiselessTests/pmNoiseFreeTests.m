@@ -79,6 +79,9 @@ p.addParameter('ellipse'    ,  false           , @islogical);
                            'numberStimulusGridPoints',   50);
     options.afni  = struct('model','afni4', ...
                            'hrf'  , 'SPM');
+    options.mlr  = struct('quickFit',0, ...
+                           'doParallel'  , 0, ...
+                           'rfType','gaussian');
 p.addParameter('options'    ,  options        , @isstruct);
 
 % Parse. Assign result inside each case
@@ -92,19 +95,22 @@ allOptions  = p.Results.options;
 allOptions  = pmParamsCompletenessCheck(allOptions, options);
 
 %% Create the test data
+COMBINE_PARAMETERS                        = struct();
 if ellipse
     COMBINE_PARAMETERS.RF                 = struct();
-    COMBINE_PARAMETERS.RF.Centerx0        = [3]; 
-    COMBINE_PARAMETERS.RF.Centery0        = [3];
-    COMBINE_PARAMETERS.RF.Theta           = [deg2rad(135)]; 
+    COMBINE_PARAMETERS.RF.Centerx0        = 3;%[3]; 
+    COMBINE_PARAMETERS.RF.Centery0        = 3;%[3];
+    COMBINE_PARAMETERS.RF.Theta           = deg2rad(45);%[deg2rad(135)]; 
     COMBINE_PARAMETERS.RF.sigmaMajor      = [1,2,3];
     COMBINE_PARAMETERS.RF.sigmaMinor      = [1,2]; 
+    % COMBINE_PARAMETERS.RF.sigmaMajor      = [1,2,4]/2;
+    % COMBINE_PARAMETERS.RF.sigmaMinor      = [1,2]/2; 
 else
     COMBINE_PARAMETERS.RF                 = struct();
-    COMBINE_PARAMETERS.RF.Centerx0        = [3]; 
-    COMBINE_PARAMETERS.RF.Centery0        = [3];
+    COMBINE_PARAMETERS.RF.Centerx0        = [0,3]; 
+    COMBINE_PARAMETERS.RF.Centery0        = [0,3];
     COMBINE_PARAMETERS.RF.Theta           = [0]; %, deg2rad(45)];
-    COMBINE_PARAMETERS.RF.sigmaMajor      = [2];
+    COMBINE_PARAMETERS.RF.sigmaMajor      = [1,2];
     COMBINE_PARAMETERS.RF.sigmaMinor      = "same";
 end
 switch prfimplementation
@@ -127,65 +133,23 @@ switch prfimplementation
         % HRF(1).Type = 'popeye_twogammas';
         HRF(1).Type = 'popeye_twogammas';
         % HRF(2).Type = 'canonical';
+     case {'mrtools','mlrtools','mlr'}
+        COMBINE_PARAMETERS.TR                   = [1.5]; % before it had to be one because the hrf was hardcoded
+        % amazing, TR:1 and 3, all ok, for TR:2, the last test fails and it is
+        % not capable of predicting anything. 
+        % HRF(1).Type = 'popeye_twogammas';
+        HRF(1).Type = 'vista_twogammas';
     otherwise
         error('%s not yet implemented',prfimplementation);
 end
 
-COMBINE_PARAMETERS.HRF           = HRF;
+COMBINE_PARAMETERS.HRF                   = HRF;
+COMBINE_PARAMETERS.Stimulus.durationSecs = 300;
 Noise(1).seed                    = 'none';
+% Noise(1).seed                    = 'random';
 COMBINE_PARAMETERS.Noise         = Noise;
-synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats', 2);
+synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats', 1);
 synthDT = pmForwardModelCalculate(synthDT);
-% Visually check that all the combinations we specified are there
-% [synthDT.RF(:,{'Centerx0','Centery0','Theta','sigmaMajor','sigmaMinor'}), ...
-%  synthDT(:,'TR'), ...
-%  synthDT.HRF(:,'Type')...
-% ]
-
-% Save the default niftis with different TR and HRF to be used as tests later on
-% niftiBOLDfile = fullfile(pmRootPath,'local', ...
-%     ['defaultSynth_TR' num2str(COMBINE_PARAMETERS.TR) '_HRF-' HRF(1).Type '.nii.gz']);
-% if ~exist(niftiBOLDfile, 'file')
-%     pmForwardModelToNifti(synthDT,'fname',niftiBOLDfile, 'demean',false);
-% end
-
-% jsonSynthFile = fullfile(pmRootPath,'local', ...
-%     ['defaultSynth_TR' num2str(COMBINE_PARAMETERS.TR) '_HRF-' HRF(1).Type '.json']);
-% if ~exist(jsonSynthFile, 'file')
-%     % Encode json
-%     jsonString = jsonencode(synthDT(:,1:(end-1)));
-%     % Format a little bit
-%     jsonString = strrep(jsonString, ',', sprintf(',\r'));
-%     jsonString = strrep(jsonString, '[{', sprintf('[\r{\r'));
-%     jsonString = strrep(jsonString, '}]', sprintf('\r}\r]'));
-%     % Write it
-%     fid = fopen(jsonSynthFile, 'w');if fid == -1,error('Cannot create JSON file');end
-%     fwrite(fid, jsonString, 'char');fclose(fid);
-%     % Read the json
-%     %{
-%     A = struct2table(jsonread(jsonSynthFile));
-%     for na=1:width(A)
-%         if isstruct(A{:,na})
-%             A.(A.Properties.VariableNames{na}) = struct2table(A{:,na});
-%         end
-%     end
-%     %}
-% end
-
-%{
-stimNiftiFname = fullfile(pmRootPath,'local', ['defaultStim_TR' num2str(COMBINE_PARAMETERS.TR) '.nii.gz']);
-if ~exist(stimNiftiFname, 'file')
-    pm1            = prfModel; 
-    pm1.TR         = COMBINE_PARAMETERS.TR;
-    pm1.compute;
-    stimNiftiFname = pm1.Stimulus.toNifti('fname',stimNiftiFname);
-end
-%}
-
-
-
-
-
 
 if useNifti
     % This is for nifti in pmModelFit purposes
@@ -236,6 +200,10 @@ switch prfimplementation
         results  = pmModelFit(input,'popeye');
     case {'popnoherf','popeyenohrf'}
         results  = pmModelFit(input,'popeyenohrf');
+    case {'mrtools','mlrtools','mlr'}
+        options.mlr            = allOptions.mlr;
+        options.mlr.quickFit = 0;
+        results  = pmModelFit(input,'mlr','options',options);        
     otherwise
         error('%s not yet implemented',prfimplementation);
 end

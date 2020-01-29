@@ -134,6 +134,7 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
         barWidth         ;   % Degrees
         durationSecs     ;   % Numeric, duration of the stimuli in secs, default 300secs
         frameduration    ;   % Numeric, how many frames we want a refresh to last
+        Shuffle          ;   
         values           ;   % char/string with path to the stimulus .mat
         videoFileName    ;
         niftiFileName    ;
@@ -170,6 +171,7 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             d.barWidth        = 2;     % Degrees. TODO
             d.durationSecs    = 200;   % Seconds
             d.frameduration   = 4;   
+            d.Shuffle         = false; % Shuffle bars or content
             
             % Convert to table and return
             d = struct2table(d,'AsArray',true);
@@ -195,6 +197,7 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             p.addParameter('barwidth'       ,d.barWidth       , @isnumeric);
             p.addParameter('durationsecs'   ,d.durationSecs   , @isnumeric);
             p.addParameter('frameduration'  ,d.frameduration  , @isnumeric);
+            p.addParameter('shuffle'        ,d.Shuffle        , @islogical);
             p.addParameter('uservals'       ,[]               , @isnumeric);
             p.parse(pm,varargin{:});
             
@@ -211,6 +214,7 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             stim.barWidth        = p.Results.barwidth;
             stim.durationSecs    = p.Results.durationsecs;
             stim.frameduration   = p.Results.frameduration;
+            stim.Shuffle         = p.Results.shuffle;
             stim.userVals        = p.Results.uservals;
             
             % If we pass uservales, override the calculations
@@ -247,6 +251,7 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
                    '_dur-'         num2str(stim.durationSecs) ...
                    '_TR-'          num2str(stim.TR) ...
                    '_framedur-'    num2str(stim.frameduration) ...
+                   '_Shuffle-'     choose(stim.Resize,'true', 'false') ...
                    ];
                assert(isa(Name, 'char'));
         end

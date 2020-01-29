@@ -1,3 +1,6 @@
+%% TODO: SAVE ALL IMPORTANT FILES, not in local
+
+
 % {
 clear all; close all; clc
 p = '/Users/glerma/gDrive/STANFORD/PROJECTS/2019_PRF_Validation_methods_(Gari)/__PUBLISH__/ELLIPTICAL';
@@ -8,12 +11,12 @@ saveTo = '~/gDrive/STANFORD/PROJECTS/2019_PRF_Validation_methods_(Gari)/__PUBLIS
 %}
 
 %% NOTES FOR THE ANALYSIS
-% 1. What was the stimulus that Baker used? You might want to try your
+% 1. DONE (similar stimulus, see below): What was the stimulus that Baker used? You might want to try your
 %    simulations with the same stimulus sequence. 
-% 2. Is there a bias in the
+% 2. DONE: Is there a bias in the
 %    distribution of angles of the major axis, or is the distribution pretty flat
 %    (as a function of angle)? 
-% 3. If you use an ellipse as ground truth, and add
+% 3. TODO: If you use an ellipse as ground truth, and add
 %    low or moderate noise. how much elongation do you need in order to reliably
 %    recover the correct angle? For example, if the ratio of major axis to minor
 %    axis is 1.1, can you correctly recover the alpha? What about 1.2? 2? This
@@ -231,10 +234,14 @@ kk = mrvNewGraphWin('ELLIP_NoiselessCloudPoints4ratios','wide');
 set(kk,'Position',[0.007 0.62  0.4  0.3]);
 nrows  = 2; ncols = 4;
 ratios = [1,1.5,2,3];
+% nrows  = 2; ncols = 3;
+% ratios = [1,2,4];
 
 % Apply params to all
 nslvl  = 'none';
 addcihist = true;
+
+
 
 % Plot each tool separately
 % Plot mrVista
@@ -248,12 +255,16 @@ for nr = 1:length(ratios)
         case 1.5, sMin=2; sMaj=3; useellipse=true;
         case 2,   sMin=1; sMaj=2; useellipse=true;
         case 3,   sMin=1; sMaj=3; useellipse=true;
+%         case 1,   sMin=.5; sMaj=.5; useellipse=true;
+%         case 2,   sMin=.5; sMaj=1; useellipse=true;
+%         case 4,   sMin=.5; sMaj=2; useellipse=true;
         otherwise, error('Ratio %i not contemplated',r)
     end
     pmCloudOfResults(vistacompTable   , tools ,'onlyCenters',false , ...
-                     'userfsize' , sMaj, 'userfsizemin' , sMin, 'useellipse',useellipse, ...
-                     'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
-                     'lineWidth' , 2     ,'noiselevel' ,nslvl , 'addcihist', addcihist,...
+                     'userfsize'  , sMaj, 'userfsizemin' , sMin, 'useellipse',useellipse, ...
+                     'centerPerc' , 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
+                     'lineWidth'  , 2     ,'noiselevel' ,nslvl , 'addcihist', addcihist,...
+                     'centerDistr', false,...
                     ... 'xlims',[2.75, 3.25],'ylims',[2.75, 3.25], 'xtick',[2.5:.125:3.5],'ytick',[2.5:.125:3.5], ...
                      'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
 end
@@ -268,12 +279,16 @@ for nr = 1:length(ratios)
         case 1.5, sMin=2; sMaj=3; useellipse=true;
         case 2,   sMin=1; sMaj=2; useellipse=true;
         case 3,   sMin=1; sMaj=3; useellipse=true;
+%         case 1,   sMin=.5; sMaj=.5; useellipse=true;
+%         case 2,   sMin=.5; sMaj=1; useellipse=true;
+%         case 4,   sMin=.5; sMaj=2; useellipse=true;
         otherwise, error('Ratio %i not contemplated',r)
     end
     pmCloudOfResults(afnicompTable, tools ,'onlyCenters',false , ...
         'userfsize' , sMaj, 'userfsizemin' , sMin, 'useellipse',useellipse, ...
         'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
         'lineWidth' , 2     ,'noiselevel' ,nslvl , 'addcihist', addcihist,...
+        'centerDistr', false,...
         ... 'xlims',[2.75, 3.25],'ylims',[2.75, 3.25], 'xtick',[2.5:.125:3.5],'ytick',[2.5:.125:3.5], ...
         'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
 end
@@ -289,6 +304,7 @@ saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
     COMBINE_PARAMETERS.RF.sigmaMajor         = [2];  
     COMBINE_PARAMETERS.RF.sigmaMinor         = 'same';
     COMBINE_PARAMETERS.TR                    = 1;
+    COMBINE_PARAMETERS.Stimulus.durationSecs = 200;
 
     HRF                                      = struct();
     HRF(1).Type                              = 'boynton';  
@@ -317,19 +333,22 @@ saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
     
     COMBINE_PARAMETERS.HRF                   = HRF;
         Noise                                = struct();
-        Noise(1).seed                        = 'none';
+        Noise(1).seed                        = 'random';
+        Noise(1).voxel                       = 'mid';
     COMBINE_PARAMETERS.Noise                 = Noise;
     synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats',1);
     synthDT = pmForwardModelCalculate(synthDT);
     sDT = synthDT;
     
     %% Solve it
-    boyntonresultsvista = pmModelFit(sDT, 'vista','model','one oval gaussian');
-    % boyntonresultsafni = pmModelFit(sDT, 'afni6');
+    % boyntonresultsvista = pmModelFit(sDT, 'vista','model','one oval gaussian');
+    options.afni.model      = 'afni6';
+    options.afni.hrf        = 'spm';
+    boyntonresultsafni = pmModelFit(sDT, 'afni', 'options', options);
     
     %% Create comptTable
     paramDefaults = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
-    boyntoncompTable  = pmResultsCompare(sDT, {'aprf'}, {boyntonresultsvista}, ...
+    boyntoncompTable  = pmResultsCompare(sDT, {'aprf'}, {boyntonresultsafni}, ...
         'params', paramDefaults, ...
         'shorten names',true, ...
         'dotSeries', false);
@@ -341,7 +360,7 @@ saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
     Cs  = 0.65 * distinguishable_colors(6,'w');
     
     % Create the fit plots with the ground truth
-    tools  = {'aprf'}; nslvl  = 'none';
+    tools  = {'aprf'}; nslvl  = 'mid';
     HRFs   = {'boynton','boynton','boynton','boynton'};
     for ii=1:height(boyntoncompTable)
         subplot(2,5,ii)
@@ -351,6 +370,7 @@ saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
             'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-','color',Cs(ii+1,:), ...
             'lineWidth' , 2     ,'noiselevel' ,nslvl , ...
             'useellipse', true, ...
+            'xlims',[0, 7],'ylims',[0, 7], 'xtick',[1:1:6],'ytick',[1:1:6], ...
             'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
     end
     
@@ -381,7 +401,6 @@ saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
     % fnameRoot = 'ELLIP_HRF_and_width_AFNI_';
     saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
 
-             
  %% another plot            
              
 kk = mrvNewGraphWin('NoiselessCloudPoints','wide');
@@ -398,24 +417,435 @@ pmCloudOfResults(compTable   , tools ,'onlyCenters', false ,'userfsize' , 2, 'ce
                  'addcihist', false, 'xtick',[-2:6],'ytick',[-2:6],...
                  'location', [3,0], ... % 'all', ... % [3,3], ...
                  'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+                          
+%%
+[kkvistacompTable, kkvistatSeries, kkvistaresults] = pmNoiseFreeTests('vista6','ellipse',true);             
+[kkafnicompTable, kkafnitSeries, kkafniresults] = pmNoiseFreeTests('afni6','ellipse',true);
+
+%% CircularVsElliptical
+if CircularVsElliptical
+        COMBINE_PARAMETERS                       = struct();
+        COMBINE_PARAMETERS.RF.Centerx0           = [3];
+        COMBINE_PARAMETERS.RF.Centery0           = [3];  
+        COMBINE_PARAMETERS.RF.sigmaMajor         = [2];  
+        COMBINE_PARAMETERS.RF.sigmaMinor         = 'same';
+        COMBINE_PARAMETERS.TR                    = 1.5;
+
+        HRF                                      = struct();
+        HRF(1).Type                              = 'vista_twogammas'; 
+        HRF(1).normalize                         = 'height'; 
+        HRF(2).Type                              = 'afni_spm'; 
+        HRF(2).normalize                         = 'height'; 
+
+        COMBINE_PARAMETERS.HRF                   = HRF;
+            Noise                                = struct();
+            Noise(1).voxel                       = 'low';
+            Noise(1).seed                        = 'none';
+            Noise(1).jitter                      = [0, 0];  % [0.1, 0.1];
+        COMBINE_PARAMETERS.Noise                 = Noise;
+
+        % This is the same one as before, but now we want to do the slow stimuli version
+        % by Jon's suggestion
+        COMBINE_PARAMETERS.Stimulus.durationSecs = 300;
+
+        synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats',10);
+        synthDT = pmForwardModelCalculate(synthDT);
+        sDT = synthDT;
+
+        %% Solve it with ellipticals
+
+        mrvista_results = pmModelFit(sDT, 'vista','model','onegaussian');
+        afni4_results   = pmModelFit(sDT, 'afni_4');
+        afni6_results   = pmModelFit(sDT, 'afni_6');
+        mrvistaoval_results = pmModelFit(sDT, 'vista','model','oneovalgaussian');
+        
+
+        %% Create comptTable
+        paramDefaults = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
+        compTable  = pmResultsCompare(sDT, {'vista','afni_4','vistaoval','afni_6'}, ...
+                                           {mrvista_results, afni4_results, mrvistaoval_results, afni6_results}, ...
+            'params', paramDefaults, ...
+            'shorten names',true, ...
+            'dotSeries', false);
+
+        %% Plot it
+        hh = mrvNewGraphWin('circularElliptical');
+        set(hh,'Position',[0.007 0.62  0.4  0.8]);
+        nrows=2; ncols=2;
+        Cs  = 0.65 * distinguishable_colors(6,'w');
+        xlims = [-2,8];
+        ylims = xlims;
+        nlvl  = 'none';
+
+        subplot(nrows,ncols,1)
+        pmCloudOfResults(compTable   , {'vista'} ,'onlyCenters',false ,'userfsize' , 2, ...
+                     'centerPerc', 90    ,'useHRF'     ,'vista_twogammas' ,'lineStyle' , '-', ...
+                     'lineWidth' , .7     ,'noiselevel' ,nlvl , 'addtext',true, ...
+                     'color', [0.5,0.5,0.5], 'xlims',xlims,'ylims',ylims,...
+                     'xtick',[1:5],'ytick',[1:5], 'addcibar', false, 'useEllipse', false, ...
+                     'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+        title('vista circular')
+
+        subplot(nrows,ncols,2)
+        pmCloudOfResults(compTable   , {'afni_4'} ,'onlyCenters',false ,'userfsize' , 2, ...
+                     'centerPerc', 90    ,'useHRF'     ,'afni_spm' ,'lineStyle' , '-', ...
+                     'lineWidth' , .7     ,'noiselevel' ,nlvl , 'addtext',true, ...
+                     'color', [0.5,0.5,0.5], 'xlims',xlims,'ylims',ylims,...
+                     'xtick',[1:5],'ytick',[1:5], 'addcibar', false, 'useEllipse', false, ...
+                     'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+        title('afni circular')
+
+        subplot(nrows,ncols,3)
+        pmCloudOfResults(compTable   , {'vistaoval'} ,'onlyCenters',false ,'userfsize' , 2, ...
+                     'centerPerc', 90    ,'useHRF'     ,'vista_twogammas' ,'lineStyle' , '-', ...
+                     'lineWidth' , .7     ,'noiselevel' ,nlvl , 'addtext',true, ...
+                     'color', [0.5,0.5,0.5], 'xlims',xlims,'ylims',ylims,...
+                     'xtick',[1:5],'ytick',[1:5], 'addcibar', false, 'useEllipse', true, ...
+                     'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+        title('vista elliptical')
+
+        subplot(nrows,ncols,4)
+        pmCloudOfResults(compTable   , {'afni_6'} ,'onlyCenters',false ,'userfsize' , 2, ...
+                     'centerPerc', 90    ,'useHRF'     ,'afni_spm' ,'lineStyle' , '-', ...
+                     'lineWidth' , .7     ,'noiselevel' ,nlvl , 'addtext',true, ...
+                     'color', [0.5,0.5,0.5], 'xlims',xlims,'ylims',ylims,...
+                     'xtick',[1:5],'ytick',[1:5], 'addcibar', false, 'useEllipse', true, ...
+                     'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+        title('afni elliptical')
+    
+    
+    fnameRoot = 'CircularElliptical';
+    saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
+    
+    
+end
+
+%% Silson 2018 plot: ECCEN vs ASPECT
+p = '/Users/glerma/toolboxes/PRFmodel/local/ellipse/BIDS/derivatives/prfreport/sub-ellipse/ses-sess03';
+% f = 'sub-ellipse_ses-sess03-prf_acq-normal_run-01_bold.json';
+% SS = jsonread(fullfile(p,f));
+f = 'sub-ellipse_ses-sess03-prf_acq-normal_run-01_bold.mat';
+SS = load(fullfile(p,f));
+dt = SS.compTable;
+nlvl = "mid";
+centerPerc = 50;
+eccenInGT  = true;
 
 
 
 
+% MAKE THIS A FUNCTION
+% Obtain eccentricity and polar angle
+[TH,R]         = cart2pol(dt.synth.x0, dt.synth.y0);
+dt.synth.angle = rad2deg(TH);
+dt.synth.eccen = R;
+dt.synth.aspect= dt.synth.sMaj ./ dt.synth.sMin;
+% Do it per each tool
+[TH,R]         = cart2pol(dt.vista.x0, dt.vista.y0);
+dt.vista.angle = rad2deg(TH);
+dt.vista.eccen = R;
+dt.vista.aspect= dt.vista.sMaj ./ dt.vista.sMin;
+
+[TH,R]         = cart2pol(dt.afni.x0, dt.afni.y0);
+dt.afni.angle  = rad2deg(TH);
+dt.afni.eccen  = R;
+dt.afni.aspect = dt.afni.sMaj  ./ dt.afni.sMin;
+
+% Check that we are getting the values we want
+xvalues = unique(dt.synth.eccen);
+isclose(linspace(1,9,8)',xvalues,'tolerance',0.001)
+
+% Filter all that we can filter
+% Noise levels
+dt = dt(dt.noiseLevel==nlvl,:);
+% Aspect ratio: start with synthesized aspect ratio = 1
+dt = dt(dt.synth.aspect==1,:);
+% Select a size, lets take the smalles one for now
+dt = dt(dt.synth.sMaj==1,:);
+
+% Check percentage is 100 based
+if centerPerc < 1; centerPerc = centerPerc*100; end
+% Define the required confidence intervals as two percentiles
+twoTailedRange = (100 - centerPerc) / 2;
+
+% We are not doing vista, remove it
+dt = dt(:,~contains(dt.Properties.VariableNames,'vista'));
+
+% We want to use just its own HRF, remove the vista one
+dt = dt(dt.HRFtype=="afni_spm",:);
+
+% Obtain eccen  vals, this is going to be the x axis
+eccenvals = unique(dt.synth.eccen);
+
+
+% Create main plot with the ground truth lines
+           
+kk = mrvNewGraphWin('SilsonSim');
+% Fig size is relative to the screen used. This is for laptop at 1900x1200
+set(kk,'Position',[0.007 0.62  0.4  0.4]);
+ystart=ones(size(eccenvals));
+ystop=5*ones(size(eccenvals));
+plot([eccenvals.';eccenvals.'],[ystart.';ystop.'], ...
+    'LineWidth',.7,'LineStyle','-.','Color','k')
+hold on
+Cs              = 0.65*distinguishable_colors(1+length(eccenvals),'w');
+% Apply percentiles and plot individually
+for ne=1:length(eccenvals)
+    C           = Cs(ne,:);
+    ecc         = eccenvals(ne);
+    aspect      = dt.afni.aspect(dt.synth.eccen==ecc);
+    realeccen   = dt.afni.eccen(dt.synth.eccen==ecc);
+    B           = prctile(aspect, [twoTailedRange, 100 - twoTailedRange]);
+    inRange     = aspect>=B(1) & aspect<=B(2);
+    % Apply
+    aspectci    = aspect(inRange);
+    realeccenci = realeccen(inRange);
+    % Medians
+    aspectmed   = median(aspectci);
+    aspectmin   = min(aspectci);
+    aspectmax   = max(aspectci);
+    realeccenmed= median(realeccenci);
+    realeccenmin= min(realeccenci);
+    realeccenmax= max(realeccenci);
+    
+    % Plot it
+    
+    if eccenInGT
+        scatter(ecc,aspectmed,80,C,'filled')
+        vax = plot(ecc * [1,1],...
+            [aspectmin  , aspectmax], ...
+            'Color',C,'LineStyle','-','LineWidth',3); %
+    else
+        scatter(realeccenmed,aspectmed,60,C,'filled')
+        hax = plot([realeccenmin, realeccenmax],...
+            aspectmed*[1,1], ...
+            'Color',C,'LineStyle','-','LineWidth',2); % 'Color','k',
+        vax = plot(realeccenmed * [1,1],...
+            [aspectmin  , aspectmax], ...
+            'Color',C,'LineStyle','-','LineWidth',2); %
+    end
+end
+title(sprintf('Afni, TR=2, Dur.= 400s, Noise: %s, C.I.=%i, GT size: %i deg',nlvl,centerPerc,unique(dt.synth.sMaj)))
+xlabel('Eccentricity (dashed=ground truth)')
+ylabel('pRF aspect ratio (ground truth=1)')
+set(gca, 'FontSize', 16)
+
+%% Unique eccentricities are xvalues
+vAspect = zeros(100,length(xvalues));
+aAspect = zeros(100,length(xvalues));
+
+for xx= 1:length(xvalues)
+    
+    lst = (vista_y(:,1) == xvalues(xx));
+    vAspect(:,xx) = vista_y(lst,2);
+    
+    lst = (afni_y(:,1) == xvalues(xx));
+    aAspect(:,xx) = afni_y(lst,2);
+end
+
+ mrvNewGraphWin; vHist = histogram(vAspect(:,1)); 
+ vHist.BinEdges = [1:0.5:5];
+ title('Vista')
+ mrvNewGraphWin; aHist = histogram(aAspect(:,1)); 
+ aHist.BinEdges = [1:0.5:5]; title('Afni')
+ 
+ median(vAspect)
+ median(aAspect)
+ xvalues
+ 
+ 
+ median(afni_y(:,2))
+ median(vista_y(:,2))
+
+
+mrvNewGraphWin;plot(xvalues,median(aAspect),'bo')
+set(gca,'ylim',[1,5])
+
+mrvNewGraphWin;plot(xvalues,median(vAspect),'bo')
+set(gca,'ylim',[1,5])
+
+%% Polar angles and Thetas
+polanglesdeg = [90,60,45,30,0,-30,-45,-60,-90];
+polanglesrad = deg2rad(polanglesdeg);
+eccentricity = linspace(1,9,8);
+eccentricity = eccentricity(4);
+eccentricity = eccentricity * ones(size(polanglesdeg));
+[X,Y]        = pol2cart(polanglesrad, eccentricity);
+% plot(X,Y,'o')
+
+COMBINE_PARAMETERS                       = struct();
+COMBINE_PARAMETERS.RF.Centerx0           = unique(round(X,3));
+COMBINE_PARAMETERS.RF.Centery0           = unique(round(Y,3));
+COMBINE_PARAMETERS.RF.sigmaMajor         = [1,2,4];
+COMBINE_PARAMETERS.RF.sigmaMinor         = 'same';
+synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats',100);
+synthDT = pmForwardModelCalculate(synthDT);
+
+
+%% Silson 2018 plot: THETA vs ANGLE
+% DATA
+p  = '/Users/glerma/toolboxes/PRFmodel/local/ellipse/BIDS/derivatives/prfreport/sub-ellipse/ses-sess04';
+f  = 'sub-ellipse_ses-sess04-prf_acq-normal_run-01_bold.mat';
+SS = load(fullfile(p,f));
+dt = SS.compTable;
+% VARIABLES
+nlvl          = "low";
+centerPerc    = 50;
+eccenInGT     = true;
+rfsize        = 1;
+gtaspectratio = 1;
+eccentricity  = linspace(1,9,8);
+eccentricity  = round(eccentricity(4),2);
+
+
+% MAKE THIS A FUNCTION
+% Obtain eccentricity and polar angle
+[TH,R]         = cart2pol(dt.synth.x0, dt.synth.y0);
+dt.synth.angle = round(rad2deg(TH),2);
+dt.synth.eccen = round(R,2);
+dt.synth.aspect= dt.synth.sMaj ./ dt.synth.sMin;
+% Do it for afni
+[TH,R]         = cart2pol(dt.afni.x0, dt.afni.y0);
+dt.afni.angle  = rad2deg(TH);
+dt.afni.eccen  = R;
+dt.afni.aspect = dt.afni.sMaj  ./ dt.afni.sMin;
+
+
+% Filter all that we can filter
+% Eccentricity
+dt = dt(dt.synth.eccen==eccentricity,:);
+% Noise levels
+dt = dt(dt.noiseLevel==nlvl,:);
+% Aspect ratio: start with synthesized aspect ratio = 1
+dt = dt(dt.synth.aspect==gtaspectratio,:);
+% Select a size, lets take the smalles one for now
+dt = dt(dt.synth.sMaj==rfsize,:);
+
+% Check percentage is 100 based
+if centerPerc < 1; centerPerc = centerPerc*100; end
+% Define the required confidence intervals as two percentiles
+twoTailedRange = (100 - centerPerc) / 2;
+
+
+% Create main plot with the ground truth lines
+           
+kk = mrvNewGraphWin('SilsonSimTheta');
+% Fig size is relative to the screen used. This is for laptop at 1900x1200
+set(kk,'Position',[0.007 0.62  0.4  0.4]);
+centers = unique(dt.synth{:,{'x0','y0'}}, 'rows');
+radii   = unique(dt.synth.sMaj)/2; % Viscircles needs radius and sigma-s are diameters
+% Create color vector
+Cs = 0.65*distinguishable_colors(1+size(centers,1),'w');
+
+subplot(2,2,2)
+polarhistogram(dt.afni.Th, 90, 'DisplayStyle','bar')
+thetalim([-90, 90])
+title('Absolute theta values')
+
+subplot(2,2,4)
+thdeg         = rad2deg(dt.afni.Th);
+relativetheta = abs(dt.afni.angle - thdeg);
+polarhistogram(deg2rad(relativetheta), 90, 'DisplayStyle','bar')
+% thetalim([-90, 90])
+title('Relative theta (|prf angle - theta)| ')
+
+subplot(2,2,[1,3])
+% Plot GT centers
+scatter(centers(:,1), centers(:,2),40,Cs(1,:),'filled')
+hold on
+% Plot GT circles
+viscircles(centers,radii*ones(size(centers,1),1),'LineWidth',2,'LineStyle','--','Color',Cs(1,:));
+axis equal; grid
+xlim([0,5]); ylim([-5,5])
+ax = gca;
+ax.XAxisLocation = 'origin';
+ax.YAxisLocation = 'origin';
+set(ax,'FontSize',16);
+
+
+% INTRODUCE THIS PLOT TOO
+[y,x] = ksdensity(dt.afni.aspect);
+plot(x,y,'k-');
+xlabel('Aspect ratio')
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+% Apply percentiles and plot individually
+anglevals = unique(dt.synth.angle);
+for ne=1:length(anglevals)
+    C            = Cs(ne+1,:);
+    ang          = anglevals(ne);
+    ecc          = unique(dt.synth.eccen);
+    aspect       = dt.afni.aspect(dt.synth.angle==ang);
+    realeccen    = dt.afni.eccen(dt.synth.angle==ang);
+    realangle    = dt.afni.angle(dt.synth.angle==ang);
+    x0           = dt.afni.x0(dt.synth.angle==ang);
+    y0           = dt.afni.y0(dt.synth.angle==ang);
+    smin         = dt.afni.sMin(dt.synth.angle==ang);
+    smaj         = dt.afni.sMaj(dt.synth.angle==ang);
+    % DECIDE THIS, control CI with aspect?
+    B            = prctile(aspect, [twoTailedRange, 100 - twoTailedRange]);
+    inRange      = aspect>=B(1) & aspect<=B(2);
+    % Apply
+    aspectci     = aspect(inRange);
+    realeccenci  = realeccen(inRange);
+    realangleci  = realangle(inRange);
+    realx0ci     = x0(inRange);
+    realy0ci     = y0(inRange);
+    realsminci   = smin(inRange);
+    realsmajci   = smaj(inRange);
+    % Medians
+    aspectmed    = median(aspectci);
+    aspectmin    = min(aspectci);
+    aspectmax    = max(aspectci);
+    
+    realeccenmed = median(realeccenci);
+    realeccenmin = min(realeccenci);
+    realeccenmax = max(realeccenci);
+    
+    realanglemed = median(realangleci);
+    realanglemin = min(realangleci);
+    realanglemax = max(realangleci);
+    
+    realx0med    = median(realx0ci);
+    realx0min    = min(realx0ci);
+    realx0max    = max(realx0ci);
+    
+    realy0med    = median(realy0ci);
+    realy0min    = min(realy0ci);
+    realy0max    = max(realy0ci);
+    
+    reasmin0med  = median(realsminci);
+    realsminmin  = min(realsminci);
+    realsminmax  = max(realsminci);
+    
+    realsmajmed  = median(realsmajci);
+    realsmajmin  = min(realsmajci);
+    realsmajmax  = max(realsmajci);
+    % Plot it
+    
+    if eccenInGT
+        scatter(realx0med, realy0med, 80,C,'filled')
+        for ne = 1:length(aspectci)
+            h = drawellipse(realx0ci(ne),realy0ci(ne),realangleci(ne),realsmajci(ne)/2,realsminci(ne)/2);
+            set(h,'LineWidth',.7,'LineStyle','-','Color',[.5 .5 .5]);
+            hold on
+        end
+        % vax = plot([realx0min  , realx0max],...
+        %            [realy0min  , realy0max], ...
+        %             'Color',C,'LineStyle','-','LineWidth',2); %
+        fitEllipse(realx0ci, realy0ci, [0,0,0],centerPerc)
+    else
+        scatter(realeccenmed,aspectmed,60,C,'filled')
+        hax = plot([realeccenmin, realeccenmax],...
+            aspectmed*[1,1], ...
+            'Color',C,'LineStyle','-','LineWidth',2); % 'Color','k',
+        vax = plot(realeccenmed * [1,1],...
+            [aspectmin  , aspectmax], ...
+            'Color',C,'LineStyle','-','LineWidth',2); %
+    end
+end
+title(sprintf('Afni, TR=2, Dur.= 400s, Noise: %s, C.I.=%i, GT size: %i deg',nlvl,centerPerc,unique(dt.synth.sMaj)))
+xlabel('x deg ')
+ylabel('y deg')
+set(gca, 'FontSize', 16)

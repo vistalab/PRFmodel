@@ -61,6 +61,9 @@ p.addParameter('useparallel'    ,  true        , @islogical);
                            'numberStimulusGridPoints',   50);
     options.afni  = struct('model','afni4', ...
                            'hrf'  , 'SPM');
+    options.mlr  = struct('quickFit',0, ...
+                           'doParallel'  , 0, ...
+                            'rfType','gaussian');
 p.addParameter('options', options, @isstruct);
 % Parse. Assign result inside each case
 p.parse(input,prfimplementation,varargin{:});
@@ -457,6 +460,71 @@ switch prfimplementation
         pmEstimates.rss        = results.model{1}.rss';
         pmEstimates.RMSE       = sqrt(mean((pmEstimates.testdata - pmEstimates.modelpred).^2,2));
         % errperf(T,P,'mae')
+    case {'mrtools','mlrtools','mlr'}
+        % Read the options
+        options = allOptions.mlr;
+        %% Create temp folders
+        tmpName = tempname(fullfile(pmRootPath,'local'));
+        mkdir(tmpName);
+        %% Change the inputs
+        if niftiInputs
+            niftiBOLDfile  = fullfile(tmpName, 'tmp.nii.gz')
+            stimNiftiFname = fullfile(tmpName, 'tmpstim.nii.gz');
+            
+            copyfile(BOLDname,niftiBOLDfile)
+            copyfile(STIMname,stimNiftiFname)
+        else
+            %% Write the stimuli as a nifti
+            pm1            = input.pm(1);
+            stimNiftiFname = fullfile(tmpName, 'tmpstim.nii.gz');
+            stimNiftiFname = pm1.Stimulus.toNifti('fname',stimNiftiFname);
+
+            %% Create a tmp nifti file
+            niftiBOLDfile  = pmForwardModelToNifti(input, 'fname', ...
+                fullfile(tmpName,'tmp.nii.gz'));
+            
+        end
+        
+        %% Prepare the function call
+        homedir       = tmpName;
+        stimfile      = stimNiftiFname;
+        datafile      = niftiBOLDfile;
+        % Make the call to the function based on Jon's script
+        
+        % TODO: save some steps if we already start with niftis
+        stimsize = [stimradius*2, stimradius*2];
+        results  = mlrRunPRF(homedir, datafile, stimfile, stimsize,...
+                             'quickFit', options.quickFit ,'doParallel',options.doParallel, ...
+                             'rfType',options.rfType);
+        if results.status==-1;error('mlr failed, check results.errorstring for more info');end
+        
+        %% Prepare the outputs in a table format
+        pmEstimates = table();
+        pmEstimates.Centerx0   = results.x;
+        pmEstimates.Centery0   = results.y;
+        pmEstimates.Theta      = zeros(size(results.y));
+        pmEstimates.sigmaMajor = results.rfHalfWidth;
+        pmEstimates.sigmaMinor = results.rfHalfWidth;
+        
+        % Add the time series as well
+        if niftiInputs
+            data                   = niftiRead(BOLDname);
+            pmEstimates.testdata   = squeeze(data.data);
+        else
+            pmEstimates.testdata   = repmat(ones([1,pm1.timePointsN]), ...
+                [height(pmEstimates),1]);
+            PMs                    = input.pm;
+            for ii=1:height(pmEstimates); pmEstimates{ii,'testdata'}=PMs(ii).BOLDnoise;end
+        end
+                
+                
+        % Obtain the modelfit,
+        % pmEstimates = pmVistaObtainPrediction(pmEstimates, results);
+        pmEstimates.modelpred = pmEstimates.testdata;
+        pmEstimates.R2         = results.r2; % calccod(pmEstimates.testdata,  pmEstimates.modelpred,2);
+        % pmEstimates.rss        = results.model{1}.rss';
+        % pmEstimates.RMSE       = sqrt(mean((pmEstimates.testdata - pmEstimates.modelpred).^2,2));
+        % errperf(T,P,'mae')
         
     case {'afni', 'simpleafni', 'basicafni', 'afni_4', 'afni4', ...
             'afni6', 'afni_6','withsigmaratio', ...
@@ -598,7 +666,7 @@ switch prfimplementation
         afni_hrf = options.hrf;
         switch afni_hrf
             % TODO: synch it with the HRF creation process in pmHRF.m 
-            case {'GAM'}
+            case {'GAM','gam'}
                 % Default GAM normalized to 1
                 system(['3dDeconvolve ' ...
                           '-nodata 50 ' num2str(TR) ' ' ...
@@ -608,7 +676,7 @@ switch prfimplementation
                           '-x1D ' fullfile(tmpName, 'conv.ref.GAM.1D')]);
                 % Set the enviroment variable
                 setenv('AFNI_CONVMODEL_REF', fullfile(tmpName, 'conv.ref.GAM.1D'));
-            case {'SPM'}
+            case {'SPM','spm'}
                 system(['3dDeconvolve ' ...
                           '-nodata 50 ' num2str(TR) ' ' ...
                           '-polort -1 ' ...
