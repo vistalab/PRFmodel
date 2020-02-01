@@ -1,24 +1,34 @@
 
-mrvNewGraphWin;
-doIt = false;
-window = false;
+
+doIt     = false;
+window   = false;
+plotbold = false;
+plotstim = true;
+plotrf   = false;
+ylims    = [-5,3];
+viewn    = 2;
+
+hh = mrvNewGraphWin('HRF comparison');
+set(hh,'Position',[0.007 0.62  0.8  0.8]);
+nrows = 2; ncols = 4;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Make the middle bar one frame
+% Select a full fov stimuli, 1 deg centered
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-subplot(2,3,1)
+subplot(nrows,ncols,1)
 pm = prfModel;
 pm.TR=1;
-pm.Stimulus.durationSecs = 31;
+pm.signalPercentage='none';
+pm.Stimulus.durationSecs = 34;
 pm.Stimulus.compute
-% pm.Stimulus.plot('window',window)
+if plotstim; pm.Stimulus.plot('window',window); end
 if doIt
     % Edit it manually to make it a single on/off bar
-    fName = fullfile(pmRootPath,'data','stimulus','Exp-103_bin-true_size-20x20_resize-true_Horz-101x101_barW-2_dur-31_TR-1_framedur-4.mat');
+    fName = fullfile(pmRootPath,'data','stimulus','Exp-103_bin-true_size-20x20_resize-true_Horz-101x101_barW-2_dur-34_TR-1_framedur-4_Shuffle-false.mat');
     kk = load(fName);
     % Repeat fourth bar, make rest zero, and save it with the same name, it will
     % not overwrite it.
     stim = kk.stim;
-    stim(:,:,3) = repmat(kk.stim(:,:,4),[1,1,1]);
+    stim(:,:,3)           = ones(size(stim(:,:,3)));
     stim(:,:,[1,2,4:end]) = zeros(size(kk.stim(:,:,[1,2,4:end])));
     % Check it
     montage(stim)
@@ -30,22 +40,156 @@ end
 % Compute the time series
 % pm.compute: we can't do this because the number of basis functions too low, for slow drift noise
 pm.computeBOLD
-pm.plot('what','nonoisetimeseries','window',window)
-title('middle bar one frame')
-ylim([-.1,.2]);xlim([0,35])
+if plotbold    
+    pm.plot('what','nonoisetimeseries','window',window)
+    xlim([0,35])
+    ylim(ylims)
+end
+if plotrf;pm.RF.plot('window',window);view(viewn);axis equal;
+text(0,-2,sprintf('Sum of RF values: %.2f, vol:%.1f',sum(pm.RF.values(:)),...
+    trapz(pm.Stimulus.XY{2}(:,1),trapz(pm.Stimulus.XY{1}(1,:),pm.RF.values,2),1)))
+end
+    title('1 full fov stimuli, RF 1 deg center')
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Select a full fov stimuli 2 deg centered
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+subplot(nrows,ncols,2)
+pm = prfModel;
+pm.TR=1;
+pm.RF.sigmaMajor = 2;
+pm.RF.sigmaMinor = 2;
+pm.signalPercentage='none';
+pm.Stimulus.durationSecs = 34;
+pm.Stimulus.compute
+if plotstim; pm.Stimulus.plot('window',window); end
+if doIt
+    % Edit it manually to make it a single on/off bar
+    fName = fullfile(pmRootPath,'data','stimulus','Exp-103_bin-true_size-20x20_resize-true_Horz-101x101_barW-2_dur-34_TR-1_framedur-4_Shuffle-false.mat');
+    kk = load(fName);
+    % Repeat fourth bar, make rest zero, and save it with the same name, it will
+    % not overwrite it.
+    stim = kk.stim;
+    stim(:,:,3)           = ones(size(stim(:,:,3)));
+    stim(:,:,[1,2,4:end]) = zeros(size(kk.stim(:,:,[1,2,4:end])));
+    % Check it
+    montage(stim)
+    % Save it
+    save(fName,'stim');
+    % Check again as part of class, it should just read it and plot what we want
+    pm.Stimulus.plot
+end
+% Compute the time series
+% pm.compute: we can't do this because the number of basis functions too low, for slow drift noise
+pm.computeBOLD
+if plotbold    
+    pm.plot('what','nonoisetimeseries','window',window)
+    xlim([0,35])
+    ylim(ylims)
+end
+if plotrf;pm.RF.plot('window',window);view(viewn);axis equal;
+text(0,-2,sprintf('Sum of RF values: %.2f, vol:%.1f',sum(pm.RF.values(:)),...
+    trapz(pm.Stimulus.XY{2}(:,1),trapz(pm.Stimulus.XY{1}(1,:),pm.RF.values,2),1)))
+end
+    title('1 full fov stimuli, RF 2 deg center')
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Select a full fov stimuli 20 deg centered
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+subplot(nrows,ncols,3)
+pm = prfModel;
+pm.TR=1;
+pm.RF.sigmaMajor = 2;
+pm.RF.sigmaMinor = 2;
+pm.RF.Centerx0   = 10;
+pm.signalPercentage='none';
+pm.Stimulus.durationSecs = 34;
+pm.Stimulus.compute
+if plotstim; pm.Stimulus.plot('window',window); end
+if doIt
+    % Edit it manually to make it a single on/off bar
+    fName = fullfile(pmRootPath,'data','stimulus','Exp-103_bin-true_size-20x20_resize-true_Horz-101x101_barW-2_dur-34_TR-1_framedur-4_Shuffle-false.mat');
+    kk = load(fName);
+    % Repeat fourth bar, make rest zero, and save it with the same name, it will
+    % not overwrite it.
+    stim = kk.stim;
+    stim(:,:,3)           = ones(size(stim(:,:,3)));
+    stim(:,:,[1,2,4:end]) = zeros(size(kk.stim(:,:,[1,2,4:end])));
+    % Check it
+    montage(stim)
+    % Save it
+    save(fName,'stim');
+    % Check again as part of class, it should just read it and plot what we want
+    pm.Stimulus.plot
+end
+% Compute the time series
+% pm.compute: we can't do this because the number of basis functions too low, for slow drift noise
+pm.computeBOLD
+if plotbold    
+    pm.plot('what','nonoisetimeseries','window',window)
+    xlim([0,35])
+    ylim(ylims)
+end
+if plotrf;pm.RF.plot('window',window);view(viewn);axis equal;
+text(0,-2,sprintf('Sum of RF values: %.2f, vol:%.1f',sum(pm.RF.values(:)),...
+    trapz(pm.Stimulus.XY{2}(:,1),trapz(pm.Stimulus.XY{1}(1,:),pm.RF.values,2),1)))
+end
+    title('1 full fov stimuli, RF 20 deg center')
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Make the middle bar one frame
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+subplot(nrows,ncols,4)
+pm = prfModel;
+pm.TR=1;
+pm.signalPercentage='none';
+pm.Stimulus.durationSecs = 31;
+pm.Stimulus.compute
+if plotstim; pm.Stimulus.plot('window',window); end
+if doIt
+    % Edit it manually to make it a single on/off bar
+    fName = fullfile(pmRootPath,'data','stimulus','Exp-103_bin-true_size-20x20_resize-true_Horz-101x101_barW-2_dur-31_TR-1_framedur-4_Shuffle-false.mat');
+    kk = load(fName);
+    % Repeat fourth bar, make rest zero, and save it with the same name, it will
+    % not overwrite it.
+    stim = kk.stim;
+    stim(:,:,3) = repmat(kk.stim(:,:,4),[1,1,1]);
+    stim(:,:,[1,2,4:end]) = zeros(size(kk.stim(:,:,[1,2,4:end])));
+    % Check it
+    montage(stim)
+    % Save it
+    save(fName,'none');
+    % Check again as part of class, it should just read it and plot what we want
+    pm.Stimulus.plot
+end
+% Compute the time series
+% pm.compute: we can't do this because the number of basis functions too low, for slow drift noise
+pm.computeBOLD
+if plotbold
+    pm.plot('what','nonoisetimeseries','window',window)
+    xlim([0,35])
+    ylim(ylims)
+end
+if plotrf;pm.RF.plot('window',window);view(viewn);axis equal;
+text(0,-2,sprintf('Sum of RF values: %.2f, vol:%.1f',sum(pm.RF.values(:)),...
+    trapz(pm.Stimulus.XY{2}(:,1),trapz(pm.Stimulus.XY{1}(1,:),pm.RF.values,2),1)))
+end
+    title('middle bar one frame, RF 1 deg center')
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Make the bar in the middle on for 5 TRs
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-subplot(2,3,2)
+subplot(nrows,ncols,5)
 pm = prfModel;
 pm.TR=1;
+pm.signalPercentage='none';
 pm.Stimulus.durationSecs = 30;
 pm.Stimulus.compute
-% pm.Stimulus.plot('window',window)
+if plotstim; pm.Stimulus.plot('window',window); end
 if doIt
     % Edit it manually to make it a single on/off bar
-    fName = fullfile(pmRootPath,'data','stimulus','Exp-103_bin-true_size-20x20_resize-true_Horz-101x101_barW-2_dur-30_TR-1_framedur-4.mat');
+    fName = fullfile(pmRootPath,'data','stimulus','Exp-103_bin-true_size-20x20_resize-true_Horz-101x101_barW-2_dur-30_TR-1_framedur-4_Shuffle-false.mat');
     kk = load(fName);
     % Repeat fourth bar, make rest zero, and save it with the same name, it will
     % not overwrite it.
@@ -62,22 +206,30 @@ end
 % Compute the time series
 % pm.compute: we can't do this because the number of basis functions too low, for slow drift noise
 pm.computeBOLD
-pm.plot('what','nonoisetimeseries','window',window)
-title('bar in the middle on for 5 TRs')
-ylim([-.1,.2]);xlim([0,35])
+if plotbold
+    pm.plot('what','nonoisetimeseries','window',window)
+    xlim([0,35])
+    ylim(ylims)
+end
+if plotrf;pm.RF.plot('window',window);view(viewn);axis equal;
+text(0,-2,sprintf('Sum of RF values: %.2f, vol:%.1f',sum(pm.RF.values(:)),...
+    trapz(pm.Stimulus.XY{2}(:,1),trapz(pm.Stimulus.XY{1}(1,:),pm.RF.values,2),1)))
+end
+    title('bar in the middle on for 5 TRs, RF 1 deg center')
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Make the middle bar 10 frames
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-subplot(2,3,3)
+subplot(nrows,ncols,6)
 pm = prfModel;
 pm.TR=1;
+pm.signalPercentage='none';
 pm.Stimulus.durationSecs = 32;
 pm.Stimulus.compute
-% pm.Stimulus.plot('window',window)
+if plotstim; pm.Stimulus.plot('window',window); end
 if doIt
     % Edit it manually to make it a single on/off bar
-    fName = fullfile(pmRootPath,'data','stimulus','Exp-103_bin-true_size-20x20_resize-true_Horz-101x101_barW-2_dur-32_TR-1_framedur-4.mat');
+    fName = fullfile(pmRootPath,'data','stimulus','Exp-103_bin-true_size-20x20_resize-true_Horz-101x101_barW-2_dur-32_TR-1_framedur-4_Shuffle-false.mat');
     kk = load(fName);
     % Repeat fourth bar, make rest zero, and save it with the same name, it will
     % not overwrite it.
@@ -94,22 +246,30 @@ end
 % Compute the time series
 % pm.compute: we can't do this because the number of basis functions too low, for slow drift noise
 pm.computeBOLD
-pm.plot('what','nonoisetimeseries','window',window)
-title('middle bar 10 frames')
-ylim([-.1,.2]);xlim([0,35])
+if plotbold
+    pm.plot('what','nonoisetimeseries','window',window)
+    xlim([0,35])
+    ylim(ylims)
+end
+if plotrf;pm.RF.plot('window',window);view(viewn);axis equal;
+text(0,-2,sprintf('Sum of RF values: %.2f, vol:%.1f',sum(pm.RF.values(:)),...
+    trapz(pm.Stimulus.XY{2}(:,1),trapz(pm.Stimulus.XY{1}(1,:),pm.RF.values,2),1)))
+end
+    title('middle bar 10 frames, RF 1 deg center')
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Make the middle bar 20 frames
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-subplot(2,3,4)
+subplot(nrows,ncols,7)
 pm = prfModel;
 pm.TR=1;
+pm.signalPercentage='none';
 pm.Stimulus.durationSecs = 40;
 pm.Stimulus.compute
-% pm.Stimulus.plot('window',window)
+if plotstim; pm.Stimulus.plot('window',window); end
 if doIt
     % Edit it manually to make it a single on/off bar
-    fName = fullfile(pmRootPath,'data','stimulus','Exp-103_bin-true_size-20x20_resize-true_Horz-101x101_barW-2_dur-40_TR-1_framedur-4.mat');
+    fName = fullfile(pmRootPath,'data','stimulus','Exp-103_bin-true_size-20x20_resize-true_Horz-101x101_barW-2_dur-40_TR-1_framedur-4_Shuffle-false.mat');
     kk = load(fName);
     % Repeat fourth bar, make rest zero, and save it with the same name, it will
     % not overwrite it.
@@ -126,22 +286,30 @@ end
 % Compute the time series
 % pm.compute: we can't do this because the number of basis functions too low, for slow drift noise
 pm.computeBOLD
-pm.plot('what','nonoisetimeseries','window',window)
-title('middle bar 20 frames')
-ylim([-.1,.2]);xlim([0,35])
+if plotbold
+    pm.plot('what','nonoisetimeseries','window',window)
+    xlim([0,35])
+    ylim(ylims)
+end
+if plotrf;pm.RF.plot('window',window);view(viewn);axis equal;
+text(0,-2,sprintf('Sum of RF values: %.2f, vol:%.1f',sum(pm.RF.values(:)),...
+    trapz(pm.Stimulus.XY{2}(:,1),trapz(pm.Stimulus.XY{1}(1,:),pm.RF.values,2),1)))
+end
+    title('middle bar 20 frames, RF 1 deg center')
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Select a side bar 5 frames
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-subplot(2,3,5)
+subplot(nrows,ncols,8)
 pm = prfModel;
 pm.TR=1;
+pm.signalPercentage='none';
 pm.Stimulus.durationSecs = 33;
 pm.Stimulus.compute
-pm.Stimulus.plot('window',window)
+if plotstim; pm.Stimulus.plot('window',window); end
 if doIt
     % Edit it manually to make it a single on/off bar
-    fName = fullfile(pmRootPath,'data','stimulus','Exp-103_bin-true_size-20x20_resize-true_Horz-101x101_barW-2_dur-33_TR-1_framedur-4.mat');
+    fName = fullfile(pmRootPath,'data','stimulus','Exp-103_bin-true_size-20x20_resize-true_Horz-101x101_barW-2_dur-33_TR-1_framedur-4_Shuffle-false.mat');
     kk = load(fName);
     % Repeat fourth bar, make rest zero, and save it with the same name, it will
     % not overwrite it.
@@ -158,11 +326,20 @@ end
 % Compute the time series
 % pm.compute: we can't do this because the number of basis functions too low, for slow drift noise
 pm.computeBOLD
-pm.plot('what','nonoisetimeseries','window',window)
-title('side bar 5 frames')
-ylim([-.1,.2]);xlim([0,35])
+if plotbold
+    pm.plot('what','nonoisetimeseries','window',window)
+    xlim([0,35])
+    % ylim(ylims)
+end
+if plotrf;pm.RF.plot('window',window);view(viewn);axis equal;
+text(0,-2,sprintf('Sum of RF values: %.2f, vol:%.1f',sum(pm.RF.values(:)),...
+    trapz(pm.Stimulus.XY{2}(:,1),trapz(pm.Stimulus.XY{1}(1,:),pm.RF.values,2),1)))
+end
+    title('side bar 5 frames, RF 1 deg center')
 
 
+
+%{
 %% See if the time series and convolution is right
 % Read the 5 bars in the middle
 % close all
@@ -287,3 +464,5 @@ pm.HRF.compute
 a = [pm.HRF.plot('window',false,'dots',false,'width',true,'xlims',[0,25])];
 %}
 
+
+%}

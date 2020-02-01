@@ -1022,12 +1022,20 @@ end
 % often likes to complain about sweep designs.
 
 
-  COMBINE_PARAMETERS                       = struct();
+    COMBINE_PARAMETERS                       = struct();
+    COMBINE_PARAMETERS.signalPercentage      = "none";
     COMBINE_PARAMETERS.RF.Centerx0           = [3];
     COMBINE_PARAMETERS.RF.Centery0           = [3];  
     COMBINE_PARAMETERS.RF.sigmaMajor         = [2];  
     COMBINE_PARAMETERS.RF.sigmaMinor         = 'same';
     COMBINE_PARAMETERS.TR                    = 1;
+    COMBINE_PARAMETERS.Stimulus.durationSecs = 200;
+    COMBINE_PARAMETERS.Stimulus.Shuffle      = false;
+    COMBINE_PARAMETERS.Stimulus.shuffleSeed  = 12345;
+    Noise                                    = struct();
+    Noise(1).seed                            = 'none';  % 'random', 'none', integer
+    Noise(1).voxel                           = 'mid';
+    COMBINE_PARAMETERS.Noise                 = Noise;
 
     HRF                                      = struct();
     HRF(1).Type                              = 'boynton';  
@@ -1052,33 +1060,36 @@ end
     HRF(4).normalize                         = 'height'; 
     HRF(4).params.n = 3;
     HRF(4).params.tau = 1.935;
-    HRF(4).params.delay = 1.65;
-    
-    % HRF(5).Type                              = 'canonical'; 
-    % HRF(5).normalize                         = 'height'; 
-    
+    HRF(4).params.delay = 1.65;    
     COMBINE_PARAMETERS.HRF                   = HRF;
-        Noise                                = struct();
-        Noise(1).seed                        = 'none';
-    COMBINE_PARAMETERS.Noise                 = Noise;
-    
     % This is the same one as before, but now we want to do the slow stimuli version
     % by Jon's suggestion
-    COMBINE_PARAMETERS.Stimulus.durationSecs = 200;
+    synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats',1);
+    synthDT = pmForwardModelCalculate(synthDT);
+    sDT_noshuffle = synthDT;
+
+    
+    
+    
     
     
     
     % CREATE ANOTHER STIM RANDOMIZING THE BARS
-    synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats',1);
-    synthDT = pmForwardModelCalculate(synthDT);
-    sDT = synthDT;
-    
     COMBINE_PARAMETERS                       = struct();
+    COMBINE_PARAMETERS.signalPercentage      = "none";
     COMBINE_PARAMETERS.RF.Centerx0           = [3];
     COMBINE_PARAMETERS.RF.Centery0           = [3];  
     COMBINE_PARAMETERS.RF.sigmaMajor         = [2];  
     COMBINE_PARAMETERS.RF.sigmaMinor         = 'same';
     COMBINE_PARAMETERS.TR                    = 1;
+    COMBINE_PARAMETERS.Stimulus.durationSecs = 200;
+    COMBINE_PARAMETERS.Stimulus.Shuffle      = true;
+    COMBINE_PARAMETERS.Stimulus.shuffleSeed  = 12345;
+    Noise                                    = struct();
+    Noise(1).seed                            = 'none';
+    Noise(1).voxel                           = 'mid';
+    Noise(1).jitter                          = [0.1, 0.1];
+    COMBINE_PARAMETERS.Noise                 = Noise;
 
     HRF                                      = struct();
     HRF(1).Type                              = 'boynton';  
@@ -1103,85 +1114,66 @@ end
     HRF(4).normalize                         = 'height'; 
     HRF(4).params.n = 3;
     HRF(4).params.tau = 1.935;
-    HRF(4).params.delay = 1.65;
-    
-    % HRF(5).Type                              = 'canonical'; 
-    % HRF(5).normalize                         = 'height'; 
-    
+    HRF(4).params.delay = 1.65;    
     COMBINE_PARAMETERS.HRF                   = HRF;
-        Noise                                = struct();
-        Noise(1).seed                        = 'none';
-    COMBINE_PARAMETERS.Noise                 = Noise;
-    
     % This is the same one as before, but now we want to do the slow stimuli version
     % by Jon's suggestion
-    COMBINE_PARAMETERS.Stimulus.durationSecs = 200;
-    
     synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats',1);
     synthDT = pmForwardModelCalculate(synthDT);
-    sDT = synthDT;
+    sDT_withshuffle = synthDT;
+    
+    
     
     %% Solve it
-    boyntonresults = pmModelFit(sDT, 'aprf');
+    noshuffle   = pmModelFit(sDT_noshuffle, 'aprf');
+    withshuffle = pmModelFit(sDT_withshuffle, 'aprf');
+    p           = fullfile(pmRootPath,'local','randomstim');
+    save(fullfile(p,'noshuffle_aprf_100_nojitter_synthDT.mat'), 'sDT_noshuffle')
+    save(fullfile(p,'noshuffle_aprf_100_nojitter_result.mat') , 'noshuffle')
+    save(fullfile(pmRootPath,'local','randomstim','withshuffle_aprf_100_nojitter.mat'),...
+        'sDT_withshuffle', 'withshuffle')
     
     %% Create comptTable
     paramDefaults = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
-    boyntoncompTable  = pmResultsCompare(sDT, {'aprf'}, {boyntonresults}, ...
+    noshufflecompTable  = pmResultsCompare(sDT_noshuffle, {'aprf'}, {noshuffle}, ...
+        'params', paramDefaults, ...
+        'shorten names',true, ...
+        'dotSeries', false);
+    withshufflecompTable  = pmResultsCompare(sDT_withshuffle, {'aprf'}, {withshuffle}, ...
         'params', paramDefaults, ...
         'shorten names',true, ...
         'dotSeries', false);
     
-    %% Plot it
+    %%  Plot it
     hh = mrvNewGraphWin('HRF comparison');
-    set(hh,'Position',[0.007 0.62  0.6  0.8]);
-    nrows = 3; ncols = 4;
+    set(hh,'Position',[0.007 0.62  0.6  0.6]);
+    nrows = 2; ncols = 4;
+    nslvl  = 'none';
 
     Cs  = 0.65 * distinguishable_colors(6,'w');
     
-    subplot(nrows,ncols,[1:ncols])
-    a   = [];
-    leg = [];
-    for ii = 1:height(sDT)
-        thispm = sDT.pm(ii);
-        if ii~=5
-            line='-';
-            % thisleg = {sprintf('Boynton %i (width=%1d)',ii,thispm.HRF.width)};
-            thisleg = {sprintf('Boynton %i',ii)};
-        else
-            % thisleg = {sprintf('aPRF canonical (width=%1d)',thispm.HRF.width)};
-            thisleg = {sprintf('aPRF canonical')};
-            line='-.';
-        end
-        a = [a;thispm.HRF.plot('window',false,'dots',false,'addwidth',false,...
-            'xlims',[0,20],'color',Cs(ii+1,:),'line',line)];
-        leg = [leg;thisleg];
-    end
-    legend(a,{'Boynton 1','Boynton 2','Boynton 3','Boynton 4'})  % ,'aprf\_canonical'})
-    legend(a,leg)
-    title('Boynton HRFs modulated in width and canonical aprf')
-    xticks([0:20])
     
     % Create the fit plots with the ground truth
-    tools  = {'aprf'}; nslvl  = 'none';
+    tools  = {'aprf'}; 
     HRFs   = {'boynton','boynton','boynton','boynton'}; % ,'canonical'};
-    for ii=1:height(boyntoncompTable)
+    for ii=1:4 % height(noshufflecompTable)
+        subplot(nrows,ncols,ii)
+        useHRF = HRFs{ii};
+        ttable = noshufflecompTable(ii,:);  % [ii:4:396+ii]',:);
+        pmCloudOfResults(ttable  , tools ,'onlyCenters',false ,'userfsize' , 2, ...
+            'centerPerc', 90     , 'useHRF'     , useHRF,'lineStyle' , '-','color',Cs(ii+1,:), ...
+            'lineWidth' , 2      , 'noiselevel' , nslvl , ...
+            'newWin'    , false  , 'saveTo'     , '','saveToType','svg')
+        axis equal
+    end
+    
+    % Create the fit plots with the ground truth
+    tools  = {'aprf'}; 
+    HRFs   = {'boynton','boynton','boynton','boynton'}; % ,'canonical'};
+    for ii=1:4  % height(withshufflecompTable)
         subplot(nrows,ncols,ncols + ii)
         useHRF = HRFs{ii};
-        ttable = boyntoncompTable(ii,:);
-        pmCloudOfResults(ttable   , tools ,'onlyCenters',false ,'userfsize' , 2, ...
-            'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-','color',Cs(ii+1,:), ...
-            'lineWidth' , 2     ,'noiselevel' ,nslvl , ...
-            'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
-        axis equal
-    end
-    
-    % Create the fit plots with the ground truth
-    tools  = {'aprf'}; nslvl  = 'none';
-    HRFs   = {'boynton','boynton','boynton','boynton'}; % ,'canonical'};
-    for ii=1:height(boyntoncompTable)
-        subplot(nrows,ncols,2*ncols + ii)
-        useHRF = HRFs{ii};
-        ttable = boyntoncompTable(ii,:);
+        ttable = withshufflecompTable(ii,:);  % ([ii:4:396+ii]',:);
         pmCloudOfResults(ttable   , tools ,'onlyCenters',false ,'userfsize' , 2, ...
             'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-','color',Cs(ii+1,:), ...
             'lineWidth' , 2     ,'noiselevel' ,nslvl , ...
@@ -1192,29 +1184,8 @@ end
     
     
     
-    fnameRoot = 'HRF_and_width_BoyntonSlow_200';
-    saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+%     fnameRoot = 'StimShuffleTest_noiseless';
+%     saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
 
 
 

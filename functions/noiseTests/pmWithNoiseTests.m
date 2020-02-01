@@ -1,9 +1,9 @@
-function [compTable, tSeries, results] = pmNoiseFreeTests(prfImplementation, varargin)
+function [compTable, tSeries, results] = pmWithNoiseTests(prfImplementation, varargin)
 % Try to create perfect solutions for evey tool using synthetic data.
 % 
 % Syntax:
 %    prfImplementation = 'vista' %'afni' 'popeye' % 'vista' % 'aprf';
-%    [compTable, tSeries] = pmNoiseFreeTests(prfImplementation);
+%    [compTable, tSeries] = pmWithNoiseTests(prfImplementation);
 %  
 % Brief description:
 %    Creates a example dataset and for the tool selected, it will recreate a
@@ -28,27 +28,27 @@ function [compTable, tSeries, results] = pmNoiseFreeTests(prfImplementation, var
 
 % Tests:
 %{
-pmNoiseFreeTests('afni')
+pmWithNoiseTests('afni')
 %}
 
 %{
-pmNoiseFreeTests('aprf')
+pmWithNoiseTests('aprf')
 %}
 
 %{
-pmNoiseFreeTests('aprfcss')
+pmWithNoiseTests('aprfcss')
 %}
 
 %{
-pmNoiseFreeTests('vista')
+pmWithNoiseTests('vista')
 %}
 
 %{
-pmNoiseFreeTests('afni6')
+pmWithNoiseTests('afni6')
 %}
 
 %{
-pmNoiseFreeTests('vista6')
+pmWithNoiseTests('vista6')
 %}
 
 
@@ -64,8 +64,12 @@ varargin          = mrvParamFormat(varargin);
 p = inputParser;
 p.addRequired('prfimplementation',@ischar);
 p.addParameter('usenifti'   ,  false           , @islogical);
-p.addParameter('plotit'     ,  false           , @islogical);
+p.addParameter('plotit'     ,  true            , @islogical);
+p.addParameter('plotts'     ,  false           , @islogical);
 p.addParameter('ellipse'    ,  false           , @islogical);
+p.addParameter('seed'       ,  'random');
+p.addParameter('voxel'      ,  'mid'           , @ischar);
+p.addParameter('jitter'     ,  [0, 0]          , @isnumeric);
 % Implementation specifics
     options       = struct();
     options.aprf  = struct('seedmode'     , [0 1 2], ...
@@ -80,16 +84,20 @@ p.addParameter('ellipse'    ,  false           , @islogical);
     options.afni  = struct('model'        , 'afni4', ...
                            'hrf'          , 'SPM');
     options.mlr  = struct('quickFit'      , 0, ...
-                           'doParallel'   , 0, ...
-                           'rfType'       , 'gaussian');
+                          'doParallel'    , 0, ...
+                          'rfType'        , 'gaussian');
 p.addParameter('options'    ,  options    , @isstruct);
 
 % Parse. Assign result inside each case
 p.parse(prfimplementation,varargin{:});
 useNifti    = p.Results.usenifti;
+plotts      = p.Results.plotts;
 plotit      = p.Results.plotit;
 ellipse     = p.Results.ellipse;
 allOptions  = p.Results.options;
+seed        = p.Results.seed;
+voxel       = p.Results.voxel;
+jitter      = p.Results.jitter;
 % We need to be sure that if only some of the params are passed, the rest will
 % be taken from the defaults 
 allOptions  = pmParamsCompletenessCheck(allOptions, options);
@@ -97,7 +105,7 @@ allOptions  = pmParamsCompletenessCheck(allOptions, options);
 %% Create the test data
 COMBINE_PARAMETERS                        = struct();
 if ellipse
-    COMBINE_PARAMETERS.TR                   = [1.5];
+    COMBINE_PARAMETERS.TR                 = [1.5];
     COMBINE_PARAMETERS.RF                 = struct();
     COMBINE_PARAMETERS.RF.Centerx0        = 3;%[3]; 
     COMBINE_PARAMETERS.RF.Centery0        = 3;%[3];
@@ -107,10 +115,10 @@ if ellipse
     % COMBINE_PARAMETERS.RF.sigmaMajor      = [1,2,4]/2;
     % COMBINE_PARAMETERS.RF.sigmaMinor      = [1,2]/2; 
 else
-    COMBINE_PARAMETERS.TR                 = [1.5];
+    COMBINE_PARAMETERS.TR                   = [1.5];
     COMBINE_PARAMETERS.RF                 = struct();
-    COMBINE_PARAMETERS.RF.Centerx0        = [0,3]; 
-    COMBINE_PARAMETERS.RF.Centery0        = [0,3];
+    COMBINE_PARAMETERS.RF.Centerx0        = [3]; 
+    COMBINE_PARAMETERS.RF.Centery0        = [3];
     COMBINE_PARAMETERS.RF.Theta           = [0]; %, deg2rad(45)];
     COMBINE_PARAMETERS.RF.sigmaMajor      = [1,2];
     COMBINE_PARAMETERS.RF.sigmaMinor      = "same";
@@ -132,10 +140,11 @@ end
 
 COMBINE_PARAMETERS.HRF                   = HRF;
 COMBINE_PARAMETERS.Stimulus.durationSecs = 300;
-Noise(1).seed                    = 'none';
-% Noise(1).seed                    = 'random';
+Noise(1).seed                    = seed;
+Noise(1).voxel                   = voxel;
+Noise(1).jitter                  = jitter;
 COMBINE_PARAMETERS.Noise         = Noise;
-synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats', 1);
+synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats', 5);
 synthDT = pmForwardModelCalculate(synthDT);
 
 if useNifti
@@ -150,12 +159,12 @@ end
 switch prfimplementation
     case {'aprf','analyzeprf'}
         options.aprf            = allOptions.aprf;
-        options.aprf.maxpolydeg = 0;
+        % options.aprf.maxpolydeg = 0;
         options.aprf.usecss     = false;
         results                 = pmModelFit(input,'analyzePRF','options',options);
     case {'aprfcss'}
         options.aprf            = allOptions.aprf;
-        options.aprf.maxpolydeg = 0;
+        % options.aprf.maxpolydeg = 0;
         options.aprf.usecss     = true;
         results                 = pmModelFit(input,'analyzePRF','options',options);
     case {'afni_4','afni4','afni'}
@@ -170,7 +179,7 @@ switch prfimplementation
         options.vista.model      = 'one gaussian';
         options.vista.grid       = false;  % if true, returns gFit
         options.vista.wSearch    = 'coarse to fine'; 
-        options.vista.detrend    = 0;
+        % options.vista.detrend    = 0;
         options.vista.keepAllPoints            = true; 
         options.vista.numberStimulusGridPoints =  50;  
         results                  = pmModelFit(input,'vistasoft','options',options);    
@@ -179,7 +188,7 @@ switch prfimplementation
         options.vista.model      = 'one oval gaussian';
         options.vista.grid       = false;  % if true, returns gFit
         options.vista.wSearch    = 'coarse to fine'; 
-        options.vista.detrend    = 0;
+        % options.vista.detrend    = 0;
         options.vista.keepAllPoints            = true; 
         options.vista.numberStimulusGridPoints =  50;  
         results                  = pmModelFit(input,'vistasoft','options',options);
@@ -208,14 +217,30 @@ end
                             'shorten names',true, ...
                             'addIscloseCol', true); 
 % Visualize with 2 digits after comma
-format bank; disp(compTable); format
+% format bank; disp(compTable); format
 
-if plotit
+if plotts
     pmTseriesPlot(tSeries, synthDT(:,'TR'), ...
         'to compare', {'synth', prfimplementation}, ...
         'voxel',[1:height(synthDT)], ... % 'metric','RMSE', ...
         'newWin',true)
 end
+
+if plotit
+    rfsizes = [1,2];
+    for nr=1:length(rfsizes)
+        rfsize = rfsizes(nr);
+        subplot(1,2,rfsize)
+        HRF = unique(compTable.HRFtype);
+        pmCloudOfResults(compTable   , {prfimplementation} ,'onlyCenters',false ,'userfsize' , rfsize, ...
+            'centerPerc', 90    ,'useHRF'     , HRF{:},'lineStyle' , '-','color',[0.5 0.5 0.5], ...
+            'lineWidth' , .7    ,'noiselevel' ,voxel , ...
+            'newWin'    , false  ,'saveTo'     ,'','saveToType','svg')
+    end
+end
+
+
+
 end
 
 

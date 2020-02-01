@@ -61,9 +61,9 @@ p.addParameter('useparallel'    ,  true        , @islogical);
                            'numberStimulusGridPoints',   50);
     options.afni  = struct('model','afni4', ...
                            'hrf'  , 'SPM');
-    options.mlr  = struct('quickFit',0, ...
+    options.mlr   = struct('quickFit', 0 , ...
                            'doParallel'  , 0, ...
-                            'rfType','gaussian');
+                           'rfType','gaussian');
 p.addParameter('options', options, @isstruct);
 % Parse. Assign result inside each case
 p.parse(input,prfimplementation,varargin{:});
@@ -525,6 +525,15 @@ switch prfimplementation
         % pmEstimates.rss        = results.model{1}.rss';
         % pmEstimates.RMSE       = sqrt(mean((pmEstimates.testdata - pmEstimates.modelpred).^2,2));
         % errperf(T,P,'mae')
+        
+        % Delete the defaults file after using this solver, at least we have
+        % observed that it messes up vistasoft's results
+        if isfile('~/.mrDefaults.mat')
+            delete '~/.mrDefaults.mat'
+        else
+            warning('mrtool (mlr) was run and it could find ~/.mrDefaults.mat to be deleted, check if it was writtme somewhere else')
+        end
+        
         
     case {'afni', 'simpleafni', 'basicafni', 'afni_4', 'afni4', ...
             'afni6', 'afni_6','withsigmaratio', ...

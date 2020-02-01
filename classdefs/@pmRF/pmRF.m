@@ -117,6 +117,9 @@ classdef pmRF <   matlab.mixin.SetGet & matlab.mixin.Copyable
                                 rf.sigmaMajor,rf.sigmaMinor,rf.Theta, ...
                                 rf.Centerx0,rf.Centery0);
                 case {'analyzeprf'}
+                    % res is always square, same side sizes
+                    % r and c are not in degrees, are in row and columns, the
+                    % code below needs to be modified
                     res     = max(size(XY{1},1), size(XY{1},1));
                     r       = rf.Centery0;
                     c       = rf.Centerx0;

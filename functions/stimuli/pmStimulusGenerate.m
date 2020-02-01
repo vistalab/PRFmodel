@@ -16,6 +16,8 @@ p.addParameter('resizedvert'   , 101  , @isnumeric); % Size of resized side. ver
 p.addParameter('normalize01'   , true , @islogical); % To normalize all values between 0 and 1
 p.addParameter('binarize'      , true , @islogical); % To binarize (threshold 0.5)
 p.addParameter('savestimmat'   , true , @islogical); % To save images in fileName
+p.addParameter('shuffle'       , false, @islogical); % To save images in fileName
+p.addParameter('shuffleseed'   , 12345);             % It can be 'shuffle' or any integer number
 p.addParameter('barwidth'      , 2    , @isnumeric); % Width of bar in deg
 p.addParameter('filename'      , './stimulus.mat' , @ischar); % filename
 
@@ -36,6 +38,8 @@ ResizedHorz     = p.Results.resizedhorz;
 normalize01     = p.Results.normalize01;
 binarize        = p.Results.binarize;
 saveStimMat     = p.Results.savestimmat;
+Shuffle         = p.Results.shuffle;
+shuffleSeed     = p.Results.shuffleseed;
 fileName        = p.Results.filename;
 barWidth        = p.Results.barwidth;
 
@@ -205,7 +209,22 @@ if normalize01
     end
 end
 
-
+if Shuffle
+    % Detect which ones are empty at the beginning and the end
+    indx        = ~(squeeze(sum(stim,[1,2])) == 0);
+    beginAndEnd = (cumsum(indx) < 1) | flip(cumsum(flip(indx))< 1);
+    
+    % Obtain reduced file
+    stimReduced = stim(:,:,~beginAndEnd);
+    
+    % Shuffle
+    shuff = 1:length(stimReduced);
+    rng(shuffleSeed,'twister')
+    shuff = shuff(randperm(length(shuff)));
+    
+    % Reconstruct
+    stim(:,:,~beginAndEnd) = stimReduced(:,:,shuff);
+end
 
 if saveStimMat
     [p,f,e] = fileparts(fileName);

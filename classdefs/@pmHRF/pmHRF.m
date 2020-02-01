@@ -49,7 +49,7 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
         Type;          % Friston, Boyton, canonical...
         PM;            % prfModel that has some of the variables we need, such as TR
         Duration;      % Seconds
-        normalize;     % 'none', 'height', 'area'
+        normalize;     % 'none', 'height', 'area', 'absarea'
         params;        % Different values depending on the type of HRF
         values;
     end
@@ -71,7 +71,7 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
             % Defaults for all different models
             d.Type                = 'vista_twogammas';  % 'canonical'
             d.Duration            = 20;
-            d.normalize           = 'none';
+            d.normalize           = 'area';
             % Default params for friston
             % [peak1 width1 peak2 width2 -weight2]
             % [5.4000 5.2000 10.8000 7.3500 0.3500]
@@ -138,7 +138,7 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     hrf.values = (t/d(1)).^a(1)   .* exp(-(t - d(1))/b(1)) ...
                         - c*(t/d(2)).^a(2) .* exp(-(t-d(2))/b(2));
                     % Additionnaly, instead of using the exponential formula we
-                    %   could have used the gammas distribution function from matlab
+                    % could have used the gammas distribution function from matlab
                     %{
                     t = 1:1:20;
                     a = [6 12];

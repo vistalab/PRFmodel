@@ -94,10 +94,10 @@ save(stimfileMat, 'images', 'stimulus');
 
 %% create a pseudo inplane underlay, required by vistasoft, by averaging the
 %   time series for each voxel
-fmri     = niftiRead(datafile);
-ippath   = fullfile('.', filesep, 'Raw', 'inplane.nii.gz');
-ip = fmri; 
-ip.data = mean(fmri.data, length(size(fmri.data)));
+fmri        = niftiRead(datafile);
+ippath      = fullfile('.', filesep, 'Raw', 'inplane.nii.gz');
+ip          = fmri; 
+ip.data     = mean(fmri.data, length(size(fmri.data)));
 ip.dim(end) = 1; 
 niftiWrite(ip, ippath);
 

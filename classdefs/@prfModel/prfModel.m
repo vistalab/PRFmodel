@@ -91,7 +91,8 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
         BOLDmeanValue    ; % Required mean value of the synthetic BOLD signal (default 10000)
         BOLDcontrast     ; % Contrast of the synthetic BOLD signal, in % (default 8%)
         scaleContrast    ; % If we want to scale contrast to the max possible value
-        timeSeries       ;
+        timeSeries       ; % No scaling
+        timeSeriesConv   ; % Time series and convolution, no scaling
         computeSubclasses; % Logical
         % BOLD signal value (before noise)
         BOLD             ;
@@ -222,8 +223,9 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
                     % TODO: make all vectors columns whenever possible. Time vertical
                     % The conv is longer (HRF size -1), we need to cut the end
                     % of the conv, or paste the results in a correct sized vect
-                    pm.BOLD       = zeros(size(pm.timeSeries))';
-                    pm.BOLD       = convValues(1:length(pm.BOLD));
+                    pm.timeSeriesConv = zeros(size(pm.timeSeries))';
+                    pm.timeSeriesConv = convValues(1:length(pm.timeSeriesConv));
+                    pm.BOLD = pm.timeSeriesConv;
                     if showconv
                         pm.showConvolution
                         hold on
@@ -305,9 +307,11 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             switch pm.signalPercentage
                  case {'spc'}
                     % The last true means that we want to center in 0, it is nicer for visualization
-                    pm.BOLD  = pm.unitless2contrast(pm.BOLD, pm.BOLDcontrast,true);
+                    pm.timeSeries = pm.unitless2contrast(pm.timeSeries, pm.BOLDcontrast,true);
+                    pm.BOLD       = pm.unitless2contrast(pm.BOLD, pm.BOLDcontrast,true);
                 case {'bold'}
-                    pm.BOLD  = pm.contrast2BOLD(pm.BOLD, pm.BOLDcontrast, pm.BOLDmeanValue);
+                    pm.timeSeries = pm.contrast2BOLD(pm.timeSeries, pm.BOLDcontrast,true);
+                    pm.BOLD       = pm.contrast2BOLD(pm.BOLD, pm.BOLDcontrast, pm.BOLDmeanValue);
                 case {'none'}
                     % Do nothing, pm.BOLD remains unaltered in this step
                 otherwise
@@ -546,7 +550,7 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
                 case {'spc'} 
                     % Both are in the same contrast scale, with zero mean
                     % We can add noise directly
-                    pm.BOLDnoise = pm.BOLD + pm.Noise.values;
+                    pm.BOLDnoise   = pm.BOLD + pm.Noise.values;
                 case {'bold'}
                     % De-scale the BOLD to contrast, add noise, and re-scale it back
                     signal         = (pm.BOLD - mean(pm.BOLD)) ./ mean(pm.BOLD);
@@ -556,11 +560,33 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
                case {'none'}
                    % Now this is the trickiest one. I need to scale the noise to the unitless arbitrary values coming from the convolution.
                    % Maybe not the most elegant, but I'll use the same approach as above
-                    contrast       = (max(pm.BOLD)-min(pm.BOLD))/(2*100);
-                    signal         = (pm.BOLD - mean(pm.BOLD)) ./ mean(pm.BOLD);
-                    signalAndNoise = signal + pm.Noise.values;
-                    pm.BOLDnoise   = pm.contrast2BOLD(signalAndNoise, ...
-                                             contrast, mean(pm.BOLD)); 
+                   
+                   % Calculate the "contrast" of the upcoming unitless signal,
+                   % to revert it back. Min is zero. Contrast is range / 2.
+                   
+                   % The noise will be added in the contrast we set up in
+                   % pm.BOLDcontrast, which is 5% by default, but we can change
+                   % it
+                   signal = pm.unitless2contrast(pm.BOLD, pm.BOLDcontrast, true); % it is fractional, not in %, but...
+                   % Now, we can add noise as in the other cases, because it has
+                   % the same scale. 
+                   signalAndNoise = signal + pm.Noise.values; 
+                   % And, now scale it back to whatever scale the original
+                   % unitless signal had, but it will have noise. 
+                   
+                   
+                   % Normalize to 0-1, so that min(normBOLD) == 0
+                    normBOLD    = (signalAndNoise)/(max(signalAndNoise));
+                    % Make the max value the same as the orig signal
+                    maxValue    = max(pm.BOLD); % This will change in every case
+                    % Now obtain the scaled value
+                    v  = normBOLD .* maxValue;
+                    % Make it start in zero
+                    if v(1) >= 0, v = v - v(1);end
+                    if v(1) <= 0, v = v + abs(v(1));end
+                   
+                    pm.BOLDnoise = v;
+                   
                otherwise
                    error('%s provided, valid values are spc, none and bold', pm.signalPercentage)
             end
@@ -597,8 +623,10 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
                 case 'nonoisetimeseries'
                     pm.computeBOLD
                     if w;mrvNewGraphWin([pm.Type 'Synthetic BOLD signals']);end
-                    plot(pm.timePointsSeries, pm.unitless2contrast(pm.timeSeries, ...
-                         pm.BOLDcontrast,true),'--','color','k','LineWidth',1); hold on;
+                    % plot(pm.timePointsSeries, pm.unitless2contrast(pm.timeSeries, ...
+                    %      pm.BOLDcontrast,true),'--','color','k','LineWidth',1); hold on;
+                    plot(pm.timePointsSeries, pm.timeSeries,'--','color','k',...
+                                                        'LineWidth',1); hold on;
                     plot(pm.timePointsSeries, pm.BOLD,'color','b');
                     legend({'Time Series','No Noise BOLD'})
                 case {'nonoise','noiseless','noisefree'}
@@ -611,7 +639,7 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
                     if w;mrvNewGraphWin([pm.Type 'Synthetic BOLD signal (noise)']);end
                     plot(pm.timePointsSeries, pm.BOLDnoise,'color',c);
                     grid on; xlabel('Time (sec)'); ylabel('Relative amplitude');
-                case 'both'
+                  case 'both'
                     pm.compute;
                     if w;mrvNewGraphWin([pm.Type 'Synthetic BOLD signals']);end
                     plot(pm.timePointsSeries, pm.BOLD,'--','color','k'); hold on;

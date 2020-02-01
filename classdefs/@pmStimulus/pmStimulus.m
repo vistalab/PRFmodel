@@ -135,6 +135,7 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
         durationSecs     ;   % Numeric, duration of the stimuli in secs, default 300secs
         frameduration    ;   % Numeric, how many frames we want a refresh to last
         Shuffle          ;   
+        shuffleSeed      ;
         values           ;   % char/string with path to the stimulus .mat
         videoFileName    ;
         niftiFileName    ;
@@ -172,6 +173,7 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             d.durationSecs    = 200;   % Seconds
             d.frameduration   = 4;   
             d.Shuffle         = false; % Shuffle bars or content
+            d.shuffleSeed     = 12345; % Can be 'shuffle' or an integer
             
             % Convert to table and return
             d = struct2table(d,'AsArray',true);
@@ -198,6 +200,7 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             p.addParameter('durationsecs'   ,d.durationSecs   , @isnumeric);
             p.addParameter('frameduration'  ,d.frameduration  , @isnumeric);
             p.addParameter('shuffle'        ,d.Shuffle        , @islogical);
+            p.addParameter('shuffleseed'    ,d.shuffleSeed);
             p.addParameter('uservals'       ,[]               , @isnumeric);
             p.parse(pm,varargin{:});
             
@@ -215,6 +218,7 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             stim.durationSecs    = p.Results.durationsecs;
             stim.frameduration   = p.Results.frameduration;
             stim.Shuffle         = p.Results.shuffle;
+            stim.shuffleSeed     = p.Results.shuffleseed;
             stim.userVals        = p.Results.uservals;
             
             % If we pass uservales, override the calculations
@@ -229,7 +233,9 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     pmStimulusGenerate('filename', stimNameWithPath,...
                         'totalduration',stim.durationSecs, ...
                         'TR', stim.TR, ...
-                        'frameduration',stim.frameduration);
+                        'frameduration',stim.frameduration, ...
+                                        'shuffle', stim.Shuffle, ...
+                                        'shuffleseed', stim.shuffleSeed); % It can be 'shuffle' or any integer                                    
                 end
                 stim.values        =  char(stimNameWithPath);
                 % Default fileName if we want to write a video of the stimuli
@@ -251,7 +257,7 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
                    '_dur-'         num2str(stim.durationSecs) ...
                    '_TR-'          num2str(stim.TR) ...
                    '_framedur-'    num2str(stim.frameduration) ...
-                   '_Shuffle-'     choose(stim.Resize,'true', 'false') ...
+                   '_Shuffle-'     choose(stim.Shuffle,'true', 'false') ...
                    ];
                assert(isa(Name, 'char'));
         end
@@ -348,7 +354,9 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     pmStimulusGenerate('filename', stimNameWithPath,...
                                         'totalduration',stim.durationSecs, ...
                                         'TR', stim.TR, ...
-                                        'frameduration',stim.frameduration);
+                                        'frameduration',stim.frameduration, ...
+                                        'shuffle', stim.Shuffle, ...
+                                        'shuffleseed', stim.shuffleSeed); % It can be 'shuffle' or any integer                                    
                 end
                 % fprintf('Retrieving stimulus file in %s',stimNameWithPath)
                 stim.values        =  char(stimNameWithPath);

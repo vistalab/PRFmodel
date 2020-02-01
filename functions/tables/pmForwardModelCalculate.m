@@ -85,6 +85,7 @@ mkdir(tmpName);
         
 tic
 parfor (nn=1:nchcks, NumWorkers)
+% for nn=1:nchcks
     DT = DTcc{nn};
     % Initialize prev variables, for parallel toolbox
     dtprev = [];
@@ -159,6 +160,7 @@ parfor (nn=1:nchcks, NumWorkers)
             % series of noise defaults. I don't like to have specific variable
             % names here, think about making it a noise param
             if strcmp(paramName,'seed')
+                
                 [val, status] = str2num(dt.Noise.(paramName){:});
                 if status
                     pm.Noise.(paramName) = val;
@@ -258,6 +260,9 @@ if writefiles
     BOLDnifti.data   = BOLDdata;
     BOLDnifti.dim    = size(BOLDdata);
     BOLDnifti.fname  = fullfile(outputdir, sprintf('%s.nii.gz', subjectName));
+    if size(BOLDdata,1) >= 2^15-1
+        BOLDnifti.version = 2;
+    end
     niftiWrite(BOLDnifti);
     if ~exist(BOLDnifti.fname,'file'),error('Could not create output BOLD %s in %s', BOLDnifti.fname,outputdir);end
 

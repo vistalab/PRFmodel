@@ -57,9 +57,9 @@ end
 if isempty(toCompare)
     toCompare = DT.Properties.VariableNames;    
 end
-if length(toCompare) <= 1
-   error('You need at least two analysis results to be able to compare them') 
-end
+% if length(toCompare) <= 1
+%    error('You need at least two analysis results to be able to compare them') 
+% end
 % Check if all names are ok
 if sum(ismember(toCompare, DT.Properties.VariableNames)) ~= length(toCompare)
     error('Some of the analysis names in <to compare> are not correct')
@@ -72,7 +72,7 @@ if w;mrvNewGraphWin('decide plot name');end
 numAcross = ceil(sqrt(length(voxel)));
 numDown   = ceil(length(voxel)/numAcross);
 for nv=1:length(voxel)
-    subplot(numAcross,numDown,nv) % as they are time series, better to see them in vertical
+    if nv>1;subplot(numAcross,numDown,nv);end % as they are time series, better to see them in vertical
     plot(TR.time(voxel(nv),:), DT.synth.BOLDnoise(voxel(nv),:), 'r');
     if length(toCompare) >= 2
         hold on;
