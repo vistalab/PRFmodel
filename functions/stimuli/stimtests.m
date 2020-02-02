@@ -2,10 +2,10 @@
 
 doIt     = false;
 window   = false;
-plotbold = false;
+plotbold = true;
 plotstim = false;
-plotrf   = true;
-ylims    = [-5,3];
+plotrf   = false;
+ylims    = [-1,2];
 viewn    = 2;
 
 hh = mrvNewGraphWin('HRF comparison');
@@ -17,6 +17,8 @@ nrows = 2; ncols = 4;
 subplot(nrows,ncols,1)
 pm = prfModel;
 pm.TR=1;
+pm.RF.sigmaMajor = .25;
+pm.RF.sigmaMinor = .25;
 pm.signalPercentage='none';
 pm.Stimulus.durationSecs = 34;
 pm.Stimulus.compute
@@ -49,7 +51,7 @@ if plotrf;pm.RF.plot('window',window);view(viewn);axis equal;
 text(0,-2,sprintf('Sum of RF values: %.2f, vol:%.1f',sum(pm.RF.values(:)),...
     trapz(pm.Stimulus.XY{2}(:,1),trapz(pm.Stimulus.XY{1}(1,:),pm.RF.values,2),1)))
 end
-    title('1 full fov stimuli, RF 1 deg center')
+    title('1 full fov stimuli, RF .25 deg center')
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -58,8 +60,8 @@ end
 subplot(nrows,ncols,2)
 pm = prfModel;
 pm.TR=1;
-pm.RF.sigmaMajor = 2;
-pm.RF.sigmaMinor = 2;
+pm.RF.sigmaMajor = 4;
+pm.RF.sigmaMinor = 4;
 pm.signalPercentage='none';
 pm.Stimulus.durationSecs = 34;
 pm.Stimulus.compute
@@ -100,8 +102,8 @@ end
 subplot(nrows,ncols,3)
 pm = prfModel;
 pm.TR=1;
-pm.RF.sigmaMajor = 2;
-pm.RF.sigmaMinor = 2;
+pm.RF.sigmaMajor = 4;
+pm.RF.sigmaMinor = 4;
 pm.RF.Centerx0   = 10;
 pm.signalPercentage='none';
 pm.Stimulus.durationSecs = 34;
@@ -135,7 +137,7 @@ if plotrf;pm.RF.plot('window',window);view(viewn);axis equal;
 text(0,-2,sprintf('Sum of RF values: %.2f, vol:%.1f',sum(pm.RF.values(:)),...
     trapz(pm.Stimulus.XY{2}(:,1),trapz(pm.Stimulus.XY{1}(1,:),pm.RF.values,2),1)))
 end
-    title('1 full fov stimuli, RF 20 deg center')
+    title('1 full fov stimuli, RF 2 deg at x=10deg ')
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Make the middle bar one frame
@@ -143,6 +145,8 @@ end
 subplot(nrows,ncols,4)
 pm = prfModel;
 pm.TR=1;
+pm.RF.sigmaMajor = .25;
+pm.RF.sigmaMinor = .25;
 pm.signalPercentage='none';
 pm.Stimulus.durationSecs = 31;
 pm.Stimulus.compute
@@ -175,7 +179,7 @@ if plotrf;pm.RF.plot('window',window);view(viewn);axis equal;
 text(0,-2,sprintf('Sum of RF values: %.2f, vol:%.1f',sum(pm.RF.values(:)),...
     trapz(pm.Stimulus.XY{2}(:,1),trapz(pm.Stimulus.XY{1}(1,:),pm.RF.values,2),1)))
 end
-    title('middle bar one frame, RF 1 deg center')
+    title('middle bar one frame, RF .25 deg center')
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Make the bar in the middle on for 5 TRs
@@ -183,6 +187,8 @@ end
 subplot(nrows,ncols,5)
 pm = prfModel;
 pm.TR=1;
+pm.RF.sigmaMajor = .25;
+pm.RF.sigmaMinor = .25;
 pm.signalPercentage='none';
 pm.Stimulus.durationSecs = 30;
 pm.Stimulus.compute
@@ -215,7 +221,7 @@ if plotrf;pm.RF.plot('window',window);view(viewn);axis equal;
 text(0,-2,sprintf('Sum of RF values: %.2f, vol:%.1f',sum(pm.RF.values(:)),...
     trapz(pm.Stimulus.XY{2}(:,1),trapz(pm.Stimulus.XY{1}(1,:),pm.RF.values,2),1)))
 end
-    title('bar in the middle on for 5 TRs, RF 1 deg center')
+    title('bar in the middle on for 5 TRs, RF .25 deg center')
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Make the middle bar 10 frames
@@ -223,6 +229,8 @@ end
 subplot(nrows,ncols,6)
 pm = prfModel;
 pm.TR=1;
+pm.RF.sigmaMajor = .25;
+pm.RF.sigmaMinor = .25;
 pm.signalPercentage='none';
 pm.Stimulus.durationSecs = 32;
 pm.Stimulus.compute
@@ -255,7 +263,7 @@ if plotrf;pm.RF.plot('window',window);view(viewn);axis equal;
 text(0,-2,sprintf('Sum of RF values: %.2f, vol:%.1f',sum(pm.RF.values(:)),...
     trapz(pm.Stimulus.XY{2}(:,1),trapz(pm.Stimulus.XY{1}(1,:),pm.RF.values,2),1)))
 end
-    title('middle bar 10 frames, RF 1 deg center')
+    title('middle bar 10 frames, RF .25 deg center')
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Make the middle bar 20 frames
@@ -263,6 +271,8 @@ end
 subplot(nrows,ncols,7)
 pm = prfModel;
 pm.TR=1;
+pm.RF.sigmaMajor = .25;
+pm.RF.sigmaMinor = .25;
 pm.signalPercentage='none';
 pm.Stimulus.durationSecs = 40;
 pm.Stimulus.compute
@@ -295,7 +305,7 @@ if plotrf;pm.RF.plot('window',window);view(viewn);axis equal;
 text(0,-2,sprintf('Sum of RF values: %.2f, vol:%.1f',sum(pm.RF.values(:)),...
     trapz(pm.Stimulus.XY{2}(:,1),trapz(pm.Stimulus.XY{1}(1,:),pm.RF.values,2),1)))
 end
-    title('middle bar 20 frames, RF 1 deg center')
+    title('middle bar 20 frames, RF .25 deg center')
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Select a side bar 5 frames
@@ -303,6 +313,8 @@ end
 subplot(nrows,ncols,8)
 pm = prfModel;
 pm.TR=1;
+pm.RF.sigmaMajor = .25;
+pm.RF.sigmaMinor = .25;
 pm.signalPercentage='none';
 pm.Stimulus.durationSecs = 33;
 pm.Stimulus.compute
@@ -335,7 +347,7 @@ if plotrf;pm.RF.plot('window',window);view(viewn);axis equal;
 text(0,-2,sprintf('Sum of RF values: %.2f, vol:%.1f',sum(pm.RF.values(:)),...
     trapz(pm.Stimulus.XY{2}(:,1),trapz(pm.Stimulus.XY{1}(1,:),pm.RF.values,2),1)))
 end
-    title('side bar 5 frames, RF 1 deg center')
+    title('side bar 5 frames, RF .25 deg center')
 
 
 

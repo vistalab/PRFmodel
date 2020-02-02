@@ -107,7 +107,10 @@ RF  = exp( -.5 * ((Y ./ sigmaMajor).^2 + (X ./ sigmaMinor).^2));
 
 % This will give a volume of 1, rergardless of sampling, for all cases
 RF = RF ./ (sigmaMajor .* 2 .* pi .* sigmaMinor);
-% But, we want the area to be 1.
+
+
+% From now on, new (GLU 2020-01-31)
+% We want the area to be 1.
 % The idea is that if we multiply it with a full fov stimuli, the result will be
 % one (and then using a normalized HRF, we can have meaningful BOLD values).
 
@@ -115,40 +118,33 @@ RF = RF ./ (sigmaMajor .* 2 .* pi .* sigmaMinor);
 % - Gaussians are infinite (they can go until machine precision)
 % - Decide here to truncate until 4 SD values, so that 99.994% of values are inside
 sigmaMajorLimit = 4;
-% - Calculate, in the same grid (if it would be limitless), 
-%   the values corresponding to 4 SD
-% - Find distances from the centre (Euclidean distance squared)
-dists  = sqrt(((Yorig ./ sigmaMajor).^2 + (Xorig ./ sigmaMinor).^2)); 
-% - Filter out locations are outside our selected radius
-toZeroInd = (dists < sigmaMajorLimit * sigmaMajor);    
-% Now we can check if with the current mesh is enough or we need to expand it
-% Check if the borders are all zero, otherwise expand
-% Xorig is the same to Yorig'
-% Calculate fieldRange and sampleRate
-minVal = Xorig(1,1);
-maxVal = Xorig(1,end);
-nVal   = size(Xorig,2);
-sampleRate = Xorig(1,2) - Xorig(1,1);
+% - Calculate, in the same sampled grid, 
+%   the values corresponding to 4 SD. 
+% ---- Calculate grid values
+minVal = Yorig(1,1);
+maxVal = Yorig(end,1);
+nVal   = size(Yorig,2);
+sampleRate = Yorig(2,1) - Yorig(1,1);
 fieldRange = maxVal - minVal + sampleRate;
-Xtemp = Xorig;
-Ytemp = Yorig;
-while sum(sum(toZeroInd([1,end],:) + toZeroInd(:,[1,end])')) > 0
-    % Maintain sample rate but increaase fieldRange
-    tmpx = [-1.5*fieldRange:sampleRate:fieldRange*1.5];
-    tmpy = tmpx;
-    [Xtemp,Ytemp] = meshgrid(tmpx, tmpy);
-    % Calculate dist and indx again
-    dists  = sqrt(((Ytemp ./ sigmaMajor).^2 + (Xtemp ./ sigmaMinor).^2)); 
-    % - Filter out locations are outside our selected radius
-    toZeroInd = (dists < sigmaMajorLimit * sigmaMajor);    
+Xfull = Xorig;
+Yfull = Yorig;
+% --- Calculate how big the mesh needs to be for a full RF
+xlimit = sigmaMajorLimit * sigmaMajor;
+tmpx   = Yfull(:,1);
+while xlimit > max(tmpx)
+    % Grow it in 10% increments to avoid making the mesh too big
+    tmpx = [-1.1*fieldRange:sampleRate:fieldRange*1.1];
 end
+% - Now that we know that the grid can hold the full RF
+%   Calculate the full RF and calculate the area underneath it
+tmpy = tmpx;
+[Xfull,Yfull] = meshgrid(tmpx, tmpy); 
+RFfull = exp( -.5 * ((Yfull ./ sigmaMajor).^2 + (Xfull ./ sigmaMinor).^2));
+RFfull = RFfull ./ (sigmaMajor .* 2 .* pi .* sigmaMinor);
+% - Calculate the full RF area
+sRFfull = sum(RFfull(:));
 
-% The gaussian fits inside the mesh, calculate the value of RF
-RFtmp = exp( -.5 * ((Ytemp ./ sigmaMajor).^2 + (Xtemp ./ sigmaMinor).^2));
-RFtmp = RFtmp ./ (sigmaMajor .* 2 .* pi .* sigmaMinor);
-% Calculate the maximum are possible
-sRFtmp = sum(RFtmp(:));
-% Normalize it
-RF  = RF ./ sRFtmp;
+% - Normalize our RF with the full RF value we just obtained
+RF  = RF ./ sRFfull;
 
 return;
