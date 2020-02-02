@@ -189,8 +189,6 @@ switch prfimplementation
         results  = pmModelFit(input,'popeyenohrf');
     case {'mrtools','mlrtools','mlr'}
         options.mlr            = allOptions.mlr;
-        options.mlr.quickFit   = 0;
-        options.mlr.doParallel = 1;
         results  = pmModelFit(input,'mlr','options',options);        
     otherwise
         error('%s not yet implemented',prfimplementation);

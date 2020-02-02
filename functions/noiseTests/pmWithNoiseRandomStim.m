@@ -1,4 +1,5 @@
-function [compTable_noshuffle, tSeries_noshuffle, compTable_withshuffle, tSeries_withshuffle] = pmWithNoiseRandomStim(prfImplementation, varargin)
+function [compTable_noshuffle, tSeries_noshuffle, compTable_withshuffle, tSeries_withshuffle] = ...
+                              pmWithNoiseRandomStim(prfImplementation, varargin)
 % Try to create perfect solutions for evey tool using synthetic data.
 % 
 % Syntax:
@@ -109,7 +110,7 @@ COMBINE_PARAMETERS                        = struct();
     COMBINE_PARAMETERS.signalPercentage      = signalperc;
     COMBINE_PARAMETERS.RF.Centerx0           = [3];
     COMBINE_PARAMETERS.RF.Centery0           = [3];  
-    COMBINE_PARAMETERS.RF.sigmaMajor         = [2];  
+    COMBINE_PARAMETERS.RF.sigmaMajor         = [1];  
     COMBINE_PARAMETERS.RF.sigmaMinor         = 'same';
     COMBINE_PARAMETERS.TR                    = 1;
     COMBINE_PARAMETERS.Stimulus.durationSecs = 200;

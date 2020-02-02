@@ -3,8 +3,8 @@
 doIt     = false;
 window   = false;
 plotbold = false;
-plotstim = true;
-plotrf   = false;
+plotstim = false;
+plotrf   = true;
 ylims    = [-5,3];
 viewn    = 2;
 

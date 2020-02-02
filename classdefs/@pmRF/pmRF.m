@@ -113,7 +113,7 @@ classdef pmRF <   matlab.mixin.SetGet & matlab.mixin.Copyable
             if iscell(rf.Type);type = rf.Type{:};else;type=rf.Type;end
             switch type
                 case {'mrvista'}
-                    rf.values = rfGaussian2d(XY{1}, XY{2}, ...
+                    rf.values = pmGaussian2d(XY{1}, XY{2}, ...
                                 rf.sigmaMajor,rf.sigmaMinor,rf.Theta, ...
                                 rf.Centerx0,rf.Centery0);
                 case {'analyzeprf'}
@@ -155,9 +155,9 @@ classdef pmRF <   matlab.mixin.SetGet & matlab.mixin.Copyable
                     assert((scale>0) && (scale<1),'DoG scale is %f (should be [0,1])',scale)
                     
                     % Create the gaussians and normalize them (we want same areas in 2D gaussians)
-                    rf1 = rfGaussian2d(X,Y,smaj,smin,theta,x0,y0);
+                    rf1 = pmGaussian2d(X,Y,smaj,smin,theta,x0,y0);
                     rf1 = rf1 ./ sqrt(smaj.*2.*pi.*smin);
-                    rf2 = rfGaussian2d(X,Y,dogsmaj,dogsmin,dogtheta,x0,y0);
+                    rf2 = pmGaussian2d(X,Y,dogsmaj,dogsmin,dogtheta,x0,y0);
                     rf2 = rf2 ./ sqrt(dogsmaj.*2.*pi.*dogsmin);
                     
                     % Assert that the area of the 2D gaussian is the same
