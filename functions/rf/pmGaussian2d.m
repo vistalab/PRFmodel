@@ -117,7 +117,7 @@ RF = RF ./ (sigmaMajor .* 2 .* pi .* sigmaMinor);
 % Implementation:
 % - Gaussians are infinite (they can go until machine precision)
 % - Decide here to truncate until 4 SD values, so that 99.994% of values are inside
-sigmaMajorLimit = 4;
+sigmaMajorLimit = 5;
 % - Calculate, in the same sampled grid, 
 %   the values corresponding to 4 SD. 
 % ---- Calculate grid values

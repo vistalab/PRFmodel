@@ -6,7 +6,9 @@ plotbold = true;
 plotstim = false;
 plotrf   = false;
 ylims    = [-1,2];
+xlims    = [0,70];
 viewn    = 2;
+tr       = 1.5;
 
 hh = mrvNewGraphWin('HRF comparison');
 set(hh,'Position',[0.007 0.62  0.8  0.8]);
@@ -16,7 +18,7 @@ nrows = 2; ncols = 4;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 subplot(nrows,ncols,1)
 pm = prfModel;
-pm.TR=1;
+pm.TR=tr;
 pm.RF.sigmaMajor = .25;
 pm.RF.sigmaMinor = .25;
 pm.signalPercentage='none';
@@ -25,18 +27,21 @@ pm.Stimulus.compute
 if plotstim; pm.Stimulus.plot('window',window); end
 if doIt
     % Edit it manually to make it a single on/off bar
-    fName = fullfile(pmRootPath,'data','stimulus','Exp-103_bin-true_size-20x20_resize-true_Horz-101x101_barW-2_dur-34_TR-1_framedur-4_Shuffle-false.mat');
+    fName = fullfile(pmRootPath,'data','stimulus',['Exp-103_bin-true_size-20x20_resize-true_Horz-101x101_barW-2_dur-34_TR-' num2str(tr) '_framedur-4_Shuffle-false.mat']);
     kk = load(fName);
     % Repeat fourth bar, make rest zero, and save it with the same name, it will
     % not overwrite it.
     stim = kk.stim;
     stim(:,:,3)           = ones(size(stim(:,:,3)));
     stim(:,:,[1,2,4:end]) = zeros(size(kk.stim(:,:,[1,2,4:end])));
+    % For short TRs is bad, concatenate to make it longer
+    stim                  = cat(3,stim, stim(:,:,[1,2,4:end]));
     % Check it
     montage(stim)
     % Save it
     save(fName,'stim');
     % Check again as part of class, it should just read it and plot what we want
+    pm.Stimulus.compute
     pm.Stimulus.plot
 end
 % Compute the time series
@@ -46,12 +51,13 @@ if plotbold
     pm.plot('what','nonoisetimeseries','window',window)
     xlim([0,35])
     ylim(ylims)
+    text(0,-0.5,sprintf('Sum of BOLD: %0.2f',sum(pm.BOLD)))
 end
 if plotrf;pm.RF.plot('window',window);view(viewn);axis equal;
 text(0,-2,sprintf('Sum of RF values: %.2f, vol:%.1f',sum(pm.RF.values(:)),...
     trapz(pm.Stimulus.XY{2}(:,1),trapz(pm.Stimulus.XY{1}(1,:),pm.RF.values,2),1)))
 end
-    title('1 full fov stimuli, RF .25 deg center')
+    title(['1 full fov stimuli, RF .25 deg center, TR=' num2str(tr)])
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -59,7 +65,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 subplot(nrows,ncols,2)
 pm = prfModel;
-pm.TR=1;
+pm.TR=tr;
 pm.RF.sigmaMajor = 4;
 pm.RF.sigmaMinor = 4;
 pm.signalPercentage='none';
@@ -68,18 +74,21 @@ pm.Stimulus.compute
 if plotstim; pm.Stimulus.plot('window',window); end
 if doIt
     % Edit it manually to make it a single on/off bar
-    fName = fullfile(pmRootPath,'data','stimulus','Exp-103_bin-true_size-20x20_resize-true_Horz-101x101_barW-2_dur-34_TR-1_framedur-4_Shuffle-false.mat');
+    fName = fullfile(pmRootPath,'data','stimulus',['Exp-103_bin-true_size-20x20_resize-true_Horz-101x101_barW-2_dur-34_TR-' num2str(tr) '_framedur-4_Shuffle-false.mat']);
     kk = load(fName);
     % Repeat fourth bar, make rest zero, and save it with the same name, it will
     % not overwrite it.
     stim = kk.stim;
     stim(:,:,3)           = ones(size(stim(:,:,3)));
     stim(:,:,[1,2,4:end]) = zeros(size(kk.stim(:,:,[1,2,4:end])));
+    % For short TRs is bad, concatenate to make it longer
+    stim                  = cat(3,stim, stim(:,:,[1,2,4:end]));
     % Check it
     montage(stim)
     % Save it
     save(fName,'stim');
     % Check again as part of class, it should just read it and plot what we want
+    pm.Stimulus.compute
     pm.Stimulus.plot
 end
 % Compute the time series
@@ -89,19 +98,20 @@ if plotbold
     pm.plot('what','nonoisetimeseries','window',window)
     xlim([0,35])
     ylim(ylims)
+    text(0,-0.5,sprintf('Sum of BOLD: %0.2f',sum(pm.BOLD)))
 end
 if plotrf;pm.RF.plot('window',window);view(viewn);axis equal;
 text(0,-2,sprintf('Sum of RF values: %.2f, vol:%.1f',sum(pm.RF.values(:)),...
     trapz(pm.Stimulus.XY{2}(:,1),trapz(pm.Stimulus.XY{1}(1,:),pm.RF.values,2),1)))
 end
-    title('1 full fov stimuli, RF 2 deg center')
+    title(['1 full fov stimuli, RF 2 deg center, TR=' num2str(tr)])
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Select a full fov stimuli 20 deg centered
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 subplot(nrows,ncols,3)
 pm = prfModel;
-pm.TR=1;
+pm.TR=tr;
 pm.RF.sigmaMajor = 4;
 pm.RF.sigmaMinor = 4;
 pm.RF.Centerx0   = 10;
@@ -111,13 +121,15 @@ pm.Stimulus.compute
 if plotstim; pm.Stimulus.plot('window',window); end
 if doIt
     % Edit it manually to make it a single on/off bar
-    fName = fullfile(pmRootPath,'data','stimulus','Exp-103_bin-true_size-20x20_resize-true_Horz-101x101_barW-2_dur-34_TR-1_framedur-4_Shuffle-false.mat');
+    fName = fullfile(pmRootPath,'data','stimulus',['Exp-103_bin-true_size-20x20_resize-true_Horz-101x101_barW-2_dur-34_TR-' num2str(tr) '_framedur-4_Shuffle-false.mat']);
     kk = load(fName);
     % Repeat fourth bar, make rest zero, and save it with the same name, it will
     % not overwrite it.
     stim = kk.stim;
     stim(:,:,3)           = ones(size(stim(:,:,3)));
     stim(:,:,[1,2,4:end]) = zeros(size(kk.stim(:,:,[1,2,4:end])));
+    % For short TRs is bad, concatenate to make it longer
+    stim                  = cat(3,stim, stim(:,:,[1,2,4:end]));
     % Check it
     montage(stim)
     % Save it
@@ -132,19 +144,20 @@ if plotbold
     pm.plot('what','nonoisetimeseries','window',window)
     xlim([0,35])
     ylim(ylims)
+    text(0,-0.5,sprintf('Sum of BOLD: %0.2f',sum(pm.BOLD)))
 end
 if plotrf;pm.RF.plot('window',window);view(viewn);axis equal;
 text(0,-2,sprintf('Sum of RF values: %.2f, vol:%.1f',sum(pm.RF.values(:)),...
     trapz(pm.Stimulus.XY{2}(:,1),trapz(pm.Stimulus.XY{1}(1,:),pm.RF.values,2),1)))
 end
-    title('1 full fov stimuli, RF 2 deg at x=10deg ')
+    title(['1 full fov stimuli, RF 2 deg at x=10deg, TR=' num2str(tr)])
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Make the middle bar one frame
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 subplot(nrows,ncols,4)
 pm = prfModel;
-pm.TR=1;
+pm.TR=tr;
 pm.RF.sigmaMajor = .25;
 pm.RF.sigmaMinor = .25;
 pm.signalPercentage='none';
@@ -153,18 +166,21 @@ pm.Stimulus.compute
 if plotstim; pm.Stimulus.plot('window',window); end
 if doIt
     % Edit it manually to make it a single on/off bar
-    fName = fullfile(pmRootPath,'data','stimulus','Exp-103_bin-true_size-20x20_resize-true_Horz-101x101_barW-2_dur-31_TR-1_framedur-4_Shuffle-false.mat');
+    fName = fullfile(pmRootPath,'data','stimulus',['Exp-103_bin-true_size-20x20_resize-true_Horz-101x101_barW-2_dur-31_TR-' num2str(tr) '_framedur-4_Shuffle-false.mat']);
     kk = load(fName);
     % Repeat fourth bar, make rest zero, and save it with the same name, it will
     % not overwrite it.
     stim = kk.stim;
     stim(:,:,3) = repmat(kk.stim(:,:,4),[1,1,1]);
     stim(:,:,[1,2,4:end]) = zeros(size(kk.stim(:,:,[1,2,4:end])));
+    % For short TRs is bad, concatenate to make it longer
+    stim                  = cat(3,stim, stim(:,:,[1,2,4:end]));
     % Check it
     montage(stim)
     % Save it
-    save(fName,'none');
+    save(fName,'stim');
     % Check again as part of class, it should just read it and plot what we want
+    pm.Stimulus.compute
     pm.Stimulus.plot
 end
 % Compute the time series
@@ -174,19 +190,20 @@ if plotbold
     pm.plot('what','nonoisetimeseries','window',window)
     xlim([0,35])
     ylim(ylims)
+    text(0,-0.5,sprintf('Sum of BOLD: %0.2f',sum(pm.BOLD)))
 end
 if plotrf;pm.RF.plot('window',window);view(viewn);axis equal;
 text(0,-2,sprintf('Sum of RF values: %.2f, vol:%.1f',sum(pm.RF.values(:)),...
     trapz(pm.Stimulus.XY{2}(:,1),trapz(pm.Stimulus.XY{1}(1,:),pm.RF.values,2),1)))
 end
-    title('middle bar one frame, RF .25 deg center')
+    title(['middle bar one frame, RF .25 deg center, TR=' num2str(tr)])
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Make the bar in the middle on for 5 TRs
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 subplot(nrows,ncols,5)
 pm = prfModel;
-pm.TR=1;
+pm.TR=tr;
 pm.RF.sigmaMajor = .25;
 pm.RF.sigmaMinor = .25;
 pm.signalPercentage='none';
@@ -195,13 +212,14 @@ pm.Stimulus.compute
 if plotstim; pm.Stimulus.plot('window',window); end
 if doIt
     % Edit it manually to make it a single on/off bar
-    fName = fullfile(pmRootPath,'data','stimulus','Exp-103_bin-true_size-20x20_resize-true_Horz-101x101_barW-2_dur-30_TR-1_framedur-4_Shuffle-false.mat');
+    fName = fullfile(pmRootPath,'data','stimulus',['Exp-103_bin-true_size-20x20_resize-true_Horz-101x101_barW-2_dur-30_TR-' num2str(tr) '_framedur-4_Shuffle-false.mat']);
     kk = load(fName);
     % Repeat fourth bar, make rest zero, and save it with the same name, it will
     % not overwrite it.
     stim = kk.stim;
     stim(:,:,3:7) = repmat(kk.stim(:,:,4),[1,1,5]);
     stim(:,:,[1,2,8:30]) = zeros(size(kk.stim(:,:,[1,2,8:30])));
+    
     % Check it
     montage(stim)
     % Save it
@@ -214,21 +232,22 @@ end
 pm.computeBOLD
 if plotbold
     pm.plot('what','nonoisetimeseries','window',window)
-    xlim([0,35])
+    xlim(xlims)
     ylim(ylims)
+    text(0,-0.5,sprintf('Sum of BOLD: %0.2f',sum(pm.BOLD)))
 end
 if plotrf;pm.RF.plot('window',window);view(viewn);axis equal;
 text(0,-2,sprintf('Sum of RF values: %.2f, vol:%.1f',sum(pm.RF.values(:)),...
     trapz(pm.Stimulus.XY{2}(:,1),trapz(pm.Stimulus.XY{1}(1,:),pm.RF.values,2),1)))
 end
-    title('bar in the middle on for 5 TRs, RF .25 deg center')
+    title(['bar in the middle on for 5 TRs, RF .25 deg center, TR=' num2str(tr)])
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Make the middle bar 10 frames
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 subplot(nrows,ncols,6)
 pm = prfModel;
-pm.TR=1;
+pm.TR=tr;
 pm.RF.sigmaMajor = .25;
 pm.RF.sigmaMinor = .25;
 pm.signalPercentage='none';
@@ -237,7 +256,7 @@ pm.Stimulus.compute
 if plotstim; pm.Stimulus.plot('window',window); end
 if doIt
     % Edit it manually to make it a single on/off bar
-    fName = fullfile(pmRootPath,'data','stimulus','Exp-103_bin-true_size-20x20_resize-true_Horz-101x101_barW-2_dur-32_TR-1_framedur-4_Shuffle-false.mat');
+    fName = fullfile(pmRootPath,'data','stimulus',['Exp-103_bin-true_size-20x20_resize-true_Horz-101x101_barW-2_dur-32_TR-' num2str(tr) '_framedur-4_Shuffle-false.mat']);
     kk = load(fName);
     % Repeat fourth bar, make rest zero, and save it with the same name, it will
     % not overwrite it.
@@ -256,21 +275,22 @@ end
 pm.computeBOLD
 if plotbold
     pm.plot('what','nonoisetimeseries','window',window)
-    xlim([0,35])
+    xlim(xlims)
     ylim(ylims)
+    text(0,-0.5,sprintf('Sum of BOLD: %0.2f',sum(pm.BOLD)))
 end
 if plotrf;pm.RF.plot('window',window);view(viewn);axis equal;
 text(0,-2,sprintf('Sum of RF values: %.2f, vol:%.1f',sum(pm.RF.values(:)),...
     trapz(pm.Stimulus.XY{2}(:,1),trapz(pm.Stimulus.XY{1}(1,:),pm.RF.values,2),1)))
 end
-    title('middle bar 10 frames, RF .25 deg center')
+    title(['middle bar 10 frames, RF .25 deg center, TR=' num2str(tr)])
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Make the middle bar 20 frames
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 subplot(nrows,ncols,7)
 pm = prfModel;
-pm.TR=1;
+pm.TR=tr;
 pm.RF.sigmaMajor = .25;
 pm.RF.sigmaMinor = .25;
 pm.signalPercentage='none';
@@ -279,7 +299,7 @@ pm.Stimulus.compute
 if plotstim; pm.Stimulus.plot('window',window); end
 if doIt
     % Edit it manually to make it a single on/off bar
-    fName = fullfile(pmRootPath,'data','stimulus','Exp-103_bin-true_size-20x20_resize-true_Horz-101x101_barW-2_dur-40_TR-1_framedur-4_Shuffle-false.mat');
+    fName = fullfile(pmRootPath,'data','stimulus',['Exp-103_bin-true_size-20x20_resize-true_Horz-101x101_barW-2_dur-40_TR-' num2str(tr) '_framedur-4_Shuffle-false.mat']);
     kk = load(fName);
     % Repeat fourth bar, make rest zero, and save it with the same name, it will
     % not overwrite it.
@@ -298,21 +318,22 @@ end
 pm.computeBOLD
 if plotbold
     pm.plot('what','nonoisetimeseries','window',window)
-    xlim([0,35])
+    xlim(xlims)
     ylim(ylims)
+    text(0,-0.5,sprintf('Sum of BOLD: %0.2f',sum(pm.BOLD)))
 end
 if plotrf;pm.RF.plot('window',window);view(viewn);axis equal;
 text(0,-2,sprintf('Sum of RF values: %.2f, vol:%.1f',sum(pm.RF.values(:)),...
     trapz(pm.Stimulus.XY{2}(:,1),trapz(pm.Stimulus.XY{1}(1,:),pm.RF.values,2),1)))
 end
-    title('middle bar 20 frames, RF .25 deg center')
+    title(['middle bar 20 frames, RF .25 deg center, TR=' num2str(tr)])
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Select a side bar 5 frames
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 subplot(nrows,ncols,8)
 pm = prfModel;
-pm.TR=1;
+pm.TR=tr;
 pm.RF.sigmaMajor = .25;
 pm.RF.sigmaMinor = .25;
 pm.signalPercentage='none';
@@ -321,7 +342,7 @@ pm.Stimulus.compute
 if plotstim; pm.Stimulus.plot('window',window); end
 if doIt
     % Edit it manually to make it a single on/off bar
-    fName = fullfile(pmRootPath,'data','stimulus','Exp-103_bin-true_size-20x20_resize-true_Horz-101x101_barW-2_dur-33_TR-1_framedur-4_Shuffle-false.mat');
+    fName = fullfile(pmRootPath,'data','stimulus',['Exp-103_bin-true_size-20x20_resize-true_Horz-101x101_barW-2_dur-33_TR-' num2str(tr) '_framedur-4_Shuffle-false.mat']);
     kk = load(fName);
     % Repeat fourth bar, make rest zero, and save it with the same name, it will
     % not overwrite it.
@@ -341,13 +362,14 @@ pm.computeBOLD
 if plotbold
     pm.plot('what','nonoisetimeseries','window',window)
     xlim([0,35])
+    text(0,-0.5,sprintf('Sum of BOLD: %0.2f',sum(pm.BOLD)))
     % ylim(ylims)
 end
 if plotrf;pm.RF.plot('window',window);view(viewn);axis equal;
 text(0,-2,sprintf('Sum of RF values: %.2f, vol:%.1f',sum(pm.RF.values(:)),...
     trapz(pm.Stimulus.XY{2}(:,1),trapz(pm.Stimulus.XY{1}(1,:),pm.RF.values,2),1)))
 end
-    title('side bar 5 frames, RF .25 deg center')
+    title(['side bar 5 frames, RF .25 deg center, TR=' num2str(tr)])
 
 
 
@@ -385,7 +407,7 @@ window = false;
 % Make the middle bar one frame
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 pm = prfModel;
-pm.TR=1;
+pm.TR=tr;
 pm.RF.sigmaMajor = 2;
 pm.RF.sigmaMinor = 2;
 pm.HRF.Type = 'vista_twogammas';

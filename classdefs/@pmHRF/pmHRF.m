@@ -71,7 +71,7 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
             % Defaults for all different models
             d.Type                = 'vista_twogammas';  % 'canonical'
             d.Duration            = 20;
-            d.normalize           = 'area';
+            d.normalize           = 'sum';
             % Default params for friston
             % [peak1 width1 peak2 width2 -weight2]
             % [5.4000 5.2000 10.8000 7.3500 0.3500]
@@ -412,6 +412,8 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     % do nothing for now
                 case 'height'
                     hrf.values = hrf.values / max(hrf.values);
+                case 'sum'
+                    hrf.values = hrf.values / sum(hrf.values);
                 case 'area'
                     tSteps      = 0: hrf.TR: hrf.TR*(length(hrf.values)-1);
                     area        = trapz(tSteps, hrf.values);
