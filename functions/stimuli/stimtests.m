@@ -9,6 +9,8 @@ ylims    = [-1,2];
 xlims    = [0,70];
 viewn    = 2;
 tr       = 1.5;
+hrtype   = 'boynton';
+spc      = 'frac';
 
 hh = mrvNewGraphWin('HRF comparison');
 set(hh,'Position',[0.007 0.62  0.8  0.8]);
@@ -21,7 +23,8 @@ pm = prfModel;
 pm.TR=tr;
 pm.RF.sigmaMajor = .25;
 pm.RF.sigmaMinor = .25;
-pm.signalPercentage='none';
+pm.HRF.Type      = hrtype;
+pm.signalPercentage=spc;
 pm.Stimulus.durationSecs = 34;
 pm.Stimulus.compute
 if plotstim; pm.Stimulus.plot('window',window); end
@@ -68,7 +71,8 @@ pm = prfModel;
 pm.TR=tr;
 pm.RF.sigmaMajor = 4;
 pm.RF.sigmaMinor = 4;
-pm.signalPercentage='none';
+pm.HRF.Type      = hrtype;
+pm.signalPercentage=spc;
 pm.Stimulus.durationSecs = 34;
 pm.Stimulus.compute
 if plotstim; pm.Stimulus.plot('window',window); end
@@ -114,8 +118,9 @@ pm = prfModel;
 pm.TR=tr;
 pm.RF.sigmaMajor = 4;
 pm.RF.sigmaMinor = 4;
+pm.HRF.Type      = hrtype;
 pm.RF.Centerx0   = 10;
-pm.signalPercentage='none';
+pm.signalPercentage=spc;
 pm.Stimulus.durationSecs = 34;
 pm.Stimulus.compute
 if plotstim; pm.Stimulus.plot('window',window); end
@@ -160,7 +165,8 @@ pm = prfModel;
 pm.TR=tr;
 pm.RF.sigmaMajor = .25;
 pm.RF.sigmaMinor = .25;
-pm.signalPercentage='none';
+pm.HRF.Type      = hrtype;
+pm.signalPercentage=spc;
 pm.Stimulus.durationSecs = 31;
 pm.Stimulus.compute
 if plotstim; pm.Stimulus.plot('window',window); end
@@ -206,7 +212,8 @@ pm = prfModel;
 pm.TR=tr;
 pm.RF.sigmaMajor = .25;
 pm.RF.sigmaMinor = .25;
-pm.signalPercentage='none';
+pm.HRF.Type      = hrtype;
+pm.signalPercentage=spc;
 pm.Stimulus.durationSecs = 30;
 pm.Stimulus.compute
 if plotstim; pm.Stimulus.plot('window',window); end
@@ -250,7 +257,8 @@ pm = prfModel;
 pm.TR=tr;
 pm.RF.sigmaMajor = .25;
 pm.RF.sigmaMinor = .25;
-pm.signalPercentage='none';
+pm.HRF.Type      = hrtype;
+pm.signalPercentage=spc;
 pm.Stimulus.durationSecs = 32;
 pm.Stimulus.compute
 if plotstim; pm.Stimulus.plot('window',window); end
@@ -293,7 +301,8 @@ pm = prfModel;
 pm.TR=tr;
 pm.RF.sigmaMajor = .25;
 pm.RF.sigmaMinor = .25;
-pm.signalPercentage='none';
+pm.HRF.Type      = hrtype;
+pm.signalPercentage=spc;
 pm.Stimulus.durationSecs = 40;
 pm.Stimulus.compute
 if plotstim; pm.Stimulus.plot('window',window); end
@@ -336,7 +345,8 @@ pm = prfModel;
 pm.TR=tr;
 pm.RF.sigmaMajor = .25;
 pm.RF.sigmaMinor = .25;
-pm.signalPercentage='none';
+pm.HRF.Type      = hrtype;
+pm.signalPercentage=spc;
 pm.Stimulus.durationSecs = 33;
 pm.Stimulus.compute
 if plotstim; pm.Stimulus.plot('window',window); end

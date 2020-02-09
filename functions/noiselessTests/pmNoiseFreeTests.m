@@ -66,6 +66,7 @@ p.addRequired('prfimplementation',@ischar);
 p.addParameter('usenifti'   ,  false           , @islogical);
 p.addParameter('plotit'     ,  false           , @islogical);
 p.addParameter('ellipse'    ,  false           , @islogical);
+p.addParameter('stimshuffle',  false           , @islogical);
 % Implementation specifics
     options       = struct();
     options.aprf  = struct('seedmode'     , [0 1 2], ...
@@ -89,6 +90,8 @@ p.parse(prfimplementation,varargin{:});
 useNifti    = p.Results.usenifti;
 plotit      = p.Results.plotit;
 ellipse     = p.Results.ellipse;
+stimshuffle = p.Results.stimshuffle;
+
 allOptions  = p.Results.options;
 % We need to be sure that if only some of the params are passed, the rest will
 % be taken from the defaults 
@@ -112,8 +115,11 @@ else
     COMBINE_PARAMETERS.RF.Centerx0        = [0,3]; 
     COMBINE_PARAMETERS.RF.Centery0        = [0,3];
     COMBINE_PARAMETERS.RF.Theta           = [0]; %, deg2rad(45)];
-    COMBINE_PARAMETERS.RF.sigmaMajor      = [1,2];
+    COMBINE_PARAMETERS.RF.sigmaMajor      = [1,2];% [1,2];
     COMBINE_PARAMETERS.RF.sigmaMinor      = "same";
+end
+if stimshuffle
+    COMBINE_PARAMETERS.Stimulus.Shuffle   = true;
 end
 switch prfimplementation
     case {'aprf','analyzeprf','aprfcss'}

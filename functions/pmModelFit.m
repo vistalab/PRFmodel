@@ -227,7 +227,12 @@ switch prfimplementation
             pmEstimates.sigmaMajor = pmEstimates.sigmaMinor;
             pmEstimates.modelpred  = results.modelpred;
             % Scale it back
+            % With the new method, the first point will be in BOLDmeanValue; 
             pmEstimates.modelpred  = pmEstimates.modelpred + BOLDmeanValue;
+            if pmEstimates.modelpred(1) ~= data(1)
+                pmEstimates.modelpred = pmEstimates.modelpred + ...
+                                        (data(1) - pmEstimates.modelpred(1));
+            end
             
         else
             if niftiInputs

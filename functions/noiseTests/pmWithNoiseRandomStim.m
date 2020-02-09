@@ -1,4 +1,5 @@
-function [compTable_noshuffle, tSeries_noshuffle, compTable_withshuffle, tSeries_withshuffle] = ...
+function [compTable_noshuffle, tSeries_noshuffle, sDT_noshuffle, ...
+          compTable_withshuffle, tSeries_withshuffle, sDT_withshuffle] = ...
                               pmWithNoiseRandomStim(prfImplementation, varargin)
 % Try to create perfect solutions for evey tool using synthetic data.
 % 
@@ -26,30 +27,61 @@ function [compTable_noshuffle, tSeries_noshuffle, compTable_withshuffle, tSeries
 %     pmModelFit
 %
 % 
-
-% Tests:
+% pmWithNoiseRandomStim('aprf','plotit',true,'plotts',true,'voxel','mid','signalperc','bold')
+% 
 %{
-pmWithNoiseTests('afni')
+    % TEST IT
+    [compTable_noshuffle, tSeries_noshuffle, sDT_noshuffle, ...
+     compTable_withshuffle, tSeries_withshuffle, sDT_withshuffle] = ...
+     pmWithNoiseRandomStim('aprfcss','plotit',true,'plotts',false,...
+                           'signalperc','bold','repeats',10,'shuffleseed',12345,...
+                           'size',1, 'seed','random','voxel','low',...
+                           'hrfnorm','norm','hrftype','boynton', ...
+                           'boldcontrast',4)
+
+    
+
+    % LAUNCH WITH THREE DIFFERENT SHUFFLLINGS
+    [compTable_noshuffle, tSeries_noshuffle, sDT_noshuffle, ...
+     compTable_withshuffle, tSeries_withshuffle, sDT_withshuffle] = ...
+     pmWithNoiseRandomStim('aprf','plotit',true,'plotts',false,'voxel','mid',...
+                           'signalperc','bold','repeats',10,'shuffleseed',12345)
+
+    [compTable_noshuffle, tSeries_noshuffle, sDT_noshuffle, ...
+     compTable_withshuffle, tSeries_withshuffle, sDT_withshuffle] = ...
+     pmWithNoiseRandomStim('aprf','plotit',true,'plotts',false,'voxel','mid',...
+                           'signalperc','bold','repeats',10,'shuffleseed',54321)
+
+    [compTable_noshuffle, tSeries_noshuffle, sDT_noshuffle, ...
+     compTable_withshuffle, tSeries_withshuffle, sDT_withshuffle] = ...
+     pmWithNoiseRandomStim('aprf','plotit',true,'plotts',false,'voxel','mid',...
+                           'signalperc','bold','repeats',10,'shuffleseed',12453)
+
+
+
+
+
+
 %}
-
+% 
+% Default tests:
 %{
-pmWithNoiseTests('aprf')
+    pmWithNoiseRandomStim('afni')
 %}
-
 %{
-pmWithNoiseTests('aprfcss')
+    pmWithNoiseRandomStim('aprf')
 %}
-
 %{
-pmWithNoiseTests('vista')
+    pmWithNoiseRandomStim('aprfcss')
 %}
-
 %{
-pmWithNoiseTests('afni6')
+    pmWithNoiseRandomStim('vista')
 %}
-
 %{
-pmWithNoiseTests('vista6')
+    pmWithNoiseRandomStim('afni6')
+%}
+%{
+    pmWithNoiseRandomStim('vista6')
 %}
 
 
@@ -64,13 +96,18 @@ varargin          = mrvParamFormat(varargin);
 % Parse
 p = inputParser;
 p.addRequired('prfimplementation',@ischar);
-p.addParameter('plotit'     ,  false            , @islogical);
-p.addParameter('plotts'     ,  true           , @islogical);
-p.addParameter('seed'       ,  'random');
-p.addParameter('voxel'      ,  'low'           , @ischar);
-p.addParameter('jitter'     ,  [0.1, 0.1]      , @isnumeric);
-p.addParameter('repeats'    ,  10              , @isnumeric);
-p.addParameter('signalperc' ,  'none'          , @ischar);
+p.addParameter('plotit'      ,  true            , @islogical);
+p.addParameter('plotts'      ,  false           , @islogical);
+p.addParameter('seed'        ,  'random');
+p.addParameter('voxel'       ,  'low'           , @ischar);
+p.addParameter('jitter'      ,  [0.1, 0.1]      , @isnumeric);
+p.addParameter('repeats'     ,  10              , @isnumeric);
+p.addParameter('signalperc'  ,  'bold'          , @ischar);
+p.addParameter('shuffleseed' ,  12345           , @isnumeric);
+p.addParameter('boldcontrast',  5               , @isnumeric);
+p.addParameter('size'        ,  1               , @isnumeric);
+p.addParameter('hrftype'     , 'boynton'        , @ischar);
+p.addParameter('hrfnorm'     , 'norm'           , @ischar);
 % Implementation specifics
     options       = struct();
     options.aprf  = struct('seedmode'     , [0 1 2], ...
@@ -98,24 +135,29 @@ seed        = p.Results.seed;
 voxel       = p.Results.voxel;
 jitter      = p.Results.jitter;
 repeats     = p.Results.repeats;
+shuffleseed = p.Results.shuffleseed;
+boldcontrast= p.Results.boldcontrast;
+size        = p.Results.size;
+hrftype     = p.Results.hrftype;
+hrfnorm     = p.Results.hrfnorm;
 signalperc  = string(p.Results.signalperc);
 % We need to be sure that if only some of the params are passed, the rest will
 % be taken from the defaults 
 allOptions  = pmParamsCompletenessCheck(allOptions, options);
 
 %% Create the test data
-COMBINE_PARAMETERS                        = struct();
 
     COMBINE_PARAMETERS                       = struct();
     COMBINE_PARAMETERS.signalPercentage      = signalperc;
+    COMBINE_PARAMETERS.BOLDcontrast          = boldcontrast;
     COMBINE_PARAMETERS.RF.Centerx0           = [3];
     COMBINE_PARAMETERS.RF.Centery0           = [3];  
-    COMBINE_PARAMETERS.RF.sigmaMajor         = [1];  
+    COMBINE_PARAMETERS.RF.sigmaMajor         = [size];  
     COMBINE_PARAMETERS.RF.sigmaMinor         = 'same';
     COMBINE_PARAMETERS.TR                    = 1;
     COMBINE_PARAMETERS.Stimulus.durationSecs = 200;
     COMBINE_PARAMETERS.Stimulus.Shuffle      = false;
-    COMBINE_PARAMETERS.Stimulus.shuffleSeed  = 12345;
+    COMBINE_PARAMETERS.Stimulus.shuffleSeed  = shuffleseed;
     Noise                                    = struct();
     Noise(1).seed                            = seed; 
     Noise(1).voxel                           = voxel;
@@ -123,26 +165,26 @@ COMBINE_PARAMETERS                        = struct();
     COMBINE_PARAMETERS.Noise                 = Noise;
 
     HRF                                      = struct();
-    HRF(1).Type                              = 'boynton';  
-    HRF(1).normalize                         = 'height'; 
+    HRF(1).Type                              = hrftype;  
+    HRF(1).normalize                         = hrfnorm; 
     HRF(1).params.n = 3;
     HRF(1).params.tau = 1.08;
     HRF(1).params.delay = 2.05;
         
-    HRF(2).Type                              = 'boynton';
-    HRF(2).normalize                         = 'height'; 
+    HRF(2).Type                              = hrftype;
+    HRF(2).normalize                         = hrfnorm; 
     HRF(2).params.n = 3;
     HRF(2).params.tau = 1.38;
     HRF(2).params.delay = 2;
     
-    HRF(3).Type                              = 'boynton';
-    HRF(3).normalize                         = 'height'; 
+    HRF(3).Type                              = hrftype;
+    HRF(3).normalize                         = hrfnorm; 
     HRF(3).params.n = 3;
     HRF(3).params.tau = 1.68;
     HRF(3).params.delay = 1.75;
     
-    HRF(4).Type                              = 'boynton';
-    HRF(4).normalize                         = 'height'; 
+    HRF(4).Type                              = hrftype;
+    HRF(4).normalize                         = hrfnorm; 
     HRF(4).params.n = 3;
     HRF(4).params.tau = 1.935;
     HRF(4).params.delay = 1.65;    
@@ -155,21 +197,18 @@ COMBINE_PARAMETERS                        = struct();
 
     
     
-    
-    
-    
-    
     % CREATE ANOTHER STIM RANDOMIZING THE BARS
     COMBINE_PARAMETERS                       = struct();
     COMBINE_PARAMETERS.signalPercentage      = signalperc;
+    COMBINE_PARAMETERS.BOLDcontrast          = boldcontrast;
     COMBINE_PARAMETERS.RF.Centerx0           = [3];
     COMBINE_PARAMETERS.RF.Centery0           = [3];  
-    COMBINE_PARAMETERS.RF.sigmaMajor         = [2];  
+    COMBINE_PARAMETERS.RF.sigmaMajor         = [size];  
     COMBINE_PARAMETERS.RF.sigmaMinor         = 'same';
     COMBINE_PARAMETERS.TR                    = 1;
     COMBINE_PARAMETERS.Stimulus.durationSecs = 200;
     COMBINE_PARAMETERS.Stimulus.Shuffle      = true;
-    COMBINE_PARAMETERS.Stimulus.shuffleSeed  = 12345;
+    COMBINE_PARAMETERS.Stimulus.shuffleSeed  = shuffleseed;
     Noise                                    = struct();
     Noise(1).seed                            = seed; 
     Noise(1).voxel                           = voxel;
@@ -177,26 +216,26 @@ COMBINE_PARAMETERS                        = struct();
     COMBINE_PARAMETERS.Noise                 = Noise;
 
     HRF                                      = struct();
-    HRF(1).Type                              = 'boynton';  
-    HRF(1).normalize                         = 'height'; 
+    HRF(1).Type                              = hrftype;  
+    HRF(1).normalize                         = hrfnorm; 
     HRF(1).params.n = 3;
     HRF(1).params.tau = 1.08;
     HRF(1).params.delay = 2.05;
         
-    HRF(2).Type                              = 'boynton';
-    HRF(2).normalize                         = 'height'; 
+    HRF(2).Type                              = hrftype;
+    HRF(2).normalize                         = hrfnorm; 
     HRF(2).params.n = 3;
     HRF(2).params.tau = 1.38;
     HRF(2).params.delay = 2;
     
-    HRF(3).Type                              = 'boynton';
-    HRF(3).normalize                         = 'height'; 
+    HRF(3).Type                              = hrftype;
+    HRF(3).normalize                         = hrfnorm; 
     HRF(3).params.n = 3;
     HRF(3).params.tau = 1.68;
     HRF(3).params.delay = 1.75;
     
-    HRF(4).Type                              = 'boynton';
-    HRF(4).normalize                         = 'height'; 
+    HRF(4).Type                              = hrftype;
+    HRF(4).normalize                         = hrfnorm; 
     HRF(4).params.n = 3;
     HRF(4).params.tau = 1.935;
     HRF(4).params.delay = 1.65;    
@@ -214,7 +253,7 @@ switch prfimplementation
         % Options
         options.aprf            = allOptions.aprf;
         % options.aprf.maxpolydeg = 0;
-        options.aprf.usecss     = false;
+        % options.aprf.usecss     = false;
         
         % Launch
         results_noshuffle       = pmModelFit(sDT_noshuffle,'analyzePRF','options',options);
@@ -294,14 +333,16 @@ paramDefaults = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
                             {results_noshuffle}, ...
                             'params', paramDefaults, ...
                             'shorten names',true, ...
-                            'addIscloseCol', true); 
+                            'addIscloseCol', false, ...
+                            'addsnrcol',true); 
 
 [compTable_withshuffle, tSeries_withshuffle] = pmResultsCompare(sDT_withshuffle, ... % Defines the input params
                             {prfimplementation}, ... % Analysis names we want to see: 'aPRF','vista',
                             {results_withshuffle}, ...
                             'params', paramDefaults, ...
                             'shorten names',true, ...
-                            'addIscloseCol', true); 
+                            'addIscloseCol', false, ...
+                            'addsnrcol',true); 
                         
                         
                         
@@ -312,15 +353,29 @@ if plotts
     nrows = 1; ncols = 2;
     
     subplot(nrows,ncols,1)
+    pms = sDT_noshuffle.pm;
+    noisevals = zeros(length(pms), size(tSeries_noshuffle.synth.BOLDnoise(1,:),2));
+    for ii =1:length(pms)
+        noisevals(ii,:) = pms(ii).Noise.values;
+    end
     pmTseriesPlot(tSeries_noshuffle, sDT_noshuffle(:,'TR'), ...
        'to compare', {'synth'}, ... %, prfimplementation}, ...
-       'voxel',1, ... %[1:height(synthDT)], ... % 'metric','RMSE', ...
+       'voxel',1, ... %[1:height(synthDT)], ... % 
+       'metric','SNR', ...
+       'noisevals',noisevals,...
        'newWin',false)
    
     subplot(nrows,ncols,2)
+    pms = sDT_withshuffle.pm;
+    noisevals = zeros(length(pms), size(tSeries_withshuffle.synth.BOLDnoise(1,:),2));
+    for ii =1:length(pms)
+        noisevals(ii,:) = pms(ii).Noise.values;
+    end
     pmTseriesPlot(tSeries_withshuffle, sDT_withshuffle(:,'TR'), ...
        'to compare', {'synth'}, ... %, prfimplementation}, ...
-       'voxel',1, ... %[1:height(synthDT)], ... % 'metric','RMSE', ...
+       'voxel',1, ... %[1:height(synthDT)], ... % 
+       'metric','SNR', ...
+       'noisevals',noisevals,...
        'newWin',false)
    
 end
@@ -338,33 +393,47 @@ if plotit
     
     Cs  = 0.65 * distinguishable_colors(6,'w');
     
+    y0 = COMBINE_PARAMETERS.RF.Centery0;
+    x0 = COMBINE_PARAMETERS.RF.Centerx0;
     
     % Create the fit plots with the ground truth
     tools  = {prfimplementation}; 
-    HRFs   = {'boynton','boynton','boynton','boynton'}; % ,'canonical'};
+    HRFs   = {hrftype,hrftype,hrftype,hrftype};
     for ii=1:4 % height(noshufflecompTable)
         subplot(nrows,ncols,ii)
         useHRF = HRFs{ii};
         % ttable = compTable_noshuffle(ii,:);  
         ttable = compTable_noshuffle((ii:4:(4*repeats-4)+ii)',:);
-        pmCloudOfResults(ttable  , tools ,'onlyCenters',false ,'userfsize' , 2, ...
-            'centerPerc', 90     , 'useHRF'     , useHRF,'lineStyle' , '-','color',Cs(ii+1,:), ...
+        pmCloudOfResults(ttable  , tools ,'onlyCenters',false ,...
+            'userfsize' , size, ...
+            'centerPerc', 90     , 'useHRF'     , useHRF,...
+            'addsnr',true,'adddice',true,...
+            'lineStyle' , '-','color',Cs(ii+1,:), ...
             'lineWidth' , .7      , 'noiselevel' , nslvl , ...
+            'xlims', [x0-2*size   , x0+2*size],...
+            'ylims', [y0-2*size   , y0+2*size],...
+            'xtick', [x0-2*size+1 : x0+2*size-1],...
+            'ytick', [y0-2*size+1 : y0+2*size-1],...
             'newWin'    , false  , 'saveTo'     , '','saveToType','svg')
         axis equal
     end
     
-    % Create the fit plots with the ground truth
-    tools  = {prfimplementation}; 
-    HRFs   = {'boynton','boynton','boynton','boynton'}; % ,'canonical'};
+    % Plot the shuffled one
     for ii=1:4  % height(withshufflecompTable)
         subplot(nrows,ncols,ncols + ii)
         useHRF = HRFs{ii};
         % ttable = compTable_withshuffle(ii,:);  
         ttable = compTable_withshuffle((ii:4:(4*repeats-4)+ii)',:);
-        pmCloudOfResults(ttable   , tools ,'onlyCenters',false ,'userfsize' , 2, ...
-            'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-','color',Cs(ii+1,:), ...
+        pmCloudOfResults(ttable   , tools ,'onlyCenters',false ,...
+            'userfsize' , size, ...
+            'centerPerc', 90    ,'useHRF'     ,useHRF,...
+            'addsnr',true,'adddice',true,...
+            'lineStyle' , '-','color',Cs(ii+1,:), ...
             'lineWidth' , .7     ,'noiselevel' ,nslvl , ...
+            'xlims', [x0-2*size  , x0+2*size],...
+            'ylims', [y0-2*size  , y0+2*size],...
+            'xtick', [x0-2*size+1:x0+2*size-1],...
+            'ytick', [y0-2*size+1:y0+2*size-1],...
             'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
         axis equal
     end

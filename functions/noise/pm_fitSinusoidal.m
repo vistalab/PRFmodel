@@ -46,7 +46,7 @@ function [diff,fit] = pm_fitSinusoidal(tSeries, period, varargin)
         plot(t,yhat,'r','linewidth',2);
     end
     % Calculate the difference (noise) and return it
-    diff = y - yhat;
-    fit  = yhat;
+    diff   = y - yhat;
+    fit    = yhat;
 end
 

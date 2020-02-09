@@ -71,7 +71,7 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
             % Defaults for all different models
             d.Type                = 'vista_twogammas';  % 'canonical'
             d.Duration            = 20;
-            d.normalize           = 'sum';
+            d.normalize           = 'norm';
             % Default params for friston
             % [peak1 width1 peak2 width2 -weight2]
             % [5.4000 5.2000 10.8000 7.3500 0.3500]
@@ -421,6 +421,8 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
                     if ~isclose(trapz(tSteps,hrf.values),1,'tolerance',0.0001)
                         error('Could not make area 1,is %1.2f',trapz(tSteps,hrf.values))
                     end
+                case 'norm'
+                    hrf.values = hrf.values / norm(hrf.values);
                 case 'absarea'
                     tSteps          = 0: hrf.TR: hrf.TR*(length(hrf.values)-1);
                     positivehrfvals = hrf.values + abs(min(hrf.values));

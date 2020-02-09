@@ -17,16 +17,167 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
     %
     
     % Examples
+    
     %{
        pm = prfModel;
        pm.plot;
     %}
+    
+    %{
+        % Check how size is modeled
+        pm = prfModel;
+        pm.signalPercentage='frac'
+        pm.BOLDcontrast  = 10;
+        pm.RF.sigmaMajor = 1;
+        pm.RF.sigmaMinor = pm.RF.sigmaMajor;
+        pm.Noise.seed    = 'none';
+        pm.HRF.Type      = 'boynton';
+        pm.HRF.normalize = 'sum';
+        pm.Stimulus.durationSecs = 300;
+        pm.Stimulus.Shuffle = true;
+        pm.Stimulus.shuffleSeed = 12345;
+        pm.compute
+        pm.plot('what','nonoise','color','r','window',true); hold on
+        % pm.plot('what','componentfft','color','r','window',true); 
+        pm.HRF.Type      = 'vista_twogammas';
+        pm.compute
+        pm.plot('what','nonoise','color','g','window',false); hold on
+        % pm.plot('what','componentfft','color','r','window',false); 
+        
+        pm = prfModel;
+        pm.signalPercentage='frac'
+        pm.BOLDcontrast  = 10;
+        pm.RF.sigmaMajor = 1;
+        pm.RF.sigmaMinor = pm.RF.sigmaMajor;
+        pm.Noise.seed    = 'none';
+        pm.HRF.Type      = 'boynton';
+        pm.HRF.normalize = 'norm';
+        pm.Stimulus.durationSecs = 300;
+        pm.Stimulus.Shuffle = true;
+        pm.Stimulus.shuffleSeed = 12345;
+        pm.compute
+        pm.plot('what','nonoise','color','r','window',true); hold on
+        % pm.plot('what','componentfft','color','r','window',true); 
+        pm.HRF.Type      = 'vista_twogammas';
+        pm.compute
+        pm.plot('what','nonoise','color','g','window',false); hold on
+        % pm.plot('what','componentfft','color','r','window',false); 
+
+
+pm.Stimulus.Shuffle = true;
+        pm.compute
+        pm.plot('what','componentfft','color','r','window',false); 
+    
+    
+        pm = prfModel;
+        pm.signalPercentage='frac'
+        pm.RF.sigmaMajor = 2;
+        pm.RF.sigmaMinor = pm.RF.sigmaMajor;
+        pm.HRF.Type = 'canonical';
+        pm.compute
+        pm.plot('what','nonoise','color','r','window',false)
+    %}
+    
+    %{
+        % Check how size is modeled
+        pm = prfModel;
+        pm.RF.sigmaMajor = 1;
+        pm.RF.sigmaMinor = pm.RF.sigmaMajor;
+        pm.HRF.Type = 'canonical';
+        pm.Stimulus.Shuffle = true;
+        pm.Stimulus.shuffleSeed = '12345;
+        pm.compute
+        pm.SNR
+        pm.plot('what','nonoise','color','b','window',true); hold on
+        
+        pm = prfModel;
+        pm.RF.sigmaMajor = 2;
+        pm.RF.sigmaMinor = pm.RF.sigmaMajor;
+        pm.HRF.Type = 'canonical';
+        pm.Stimulus.Shuffle = true;
+        pm.Stimulus.shuffleSeed = 12345;
+        pm.compute
+        pm.SNR
+        pm.plot('what','nonoise','color','r','window',false)
+    %}
+    
+    %{
+        % Check how size is modeled
+        pm = prfModel;
+        pm.RF.sigmaMajor = 1;
+        pm.RF.sigmaMinor = pm.RF.sigmaMajor;
+        pm.signalPercentage='bold';
+        pm.HRF.Type = 'boynton';
+        pm.HRF.normalize = 'sum';
+        pm.Stimulus.Shuffle = false;
+        pm.Stimulus.shuffleSeed = 12345;
+        pm.Noise.seed = 12345;
+        pm.compute
+        pm.BOLDcontrast
+        pm.SNR
+        pm.plot('what','withnoise','color','b','window',true); hold on
+        
+        pm = prfModel;
+        pm.RF.sigmaMajor = 1;
+        pm.RF.sigmaMinor = pm.RF.sigmaMajor;
+        pm.signalPercentage='bold';
+        pm.HRF.Type = 'boynton';
+        pm.Stimulus.Shuffle = true;
+        pm.Stimulus.shuffleSeed = 12345;
+        pm.Noise.seed = 12345; 
+        pm.compute
+        pm.SNR
+        pm.plot('what','withnoise','color','r','window',false)
+    %}
+    
+    %{
+        % Check how size is modeled
+        pm = prfModel;
+        pm.signalPercentage='spc';
+        pm.BOLDcontrast = 10;
+        pm.RF.sigmaMajor = .2;
+        pm.RF.sigmaMinor = pm.RF.sigmaMajor;
+        pm.HRF.normalize = 'power'
+        pm.HRF.compute
+        
+        pm.HRF.Type = 'canonical';
+        pm.compute
+        sum(pm.HRF.values .^2);
+        sum(pm.BOLD .^2) 
+        pm.plot('what','nonoise','color','b','window',true); hold on
+        pm.HRF.Type = 'vista_twogammas';
+        pm.compute
+        sum(pm.HRF.values .^2);
+        sum(pm.BOLD .^2)
+        sqrt(mean(pm.BOLD .^2))
+    
+        pm.plot('what','nonoise','color','r','window',false); 
+
+pm.Noise.seed=12345;
+        pm.compute;
+        pm.SNR
+        pm.plot('what','withnoise','color','b','window',true); hold on
+        
+        pm = prfModel;
+        pm.signalPercentage='bold'
+        pm.RF.sigmaMajor = 2;
+        pm.RF.sigmaMinor = pm.RF.sigmaMajor;
+        pm.HRF.Type = 'canonical';
+        pm.Noise.seed=12345;
+        pm.compute
+        pm.SNR
+        pm.plot('what','withnoise','color','r','window',false)
+    %}
+    
     %{ 
        % Check mean BOLD, range, contrast
        pm = prfModel;
        pm.BOLDcontrast = 8;
+       pm.signalPercentage='frac';
        pm.Noise.seed = 12345
-       pm.HRF.Type = 'boynton'
+       pm.Noise.setVoxelDefaults('low')
+       pm.Noise.compute
+       pm.HRF.Type = 'canonical'
        pm.compute;
        pm.plot;
        noiselessRange = (max(pm.BOLD)-min(pm.BOLD))/2;  % should be 0.16
@@ -48,7 +199,6 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
         pm.RF.sigmaMinor = 2;
         pm.BOLDcontrast
         pm.plot
-        pm.scaleContrast = true;
         pm.compute
         pm.BOLDcontrast
         pm.plot
@@ -62,7 +212,6 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
         pm.RF.sigmaMinor = 2;
         pm.BOLDcontrast
         pm.plot
-        pm.scaleContrast = true;
         pm.compute
         pm.BOLDcontrast
         pm.plot
@@ -81,23 +230,21 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
     properties (GetAccess=public, SetAccess=public) % Changed from SetAccess=private, check
         % Basic, CSS ... (char)
         Type             ;
-        % Components required to build the synthetic bold signal (classes)
+        % Components required to build the synthetic bold signal (class)
         Stimulus         ;
         RF               ;
         HRF              ;
         Noise            ;
-        % Other required options (double)
+        % Other required options (double, char, logical)
         signalPercentage ; % Provide results in BOLD signal (bold), in signal percent change (spc) or unitless (none) (default bold)
         BOLDmeanValue    ; % Required mean value of the synthetic BOLD signal (default 10000)
         BOLDcontrast     ; % Contrast of the synthetic BOLD signal, in % (default 8%)
-        scaleContrast    ; % If we want to scale contrast to the max possible value
         timeSeries       ; % No scaling
-        timeSeriesConv   ; % Time series and convolution, no scaling
         computeSubclasses; % Logical
-        % BOLD signal value (before noise)
-        BOLD             ;
-        % The result: synthetic BOLD series (1 dim array of doubles)
+        BOLDconv         ; % Raw BOLD signal, before scaling
+        BOLD             ; % BOLD signal value, scaled (before noise)
         BOLDnoise        ; % Final value, composed of the BOLD + noise
+        SNR              ; % in DB, knowing the signal and the noise
     end
     properties (Dependent)
         TR               ; % This one is derived and copied to all other classes
@@ -109,15 +256,13 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
     
     methods (Static)
         function d = defaultsGet
-            % This provides the defaults of this class, which is the only one at
-            % the top level. 
+            % This provides the defaults of this class, which is the only one at the top level. 
             d.TR                = 1;
             d.Type              = 'basic';
             d.signalPercentage  = 'bold';
-            d.BOLDcontrast      = 5;    % Percent. So this will be 0.08
-            d.scaleContrast     = false;    % Logical
-            d.BOLDmeanValue     = 10000; % Mean BOLD, set signalPercentage to bold to use this
-            d.computeSubclasses = true;
+            d.BOLDcontrast      = 10;    % Percent. Best case scenario (full stim and RF), will be scaled always lower
+            d.BOLDmeanValue     = 10000; % Mean BOLD, needs signalPercentage='bold'
+            d.computeSubclasses = true;  % Used to save computation time in pmForwardTableCalculate
             % Convert to table and return
             d = struct2table(d,'AsArray',true);
         end
@@ -137,7 +282,6 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             p.addParameter('signalpercentage' , d.signalPercentage{:} , @islogical);
             p.addParameter('boldmeanvalue'    , d.BOLDmeanValue       , @isnumeric);
             p.addParameter('boldcontrast'     , d.BOLDcontrast        , @isnumeric);
-            p.addParameter('scalecontrast'    , d.scaleContrast       , @islogical);
             p.addParameter('computesubclasses', d.computeSubclasses   , @islogical);
             
             p.parse(varargin{:});
@@ -147,7 +291,6 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             pm.signalPercentage  = p.Results.signalpercentage;
             pm.BOLDmeanValue     = p.Results.boldmeanvalue;
             pm.BOLDcontrast      = p.Results.boldcontrast;  % In percentage
-            pm.scaleContrast     = p.Results.scalecontrast;
             pm.computeSubclasses = p.Results.computesubclasses;
             
             % Create the classes, and initialize a prfModel inside it
@@ -179,6 +322,18 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
         end
         function v = get.frequencySeriesHz(pm)
             v  = (1/pm.TR)*(0:(pm.timePointsN-1))/pm.timePointsN;
+        end
+        function v = get.SNR(pm)
+            pm.compute
+            switch pm.signalPercentage
+                case 'bold'
+                    s  = (pm.BOLD - pm.BOLDmeanValue) / pm.BOLDmeanValue;
+                    sn = (pm.BOLDnoise - pm.BOLDmeanValue) / pm.BOLDmeanValue;
+                otherwise
+                    s  = pm.BOLD;
+                    sn = pm.BOLDnoise;
+            end
+            v  = snr(s, (sn - s));
         end
         function defaultsTable = get.defaultsTable(pm)
             % This function obtains all the defaults from all the
@@ -223,9 +378,8 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
                     % TODO: make all vectors columns whenever possible. Time vertical
                     % The conv is longer (HRF size -1), we need to cut the end
                     % of the conv, or paste the results in a correct sized vect
-                    pm.timeSeriesConv = zeros(size(pm.timeSeries))';
-                    pm.timeSeriesConv = convValues(1:length(pm.timeSeriesConv));
-                    pm.BOLD = pm.timeSeriesConv;
+                    pm.BOLDconv = zeros(size(pm.timeSeries))';
+                    pm.BOLDconv = convValues(1:length(pm.BOLDconv));
                     if showconv
                         pm.showConvolution
                         hold on
@@ -277,45 +431,34 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             end
             % Scale the signal so that it has the required mean and contrast
             
-            % We need to know if the user wants to scale it to the max possible
-            % signal first. We will edit the contrast if it is the case,
-            % therefore the value of the set contrast will change
-            if pm.scaleContrast
-               maxcenter            = pm.Stimulus.maxStimCenter;
-               % Create an pmRF class but with the same values coming from the main pm
-               pmMax = pmRF(pm);
-               % Change the center and rfsize, to calculate the max, maintain the rest
-               pmMax.Type           = pm.RF.Type;
-               pmMax.Centerx0       = maxcenter(1);
-               pmMax.Centery0       = maxcenter(2);
-               pmMax.sigmaMajor     = pm.RF.sigmaMajor;
-               pmMax.sigmaMinor     = pm.RF.sigmaMinor;
-               pmMax.Theta          = pm.RF.Theta;
-               pmMax.dog_sigmaMajor = pm.RF.dog_sigmaMajor;
-               pmMax.dog_sigmaMinor = pm.RF.dog_sigmaMinor;
-               pmMax.dog_Theta      = pm.RF.dog_Theta;
-               pmMax.dog_Scale      = pm.RF.dog_Scale;
-               
-               pmMax.compute;
-               
-               maxTimeSeries    = max(spaceStim' * pmMax.values(:));
-               myMaxTimeSeries  = max(pm.timeSeries);
-               % Scale the contrast value
-               pm.BOLDcontrast = pm.BOLDcontrast * myMaxTimeSeries / maxTimeSeries;
-            end
-            % Convert the output is requested in pm.signalPercentage 
+            % Convert the output requested in pm.signalPercentage 
+            % The BOLD signal has meaning: an Stimuli of all 1-s, an RF that
+            % sums 1 (all RFs have been normalized to sum 1, if they fit in the
+            % fov), and the HRF sums 1, will give a time series of 1, and if
+            % maintained in time, it will generate a BOLD of 1 (with a peak and an
+            % overshoot, see stimtest.m for an illustration). 
+            
+            % At this moment of the code, pm.BOLD is the fractional signal, we
+            % need to multiply it by 100 to convert it to spc.
+            
+            % The formula will be the following then:
+            % 
+            %    boldAndNoise = MeanBold * (1 + contrast/100 * pm.BOLD + Noise);
+            % 
+            % Noise will be added in a later stage, here we want to provide the
+            % pre-noise signal correctly scaled. 
+          
             switch pm.signalPercentage
-                 case {'spc'}
-                    % The last true means that we want to center in 0, it is nicer for visualization
-                    pm.timeSeries = pm.unitless2contrast(pm.timeSeries, pm.BOLDcontrast,true);
-                    pm.BOLD       = pm.unitless2contrast(pm.BOLD, pm.BOLDcontrast,true);
+                 case {'frac', 'fractional'}
+                    pm.BOLD = 2 * pm.BOLDcontrast/100 * pm.BOLDconv;
+                case {'spc'}
+                    pm.BOLD = 2 * pm.BOLDcontrast * pm.BOLDconv;
+                 case {'frac', 'fractional'}
+                    pm.BOLD = 2 * pm.BOLDcontrast/100 * pm.BOLDconv;
                 case {'bold'}
-                    pm.timeSeries = pm.contrast2BOLD(pm.timeSeries, pm.BOLDcontrast,true);
-                    pm.BOLD       = pm.contrast2BOLD(pm.BOLD, pm.BOLDcontrast, pm.BOLDmeanValue);
-                case {'none'}
-                    % Do nothing, pm.BOLD remains unaltered in this step
+                    pm.BOLD = pm.BOLDmeanValue * (1 + 2 * pm.BOLDcontrast/100 * pm.BOLDconv);
                 otherwise
-                   error('%s provided, valid values are spc, none and bold', pm.signalPercentage)
+                   error('%s provided, valid values are frac, spc, and bold (default)', pm.signalPercentage)
             end
         end
         function showConvolution(pm)
@@ -406,7 +549,7 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             % plot f(t) and go(t1)
             ax_1 = subplot(3,1,1);
             op = plot(t,f, 'b',  t1, go, 'r');
-            if isempty(pm.BOLD); pm.computeBOLD; end
+            if isempty(pm.BOLDconv); pm.computeBOLD; end
             hold on; grid on;
             set(ax_1, 'XColor', axis_color, 'YColor', axis_color, 'Color', 'w', 'Fontsize', 9);
             xlim( [ ( min(t)-abs(max(tf)-min(tf)) - 1 ) ( max(t)+abs(max(tf)-min(tf)) + 1 ) ] );
@@ -476,7 +619,7 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
                 
             end;
             tccontrast = (max(c)-min(c))/2;
-            ourBOLD = 100 * pm.unitless2contrast(pm.BOLD,tccontrast,true);
+            ourBOLD = 100 * pm.unitless2contrast(pm.BOLDconv,tccontrast,true);
             if ourBOLD(1) >= 0, ourBOLD = ourBOLD - ourBOLD(1);end
             if ourBOLD(1) <= 0, ourBOLD = ourBOLD + abs(ourBOLD(1));end
             plot(ourBOLD,'k-.')
@@ -542,53 +685,18 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
                 pm.Noise.compute;
                 
             end
-            % Compute BOLD signal
+            % Compute BOLDconv signal
             pm.computeBOLD;
-            % Add the noise component. We want them to be separated. 
-            % Depending on how the pm.BOLD is going, we need to do a separate thing with the noise
             switch pm.signalPercentage
-                case {'spc'} 
-                    % Both are in the same contrast scale, with zero mean
-                    % We can add noise directly
-                    pm.BOLDnoise   = pm.BOLD + pm.Noise.values;
+                 case {'frac', 'fractional'}
+                    pm.BOLDnoise = pm.BOLD + pm.Noise.values;
+                 case {'spc'}
+                    pm.BOLDnoise = pm.BOLD + 100 * pm.Noise.values;
                 case {'bold'}
-                    % De-scale the BOLD to contrast, add noise, and re-scale it back
-                    signal         = (pm.BOLD - mean(pm.BOLD)) ./ mean(pm.BOLD);
-                    signalAndNoise = signal + pm.Noise.values;
-                    pm.BOLDnoise   = pm.contrast2BOLD(signalAndNoise, ...
-                                             pm.BOLDcontrast, pm.BOLDmeanValue); 
-               case {'none'}
-                   % Now this is the trickiest one. I need to scale the noise to the unitless arbitrary values coming from the convolution.
-                   % Maybe not the most elegant, but I'll use the same approach as above
-                   
-                   % Calculate the "contrast" of the upcoming unitless signal,
-                   % to revert it back. Min is zero. Contrast is range / 2.
-                   
-                   % The noise will be added in the contrast we set up in
-                   % pm.BOLDcontrast, which is 5% by default, but we can change
-                   % it
-                   signal = pm.unitless2contrast(pm.BOLD, pm.BOLDcontrast, true); % it is fractional, not in %, but...
-                   % Now, we can add noise as in the other cases, because it has
-                   % the same scale. 
-                   signalAndNoise = signal + pm.Noise.values; 
-                   % And, now scale it back to whatever scale the original
-                   % unitless signal had, but it will have noise. 
-                   
-                   
-                   % Normalize to 0-1, so that min(normBOLD) == 0
-                    normBOLD    = (signalAndNoise)/(max(signalAndNoise));
-                    % Make the max value the same as the orig signal
-                    maxValue    = max(pm.BOLD); % This will change in every case
-                    % Now obtain the scaled value
-                    v  = normBOLD .* maxValue;
-                    % Make it start in zero
-                    if v(1) >= 0, v = v - v(1);end
-                    if v(1) <= 0, v = v + abs(v(1));end
-                   
-                    pm.BOLDnoise = v;
-                   
-               otherwise
-                   error('%s provided, valid values are spc, none and bold', pm.signalPercentage)
+                    pm.BOLDnoise = pm.BOLDmeanValue * ...
+                                   (1 + 2 * pm.BOLDcontrast/100 * pm.BOLDconv + pm.Noise.values);
+                otherwise
+                   error('%s provided, valid values are frac, spc, and bold (default)', pm.signalPercentage)
             end
             
         end
@@ -602,7 +710,8 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             p.addParameter('window', true, @islogical);
             p.addParameter('addtext', false, @islogical);
             p.addParameter('color', 'b');
-            p.addParameter('centerzero', false);
+            p.addParameter('centerzero', false, @islogical);
+            p.addParameter('addhrf', true, @islogical);
             
             p.parse(pm,varargin{:});
             what = mrvParamFormat(p.Results.what);
@@ -610,6 +719,7 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
             t  = p.Results.addtext;
             c  = p.Results.color;
             z  = p.Results.centerzero;
+            h  = p.Results.addhrf;
             
             switch what
                 case 'timeseries'
@@ -627,8 +737,9 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
                     %      pm.BOLDcontrast,true),'--','color','k','LineWidth',1); hold on;
                     plot(pm.timePointsSeries, pm.timeSeries,'--','color','k',...
                                                         'LineWidth',1); hold on;
-                    plot(pm.timePointsSeries, pm.BOLD,'color','b');
-                    legend({'Time Series','No Noise BOLD'})
+                    plot(pm.timePointsSeries, pm.BOLDconv,'color','b');
+                    plot(pm.timePointsSeries, pm.BOLD,'color','r');
+                    legend({'Time Series','No scaled BOLD','Scaled BOLD'})
                 case {'nonoise','noiseless','noisefree'}
                     pm.computeBOLD
                     if w;mrvNewGraphWin([pm.Type 'Synthetic BOLD signal (no noise)']);end
@@ -658,10 +769,45 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
                     plot(pm.timePointsSeries, pm.unitless2contrast(pm.timeSeries, pm.BOLDcontrast,true),'color','k'); hold on;
                     plot(pm.timePointsSeries, pm.BOLDnoise);
                     legend({'Time Series','With Noise BOLD'})
+                case 'componentfft'
+                    % Plots the stimulus and HRF amplitude spectrum
+                    
+                    % Obtain time series (matrix mult between stim and rf) and hrf
+                    ts    = pm.timeSeries;
+                    hrf   = zeros(size(ts));
+                    hrf(1:size(pm.HRF.values,2)) = pm.HRF.values;
+                    
+                    % Obtain the FFT of both signals
+                    Pts   = abs(fft(ts)/pm.timePointsN);
+                    Phrf  = abs(fft(hrf)/pm.timePointsN);
+                    
+                    % Halve it
+                    hlftpN = round(pm.timePointsN/2);
+                    Fts    = Pts(1:hlftpN);
+                    Fhrf   = Phrf(1:hlftpN);
+                    % The amplitude is divided in the two halfs, so we take one half and
+                    % multiply the amplitude by two
+                    Fts(2:end-1) = 2*Fts(2:end-1);
+                    Fhrf(2:end-1) = 2*Fhrf(2:end-1);
+                    % Get the frequency vector (for the half points)
+                    fts  = (1/pm.TR)*(0:hlftpN-1)./pm.timePointsN;
+                    fhrf = (1/pm.TR)*(0:hlftpN-1)./pm.timePointsN;
+                    
+                    % Plot it
+                    if w;mrvNewGraphWin(['Individual component spectrum']);end
+                    plot(fts, Fts);hold on;
+                    if h;plot(fhrf, Fhrf);end
+                    grid on; xlabel('f[Hz]'); ylabel('Relative amplitude');
+                    title(['Individual component spectrum, TR=' num2str(pm.TR)])
+                    
+                    
                 otherwise
                     error('no noise, with noise, both, all, with noise timeseries, no noise timeseries are acepted')
             end
-            grid on; xlabel('Time (sec)'); ylabel('Relative amplitude');
+            grid on;
+            if ~strcmp(what,'componentfft')
+                 xlabel('Time (sec)'); ylabel('Relative amplitude');
+            end
             aa = gca;
             if t, text(5,aa.YLim(1)*(1.0025),...
                     sprintf('TR=%1.1fs, Center(x0,y0)=[%1.1f,%1.1f]deg, Theta=%1.1frad, \\sigmaMaj=%1.1fdeg, \\sigmaMin=%1.1fdeg, FoVh=%1.1fdeg, FoVv=%1.1fdeg' ,...

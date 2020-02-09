@@ -24,6 +24,7 @@ p.addParameter('params'         , paramDefaults , @iscell);
 p.addParameter('shortennames'   , false         , @islogical);
 p.addParameter('shortnames'     , shortDefaults , @iscell);
 p.addParameter('addisclosecol'  , false         , @islogical);
+p.addParameter('addsnrcol'      , false         , @islogical);
 p.addParameter('tolerance'      , 0.0001        , @isnumeric);
 p.addParameter('dotseries'      , true         , @islogical);
 p.parse(synthDT, resNames, resDT, varargin{:});
@@ -31,6 +32,7 @@ p.parse(synthDT, resNames, resDT, varargin{:});
 params       = p.Results.params;
 shortenNames = p.Results.shortennames;
 addIscloseCol= p.Results.addisclosecol;
+addSnrCol    = p.Results.addsnrcol;
 tolerance    = p.Results.tolerance;
 dotSeries    = p.Results.dotseries;
 shortNames   = p.Results.shortnames;
@@ -52,11 +54,17 @@ end
 newDT.HRFtype   = synthDT.HRF.Type;
 % Add the TR type
 newDT.TR        = synthDT.TR;
-% Add the White Noise param
+% Add the Noise type param
 newDT.noiseLevel = synthDT.Noise.voxel;
 newDT.noiseLevel(synthDT.Noise.seed=="none") = repmat({'none'},[length(newDT.noiseLevel(synthDT.Noise.seed=="none")),1]);
-
-
+% If requested, add the snr param
+if addSnrCol
+    newDT.snr = zeros(height(newDT),1);
+    pms       = synthDT.pm;
+    for ns=1:height(newDT)
+        newDT.snr(ns) = pms(ns).SNR;
+    end
+end
 
 for ii=1:length(resNames)
     newDT.(resNames{ii}) = resDT{ii}(:,params);

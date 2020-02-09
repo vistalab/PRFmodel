@@ -29,9 +29,11 @@ p = inputParser;
 p.addRequired ('DT'                   , @istable);
 p.addRequired ('TR'                   , @istable);
 p.addParameter('tocompare', {}        , @iscell);  % Default is do them all
-p.addParameter('metric'   , 'RMSE'    , @ischar);  
+p.addParameter('metric'   , 'snr'    , @ischar);  
 p.addParameter('voxel'    , [1]       , @isnumeric);  
 p.addParameter('newwin'   , true      , @islogical); % For subplot, set this to false
+p.addParameter('noisevals', @istable);  
+
 % Parse
 p.parse(DT, TR, varargin{:});
 % Assign
@@ -39,6 +41,7 @@ toCompare  = p.Results.tocompare;
 metric     = p.Results.metric;
 voxel      = p.Results.voxel;
 w          = p.Results.newwin;
+noisevals  = p.Results.noisevals;
 
 % Calculate time series
 timePoints = size(DT.synth.BOLDnoise, 2);
@@ -74,6 +77,20 @@ numDown   = ceil(length(voxel)/numAcross);
 for nv=1:length(voxel)
     if nv>1;subplot(numAcross,numDown,nv);end % as they are time series, better to see them in vertical
     plot(TR.time(voxel(nv),:), DT.synth.BOLDnoise(voxel(nv),:), 'r');
+    if addMetric
+        switch metric
+            case {'snr','SNR'}
+                snrval = snr(DT.synth.BOLDnoise(voxel(nv),:),...
+                             noisevals(voxel(nv),:));
+                aa = gca; text(5,aa.YLim(1)*nv*(0.8), ...
+                    sprintf('SNR(%s):%2.2f',toCompare{voxel(nv)},snrval));
+            case 'RMSE'
+                aa = gca; text(5,aa.YLim(1)*nv*(1.0025), ...
+                    sprintf('RMSE(%s):%2.2f',toCompare{ii},99.99));
+            otherwise
+                error('%s not recognized', metric)
+        end
+    end
     if length(toCompare) >= 2
         hold on;
         for ii=2:length(toCompare)
@@ -81,8 +98,17 @@ for nv=1:length(voxel)
             % Just for testing
             % plot(DT.(toCompare{ii}).testdata(voxel(nv),:));
             if addMetric
-                aa = gca; text(5,aa.YLim(1)*ii*(1.0025), ...
-                    sprintf('RMSE(%s):%2.2f',toCompare{ii},99.99));
+                switch metric
+                    case 'snr'
+                        snrval = snr();
+                        aa = gca; text(5,aa.YLim(1)*ii*(1.0025), ...
+                            sprintf('SNR(%s):%2.2f',toCompare{ii},snrval));
+                    case 'RMSE'
+                        aa = gca; text(5,aa.YLim(1)*ii*(1.0025), ...
+                            sprintf('RMSE(%s):%2.2f',toCompare{ii},99.99));
+                    otherwise
+                        error('%s not recognized', metric)
+                end
             end
         end
     end

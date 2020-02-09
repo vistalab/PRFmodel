@@ -12,8 +12,8 @@ p.addRequired('tools'                    , @iscell);
 p.addParameter('centerdistr'  , true    , @islogical);
 p.addParameter('onlycenters'  , false    , @islogical);
 p.addParameter('location'     , 'all');
-p.addParameter('userfsize'    , 2        , @isnumeric);
-p.addParameter('userfsizemin' , 2        , @isnumeric);
+p.addParameter('userfsize'    , 1        , @isnumeric);
+p.addParameter('userfsizemin' , 1        , @isnumeric);
 p.addParameter('centerperc'   , 50       , @isnumeric);
 p.addParameter('usehrf'       , 'mix'    , @ischar);
 p.addParameter('linestyle'    , '-'      , @ischar);
@@ -28,10 +28,13 @@ p.addParameter('addcibar'     , false    , @islogical);
 p.addParameter('addcihist'    , false    , @islogical);
 p.addParameter('useellipse'   , false    , @islogical);
 p.addParameter('addtext'      , true     , @islogical);
-p.addParameter('xlims'        , [1,5]    , @isnumeric);
-p.addParameter('ylims'        , [1,5]    , @isnumeric);
+p.addParameter('adddice'      , false     , @islogical);
+p.addParameter('addsnr'       , false     , @islogical);
+p.addParameter('xlims'        , [.8,5]    , @isnumeric);
+p.addParameter('ylims'        , [.8,5]    , @isnumeric);
 p.addParameter('xtick'        , [2:4]    , @isnumeric);
 p.addParameter('ytick'        , [2:4]    , @isnumeric);
+
 % Parse. Assign result inside each case
 p.parse(compTable, tools, varargin{:});
 % Read here only the generic ones
@@ -58,6 +61,8 @@ addcibar      = p.Results.addcibar;
 addcihist     = p.Results.addcihist; 
 useEllipse    = p.Results.useellipse; 
 addtext       = p.Results.addtext; 
+adddice       = p.Results.adddice; 
+addsnr        = p.Results.addsnr; 
 xlims         = p.Results.xlims; 
 ylims         = p.Results.ylims; 
 xtick         = p.Results.xtick; 
@@ -117,6 +122,7 @@ for nt=1:length(tools)
     Sizes   = dt.(tool).sMaj;
     Sizemin = dt.(tool).sMin;
     Thetas  = dt.(tool).Th;
+    
     B       = prctile(Sizes, [twoTailedRange, 100 - twoTailedRange]);
     inRange = Sizes>=B(1) & Sizes<=B(2);
     % Apply
@@ -125,23 +131,51 @@ for nt=1:length(tools)
     Sizes   = Sizes(inRange);
     Sizemin = Sizemin(inRange);
     Thetas  = Thetas(inRange);
-
+    if addsnr
+        SNR     = dt.snr;
+        SNR     = SNR(inRange);
+        % Calculate mean and std of SNR
+        meanSNR = mean(SNR);
+        stdSNR  = std(SNR);
+    end
+    
     if onlyCenters
         % This will plot just the centers
         scatter(X0, Y0, 20, Cs(nt+1,:));
     else
-        % Plot circunferences or ellipses
+        if adddice
+            % Plot circunferences or ellipses
+            Esynth.center = [unique(dt.synth.x0), unique(dt.synth.y0)]; 
+            Esynth.sigma  = [unique(dt.synth.sMaj), unique(dt.synth.sMin)]; 
+            Esynth.theta  = unique(dt.synth.Th);
+            diceVals = [];
+            for ne = 1:length(Sizes)   
+                E2.center = [X0(ne),Y0(ne)]; 
+                E2.sigma = [Sizes(ne),Sizemin(ne)]; 
+                E2.theta = Thetas(ne);
+                diceVals = [diceVals, ellipseDice(Esynth, E2, 'show', false)];
+            end
+            % Calculate mean and std of DICE
+            meanDiceVal = mean(diceVals);
+            stdDiceVal  = std(diceVals);
+        end
+        
         if useEllipse
             for ne = 1:length(Sizes)                
-                h = drawellipse(X0(ne),Y0(ne),Thetas(ne),Sizes(ne)/2,Sizemin(ne)/2);
+                h = drawellipse(X0(ne),Y0(ne),Thetas(ne),Sizes(ne),Sizemin(ne));
                 set(h,'LineWidth',lineWidth,'LineStyle',lineStyle,'Color',Cs(nt+1,:));
                 hold on
             end
         else
             centers = [X0,Y0];
-            radii   = Sizes/2; % Viscircles needs radius and sigma-s are diameters
+            radii   = Sizes; % Viscircles needs radius and sigma-s are diameters
             viscircles(centers,radii,'LineWidth',lineWidth,'LineStyle',lineStyle,'Color',Cs(nt+1,:));
         end
+    end
+    if adddice && addsnr
+        text(1.1*xlims(1),1.1*ylims(1),sprintf('DICE:%.2f(±%.2f) | SNR:%.2f(±%.2f)',...
+                          meanDiceVal, stdDiceVal,meanSNR, stdSNR), ...
+             'FontWeight','bold','FontSize',12)
     end
     hold on; grid on;axis equal
     % Edit the legend to understand how many values went in
@@ -174,12 +208,12 @@ else
         end
     else
         if (length(unique(dt.synth.x0)) == 1 && length(unique(dt.synth.y0)) == 1)
-            viscircles([unique(dt.synth.x0),unique(dt.synth.y0)],userfsize/2,...
+            viscircles([unique(dt.synth.x0),unique(dt.synth.y0)],userfsize,...
                 'LineWidth',2.5,'Color',Cs(1,:),'LineStyle','--');
         else
             xys = unique(dt.synth(:,{'x0','y0'}));
             for nx=1:height(xys)
-                viscircles([xys{nx,1}, xys{nx,2}],userfsize/2,...
+                viscircles([xys{nx,1}, xys{nx,2}],userfsize,...
                 'LineWidth',2.5,'Color',Cs(1,:),'LineStyle','--');
             end
         end
@@ -203,7 +237,7 @@ end
 if strcmp(noiseLevel, "none")
     if useEllipse
         h = drawellipse(unique(dt.(tool).x0),unique(dt.(tool).y0),unique(dt.(tool).Th),...
-                        unique(dt.(tool).sMaj)/2, unique(dt.(tool).sMin)/2);
+                        unique(dt.(tool).sMaj), unique(dt.(tool).sMin));
         set(h,'LineWidth',lineWidth,'LineStyle',lineStyle,'Color',Cs(nt+1,:));
     else
         viscircles(centers,radii,'LineWidth',lineWidth,'LineStyle',lineStyle,'Color',Cs(nt+1,:));

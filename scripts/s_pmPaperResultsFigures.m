@@ -4,26 +4,28 @@
 
 % Create the names that will be used in this script
 
-close all;clear all;clc
+% close all;clear all;clc
 % tbUse prfmodel;
 saveTo = '/Users/glerma/gDrive/STANFORD/PROJECTS/2019_PRF_Validation_methods_(Gari)/__PUBLISH__/PAPER_SUBMISSION01/Figures/RAW';
 
 
 % Control execution of the script file
-defineFileNames          = true;
-generateInputFiles       = false;
-uploadInputFiles         = false;
-analysisInputFiles       = false;
-downloadLoadFiles        = true;
-createComptTables        = true;
-plotGroupAnalysis        = false;
-plotCloudPoints          = false;
-plotHRFwidthtestsREALS   = false;
-plotHRFwidthtestsBOYNTON = false;
-plotHRFwidthtestsBOYNTONslow = true;
-plotHRFwidthtestsVISTA   = false;
-ForwardModelSteps        = false;
-AppendixNoiseElements    = false;
+defineFileNames              = false;
+generateInputFiles           = false;
+uploadInputFiles             = false;
+analysisInputFiles           = false;
+downloadLoadFiles            = false;
+createComptTables            = false;
+plotGroupAnalysis            = false;
+plotCloudPoints              = false;
+plotHRFwidthtestsREALS       = false;
+plotHRFwidthtestsBOYNTON     = true;
+plotHRFwidthtestsBOYNTONslow = false;
+plotNoiselessSizeTest        = false;
+plotHRFwidthtestsVISTA       = false;
+ForwardModelSteps            = false;
+AppendixNoiseElements        = false;
+randomStimTest               = false;
 
 %% defineFileNames
 if defineFileNames
@@ -476,31 +478,35 @@ if plotHRFwidthtestsBOYNTON
 
     HRF                                      = struct();
     HRF(1).Type                              = 'boynton';  
-    HRF(1).normalize                         = 'height'; 
+    % HRF(1).normalize                         = 'height'; % biorxiv version, before Jon's changes to prfmodel
+    HRF(1).normalize                         = 'sum';
     HRF(1).params.n = 3;
     HRF(1).params.tau = 1.08;
     HRF(1).params.delay = 2.05;
         
     HRF(2).Type                              = 'boynton';
-    HRF(2).normalize                         = 'height'; 
+    % HRF(2).normalize                         = 'height'; 
+    HRF(1).normalize                         = 'sum';
     HRF(2).params.n = 3;
     HRF(2).params.tau = 1.38;
     HRF(2).params.delay = 2;
     
     HRF(3).Type                              = 'boynton';
-    HRF(3).normalize                         = 'height'; 
+    % HRF(3).normalize                         = 'height'; 
+    HRF(1).normalize                         = 'sum';
     HRF(3).params.n = 3;
     HRF(3).params.tau = 1.68;
     HRF(3).params.delay = 1.75;
     
     HRF(4).Type                              = 'boynton';
-    HRF(4).normalize                         = 'height'; 
+    % HRF(4).normalize                         = 'height'; 
+    HRF(1).normalize                         = 'sum';
     HRF(4).params.n = 3;
     HRF(4).params.tau = 1.935;
     HRF(4).params.delay = 1.65;
     
-    HRF(5).Type                              = 'canonical'; 
-    HRF(5).normalize                         = 'height'; 
+    % HRF(5).Type                              = 'canonical'; 
+    % HRF(5).normalize                         = 'height'; 
     
     COMBINE_PARAMETERS.HRF                   = HRF;
         Noise                                = struct();
@@ -508,13 +514,13 @@ if plotHRFwidthtestsBOYNTON
     COMBINE_PARAMETERS.Noise                 = Noise;
     synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats',1);
     synthDT = pmForwardModelCalculate(synthDT);
-    sDT = synthDT;
+    sDT     = synthDT;
     
     %% Solve it
     boyntonresults = pmModelFit(sDT, 'aprf');
     
     %% Create comptTable
-        paramDefaults = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
+    paramDefaults = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
         boyntoncompTable  = pmResultsCompare(sDT, {'aprf'}, {boyntonresults}, ...
         'params', paramDefaults, ...
         'shorten names',true, ...
@@ -528,7 +534,7 @@ if plotHRFwidthtestsBOYNTON
     
     % Create the fit plots with the ground truth
     tools  = {'aprf'}; nslvl  = 'none';
-    HRFs   = {'boynton','boynton','boynton','boynton','canonical'};
+    HRFs   = {'boynton','boynton','boynton','boynton'}; % ,'canonical'};
     for ii=1:height(boyntoncompTable)
         subplot(2,5,ii)
         useHRF = HRFs{ii};
@@ -557,9 +563,9 @@ if plotHRFwidthtestsBOYNTON
             'xlims',[0,20],'color',Cs(ii+1,:),'line',line)];
         leg = [leg;thisleg];
     end
-    legend(a,{'Boynton 1','Boynton 2','Boynton 3','Boynton 4','aprf\_canonical'})
+    legend(a,{'Boynton 1','Boynton 2','Boynton 3','Boynton 4'}); % ,'aprf\_canonical'})
     legend(a,leg)
-    title('Boynton HRFs modulated in width and canonical aprf')
+    title('Boynton HRFs modulated in width') %  and canonical aprf')
     xticks([0:20])
     
     fnameRoot = 'HRF_and_width';
@@ -678,7 +684,6 @@ if plotHRFwidthtestsBOYNTONslow
     
 end
 
-
 %% plotNoiselessSizeTest
 if plotNoiselessSizeTest
     COMBINE_PARAMETERS                       = struct();
@@ -787,7 +792,6 @@ if plotNoiselessSizeTest
     
     
 end
-
 
 %% plotHRFwidthtestsVISTA
 if plotHRFwidthtestsVISTA
@@ -1002,6 +1006,7 @@ if AppendixNoiseElements
 end
 
 %% Jon's notes, another test to do
+if randomStimTest
 % Another stimulus manipulation that would reduce or even eliminate tradeoffs
 % between the hrf and prf size is to randomize the sequence of bar positions.
 % Some groups do this (including our 2013 css paper). The downside to
@@ -1124,7 +1129,7 @@ end
     
     
     
-    %% Solve it
+    % Solve it
     noshuffle   = pmModelFit(sDT_noshuffle, 'aprf');
     withshuffle = pmModelFit(sDT_withshuffle, 'aprf');
     p           = fullfile(pmRootPath,'local','randomstim');
@@ -1133,7 +1138,7 @@ end
     save(fullfile(pmRootPath,'local','randomstim','withshuffle_aprf_100_nojitter.mat'),...
         'sDT_withshuffle', 'withshuffle')
     
-    %% Create comptTable
+    % Create comptTable
     paramDefaults = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
     noshufflecompTable  = pmResultsCompare(sDT_noshuffle, {'aprf'}, {noshuffle}, ...
         'params', paramDefaults, ...
@@ -1144,7 +1149,7 @@ end
         'shorten names',true, ...
         'dotSeries', false);
     
-    %%  Plot it
+    %  Plot it
     hh = mrvNewGraphWin('HRF comparison');
     set(hh,'Position',[0.007 0.62  0.6  0.6]);
     nrows = 2; ncols = 4;
@@ -1188,5 +1193,5 @@ end
 %     saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
 
 
-
+end
 

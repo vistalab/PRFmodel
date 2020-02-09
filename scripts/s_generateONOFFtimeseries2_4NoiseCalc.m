@@ -10,14 +10,16 @@
 % 3/ Try to mimic the noise spectrum of these three voxels in our syntetic signal
 % 
 % Prepare and start always from scratch
-clear all; close all; clc;
-tbUse prfmodel;
+%{
+    clear all; close all; clc;
+    tbUse prfmodel;
+%}
 % Save files to
-saveTo = '/Users/glerma/gDrive/STANFORD/PROJECTS/2019_PRF_Validation_methods_(Gari)/__PUBLISH__/PAPER_SUBMISSION01/Figures/RAW';
+saveTo = '/Users/glerma/gDrive/STANFORD/PROJECTS/2019_PRF_Validation_methods_(Gari)/__PUBLISH__/PAPER_SUBMISSION02/Figures/RAW';
 % Three colors
-rcolor = [1 0 0]*0.75;
-gcolor = [0 1 0]*0.75;
-bcolor = [0 0 1]*0.75;
+rcolor = [1 0 0] * 0.75;
+gcolor = [0 1 0] * 0.75;
+bcolor = [0 0 1] * 0.75;
 
 %% Read NYU niftis 
 URLToOSFNoiseTests = 'https://files.osf.io/v1/resources/2dusf/providers/osfstorage/5dc5d6787f37e3000ecb477a?action=download&version=1&direct';
@@ -226,10 +228,13 @@ tscoh        = tscoh(selected,:)';
 % How many repetitions do we have in this session
 nReps   = size(ts,3);
 V1diff1 = zeros([length(selected),nTimes, nReps]);
+snrs    = zeros([length(selected), nReps]);
 for nv=1:length(selected)
     for thisRep = 1 :nReps
         oneRep                       = tsrealNorm(nv,1:nTimes,thisRep);
-        V1diff1(nv,1:nTimes,thisRep) = pm_fitSinusoidal(oneRep, period); 
+        [diff, fit]                  = pm_fitSinusoidal(oneRep, period); 
+        V1diff1(nv,1:nTimes,thisRep) = diff;
+        snrs(nv,thisRep)             = snr(fit, diff); 
         % To visualize the fit execute:
         % pm_fitSinusoidal(oneRep, period,'plotit',true);
     end
@@ -260,6 +265,9 @@ mrvNewGraphWin('diff noise hist');
 amax    = plot(XVALS(maxNoiseIndex,:),PDF(maxNoiseIndex,:),'Color',rcolor,'LineStyle','-','LineWidth',2); hold on;
 amid    = plot(XVALS(midNoiseIndex,:),PDF(midNoiseIndex,:),'Color',bcolor,'LineStyle','-','LineWidth',2);
 amin    = plot(XVALS(minNoiseIndex,:),PDF(minNoiseIndex,:),'Color',gcolor,'LineStyle','-','LineWidth',2);
+snrmax  = mean(snrs(maxNoiseIndex,:));
+snrmid  = mean(snrs(midNoiseIndex,:));
+snrmin  = mean(snrs(minNoiseIndex,:));
 xlabel('Relative noise values'); ylabel('Probability density'); title('');
 legend({'High noise voxel','Mid noise voxel','Low noise voxel'})
 set(gca,'FontSize',14)
@@ -329,6 +337,8 @@ text(1,0.09,sprintf('Low (coh.:%0.2f, contr: %0.2f), Mid (coh.:%0.2f, contr: %0.
                          tscoh(minNoiseIndex),tscontr(minNoiseIndex),...
                          tscoh(midNoiseIndex),tscontr(midNoiseIndex),...
                          tscoh(maxNoiseIndex),tscontr(maxNoiseIndex)))
+text(1,0.07,sprintf('Low (SNR: %0.2f), Mid (SNR: %0.2f), High (SNR: %0.2f)',...
+                         snrmin,snrmid,snrmax))                     
 
 % To calculate the fft, use the first repetition time series always
 subplot(2,2,3)
@@ -377,53 +387,89 @@ legend({'High noise voxel','Mid noise voxel','Low noise voxel'})
 xlabel('Hz'); ylabel('relative amplitude');set(gca,'FontSize',14)
 title('noise spectrum of the 3 selected voxels')
 
+
+
+
+
+%% Plot the three noise and simulated voxels for comparison
 % Save just the second subplot but in three separated voxels
 mrvNewGraphWin('Three voxels and their sinusoidal','wide');
 t = (1:size(data,2)) * tr;
 subplot(1,3,1)
-plot(t, tsmnrealNorm(:,minNoiseIndex), '-','color',gcolor, 'LineWidth', 2);hold on;
 [~,yhat] = pm_fitSinusoidal(tsmnrealNorm(:,minNoiseIndex), period);
+% to0 = 0-yhat(1);
+% plot(t, to0+tsmnrealNorm(:,minNoiseIndex), '-','color',gcolor, 'LineWidth', 2);hold on;
+% plot(t, to0+yhat, '-','color','k', 'LineWidth', 1);
+% ylim([-0.05,0.15])
+plot(t, tsmnrealNorm(:,minNoiseIndex), '-','color',gcolor, 'LineWidth', 2);hold on;
 plot(t, yhat, '-','color','k', 'LineWidth', 1);
 ylim([-0.1,0.1])
-ylabel('Signal percent change');
+ylabel('Signal fraction change');
 xlabel('Time [sec]');set(gca, 'XGrid', 'off', 'FontSize', 16)
-title('Low noise voxel')
+title(sprintf('Low noise voxel'))
+text(1,-0.09,sprintf('Contr.(s+n):%0.2f | Contr.(s): %0.2f | SNR: %0.2f', ... % | PWR: %0.2f', ...
+                    tscontr(minNoiseIndex), (max(yhat)-min(yhat))/2, snrmin), ... % , rms(to0+tsmnrealNorm(:,minNoiseIndex))^2), ...
+     'FontSize',16,'FontWeight','bold')
 
 subplot(1,3,2)
-plot(t, tsmnrealNorm(:,midNoiseIndex), '-','color',bcolor, 'LineWidth', 2);hold on;
 [~,yhat] = pm_fitSinusoidal(tsmnrealNorm(:,midNoiseIndex), period);
+% to0 = 0-yhat(1);
+% plot(t, to0+tsmnrealNorm(:,midNoiseIndex), '-','color',bcolor, 'LineWidth', 2);hold on;
+% plot(t, to0+yhat, '-','color','k', 'LineWidth', 1);
+% ylim([-0.05,0.15])
+plot(t, tsmnrealNorm(:,midNoiseIndex), '-','color',bcolor, 'LineWidth', 2);hold on;
 plot(t, yhat, '-','color','k', 'LineWidth', 1);
 ylim([-0.1,0.1])
 xlabel('Time [sec]');set(gca, 'XGrid', 'off', 'FontSize', 16)
-title('Middle noise voxel')
-
+title(sprintf('Middle noise voxel'))
+text(1,-0.09,sprintf('Contr.(s+n):%0.2f | Contr.(s): %0.2f | SNR: %0.2f', ...
+                    tscontr(midNoiseIndex), (max(yhat)-min(yhat))/2, snrmid), ...
+     'FontSize',16,'FontWeight','bold')
+ 
 subplot(1,3,3)
-plot(t, tsmnrealNorm(:,maxNoiseIndex), '-','color',rcolor, 'LineWidth', 2); hold on;
 [~,yhat] = pm_fitSinusoidal(tsmnrealNorm(:,maxNoiseIndex), period);
+% to0 = 0-yhat(1);
+% plot(t, to0+tsmnrealNorm(:,maxNoiseIndex), '-','color',rcolor, 'LineWidth', 2); hold on;
+% plot(t, to0+yhat, '-','color','k', 'LineWidth', 1); 
+% ylim([-0.05,0.15])
+plot(t, tsmnrealNorm(:,maxNoiseIndex), '-','color',rcolor, 'LineWidth', 2); hold on;
 plot(t, yhat, '-','color','k', 'LineWidth', 1); 
 ylim([-0.1,0.1])
 xlabel('Time [sec]');set(gca, 'XGrid', 'off', 'FontSize', 16)
-title('High noise voxel')
-
+title(sprintf('High noise voxel'))
+text(1,-0.09,sprintf('Contr.(s+n):%0.2f | Contr.(s): %0.2f | SNR: %0.2f', ...
+                    tscontr(maxNoiseIndex), (max(yhat)-min(yhat))/2, snrmax), ...
+     'FontSize',16,'FontWeight','bold')
+ 
 fnameRoot = 'Three_voxels_and_their_sinusoidal';
 saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
 
 
-%% Fit the parameters in pmNoise until we have similar values
+
+
+
+
+
+
+
+
+
+
+% Fit the parameters in pmNoise until we have similar values
 % It is already a signal percent change
 % No need to create noise free signal and substract. Our noise is already fMRI
 % BOLD signal percent change
 % Create generic
 pm                       = prfModel;
-pm.TR                    = 1.5;
-pm.BOLDcontrast          = 10;
+pm.TR                    = 1;
+pm.BOLDcontrast          = 4;
 pm.Noise.jitter          = [0,0]; % [freq, ampl]
-pm.signalPercentage      = 'spc';
-pm.Stimulus.durationSecs = 250;
+pm.signalPercentage      = 'frac';
+pm.Stimulus.durationSecs = 200;
 pm.compute;
 
 % PLOT IT
-sfrequency      = ((1/pm.TR)*(0:(pm.timePointsN/2)-1)/pm.timePointsN)';
+sfrequency      = ((1/pm.TR)*(0:round(pm.timePointsN/2)-1)/pm.timePointsN)';
 
 mrvNewGraphWin('synth vs real','wide');
 
@@ -435,13 +481,17 @@ pm.Noise.compute;
 difflow = pm.Noise.values;
 Fsynth          = abs(fft(pm.Noise.values)/pm.timePointsN)';
 Fsynth(2:end-1) = 2*Fsynth(2:end-1);
-Fsynth          = Fsynth(1:(pm.timePointsN/2));
+Fsynth          = Fsynth(1:round((pm.timePointsN/2)));
 Fsynthmax       = Fsynth;
 pm.plot('what','both','window',false,'addtext',false,'color',gcolor)
 xlabel('Time [sec]'),set(gca,'FontSize',16)
 ylabel('BOLD contrast')
 ylim([-0.2,0.3])
-title('LOW NOISE VOXEL')
+pm.compute
+title('Low noise voxel')
+text(1,-0.15,sprintf('Contr.(s+n):%0.2f | Contr.(s): %0.2f | SNR: %0.2f', ...
+                    (max(pm.BOLDnoise)-min(pm.BOLDnoise))/2, (max(pm.BOLD)-min(pm.BOLD))/2, pm.SNR), ...
+     'FontSize',16,'FontWeight','bold')
 
 subplot(2,3,2)
 % Change for mid voxel
@@ -451,13 +501,17 @@ pm.Noise.compute;
 diffmid = pm.Noise.values;
 Fsynth          = abs(fft(pm.Noise.values)/pm.timePointsN)';
 Fsynth(2:end-1) = 2*Fsynth(2:end-1);
-Fsynth          = Fsynth(1:(pm.timePointsN/2));
+Fsynth          = Fsynth(1:round((pm.timePointsN/2)));
 Fsynthmid       = Fsynth;
 pm.plot('what','both','window',false,'addtext',false,'color',bcolor)
 set(gca,'FontSize',16);
 ylim([-0.2,0.3])
 xlabel('Time [sec]'), 
-title('MID NOISE VOXEL')
+pm.compute
+title('Mid noise voxel')
+text(1,-0.15,sprintf('Contr.(s+n):%0.2f | Contr.(s): %0.2f | SNR: %0.2f', ...
+                    (max(pm.BOLDnoise)-min(pm.BOLDnoise))/2, (max(pm.BOLD)-min(pm.BOLD))/2, pm.SNR), ...
+     'FontSize',16,'FontWeight','bold')
 
 subplot(2,3,3)
 % Change for min voxel
@@ -467,14 +521,16 @@ pm.Noise.compute;
 diffhigh = pm.Noise.values;
 Fsynth          = abs(fft(pm.Noise.values)/pm.timePointsN)';
 Fsynth(2:end-1) = 2*Fsynth(2:end-1);
-Fsynth          = Fsynth(1:(pm.timePointsN/2));
+Fsynth          = Fsynth(1:round((pm.timePointsN/2)));
 Fsynthmin       = Fsynth;
 pm.plot('what','both','window',false,'addtext',false,'color',rcolor);
 ylim([-0.2,0.3])
 xlabel('Time [sec]'), set(gca,'FontSize',16)
-title('HIGH NOISE VOXEL')
-
-
+pm.compute
+title('High noise voxel')
+text(1,-0.15,sprintf('Contr.(s+n):%0.2f | Contr.(s): %0.2f | SNR: %0.2f', ...
+                    (max(pm.BOLDnoise)-min(pm.BOLDnoise))/2, (max(pm.BOLD)-min(pm.BOLD))/2, pm.SNR), ...
+     'FontSize',16,'FontWeight','bold')
 
 subplot(2,3,4)
 plot(sfrequency(2:end,:),Fsynthmax(2:end,:),'-','color',gcolor);hold on;
@@ -503,7 +559,10 @@ fnameRoot = 'SyntheticVoxelTimeSeriesAndSpectrum';
 saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
 
 
-% Plot the noise distribuion now
+
+
+
+%% Plot the noise distribuion now
 [pdflow,xvalslow] = ksdensity(difflow);
 [pdfmid,xvalsmid] = ksdensity(diffmid);
 [pdfhigh,xvalshigh] = ksdensity(diffhigh);
