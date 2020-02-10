@@ -33,9 +33,9 @@ function [compTable_noshuffle, tSeries_noshuffle, sDT_noshuffle, ...
     % TEST IT
     [compTable_noshuffle, tSeries_noshuffle, sDT_noshuffle, ...
      compTable_withshuffle, tSeries_withshuffle, sDT_withshuffle] = ...
-     pmWithNoiseRandomStim('aprfcss','plotit',true,'plotts',false,...
+     pmWithNoiseRandomStim('vista','plotit',true,'plotts',false,...
                            'signalperc','bold','repeats',10,'shuffleseed',12345,...
-                           'size',1, 'seed','random','voxel','low',...
+                           'radius',1, 'seed','none','voxel','mid',...
                            'hrfnorm','norm','hrftype','boynton', ...
                            'boldcontrast',4)
 
@@ -105,7 +105,7 @@ p.addParameter('repeats'     ,  10              , @isnumeric);
 p.addParameter('signalperc'  ,  'bold'          , @ischar);
 p.addParameter('shuffleseed' ,  12345           , @isnumeric);
 p.addParameter('boldcontrast',  5               , @isnumeric);
-p.addParameter('size'        ,  1               , @isnumeric);
+p.addParameter('radius'      ,  1               , @isnumeric);
 p.addParameter('hrftype'     , 'boynton'        , @ischar);
 p.addParameter('hrfnorm'     , 'norm'           , @ischar);
 % Implementation specifics
@@ -137,7 +137,7 @@ jitter      = p.Results.jitter;
 repeats     = p.Results.repeats;
 shuffleseed = p.Results.shuffleseed;
 boldcontrast= p.Results.boldcontrast;
-size        = p.Results.size;
+size        = p.Results.radius;
 hrftype     = p.Results.hrftype;
 hrfnorm     = p.Results.hrfnorm;
 signalperc  = string(p.Results.signalperc);

@@ -27,6 +27,14 @@ ForwardModelSteps            = false;
 AppendixNoiseElements        = false;
 randomStimTest               = false;
 
+%% Initial checks
+% mrTools writes some defaults in the local computer that mess the Vista
+% results, make sure that they are always deleted. It is done after mrTools is
+% run as well, but we need to be sure
+if exist('~/.mrDefaults.mat','file')
+    delete '~/.mrDefaults.mat'
+end
+
 %% defineFileNames
 if defineFileNames
     % INPUTS TO prfsynth
@@ -1191,7 +1199,7 @@ if randomStimTest
     
 %     fnameRoot = 'StimShuffleTest_noiseless';
 %     saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
-
-
 end
+
+%% Plots showing that 
 

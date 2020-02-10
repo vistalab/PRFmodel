@@ -465,6 +465,7 @@ pm.TR                    = 1;
 pm.BOLDcontrast          = 4;
 pm.Noise.jitter          = [0,0]; % [freq, ampl]
 pm.signalPercentage      = 'frac';
+
 pm.Stimulus.durationSecs = 200;
 pm.compute;
 
