@@ -744,13 +744,12 @@ pm.Noise.seed=12345;
                     pm.computeBOLD
                     if w;mrvNewGraphWin([pm.Type 'Synthetic BOLD signal (no noise)']);end
                     plot(pm.timePointsSeries, pm.BOLD,'color',c);
-                    grid on; xlabel('Time (sec)'); ylabel('Relative amplitude');
                 case 'withnoise'
                     pm.compute;
                     if w;mrvNewGraphWin([pm.Type 'Synthetic BOLD signal (noise)']);end
                     plot(pm.timePointsSeries, pm.BOLDnoise,'color',c);
                     grid on; xlabel('Time (sec)'); ylabel('Relative amplitude');
-                  case 'both'
+                case 'both'
                     pm.compute;
                     if w;mrvNewGraphWin([pm.Type 'Synthetic BOLD signals']);end
                     plot(pm.timePointsSeries, pm.BOLD,'--','color','k'); hold on;
@@ -795,8 +794,8 @@ pm.Noise.seed=12345;
                     
                     % Plot it
                     if w;mrvNewGraphWin(['Individual component spectrum']);end
-                    plot(fts, Fts);hold on;
-                    if h;plot(fhrf, Fhrf);end
+                    plot(fts, Fts, 'Color', c);hold on;
+                    if h;plot(fhrf, Fhrf,'k-');end
                     grid on; xlabel('f[Hz]'); ylabel('Relative amplitude');
                     title(['Individual component spectrum, TR=' num2str(pm.TR)])
                     

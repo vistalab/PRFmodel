@@ -33,10 +33,10 @@ function [compTable_noshuffle, tSeries_noshuffle, sDT_noshuffle, ...
     % TEST IT
     [compTable_noshuffle, tSeries_noshuffle, sDT_noshuffle, ...
      compTable_withshuffle, tSeries_withshuffle, sDT_withshuffle] = ...
-     pmWithNoiseRandomStim('vista','plotit',true,'plotts',false,...
-                           'signalperc','bold','repeats',10,'shuffleseed',12345,...
-                           'radius',1, 'seed','none','voxel','mid',...
-                           'hrfnorm','norm','hrftype','boynton', ...
+     pmWithNoiseRandomStim('aprfcss','plotit',true,'plotts',false,...
+                           'signalperc','bold','repeats',1,'shuffleseed',12345,...
+                           'radius',2, 'seed','none','voxel','mid',...
+                           'hrfnorm','height','hrftype','boynton', ...
                            'boldcontrast',4)
 
     
@@ -108,6 +108,10 @@ p.addParameter('boldcontrast',  5               , @isnumeric);
 p.addParameter('radius'      ,  1               , @isnumeric);
 p.addParameter('hrftype'     , 'boynton'        , @ischar);
 p.addParameter('hrfnorm'     , 'norm'           , @ischar);
+p.addParameter('scanduration', 200              , @isnumeric);
+p.addParameter('tr'          , 1                , @isnumeric);
+p.addParameter('window'      , false            , @islogical);
+p.addParameter('onlybarshuffleorboth', 'both'   , @ischar);
 % Implementation specifics
     options       = struct();
     options.aprf  = struct('seedmode'     , [0 1 2], ...
@@ -140,13 +144,32 @@ boldcontrast= p.Results.boldcontrast;
 size        = p.Results.radius;
 hrftype     = p.Results.hrftype;
 hrfnorm     = p.Results.hrfnorm;
+scanduration= p.Results.scanduration;
+tr          = p.Results.tr;
+window      = p.Results.window;
+onlybarshuffleorboth = p.Results.onlybarshuffleorboth;
 signalperc  = string(p.Results.signalperc);
 % We need to be sure that if only some of the params are passed, the rest will
 % be taken from the defaults 
 allOptions  = pmParamsCompletenessCheck(allOptions, options);
 
-%% Create the test data
+switch onlybarshuffleorboth
+    case {'noshuffle'}
+        doNS = true;
+        doS  = false;
+    case {'shuffle'}
+        doNS = false;
+        doS  = true;
+    case {'both'}
+        doNS = true;
+        doS  = true;
+    otherwise
+        error('%s not recognized, options: shuffle, noshuffle, both',onlybarshuffleorboth)
+end
 
+
+%% Create the test data
+if doNS
     COMBINE_PARAMETERS                       = struct();
     COMBINE_PARAMETERS.signalPercentage      = signalperc;
     COMBINE_PARAMETERS.BOLDcontrast          = boldcontrast;
@@ -154,8 +177,8 @@ allOptions  = pmParamsCompletenessCheck(allOptions, options);
     COMBINE_PARAMETERS.RF.Centery0           = [3];  
     COMBINE_PARAMETERS.RF.sigmaMajor         = [size];  
     COMBINE_PARAMETERS.RF.sigmaMinor         = 'same';
-    COMBINE_PARAMETERS.TR                    = 1;
-    COMBINE_PARAMETERS.Stimulus.durationSecs = 200;
+    COMBINE_PARAMETERS.TR                    = tr;
+    COMBINE_PARAMETERS.Stimulus.durationSecs = scanduration;
     COMBINE_PARAMETERS.Stimulus.Shuffle      = false;
     COMBINE_PARAMETERS.Stimulus.shuffleSeed  = shuffleseed;
     Noise                                    = struct();
@@ -194,9 +217,9 @@ allOptions  = pmParamsCompletenessCheck(allOptions, options);
     synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats',repeats);
     synthDT = pmForwardModelCalculate(synthDT);
     sDT_noshuffle = synthDT;
-
+end
     
-    
+if doS
     % CREATE ANOTHER STIM RANDOMIZING THE BARS
     COMBINE_PARAMETERS                       = struct();
     COMBINE_PARAMETERS.signalPercentage      = signalperc;
@@ -245,7 +268,7 @@ allOptions  = pmParamsCompletenessCheck(allOptions, options);
     synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats',repeats);
     synthDT = pmForwardModelCalculate(synthDT);
     sDT_withshuffle = synthDT;
-   
+end
 
 %% Launch the analysis
 switch prfimplementation
@@ -256,29 +279,31 @@ switch prfimplementation
         % options.aprf.usecss     = false;
         
         % Launch
-        results_noshuffle       = pmModelFit(sDT_noshuffle,'analyzePRF','options',options);
-        results_withshuffle     = pmModelFit(sDT_withshuffle,'analyzePRF','options',options);
+        
+        if doNS; results_noshuffle       = pmModelFit(sDT_noshuffle,'analyzePRF','options',options);end
+        if doS;  results_withshuffle     = pmModelFit(sDT_withshuffle,'analyzePRF','options',options);end
+        
     case {'aprfcss'}
         options.aprf            = allOptions.aprf;
         % options.aprf.maxpolydeg = 0;
         options.aprf.usecss     = true;
         
         % Launch
-        results_noshuffle                 = pmModelFit(sDT_noshuffle,'analyzePRF','options',options);
-        results_withshuffle                 = pmModelFit(sDT_withshuffle,'analyzePRF','options',options);
+        if doNS; results_noshuffle       = pmModelFit(sDT_noshuffle,'analyzePRF','options',options);end
+        if doS; results_withshuffle     = pmModelFit(sDT_withshuffle,'analyzePRF','options',options);end
     case {'afni_4','afni4','afni'}
         options.afni            = allOptions.afni;
         
         % Launch
-        results_noshuffle                 = pmModelFit(sDT_noshuffle,'afni','options',options);
-        results_withshuffle                 = pmModelFit(sDT_withshuffle,'afni','options',options);
+        if doNS; results_noshuffle       = pmModelFit(sDT_noshuffle,'afni','options',options);end
+        if doS;  results_withshuffle     = pmModelFit(sDT_withshuffle,'afni','options',options);end
     case {'afni_6','afni6'}
         options.afni            = allOptions.afni;
         options.afni.model      = 'afni6';
         
         % Launch
-        results_noshuffle                 = pmModelFit(sDT_noshuffle,'afni','options',options);
-        results_withshuffle                 = pmModelFit(sDT_withshuffle,'afni','options',options);
+        if doNS; results_noshuffle                 = pmModelFit(sDT_noshuffle,'afni','options',options);end
+        if doS;  results_withshuffle                 = pmModelFit(sDT_withshuffle,'afni','options',options);end
     case {'vista','mrvista','vistasoft','vista4'}
         options.vista            = allOptions.vista;
         options.vista.model      = 'one gaussian';
@@ -289,8 +314,8 @@ switch prfimplementation
         options.vista.numberStimulusGridPoints =  50;  
         
         % Launch
-        results_noshuffle                  = pmModelFit(sDT_noshuffle,'vistasoft','options',options);    
-        results_withshuffle                  = pmModelFit(sDT_withshuffle,'vistasoft','options',options);    
+        if doNS; results_noshuffle                  = pmModelFit(sDT_noshuffle,'vistasoft','options',options);    end
+        if doS;  results_withshuffle                  = pmModelFit(sDT_withshuffle,'vistasoft','options',options);  end  
     case {'vistaoval','vista6'}
         options.vista            = allOptions.vista;
         options.vista.model      = 'one oval gaussian';
@@ -301,26 +326,26 @@ switch prfimplementation
         options.vista.numberStimulusGridPoints =  50;  
         
         % Launch
-        results_noshuffle                  = pmModelFit(sDT_noshuffle,'vistasoft','options',options);
-        results_withshuffle                  = pmModelFit(sDT_withshuffle,'vistasoft','options',options);
+        if doNS; results_noshuffle                  = pmModelFit(sDT_noshuffle,'vistasoft','options',options);end
+        if doS;  results_withshuffle                  = pmModelFit(sDT_withshuffle,'vistasoft','options',options);end
     case {'popeye','pop'}
         
         % Launch
-        results_noshuffle  = pmModelFit(sDT_noshuffle,'popeye');
-        results_withshuffle  = pmModelFit(sDT_withshuffle,'popeye');
+        if doNS; results_noshuffle  = pmModelFit(sDT_noshuffle,'popeye');end
+        if doS;  results_withshuffle  = pmModelFit(sDT_withshuffle,'popeye');end
     case {'popnoherf','popeyenohrf'}
         
         % Launch
-        results_noshuffle  = pmModelFit(sDT_noshuffle,'popeyenohrf');
-        results_withshuffle  = pmModelFit(sDT_withshuffle,'popeyenohrf');
+        if doNS; results_noshuffle  = pmModelFit(sDT_noshuffle,'popeyenohrf');end
+        if doS;  results_withshuffle  = pmModelFit(sDT_withshuffle,'popeyenohrf');end
     case {'mrtools','mlrtools','mlr'}
         options.mlr            = allOptions.mlr;
         options.mlr.quickFit   = 0;
         options.mlr.doParallel = 1;
         
         % Launch
-        results_noshuffle  = pmModelFit(sDT_noshuffle,'mlr','options',options);        
-        results_withshuffle  = pmModelFit(sDT_withshuffle,'mlr','options',options);        
+        if doNS; results_noshuffle  = pmModelFit(sDT_noshuffle,'mlr','options',options);    end    
+        if doS;  results_withshuffle  = pmModelFit(sDT_withshuffle,'mlr','options',options); end       
     otherwise
         error('%s not yet implemented',prfimplementation);
 end
@@ -328,28 +353,32 @@ end
 %% Create and display the results
 paramDefaults = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
 
-[compTable_noshuffle, tSeries_noshuffle] = pmResultsCompare(sDT_noshuffle, ... % Defines the input params
+if doNS;  [compTable_noshuffle, tSeries_noshuffle] = pmResultsCompare(sDT_noshuffle, ... % Defines the input params
                             {prfimplementation}, ... % Analysis names we want to see: 'aPRF','vista',
                             {results_noshuffle}, ...
                             'params', paramDefaults, ...
                             'shorten names',true, ...
                             'addIscloseCol', false, ...
                             'addsnrcol',true); 
+end
 
-[compTable_withshuffle, tSeries_withshuffle] = pmResultsCompare(sDT_withshuffle, ... % Defines the input params
+if doS;  [compTable_withshuffle, tSeries_withshuffle] = pmResultsCompare(sDT_withshuffle, ... % Defines the input params
                             {prfimplementation}, ... % Analysis names we want to see: 'aPRF','vista',
                             {results_withshuffle}, ...
                             'params', paramDefaults, ...
                             'shorten names',true, ...
                             'addIscloseCol', false, ...
                             'addsnrcol',true); 
+end
                         
                         
                         
 
 if plotts
-    hh = mrvNewGraphWin('HRF comparison');
-    set(hh,'Position',[0.007 0.62  .8  0.3]);
+    if window; 
+        hh = mrvNewGraphWin('HRF comparison');
+        set(hh,'Position',[0.007 0.62  .8  0.3]);
+    end
     nrows = 1; ncols = 2;
     
     subplot(nrows,ncols,1)
@@ -382,9 +411,18 @@ end
 
 if plotit
     %%  Plot it
-    hh = mrvNewGraphWin('HRF comparison');
-    set(hh,'Position',[0.007 0.62  0.6  0.6]);
-    nrows = 2; ncols = 4;
+    if window    
+        hh = mrvNewGraphWin('HRF comparison');
+        if strcmp(onlybarshuffleorboth,'both');
+            set(hh,'Position',[0.007 0.62  0.6  0.6]);
+        else
+            set(hh,'Position',[0.007 0.62  0.6  0.3]);
+        end
+    end
+    if strcmp(onlybarshuffleorboth,'both');nrows = 2; ncols = 4;
+    else
+        nrows = 1; ncols = 4;
+    end
     if strcmp(seed,'none')
         nslvl = 'none';
     else
@@ -399,43 +437,48 @@ if plotit
     % Create the fit plots with the ground truth
     tools  = {prfimplementation}; 
     HRFs   = {hrftype,hrftype,hrftype,hrftype};
-    for ii=1:4 % height(noshufflecompTable)
-        subplot(nrows,ncols,ii)
-        useHRF = HRFs{ii};
-        % ttable = compTable_noshuffle(ii,:);  
-        ttable = compTable_noshuffle((ii:4:(4*repeats-4)+ii)',:);
-        pmCloudOfResults(ttable  , tools ,'onlyCenters',false ,...
-            'userfsize' , size, ...
-            'centerPerc', 90     , 'useHRF'     , useHRF,...
-            'addsnr',true,'adddice',true,...
-            'lineStyle' , '-','color',Cs(ii+1,:), ...
-            'lineWidth' , .7      , 'noiselevel' , nslvl , ...
-            'xlims', [x0-2*size   , x0+2*size],...
-            'ylims', [y0-2*size   , y0+2*size],...
-            'xtick', [x0-2*size+1 : x0+2*size-1],...
-            'ytick', [y0-2*size+1 : y0+2*size-1],...
-            'newWin'    , false  , 'saveTo'     , '','saveToType','svg')
-        axis equal
+    if doNS
+        for ii=1:4 % height(noshufflecompTable)
+            subplot(nrows,ncols,ii)
+            useHRF = HRFs{ii};
+            % ttable = compTable_noshuffle(ii,:);
+            ttable = compTable_noshuffle((ii:4:(4*repeats-4)+ii)',:);
+            pmCloudOfResults(ttable  , tools ,'onlyCenters',false ,...
+                'userfsize' , size, ...
+                'centerPerc', 90     , 'useHRF'     , useHRF,...
+                'addsnr',true,'adddice',true,...
+                'lineStyle' , '-','color',Cs(ii+1,:), ...
+                'lineWidth' , .7      , 'noiselevel' , nslvl , ...
+                'xlims', [x0-2*size   , x0+2*size],...
+                'ylims', [y0-2*size   , y0+2*size],...
+                'xtick', [x0-2*size+1 : x0+2*size-1],...
+                'ytick', [y0-2*size+1 : y0+2*size-1],...
+                'newWin'    , false  , 'saveTo'     , '','saveToType','svg')
+            axis equal
+        end
     end
-    
-    % Plot the shuffled one
-    for ii=1:4  % height(withshufflecompTable)
-        subplot(nrows,ncols,ncols + ii)
-        useHRF = HRFs{ii};
-        % ttable = compTable_withshuffle(ii,:);  
-        ttable = compTable_withshuffle((ii:4:(4*repeats-4)+ii)',:);
-        pmCloudOfResults(ttable   , tools ,'onlyCenters',false ,...
-            'userfsize' , size, ...
-            'centerPerc', 90    ,'useHRF'     ,useHRF,...
-            'addsnr',true,'adddice',true,...
-            'lineStyle' , '-','color',Cs(ii+1,:), ...
-            'lineWidth' , .7     ,'noiselevel' ,nslvl , ...
-            'xlims', [x0-2*size  , x0+2*size],...
-            'ylims', [y0-2*size  , y0+2*size],...
-            'xtick', [x0-2*size+1:x0+2*size-1],...
-            'ytick', [y0-2*size+1:y0+2*size-1],...
-            'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
-        axis equal
+    if doS
+        % Plot the shuffled one
+        for ii=1:4  % height(withshufflecompTable)
+            addcolnum = 0;
+            if strcmp(onlybarshuffleorboth,'both');addcolnum = ncols;end
+            subplot(nrows,ncols,addcolnum + ii)
+            useHRF = HRFs{ii};
+            % ttable = compTable_withshuffle(ii,:);
+            ttable = compTable_withshuffle((ii:4:(4*repeats-4)+ii)',:);
+            pmCloudOfResults(ttable   , tools ,'onlyCenters',false ,...
+                'userfsize' , size, ...
+                'centerPerc', 90    ,'useHRF'     ,useHRF,...
+                'addsnr',true,'adddice',true,...
+                'lineStyle' , '-','color',Cs(ii+1,:), ...
+                'lineWidth' , .7     ,'noiselevel' ,nslvl , ...
+                'xlims', [x0-2*size  , x0+2*size],...
+                'ylims', [y0-2*size  , y0+2*size],...
+                'xtick', [x0-2*size+1:x0+2*size-1],...
+                'ytick', [y0-2*size+1:y0+2*size-1],...
+                'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+            axis equal
+        end
     end
 end
 

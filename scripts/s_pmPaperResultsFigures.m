@@ -6,7 +6,7 @@
 
 % close all;clear all;clc
 % tbUse prfmodel;
-saveTo = '/Users/glerma/gDrive/STANFORD/PROJECTS/2019_PRF_Validation_methods_(Gari)/__PUBLISH__/PAPER_SUBMISSION01/Figures/RAW';
+saveTo = '/Users/glerma/gDrive/STANFORD/PROJECTS/2019_PRF_Validation_methods_(Gari)/__PUBLISH__/PAPER_SUBMISSION02/Figures/RAW';
 
 
 % Control execution of the script file
@@ -19,13 +19,15 @@ createComptTables            = false;
 plotGroupAnalysis            = false;
 plotCloudPoints              = false;
 plotHRFwidthtestsREALS       = false;
-plotHRFwidthtestsBOYNTON     = true;
+plotHRFwidthtestsBOYNTON     = false;
 plotHRFwidthtestsBOYNTONslow = false;
 plotNoiselessSizeTest        = false;
 plotHRFwidthtestsVISTA       = false;
 ForwardModelSteps            = false;
 AppendixNoiseElements        = false;
 randomStimTest               = false;
+SNRvsSize                    = false;
+mitigationPLOT               = true
 
 %% Initial checks
 % mrTools writes some defaults in the local computer that mess the Vista
@@ -493,28 +495,22 @@ if plotHRFwidthtestsBOYNTON
     HRF(1).params.delay = 2.05;
         
     HRF(2).Type                              = 'boynton';
-    % HRF(2).normalize                         = 'height'; 
-    HRF(1).normalize                         = 'sum';
+    HRF(2).normalize                         = 'sum';
     HRF(2).params.n = 3;
     HRF(2).params.tau = 1.38;
     HRF(2).params.delay = 2;
     
     HRF(3).Type                              = 'boynton';
-    % HRF(3).normalize                         = 'height'; 
-    HRF(1).normalize                         = 'sum';
+    HRF(3).normalize                         = 'sum';
     HRF(3).params.n = 3;
     HRF(3).params.tau = 1.68;
     HRF(3).params.delay = 1.75;
     
     HRF(4).Type                              = 'boynton';
-    % HRF(4).normalize                         = 'height'; 
-    HRF(1).normalize                         = 'sum';
+    HRF(4).normalize                         = 'sum';
     HRF(4).params.n = 3;
     HRF(4).params.tau = 1.935;
     HRF(4).params.delay = 1.65;
-    
-    % HRF(5).Type                              = 'canonical'; 
-    % HRF(5).normalize                         = 'height'; 
     
     COMBINE_PARAMETERS.HRF                   = HRF;
         Noise                                = struct();
@@ -525,11 +521,14 @@ if plotHRFwidthtestsBOYNTON
     sDT     = synthDT;
     
     %% Solve it
-    boyntonresults = pmModelFit(sDT, 'aprf');
+    options.aprf  = struct('seedmode', [0 1 2], ...
+                           'display' , 'off'  , ...
+                           'usecss'  , false  );
+    boyntonresults = pmModelFit(sDT, 'aprf','options',options);
     
     %% Create comptTable
-    paramDefaults = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
-        boyntoncompTable  = pmResultsCompare(sDT, {'aprf'}, {boyntonresults}, ...
+    paramDefaults     = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
+    boyntoncompTable  = pmResultsCompare(sDT, {'aprf'}, {boyntonresults}, ...
         'params', paramDefaults, ...
         'shorten names',true, ...
         'dotSeries', false);
@@ -540,24 +539,12 @@ if plotHRFwidthtestsBOYNTON
 
     Cs  = 0.65 * distinguishable_colors(6,'w');
     
-    % Create the fit plots with the ground truth
-    tools  = {'aprf'}; nslvl  = 'none';
-    HRFs   = {'boynton','boynton','boynton','boynton'}; % ,'canonical'};
-    for ii=1:height(boyntoncompTable)
-        subplot(2,5,ii)
-        useHRF = HRFs{ii};
-        ttable = boyntoncompTable(ii,:);
-        pmCloudOfResults(ttable   , tools ,'onlyCenters',false ,'userfsize' , 2, ...
-            'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-','color',Cs(ii+1,:), ...
-            'lineWidth' , 2     ,'noiselevel' ,nslvl , ...
-            'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
-    end
-    
-    subplot(2,5,[6:10])
+    subplot(2,4,[1:4])
     a   = [];
     leg = [];
     for ii = 1:height(sDT)
         thispm = sDT.pm(ii);
+        
         if ii~=5
             line='-';
             % thisleg = {sprintf('Boynton %i (width=%1d)',ii,thispm.HRF.width)};
@@ -575,6 +562,22 @@ if plotHRFwidthtestsBOYNTON
     legend(a,leg)
     title('Boynton HRFs modulated in width') %  and canonical aprf')
     xticks([0:20])
+    
+    % Create the fit plots with the ground truth
+    tools  = {'aprf'}; nslvl  = 'none';
+    HRFs   = {'boynton','boynton','boynton','boynton'}; % ,'canonical'};
+    for ii=1:height(boyntoncompTable)
+        subplot(2,4,4+ii)
+        useHRF = HRFs{ii};
+        ttable = boyntoncompTable(ii,:);
+        pmCloudOfResults(ttable   , tools ,'onlyCenters',false ,'userfsize' , 2, ...
+            'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-','color',Cs(ii+1,:), ...
+            'lineWidth' , 2     ,'noiselevel' ,nslvl , ...
+            'xlim',[.5,5.5],'ylim',[.5,5.5],... 
+            'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+    end
+    
+
     
     fnameRoot = 'HRF_and_width';
     saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
@@ -1034,172 +1037,294 @@ if randomStimTest
 % What got me thinking about this is seeing Ione Fine on the email list. She
 % often likes to complain about sweep designs.
 
+[compTable_noshuffle, tSeries_noshuffle, sDT_noshuffle, ...
+ compTable_withshuffle, tSeries_withshuffle, sDT_withshuffle] = ...
+ pmWithNoiseRandomStim('aprfcss','plotit',true,'plotts',false,...
+                           'signalperc','bold','repeats',1,'shuffleseed',12345,...
+                           'radius',2, 'seed','none','voxel','mid',...
+                           'hrfnorm','norm','hrftype','boynton', ...
+                           'boldcontrast',4, 'scanduration',200, 'tr',1)
+fnameRoot = 'StimShuffleTest_noiseless';
+saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
 
-    COMBINE_PARAMETERS                       = struct();
-    COMBINE_PARAMETERS.signalPercentage      = "none";
-    COMBINE_PARAMETERS.RF.Centerx0           = [3];
-    COMBINE_PARAMETERS.RF.Centery0           = [3];  
-    COMBINE_PARAMETERS.RF.sigmaMajor         = [2];  
-    COMBINE_PARAMETERS.RF.sigmaMinor         = 'same';
-    COMBINE_PARAMETERS.TR                    = 1;
-    COMBINE_PARAMETERS.Stimulus.durationSecs = 200;
-    COMBINE_PARAMETERS.Stimulus.Shuffle      = false;
-    COMBINE_PARAMETERS.Stimulus.shuffleSeed  = 12345;
-    Noise                                    = struct();
-    Noise(1).seed                            = 'none';  % 'random', 'none', integer
-    Noise(1).voxel                           = 'mid';
-    COMBINE_PARAMETERS.Noise                 = Noise;
 
-    HRF                                      = struct();
-    HRF(1).Type                              = 'boynton';  
-    HRF(1).normalize                         = 'height'; 
-    HRF(1).params.n = 3;
-    HRF(1).params.tau = 1.08;
-    HRF(1).params.delay = 2.05;
-        
-    HRF(2).Type                              = 'boynton';
-    HRF(2).normalize                         = 'height'; 
-    HRF(2).params.n = 3;
-    HRF(2).params.tau = 1.38;
-    HRF(2).params.delay = 2;
-    
-    HRF(3).Type                              = 'boynton';
-    HRF(3).normalize                         = 'height'; 
-    HRF(3).params.n = 3;
-    HRF(3).params.tau = 1.68;
-    HRF(3).params.delay = 1.75;
-    
-    HRF(4).Type                              = 'boynton';
-    HRF(4).normalize                         = 'height'; 
-    HRF(4).params.n = 3;
-    HRF(4).params.tau = 1.935;
-    HRF(4).params.delay = 1.65;    
-    COMBINE_PARAMETERS.HRF                   = HRF;
-    % This is the same one as before, but now we want to do the slow stimuli version
-    % by Jon's suggestion
-    synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats',1);
-    synthDT = pmForwardModelCalculate(synthDT);
-    sDT_noshuffle = synthDT;
+%% Show that the SNR is reduced because the HRF is a low pass filter
+% Check how size is modeled
 
+xx = mrvNewGraphWin('SNR_LowerWithShuffle','wide');
+set(xx,'Position',[0.007 0.62  .4  .6]);
     
-    
-    
-    
-    
-    
-    % CREATE ANOTHER STIM RANDOMIZING THE BARS
-    COMBINE_PARAMETERS                       = struct();
-    COMBINE_PARAMETERS.signalPercentage      = "none";
-    COMBINE_PARAMETERS.RF.Centerx0           = [3];
-    COMBINE_PARAMETERS.RF.Centery0           = [3];  
-    COMBINE_PARAMETERS.RF.sigmaMajor         = [2];  
-    COMBINE_PARAMETERS.RF.sigmaMinor         = 'same';
-    COMBINE_PARAMETERS.TR                    = 1;
-    COMBINE_PARAMETERS.Stimulus.durationSecs = 200;
-    COMBINE_PARAMETERS.Stimulus.Shuffle      = true;
-    COMBINE_PARAMETERS.Stimulus.shuffleSeed  = 12345;
-    Noise                                    = struct();
-    Noise(1).seed                            = 'none';
-    Noise(1).voxel                           = 'mid';
-    Noise(1).jitter                          = [0.1, 0.1];
-    COMBINE_PARAMETERS.Noise                 = Noise;
+subplot(2,1,1)
 
-    HRF                                      = struct();
-    HRF(1).Type                              = 'boynton';  
-    HRF(1).normalize                         = 'height'; 
-    HRF(1).params.n = 3;
-    HRF(1).params.tau = 1.08;
-    HRF(1).params.delay = 2.05;
-        
-    HRF(2).Type                              = 'boynton';
-    HRF(2).normalize                         = 'height'; 
-    HRF(2).params.n = 3;
-    HRF(2).params.tau = 1.38;
-    HRF(2).params.delay = 2;
-    
-    HRF(3).Type                              = 'boynton';
-    HRF(3).normalize                         = 'height'; 
-    HRF(3).params.n = 3;
-    HRF(3).params.tau = 1.68;
-    HRF(3).params.delay = 1.75;
-    
-    HRF(4).Type                              = 'boynton';
-    HRF(4).normalize                         = 'height'; 
-    HRF(4).params.n = 3;
-    HRF(4).params.tau = 1.935;
-    HRF(4).params.delay = 1.65;    
-    COMBINE_PARAMETERS.HRF                   = HRF;
-    % This is the same one as before, but now we want to do the slow stimuli version
-    % by Jon's suggestion
-    synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats',1);
-    synthDT = pmForwardModelCalculate(synthDT);
-    sDT_withshuffle = synthDT;
-    
-    
-    
-    % Solve it
-    noshuffle   = pmModelFit(sDT_noshuffle, 'aprf');
-    withshuffle = pmModelFit(sDT_withshuffle, 'aprf');
-    p           = fullfile(pmRootPath,'local','randomstim');
-    save(fullfile(p,'noshuffle_aprf_100_nojitter_synthDT.mat'), 'sDT_noshuffle')
-    save(fullfile(p,'noshuffle_aprf_100_nojitter_result.mat') , 'noshuffle')
-    save(fullfile(pmRootPath,'local','randomstim','withshuffle_aprf_100_nojitter.mat'),...
-        'sDT_withshuffle', 'withshuffle')
-    
-    % Create comptTable
-    paramDefaults = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
-    noshufflecompTable  = pmResultsCompare(sDT_noshuffle, {'aprf'}, {noshuffle}, ...
-        'params', paramDefaults, ...
-        'shorten names',true, ...
-        'dotSeries', false);
-    withshufflecompTable  = pmResultsCompare(sDT_withshuffle, {'aprf'}, {withshuffle}, ...
-        'params', paramDefaults, ...
-        'shorten names',true, ...
-        'dotSeries', false);
-    
-    %  Plot it
-    hh = mrvNewGraphWin('HRF comparison');
-    set(hh,'Position',[0.007 0.62  0.6  0.6]);
-    nrows = 2; ncols = 4;
-    nslvl  = 'none';
+pm                   = prfModel;
+pm.signalPercentage  = 'frac'
+pm.BOLDcontrast      = 10;
+pm.RF.sigmaMajor     = 1;
+pm.RF.sigmaMinor     = pm.RF.sigmaMajor;
+pm.Noise.seed        = 'none';
+pm.HRF.Type          = 'vista_twogammas';
+pm.HRF.normalize     = 'none';
+pm.Stimulus.durationSecs = 300;
+pm.compute
+pm.plot('what','nonoise','color',[.8 0 0],'window',false); hold on
 
-    Cs  = 0.65 * distinguishable_colors(6,'w');
-    
-    
-    % Create the fit plots with the ground truth
-    tools  = {'aprf'}; 
-    HRFs   = {'boynton','boynton','boynton','boynton'}; % ,'canonical'};
-    for ii=1:4 % height(noshufflecompTable)
-        subplot(nrows,ncols,ii)
-        useHRF = HRFs{ii};
-        ttable = noshufflecompTable(ii,:);  % [ii:4:396+ii]',:);
-        pmCloudOfResults(ttable  , tools ,'onlyCenters',false ,'userfsize' , 2, ...
-            'centerPerc', 90     , 'useHRF'     , useHRF,'lineStyle' , '-','color',Cs(ii+1,:), ...
-            'lineWidth' , 2      , 'noiselevel' , nslvl , ...
-            'newWin'    , false  , 'saveTo'     , '','saveToType','svg')
-        axis equal
-    end
-    
-    % Create the fit plots with the ground truth
-    tools  = {'aprf'}; 
-    HRFs   = {'boynton','boynton','boynton','boynton'}; % ,'canonical'};
-    for ii=1:4  % height(withshufflecompTable)
-        subplot(nrows,ncols,ncols + ii)
-        useHRF = HRFs{ii};
-        ttable = withshufflecompTable(ii,:);  % ([ii:4:396+ii]',:);
-        pmCloudOfResults(ttable   , tools ,'onlyCenters',false ,'userfsize' , 2, ...
-            'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-','color',Cs(ii+1,:), ...
-            'lineWidth' , 2     ,'noiselevel' ,nslvl , ...
-            'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
-        axis equal
-    end
-    
-    
-    
-    
-%     fnameRoot = 'StimShuffleTest_noiseless';
-%     saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
+pm.Stimulus.Shuffle      = true;
+pm.Stimulus.shuffleSeed  = 12345;
+pm.compute
+pm.plot('what','nonoise','color',[0 0 0.8],'window',false);
+
+
+
+subplot(2,1,2)
+
+pm                   = prfModel;
+pm.signalPercentage  = 'frac'
+pm.BOLDcontrast      = 10;
+pm.RF.sigmaMajor     = 1;
+pm.RF.sigmaMinor     = pm.RF.sigmaMajor;
+pm.Noise.seed        = 'none';
+pm.HRF.Type          = 'vista_twogammas';
+pm.HRF.normalize     = 'none';
+pm.Stimulus.durationSecs = 300;
+pm.compute
+pm.plot('what','componentfft','color',[.8 0 0],'window',false); hold on
+
+pm.Stimulus.Shuffle      = true;
+pm.Stimulus.shuffleSeed  = 12345;
+pm.compute
+pm.plot('what','componentfft','color',[0 0 0.8],'window',false); 
+
+
+fnameRoot = 'SNR_LowerWithShuffle';
+saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
+
 end
 
-%% Plots showing that 
+%% Plots showing that SNR goes down using shufled stimuli for the same level of noise
+if SNRvsSize
+
+sizes        = [0.1:.2:8];
+pm           = prfModel;
+pm.HRF.normalize = 'sum';
+
+snrs_1_200   = zeros(1,length(sizes));
+snrs_2_200   = zeros(1,length(sizes));
+snrs_1_400   = zeros(1,length(sizes));
+snrs_2_400   = zeros(1,length(sizes));
+snrsSF_1_200 = zeros(1,length(sizes));
+snrsSF_2_200 = zeros(1,length(sizes));
+snrsSF_1_400 = zeros(1,length(sizes));
+snrsSF_2_400 = zeros(1,length(sizes));
+
+
+rng(12346,'twister'); 
+seeds        = randi([1111,5555], [1,length(sizes)]);
+for ns=1:length(sizes)
+    % Assign noise seeds
+    pm.Noise.seed            = seeds(ns);
+    % Assign size
+    pm.RF.sigmaMajor         = sizes(ns);
+    pm.RF.sigmaMinor         = pm.RF.sigmaMajor;
+    
+    % NON SHUFFLED
+    % (make changes and ) Compute it
+    pm.TR = 1;
+    pm.Stimulus.durationSecs = 200;
+    pm.Stimulus.Shuffle = false;
+    pm.compute
+    % Add to the SNR vector
+    snrs_1_200(ns) = pm.SNR;
+    
+    % (make changes and ) Compute it
+    pm.TR = 2;
+    pm.Stimulus.durationSecs = 200;
+    pm.Stimulus.Shuffle = false;
+    pm.compute
+    % Add to the SNR vector
+    snrs_2_200(ns) = pm.SNR;
+    
+    % (make changes and ) Compute it
+    pm.TR = 1;
+    pm.Stimulus.durationSecs = 400;
+    pm.Stimulus.Shuffle = false;
+    pm.compute
+    % Add to the SNR vector
+    snrs_1_400(ns) = pm.SNR;
+    
+    % (make changes and ) Compute it
+    pm.TR = 2;
+    pm.Stimulus.durationSecs = 400;
+    pm.Stimulus.Shuffle = false;
+    pm.compute
+    % Add to the SNR vector
+    snrs_2_400(ns) = pm.SNR;
+    
+    % SHUFFLED
+    % (make changes and ) Compute it
+    pm.TR = 1;
+    pm.Stimulus.durationSecs = 200;
+    pm.Stimulus.Shuffle = true;
+    pm.compute
+    % Add to the SNR vector
+    snrsSF_1_200(ns) = pm.SNR;
+    
+    % (make changes and ) Compute it
+    pm.TR = 2;
+    pm.Stimulus.durationSecs = 200;
+    pm.Stimulus.Shuffle = true;
+    pm.compute
+    % Add to the SNR vector
+    snrsSF_2_200(ns) = pm.SNR;
+    
+    % (make changes and ) Compute it
+    pm.TR = 1;
+    pm.Stimulus.durationSecs = 400;
+    pm.Stimulus.Shuffle = true;
+    pm.compute
+    % Add to the SNR vector
+    snrsSF_1_400(ns) = pm.SNR;
+    
+    % (make changes and ) Compute it
+    pm.TR = 2;
+    pm.Stimulus.durationSecs = 400;
+    pm.Stimulus.Shuffle = true;
+    pm.compute
+    % Add to the SNR vector
+    snrsSF_2_400(ns) = pm.SNR;
+end
+
+xx = mrvNewGraphWin('Noise Components','wide');
+set(xx,'Position',[0.007 0.62  .5  .5]);
+
+plot(sizes, snrs_1_200,'-','Color',[.7 0 0]);hold on;
+plot(sizes, snrsSF_1_200,'--','Color',[.7 0 0])
+
+plot(sizes, snrs_1_400,'-','Color',[0 0 .7]);
+plot(sizes, snrsSF_1_400,'--','Color',[0 0 .7])
+
+plot(sizes, snrs_2_200,'-','Color',[0 .7 0]);
+plot(sizes, snrsSF_2_200,'--','Color',[0 .7 0])
+
+plot(sizes, snrs_2_400,'-','Color',[.7 .7 .7]);
+plot(sizes, snrsSF_2_400,'--','Color',[.7 .7 .7])
+
+ylabel('SNR [dB]')
+xlabel('Radius of receptive field, 1 SD of gaussian [deg]')
+
+set(gca, 'FontSize',14,'FontWeight','bold')
+yy = get(gca,'ylim');
+plot(2.77*[1,1],[yy(1),yy(2)])
+% 20deg is 101 cols, x deg is 14 cols: (14*20)/101
+legend('Bars (TR=1s, Sweep=18s)', 'Shuffled', ...
+       'Bars (TR=1s, Sweep=38s)', 'Shuffled', ...
+       'Bars (TR=2s, Sweep=18s)', 'Shuffled', ...
+       'Bars (TR=2s, Sweep=38s)', 'Shuffled', ...
+       'Stim. bar width')
+title('RF size vs SNR for different TR and Stimulus duration [sum(HRF)]. Bar width 2.77 deg')
+
+
+fnameRoot = 'SNR-SIZE-SHUFFLED_HRF-sum';
+saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
+
+
+end
+
+
+
+%% Make the MITIGATION PLOT ALL TOGETHER
+if mitigationPLOT
+    xx = mrvNewGraphWin('SNR_LowerWithShuffle','wide');
+    set(xx,'Position',[0.007 0.62  1  1]);
+    
+    % COL1: making sweeps longer
+    % COL2: shuffling and explanation
+    
+    % COL 1
+    subplot(3,2,1)
+    pmWithNoiseRandomStim('aprfcss','plotit',true,'plotts',false,...
+                           'signalperc','bold','repeats',1,'shuffleseed',12345,...
+                           'radius',2, 'seed','none','voxel','mid',...
+                           'hrfnorm','norm','hrftype','boynton', ...
+                           'boldcontrast',4, 'scanduration',200, 'tr',1, ...
+                           'window',false,'onlybarshuffleorboth','noshuffle'); hold off  
+    
+    subplot(3,2,3)
+    pmWithNoiseRandomStim('aprfcss','plotit',true,'plotts',false,...
+                           'signalperc','bold','repeats',1,'shuffleseed',12345,...
+                           'radius',2, 'seed','none','voxel','mid',...
+                           'hrfnorm','norm','hrftype','boynton', ...
+                           'boldcontrast',4, 'scanduration',300, 'tr',1, ...
+                           'window',false,'onlybarshuffleorboth','noshuffle') ;   hold off
+                       
+    subplot(3,2,5)
+    pmWithNoiseRandomStim('aprfcss','plotit',true,'plotts',false,...
+                           'signalperc','bold','repeats',1,'shuffleseed',12345,...
+                           'radius',2, 'seed','none','voxel','mid',...
+                           'hrfnorm','norm','hrftype','boynton', ...
+                           'boldcontrast',4, 'scanduration',400, 'tr',1, ...
+                           'window',false,'onlybarshuffleorboth','noshuffle') ;   hold off                   
+    
+    % COL 2
+    % Mitigation 2: shuffle stimuli
+    subplot(3,2,2)
+      % [compTable_noshuffle, tSeries_noshuffle, sDT_noshuffle, ...
+      %  compTable_withshuffle, tSeries_withshuffle, sDT_withshuffle] = ...
+      pmWithNoiseRandomStim('aprfcss','plotit',true,'plotts',false,...
+                           'signalperc','bold','repeats',1,'shuffleseed',11111,...
+                           'radius',2, 'seed','none','voxel','mid',...
+                           'hrfnorm','norm','hrftype','boynton', ...
+                           'boldcontrast',4, 'scanduration',200, 'tr',1, ...
+                           'window',true,'onlybarshuffleorboth','both');
+    
+    
+    
+    % Time and frequency domain
+    subplot(3,2,4)
+
+    pm                   = prfModel;
+    pm.signalPercentage  = 'frac'
+    pm.BOLDcontrast      = 10;
+    pm.RF.sigmaMajor     = 1;
+    pm.RF.sigmaMinor     = pm.RF.sigmaMajor;
+    pm.Noise.seed        = 'none';
+    pm.HRF.Type          = 'vista_twogammas';
+    pm.HRF.normalize     = 'none';
+    pm.Stimulus.durationSecs = 300;
+    pm.compute
+    pm.plot('what','nonoise','color',[.8 0 0],'window',false); hold on
+
+    pm.Stimulus.Shuffle      = true;
+    pm.Stimulus.shuffleSeed  = 12345;
+    pm.compute
+    pm.plot('what','nonoise','color',[0 0 0.8],'window',false);
+
+
+
+    subplot(3,2,6)
+
+    pm                   = prfModel;
+    pm.signalPercentage  = 'frac'
+    pm.BOLDcontrast      = 10;
+    pm.RF.sigmaMajor     = 1;
+    pm.RF.sigmaMinor     = pm.RF.sigmaMajor;
+    pm.Noise.seed        = 'none';
+    pm.HRF.Type          = 'vista_twogammas';
+    pm.HRF.normalize     = 'none';
+    pm.Stimulus.durationSecs = 300;
+    pm.compute
+    pm.plot('what','componentfft','color',[.8 0 0],'window',false); hold on
+
+    pm.Stimulus.Shuffle      = true;
+    pm.Stimulus.shuffleSeed  = 12345;
+    pm.compute
+    pm.plot('what','componentfft','color',[0 0 0.8],'window',false); 
+    
+    
+    
+    fnameRoot = 'Mitigation_Plot';
+    saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
+    
+end
+
+
 

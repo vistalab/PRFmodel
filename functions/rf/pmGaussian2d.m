@@ -133,7 +133,8 @@ xlimit = sigmaMajorLimit * sigmaMajor;
 tmpx   = Yfull(:,1);
 while xlimit > max(tmpx)
     % Grow it in 10% increments to avoid making the mesh too big
-    tmpx = [-1.1*fieldRange:sampleRate:fieldRange*1.1];
+    fieldRange = 1.1*fieldRange;
+    tmpx       = [-fieldRange:sampleRate:fieldRange];
 end
 % - Now that we know that the grid can hold the full RF
 %   Calculate the full RF and calculate the area underneath it

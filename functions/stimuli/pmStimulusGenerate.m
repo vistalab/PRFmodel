@@ -218,7 +218,7 @@ if Shuffle
     stimReduced = stim(:,:,~beginAndEnd);
     
     % Shuffle
-    shuff = 1:length(stimReduced);
+    shuff = 1:size(stimReduced,3);
     rng(shuffleSeed,'twister')
     shuff = shuff(randperm(length(shuff)));
     
