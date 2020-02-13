@@ -158,9 +158,9 @@ if iscell(input)
 else
     niftiInputs = false;
     if ~istable(input)
-        temp = table();
+        temp    = table();
         temp.pm = input;
-        input = temp;
+        input   = temp;
     end
     % Obtain the same parameters as above
     pm1      = input.pm(1);

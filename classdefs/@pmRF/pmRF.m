@@ -104,7 +104,15 @@ classdef pmRF <   matlab.mixin.SetGet & matlab.mixin.Copyable
         
         % Methods available to this class and childrens, if any
         function compute(rf)
-            
+            % Check the sigma values, if we want CSS, we need to multiply the
+            % sigma values by the sqrt of the css exponent
+            switch rf.PM.Type
+                case 'CSS'
+                    rf.sigmaMajor     = sqrt(rf.PM.cssexp) * rf.sigmaMajor;
+                    rf.sigmaMinor     = sqrt(rf.PM.cssexp) * rf.sigmaMinor;
+                    rf.dog_sigmaMajor = sqrt(rf.PM.cssexp) * rf.dog_sigmaMajor;
+                    rf.dog_sigmaMinor = sqrt(rf.PM.cssexp) * rf.dog_sigmaMinor;
+            end
             % Compute stimulus just in case
             rf.PM.Stimulus.compute;
             % Obtain grid XY

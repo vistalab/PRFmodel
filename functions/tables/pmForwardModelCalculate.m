@@ -84,8 +84,8 @@ tmpName = tempname(fullfile(pmRootPath,'local'));
 mkdir(tmpName);
         
 tic
-parfor (nn=1:nchcks, NumWorkers)
-% for nn=1:nchcks
+% parfor (nn=1:nchcks, NumWorkers)
+for nn=1:nchcks
     DT = DTcc{nn};
     % Initialize prev variables, for parallel toolbox
     dtprev = [];

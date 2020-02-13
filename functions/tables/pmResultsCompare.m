@@ -26,7 +26,7 @@ p.addParameter('shortnames'     , shortDefaults , @iscell);
 p.addParameter('addisclosecol'  , false         , @islogical);
 p.addParameter('addsnrcol'      , false         , @islogical);
 p.addParameter('tolerance'      , 0.0001        , @isnumeric);
-p.addParameter('dotseries'      , true         , @islogical);
+p.addParameter('dotseries'      , true          , @islogical);
 p.parse(synthDT, resNames, resDT, varargin{:});
 
 params       = p.Results.params;
@@ -45,10 +45,35 @@ shortNames   = p.Results.shortnames;
 % Right now use it just to concatenate
 % Later decide if this function returns another table with just the results
 
-newDT   = table();
-newDT.synth = synthDT.RF(:,params(~contains(params,'R2')));
-if shortenNames 
-    newDT.synth.Properties.VariableNames = shortNames(~contains(params,'R2'));
+newDT         = table();
+newDT.synth   = table();
+
+toolresults      = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
+shorttoolresults = {'x0', 'y0', 'Th', 'sMin', 'sMaj'};
+for ni=1:length(params)
+    param  = params{ni};
+    shortn = shortNames{ni};
+    if shortenNames 
+        switch shortn
+            case shorttoolresults
+                newDT.synth.(shortn) = synthDT.RF.(param);
+            case 'sseed'
+                newDT.synth.sseed = synthDT.Stimulus.shuffleSeed;
+            case 'tau'
+                hrfparamsT = struct2table(synthDT.HRF.params);
+                newDT.synth.tau  = hrfparamsT.tau;
+        end
+    else
+        switch param
+            case toolresults
+                newDT.synth.(param) = synthDT.RF.(param);
+            case 'shuffleseed'
+                newDT.synth.shuffleseed = synthDT.Stimulus.shuffleSeed;
+            case 'tau'
+                hrfparamsT = struct2table(synthDT.HRF.params);
+                newDT.synth.tau  = hrfparamsT.tau;    
+        end
+    end
 end
 % Add the HRF type
 newDT.HRFtype   = synthDT.HRF.Type;
@@ -57,6 +82,7 @@ newDT.TR        = synthDT.TR;
 % Add the Noise type param
 newDT.noiseLevel = synthDT.Noise.voxel;
 newDT.noiseLevel(synthDT.Noise.seed=="none") = repmat({'none'},[length(newDT.noiseLevel(synthDT.Noise.seed=="none")),1]);
+
 % If requested, add the snr param
 if addSnrCol
     newDT.snr = zeros(height(newDT),1);
@@ -67,8 +93,10 @@ if addSnrCol
 end
 
 for ii=1:length(resNames)
-    newDT.(resNames{ii}) = resDT{ii}(:,params);
-    newDT.(resNames{ii}).Properties.VariableNames = shortNames;
+    newDT.(resNames{ii}) = resDT{ii}(:,toolresults);
+    if shortenNames
+        newDT.(resNames{ii}).Properties.VariableNames = shorttoolresults;
+    end
 end
 
 % Add the isclose col for the perfect prediction case if required.

@@ -27,7 +27,7 @@ ForwardModelSteps            = false;
 AppendixNoiseElements        = false;
 randomStimTest               = false;
 SNRvsSize                    = false;
-mitigationPLOT               = true
+mitigationPLOT               = true;
 
 %% Initial checks
 % mrTools writes some defaults in the local computer that mess the Vista
@@ -1105,7 +1105,8 @@ if SNRvsSize
 
 sizes        = [0.1:.2:8];
 pm           = prfModel;
-pm.HRF.normalize = 'sum';
+pm.HRF.normalize = 'norm';
+pm.Type      = 'CSS';
 
 snrs_1_200   = zeros(1,length(sizes));
 snrs_2_200   = zeros(1,length(sizes));
@@ -1220,7 +1221,7 @@ legend('Bars (TR=1s, Sweep=18s)', 'Shuffled', ...
        'Bars (TR=2s, Sweep=18s)', 'Shuffled', ...
        'Bars (TR=2s, Sweep=38s)', 'Shuffled', ...
        'Stim. bar width')
-title('RF size vs SNR for different TR and Stimulus duration [sum(HRF)]. Bar width 2.77 deg')
+title('RF size vs SNR for different TR and Stimulus duration [norm(HRF)]. Bar width 2.77 deg')
 
 
 fnameRoot = 'SNR-SIZE-SHUFFLED_HRF-sum';
@@ -1233,53 +1234,55 @@ end
 
 %% Make the MITIGATION PLOT ALL TOGETHER
 if mitigationPLOT
-    xx = mrvNewGraphWin('SNR_LowerWithShuffle','wide');
-    set(xx,'Position',[0.007 0.62  1  1]);
+    % We are going to do 2 separate plots at the end
     
-    % COL1: making sweeps longer
-    % COL2: shuffling and explanation
     
+    
+    fnameRoot = 'Mitigation_A_duration';
     % COL 1
-    subplot(3,2,1)
     pmWithNoiseRandomStim('aprfcss','plotit',true,'plotts',false,...
                            'signalperc','bold','repeats',1,'shuffleseed',12345,...
                            'radius',2, 'seed','none','voxel','mid',...
-                           'hrfnorm','norm','hrftype','boynton', ...
+                           'hrfnorm','norm','hrftype','boynton', 'addtext',false,...
                            'boldcontrast',4, 'scanduration',200, 'tr',1, ...
-                           'window',false,'onlybarshuffleorboth','noshuffle'); hold off  
+                           'window',true,'onlybarshuffleorboth','noshuffle'); 
+    saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'_200.svg')),'svg');
     
-    subplot(3,2,3)
     pmWithNoiseRandomStim('aprfcss','plotit',true,'plotts',false,...
                            'signalperc','bold','repeats',1,'shuffleseed',12345,...
                            'radius',2, 'seed','none','voxel','mid',...
-                           'hrfnorm','norm','hrftype','boynton', ...
+                           'hrfnorm','norm','hrftype','boynton', 'addtext',false, ...
                            'boldcontrast',4, 'scanduration',300, 'tr',1, ...
-                           'window',false,'onlybarshuffleorboth','noshuffle') ;   hold off
+                           'window',true,'onlybarshuffleorboth','noshuffle') ; 
+    saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'_300.svg')),'svg');
                        
-    subplot(3,2,5)
     pmWithNoiseRandomStim('aprfcss','plotit',true,'plotts',false,...
                            'signalperc','bold','repeats',1,'shuffleseed',12345,...
                            'radius',2, 'seed','none','voxel','mid',...
-                           'hrfnorm','norm','hrftype','boynton', ...
+                           'hrfnorm','norm','hrftype','boynton', 'addtext',false, ...
                            'boldcontrast',4, 'scanduration',400, 'tr',1, ...
-                           'window',false,'onlybarshuffleorboth','noshuffle') ;   hold off                   
+                           'window',true,'onlybarshuffleorboth','noshuffle') ; 
+    saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'_400.svg')),'svg');
     
     % COL 2
     % Mitigation 2: shuffle stimuli
-    subplot(3,2,2)
-      % [compTable_noshuffle, tSeries_noshuffle, sDT_noshuffle, ...
-      %  compTable_withshuffle, tSeries_withshuffle, sDT_withshuffle] = ...
+     fnameRoot = 'Mitigation_B_stimShuffle';
+     % [compTable_noshuffle, tSeries_noshuffle, sDT_noshuffle, ...
+     %  compTable_withshuffle1, tSeries_withshuffle1, sDT_withshuffle1] = ...
       pmWithNoiseRandomStim('aprfcss','plotit',true,'plotts',false,...
-                           'signalperc','bold','repeats',1,'shuffleseed',11111,...
-                           'radius',2, 'seed','none','voxel','mid',...
-                           'hrfnorm','norm','hrftype','boynton', ...
-                           'boldcontrast',4, 'scanduration',200, 'tr',1, ...
-                           'window',true,'onlybarshuffleorboth','both');
-    
+         'signalperc','bold','repeats',1,'shuffleseed',[12345,11111,12346,54321,12453],...
+         'radius',2, 'seed','none','voxel','mid',...
+         'hrfnorm','norm','hrftype','boynton', 'addtext',false, ...
+         'boldcontrast',4, 'scanduration',200, 'tr',1, ...
+         'window',true,'onlybarshuffleorboth','both');
+    saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
     
     
     % Time and frequency domain
-    subplot(3,2,4)
+    fnameRoot = 'Mitigation_B_timeSeries';
+    xx = mrvNewGraphWin(fnameRoot);
+    set(xx,'Position',[0.007 0.62  .4  .6]);
+    subplot(2,1,1)
 
     pm                   = prfModel;
     pm.signalPercentage  = 'frac'
@@ -1297,10 +1300,11 @@ if mitigationPLOT
     pm.Stimulus.shuffleSeed  = 12345;
     pm.compute
     pm.plot('what','nonoise','color',[0 0 0.8],'window',false);
+    set(gca,'FontSize',14,'FontWeight','bold')
 
 
 
-    subplot(3,2,6)
+    subplot(2,1,2)
 
     pm                   = prfModel;
     pm.signalPercentage  = 'frac'
@@ -1317,11 +1321,9 @@ if mitigationPLOT
     pm.Stimulus.Shuffle      = true;
     pm.Stimulus.shuffleSeed  = 12345;
     pm.compute
-    pm.plot('what','componentfft','color',[0 0 0.8],'window',false); 
+    pm.plot('what','componentfft','color',[0 0 0.8],'window',false);
+    set(gca,'FontSize',14,'FontWeight','bold')
     
-    
-    
-    fnameRoot = 'Mitigation_Plot';
     saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
     
 end

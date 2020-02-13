@@ -30,10 +30,59 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
         pm.BOLDcontrast  = 10;
         pm.RF.sigmaMajor = 1;
         pm.RF.sigmaMinor = pm.RF.sigmaMajor;
-        pm.Noise.seed    = 'none';
-        pm.HRF.Type      = 'boynton';
-        pm.HRF.normalize = 'sum';
+        pm.Noise.seed    = 'random';
+        pm.HRF.Type      = 'vista_twogammas';
         pm.Stimulus.durationSecs = 300;
+    
+        pm.TR = 1;
+        pm.HRF.normalize = 'norm';
+        pm.compute
+        % pm.plot('what','componentfft','color','b','window',true); hold on
+    pm.plot('what','nonoise','color','b','window',true); hold on
+        pm.HRF.normalize = 'sum';    
+        pm.compute
+    pm.plot('what','nonoise','color','g','window',false,'line','--'); hold on
+    
+        pm.TR = 1.4;
+        pm.HRF.normalize = 'norm';  
+        pm.compute
+        % pm.plot('what','componentfft','color','r','window',false); 
+    pm.plot('what','nonoise','color','r','window',false); 
+        pm.TR = 1.4;
+        pm.HRF.normalize = 'sum';
+        pm.compute
+    pm.plot('what','nonoise','color','k','window',false,'line','--'); 
+        legend({'norm, TR=1','sum, TR=1','norm, TR=1.4','sum, TR=1.4'})
+
+    
+    
+    
+        pm = prfModel;
+        pm.TR = 1;
+        pm.HRF.Type      = 'vista_twogammas';
+    
+        pm.HRF.normalize = 'norm';
+        pm.compute
+    pm.HRF.plot('window',true,'color' , 'b');hold on
+        pm.HRF.normalize = 'sum';
+        pm.compute
+    pm.HRF.plot('window',false,'color' , 'g','line','--')
+        
+        pm.TR = 1.4;
+        pm.HRF.normalize = 'norm';
+        pm.compute
+    pm.HRF.plot('window',false,'color' , 'r')
+        pm.HRF.normalize = 'sum';
+        pm.compute
+    pm.HRF.plot('window',false,'color' , 'k','line','--')
+    
+    legend({'norm, TR=1','sum, TR=1','norm, TR=1.4','sum, TR=1.4'})
+    
+    
+    
+    
+    
+    
         pm.Stimulus.Shuffle = true;
         pm.Stimulus.shuffleSeed = 12345;
         pm.compute
@@ -228,8 +277,8 @@ pm.Noise.seed=12345;
         uniqueTR;          % This is part of the main model. It will be set in all subclasses
     end
     properties (GetAccess=public, SetAccess=public) % Changed from SetAccess=private, check
-        % Basic, CSS ... (char)
-        Type             ;
+        Type             ; % Basic, CSS ... (char)
+        cssexp           ;
         % Components required to build the synthetic bold signal (class)
         Stimulus         ;
         RF               ;
@@ -258,9 +307,10 @@ pm.Noise.seed=12345;
         function d = defaultsGet
             % This provides the defaults of this class, which is the only one at the top level. 
             d.TR                = 1;
-            d.Type              = 'basic';
+            d.Type              = 'linear';
+            d.cssexp            = 0.05;
             d.signalPercentage  = 'bold';
-            d.BOLDcontrast      = 10;    % Percent. Best case scenario (full stim and RF), will be scaled always lower
+            d.BOLDcontrast      = 5;    % Percent. Best case scenario (full stim and RF), will be scaled always lower
             d.BOLDmeanValue     = 10000; % Mean BOLD, needs signalPercentage='bold'
             d.computeSubclasses = true;  % Used to save computation time in pmForwardTableCalculate
             % Convert to table and return
@@ -279,6 +329,7 @@ pm.Noise.seed=12345;
             p = inputParser;
             p.addParameter('tr'               , d.TR                  , @isnumeric);
             p.addParameter('type'             , d.Type{:}             , @ischar);
+            p.addParameter('cssexp'           , d.cssexp              , @isnumeric);
             p.addParameter('signalpercentage' , d.signalPercentage{:} , @islogical);
             p.addParameter('boldmeanvalue'    , d.BOLDmeanValue       , @isnumeric);
             p.addParameter('boldcontrast'     , d.BOLDcontrast        , @isnumeric);
@@ -288,6 +339,7 @@ pm.Noise.seed=12345;
             % Assign defaults/parameters to class/variables
             pm.TR                = p.Results.tr;
             pm.Type              = p.Results.type;
+            pm.cssexp            = p.Results.cssexp;
             pm.signalPercentage  = p.Results.signalpercentage;
             pm.BOLDmeanValue     = p.Results.boldmeanvalue;
             pm.BOLDcontrast      = p.Results.boldcontrast;  % In percentage
@@ -369,23 +421,16 @@ pm.Noise.seed=12345;
             % Initialize timeSeries, it is the signal prior to convolution
             [r,c,t]    = size(stimValues);
             spaceStim  = reshape(stimValues,r*c,t);
+            % Calculate time series
+            pm.timeSeries = spaceStim' * pm.RF.values(:);
             switch pm.Type
-                case 'basic'
-                    % Calculate time series
-                    pm.timeSeries = spaceStim' * pm.RF.values(:);
-                    convValues    = conv(pm.timeSeries',pm.HRF.values);
-                    % Create the bold signal with the correct size
-                    % TODO: make all vectors columns whenever possible. Time vertical
-                    % The conv is longer (HRF size -1), we need to cut the end
-                    % of the conv, or paste the results in a correct sized vect
-                    pm.BOLDconv = zeros(size(pm.timeSeries))';
-                    pm.BOLDconv = convValues(1:length(pm.BOLDconv));
-                    if showconv
-                        pm.showConvolution
-                        hold on
-                    end
+                case 'linear'
+                    % Do nothing
                 case 'CSS'
-                    error('Untested, use only basic')
+                    % Exponentiate values
+                    pm.timeSeries = pm.timeSeries .^ 0.05;
+                    %{
+                    % error('Untested, use only linear')
                     % Import function from analyzePRF and use it to generate the predicted BOLD signal.
                     %                     aprff = ...
                     %                         @(pp,dd) ...  % Defines the inputs to the function, params (to be guessed) and data
@@ -412,7 +457,7 @@ pm.Noise.seed=12345;
                     %       x0=0,y0=0,theta=0,sigmaMinor=1,sigmaMajor=1
                     % the parameters returned with a R2=57 where:
                     %       50.538, 50.278, 0.12756, 412.16, 0.015133
-                    %{
+                    
                     pp(1) = 50;  % number of row location in a grid
                     pp(2) = 50;  % number of col location in a grid
                     pp(3) = 1; % Sigma minor and sigma mayor. only circles for now
@@ -427,8 +472,19 @@ pm.Noise.seed=12345;
                     pm.BOLD = conv2(timeSeries, getcanonicalhrf(pm.TR,pm.TR), 'same')'; % This is the same now
                     %}
                 otherwise
-                    error('Model %s not implemented, select basic or CSS', pm.Type)
+                    error('Model %s not implemented, select linear or CSS', pm.Type)
             end
+                convValues    = conv(pm.timeSeries',pm.HRF.values);
+                % Create the bold signal with the correct size
+                % TODO: make all vectors columns whenever possible. Time vertical
+                % The conv is longer (HRF size -1), we need to cut the end
+                % of the conv, or paste the results in a correct sized vect
+                pm.BOLDconv = zeros(size(pm.timeSeries))';
+                pm.BOLDconv = convValues(1:length(pm.BOLDconv));
+                if showconv
+                    pm.showConvolution
+                    hold on
+                end
             % Scale the signal so that it has the required mean and contrast
             
             % Convert the output requested in pm.signalPercentage 
@@ -449,16 +505,16 @@ pm.Noise.seed=12345;
             % pre-noise signal correctly scaled. 
           
             switch pm.signalPercentage
-                 case {'frac', 'fractional'}
+                case {'frac', 'fractional'}
                     pm.BOLD = 2 * pm.BOLDcontrast/100 * pm.BOLDconv;
                 case {'spc'}
                     pm.BOLD = 2 * pm.BOLDcontrast * pm.BOLDconv;
-                 case {'frac', 'fractional'}
+                case {'frac', 'fractional'}
                     pm.BOLD = 2 * pm.BOLDcontrast/100 * pm.BOLDconv;
                 case {'bold'}
                     pm.BOLD = pm.BOLDmeanValue * (1 + 2 * pm.BOLDcontrast/100 * pm.BOLDconv);
                 otherwise
-                   error('%s provided, valid values are frac, spc, and bold (default)', pm.signalPercentage)
+                    error('%s provided, valid values are frac, spc, and bold (default)', pm.signalPercentage)
             end
         end
         function showConvolution(pm)
@@ -512,8 +568,8 @@ pm.Noise.seed=12345;
             % definition of function 'f(t)'
             % f = 0.1*(t.^2);
             f = pm.timeSeries';
-            HRFcontrast = (max(pm.HRF.values)-min(pm.HRF.values))/2;
-            f = 100 * pm.unitless2contrast(f,HRFcontrast,true);
+            % HRFcontrast = (max(pm.HRF.values)-min(pm.HRF.values))/2;
+            % f = 100 * pm.unitless2contrast(f,HRFcontrast,true);
             if f(1) >= 0, f = f - f(1);end
             if f(1) <= 0, f = f + abs(f(1));end
             %  f = 5*ones(1, length(t));
@@ -619,7 +675,8 @@ pm.Noise.seed=12345;
                 
             end;
             tccontrast = (max(c)-min(c))/2;
-            ourBOLD = 100 * pm.unitless2contrast(pm.BOLDconv,tccontrast,true);
+            % ourBOLD = 100 * pm.unitless2contrast(pm.BOLDconv,tccontrast,true);
+            ourBOLD = pm.BOLDconv;
             if ourBOLD(1) >= 0, ourBOLD = ourBOLD - ourBOLD(1);end
             if ourBOLD(1) <= 0, ourBOLD = ourBOLD + abs(ourBOLD(1));end
             plot(ourBOLD,'k-.')
@@ -710,6 +767,7 @@ pm.Noise.seed=12345;
             p.addParameter('window', true, @islogical);
             p.addParameter('addtext', false, @islogical);
             p.addParameter('color', 'b');
+            p.addParameter('line', '-');
             p.addParameter('centerzero', false, @islogical);
             p.addParameter('addhrf', true, @islogical);
             
@@ -720,6 +778,7 @@ pm.Noise.seed=12345;
             c  = p.Results.color;
             z  = p.Results.centerzero;
             h  = p.Results.addhrf;
+            line  = p.Results.line;
             
             switch what
                 case 'timeseries'
@@ -743,29 +802,31 @@ pm.Noise.seed=12345;
                 case {'nonoise','noiseless','noisefree'}
                     pm.computeBOLD
                     if w;mrvNewGraphWin([pm.Type 'Synthetic BOLD signal (no noise)']);end
-                    plot(pm.timePointsSeries, pm.BOLD,'color',c);
+                    plot(pm.timePointsSeries, pm.BOLD,'o','color',c,'LineStyle',line);
                 case 'withnoise'
                     pm.compute;
                     if w;mrvNewGraphWin([pm.Type 'Synthetic BOLD signal (noise)']);end
-                    plot(pm.timePointsSeries, pm.BOLDnoise,'color',c);
+                    plot(pm.timePointsSeries, pm.BOLDnoise,'color',c,'LineStyle',line);
                     grid on; xlabel('Time (sec)'); ylabel('Relative amplitude');
                 case 'both'
                     pm.compute;
                     if w;mrvNewGraphWin([pm.Type 'Synthetic BOLD signals']);end
-                    plot(pm.timePointsSeries, pm.BOLD,'--','color','k'); hold on;
-                    plot(pm.timePointsSeries, pm.BOLDnoise,'color',c);
+                    plot(pm.timePointsSeries, pm.BOLD,'--','color','k','LineStyle',line); hold on;
+                    plot(pm.timePointsSeries, pm.BOLDnoise,'color',c,'LineStyle',line);
                     legend({'No Noise BOLD','With Noise BOLD'})
                 case 'all'
                     pm.compute;
                     if w;mrvNewGraphWin([pm.Type 'Synthetic BOLD signals']);end
-                    plot(pm.timePointsSeries, pm.unitless2contrast(pm.timeSeries, pm.BOLDcontrast,true),'color','k'); hold on;
-                    plot(pm.timePointsSeries, pm.BOLD);
-                    plot(pm.timePointsSeries, pm.BOLDnoise);
+                    % plot(pm.timePointsSeries, pm.unitless2contrast(pm.timeSeries, pm.BOLDcontrast,true),'color','k'); hold on;
+                    plot(pm.timePointsSeries, pm.timeSeries,'color','k','LineStyle',line); hold on;
+                    plot(pm.timePointsSeries, pm.BOLD,'LineStyle',line);
+                    plot(pm.timePointsSeries, pm.BOLDnoise,'LineStyle',line);
                     legend({'Time Series','No Noise BOLD','With Noise BOLD'})                    
                 case 'withnoisetimeseries'
                     pm.compute;
                     if w;mrvNewGraphWin([pm.Type 'Synthetic BOLD signals']);end
-                    plot(pm.timePointsSeries, pm.unitless2contrast(pm.timeSeries, pm.BOLDcontrast,true),'color','k'); hold on;
+                    % plot(pm.timePointsSeries, pm.unitless2contrast(pm.timeSeries, pm.BOLDcontrast,true),'color','k'); hold on;
+                    plot(pm.timePointsSeries, pm.timeSeries,'color','k','LineStyle',line); hold on;
                     plot(pm.timePointsSeries, pm.BOLDnoise);
                     legend({'Time Series','With Noise BOLD'})
                 case 'componentfft'

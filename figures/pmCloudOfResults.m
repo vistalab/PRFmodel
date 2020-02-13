@@ -172,7 +172,7 @@ for nt=1:length(tools)
             viscircles(centers,radii,'LineWidth',lineWidth,'LineStyle',lineStyle,'Color',Cs(nt+1,:));
         end
     end
-    if adddice && addsnr
+    if adddice && addsnr && addtext
         text(1.1*xlims(1),1.1*ylims(1),sprintf('DICE:%.2f(±%.2f) | SNR:%.2f(±%.2f)',...
                           meanDiceVal, stdDiceVal,meanSNR, stdSNR), ...
              'FontWeight','bold','FontSize',12)
@@ -223,10 +223,10 @@ if centerDistr
     % Instead of the centers (see above), plot the ellipses showing the distribution of the centers
     for nt=1:length(tools)
         tool = tools{nt};
-        if addtext
-            % We need this for the legend, but only when the legend is shown
-            a = [a; scatter(median(dt.(tool).x0), median(dt.(tool).y0),20,Cs(nt+1,:),'filled')]; hold on
-        end
+        
+        % We need this for the legend, but only when the legend is shown
+        a = [a; scatter(median(dt.(tool).x0), median(dt.(tool).y0),20,Cs(nt+1,:),'filled')]; hold on
+        
         if length(X0) >1
             fitEllipse(X0,Y0,[0,0,0],centerPerc);
         end
