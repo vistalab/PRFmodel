@@ -103,7 +103,7 @@ fmri        = niftiRead(datafile);
 ippath      = fullfile('.', 'Raw', 'inplane.nii.gz');
 ip          = fmri; 
 ip.data     = mean(fmri.data, length(size(fmri.data)));
-ip.dim(end) = 1 
+ip.dim(end) = 1
 niftiWrite(ip, ippath);
 
 A = niftiRead(ippath)
@@ -122,6 +122,8 @@ params.functionals  = fullfile('.','Raw', sprintf('%s%s', f,e));
 
 % Run it:
 ok = mrInit(params);
+params
+dir(fullfile('.', filesep,'Raw'))
 
 params
 dir(fullfile('.', filesep,'Raw'))
@@ -172,8 +174,6 @@ sParams.hrfType    = 'two gammas (SPM style)';
 % pre-scan duration will be stored in frames for the rm, but was stored in
 % seconds in the stimulus file
 sParams.prescanDuration = 0;
-
-
 
 
 dataTYPES = dtSet(dataTYPES, 'rm stim params', sParams);

@@ -71,6 +71,15 @@ classdef pmHRF <  matlab.mixin.SetGet & matlab.mixin.Copyable
             % Defaults for all different models
             d.Type                = 'vista_twogammas';  % 'canonical'
             d.Duration            = 20;
+            % Normalize HRF:
+            %   - 'sum': the mean of the signal will be maintained across HRFs,
+            %            but not the contrast, so different SNR for diff HRF
+            %   - 'norm': the mean is not maintained, and we don't have control
+            %             over the contrast, but it will be more similar, so the
+            %             same goes for the SNR. Use this as default. 
+            %             Furthermore, if we want constant SNR per RF size, we
+            %             need to use 'CSS' for the pm.Type
+            %   
             d.normalize           = 'norm';
             % Default params for friston
             % [peak1 width1 peak2 width2 -weight2]

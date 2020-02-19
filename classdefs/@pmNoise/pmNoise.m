@@ -405,16 +405,21 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
             p = inputParser;
             p.addRequired ('noise'  ,  @(x)(isa(x,'pmNoise')));
             p.addParameter('window',true, @islogical);
+            p.addParameter('windowfreq',true, @islogical);
             p.addParameter('color','b');
+            p.addParameter('line','-');
+            
             p.parse(noise,varargin{:});
             w = p.Results.window;
+            wf = p.Results.windowfreq;
             c = p.Results.color;
+            line = p.Results.line;
             
             if w; mrvNewGraphWin('Noise'); end
             noise.compute;
             % Plot it
-            if w; subplot(2,1,1); end
-            plot(noise.PM.timePointsSeries, noise.values,'-','color',c);hold on;
+            if wf; subplot(2,1,1); end
+            plot(noise.PM.timePointsSeries, noise.values,'-','color',c,'LineStyle',line);hold on;
             grid on; xlabel('Time (sec)'); ylabel('Relative amplitude');
             title(['Noise: time domain (not scaled to BOLD), TR=' num2str(noise.TR)])
             % If it is not even we cannot plot the half of it, so remove the last time point
@@ -427,7 +432,7 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
 
             
             % Only plot frequ domain if in our own window
-            if w
+            if wf
                 subplot(2,1,2)
                 % Obtain the FFT of the signal
                 P = abs(fft(timeValues)/timePoints);

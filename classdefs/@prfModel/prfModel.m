@@ -38,25 +38,29 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
         pm.HRF.normalize = 'norm';
         pm.compute
         % pm.plot('what','componentfft','color','b','window',true); hold on
+        sqrt(mean(pm.BOLD.^2))
     pm.plot('what','nonoise','color','b','window',true); hold on
         pm.HRF.normalize = 'sum';    
         pm.compute
+        sqrt(mean(pm.BOLD.^2))
     pm.plot('what','nonoise','color','g','window',false,'line','--'); hold on
     
         pm.TR = 1.4;
         pm.HRF.normalize = 'norm';  
         pm.compute
         % pm.plot('what','componentfft','color','r','window',false); 
+        sqrt(mean(pm.BOLD.^2))
     pm.plot('what','nonoise','color','r','window',false); 
         pm.TR = 1.4;
         pm.HRF.normalize = 'sum';
         pm.compute
+        sqrt(mean(pm.BOLD.^2))
     pm.plot('what','nonoise','color','k','window',false,'line','--'); 
         legend({'norm, TR=1','sum, TR=1','norm, TR=1.4','sum, TR=1.4'})
 
     
     
-    
+        % PLOT HRF
         pm = prfModel;
         pm.TR = 1;
         pm.HRF.Type      = 'vista_twogammas';
@@ -78,7 +82,33 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
     
     legend({'norm, TR=1','sum, TR=1','norm, TR=1.4','sum, TR=1.4'})
     
+        % PLOT NOISE
+        pm = prfModel;
+        pm.TR = 1;
+        pm.Noise.seed = 12345;
+        pm.HRF.Type      = 'vista_twogammas';
     
+        pm.HRF.normalize = 'norm';
+        pm.compute
+        sqrt(mean(pm.Noise.values.^2))
+    pm.Noise.plot('window',true,'color' , 'b','windowfreq',false);hold on
+        
+        pm.HRF.normalize = 'sum';
+        pm.compute
+        sqrt(mean(pm.Noise.values.^2))
+    pm.Noise.plot('window',false,'color' , 'g','line','--','windowfreq',false)
+        
+        pm.TR = 1.4;
+        pm.HRF.normalize = 'norm';
+        pm.compute
+        sqrt(mean(pm.Noise.values.^2))
+    pm.Noise.plot('window',false,'color' , 'r','windowfreq',false)
+        pm.HRF.normalize = 'sum';
+        pm.compute
+        sqrt(mean(pm.Noise.values.^2))
+    pm.Noise.plot('window',false,'color' , 'k','line','--','windowfreq',false)
+    
+    legend({'norm, TR=1','sum, TR=1','norm, TR=1.4','sum, TR=1.4'})
     
     
     
@@ -426,7 +456,7 @@ pm.Noise.seed=12345;
             switch pm.Type
                 case 'linear'
                     % Do nothing
-                case 'CSS'
+                case {'CSS','css'}
                     % Exponentiate values
                     pm.timeSeries = pm.timeSeries .^ 0.05;
                     %{

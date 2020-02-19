@@ -1,6 +1,53 @@
 function pmCloudOfResults(compTable, tools,varargin)
 %pmCloudOfResults Return a distribution plot for several noise values
 %   It return only one plot, it need to be composited with another script
+% Examples
+
+%{
+
+close all; clear all; clc;
+    load('/Users/glerma/toolboxes/PRFmodel/local/paper02/sub-paper_ses-sess02-prf_acq-normal_run-01_bold.mat');
+    useHRF      = 'mix';  % {'vista_twogammas','afni_spm','popeye_twogammas','canonical'};
+    tools       = {'vista','afni','popeye','aprf'};
+    onlyCenters = false;
+    userfsize   = 2;
+    centerPerc  = 90;
+    lineStyle   = '-';
+    lineWidth   = 0.7;
+    color       = [.5,.5,.5];
+    xlims       = [-2,8];
+    ylims       = [-2,8];
+    fontsize    = 14;
+    useellipse  = false;
+    xtick       = [1,2,3,4,5];
+    ytick       = [1,2,3,4,5];
+    addcihist   = true;
+    nslvl       = 'mid';
+    numanalysis = length(tools);
+    addtext     = true;
+    saveToType  = 'svg';
+
+    fnameRoot = ['CloudPlots_MixHRF_Noise_HIST' nslvl];
+    mm = mrvNewGraphWin(fnameRoot,[],'on');
+    set(mm,'Units','centimeters','Position',[0 0 10*numanalysis 10]);
+    np      = 0;
+    for tool = tools
+        np=np+1;
+        subplot(1,numanalysis,np)
+        pmCloudOfResults(compTable   , tool , ...
+                         'onlyCenters',onlyCenters, 'userfsize' , userfsize, ...
+                         'centerPerc', centerPerc, 'useHRF', useHRF , ...
+                         'lineStyle' , lineStyle, 'lineWidth' , lineWidth, ...
+                         'noiselevel' ,nslvl , 'addtext',addtext, ...
+                         'color', color, 'xlims',xlims,'ylims',ylims, ...
+                         'xtick',xtick,'ytick',ytick, ...
+                         'fontsize', fontsize, 'addcihist', addcihist, ...
+                         'useellipse', useellipse, ...
+                         'newWin', false ,'saveTo','', 'saveToType',saveToType)
+        end
+     set(gca,'FontName', 'Arial')
+
+%}
 
 %% Read the inputs
 % Make varargin lower case, remove white spaces...
@@ -8,26 +55,26 @@ varargin = mrvParamFormat(varargin);
 % Parse
 p = inputParser;
 p.addRequired('compTable');
-p.addRequired('tools'                    , @iscell);
-p.addParameter('centerdistr'  , true    , @islogical);
-p.addParameter('onlycenters'  , false    , @islogical);
+p.addRequired('tools'                     , @iscell);
+p.addParameter('centerdistr'  , true      , @islogical);
+p.addParameter('onlycenters'  , false     , @islogical);
 p.addParameter('location'     , 'all');
-p.addParameter('userfsize'    , 1        , @isnumeric);
-p.addParameter('userfsizemin' , 1        , @isnumeric);
-p.addParameter('centerperc'   , 50       , @isnumeric);
-p.addParameter('usehrf'       , 'mix'    , @ischar);
-p.addParameter('linestyle'    , '-'      , @ischar);
-p.addParameter('linewidth'    , .7       , @isnumeric);
-p.addParameter('fontsize'     , 14       , @isnumeric);
-p.addParameter('newwin'       , true     , @islogical);
-p.addParameter('noiselevel'   , 'none'   , @ischar);
-p.addParameter('saveto'       , ''       , @ischar);
-p.addParameter('savetotype'   , 'png'    , @ischar);
+p.addParameter('userfsize'    , 1         , @isnumeric);
+p.addParameter('userfsizemin' , 1         , @isnumeric);
+p.addParameter('centerperc'   , 50        , @isnumeric);
+p.addParameter('usehrf'       , 'mix'     , @ischar);
+p.addParameter('linestyle'    , '-'       , @ischar);
+p.addParameter('linewidth'    , .7        , @isnumeric);
+p.addParameter('fontsize'     , 14        , @isnumeric);
+p.addParameter('newwin'       , true      , @islogical);
+p.addParameter('noiselevel'   , 'none'    , @ischar);
+p.addParameter('saveto'       , ''        , @ischar);
+p.addParameter('savetotype'   , 'png'     , @ischar);
 p.addParameter('color'        , 'old'             );
-p.addParameter('addcibar'     , false    , @islogical);
-p.addParameter('addcihist'    , false    , @islogical);
-p.addParameter('useellipse'   , false    , @islogical);
-p.addParameter('addtext'      , true     , @islogical);
+p.addParameter('addcibar'     , false     , @islogical);
+p.addParameter('addcihist'    , false     , @islogical);
+p.addParameter('useellipse'   , false     , @islogical);
+p.addParameter('addtext'      , true      , @islogical);
 p.addParameter('adddice'      , false     , @islogical);
 p.addParameter('addsnr'       , false     , @islogical);
 p.addParameter('xlims'        , [.8,5]    , @isnumeric);
