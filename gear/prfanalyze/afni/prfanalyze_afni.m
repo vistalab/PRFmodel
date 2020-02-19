@@ -34,6 +34,7 @@ if ~isempty(opts_file)
     disp('These are the contents of the json file:')
     tmp
     if ~isempty(tmp)
+        opt.options.afni = tmp.options;
         opts.afni = tmp;
         opts = {'options', opts};
     else

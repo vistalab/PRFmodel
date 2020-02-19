@@ -99,8 +99,8 @@ else:
 all_fields = ('index','voxel') + fields + ('pred',)
 res = {k:np.asarray([u[ii] for u in voxs]) for (ii,k) in enumerate(all_fields)}
 rr = {}
-rr['x0'] = np.cos(res['theta'])  * res['rho']
-rr['y0'] = -np.sin(res['theta']) * res['rho']
+rr['centerx0'] = np.cos(res['theta'])  * res['rho']
+rr['centery0'] = -np.sin(res['theta']) * res['rho']
 rr['sigmamajor'] = res['sigma']
 rr['sigmaminor'] = res['sigma']
 rr['beta'] = res['beta']

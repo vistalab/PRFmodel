@@ -70,7 +70,12 @@ fprintf('\n[pmVistasoft] This is stimradius: %i\n',stimradius)
 
 %% Set up files and directories
 % mkdir(homedir); 
+
+
+
 cd(homedir);
+
+if exist(fullfile(homedir,'Raw'),'dir');error('RAW DIR EXISTS');end
 mkdir(fullfile(homedir, 'Raw'));
 mkdir(fullfile(homedir, 'Stimuli'));
 
@@ -89,17 +94,20 @@ sprintf('/n/n USING TR:%2.2f/n/n',tr)
 stimulus.seq = 1:size(images,3);
 stimulus.seqtiming = (stimulus.seq-1) * tr;
 
-stimfileMat = fullfile('.', filesep, 'Stimuli', 'images_and_params');
+stimfileMat = fullfile('.', 'Stimuli', 'images_and_params');
 save(stimfileMat, 'images', 'stimulus');
 
 %% create a pseudo inplane underlay, required by vistasoft, by averaging the
 %   time series for each voxel
 fmri        = niftiRead(datafile);
-ippath      = fullfile('.', filesep, 'Raw', 'inplane.nii.gz');
+ippath      = fullfile('.', 'Raw', 'inplane.nii.gz');
 ip          = fmri; 
 ip.data     = mean(fmri.data, length(size(fmri.data)));
-ip.dim(end) = 1; 
+ip.dim(end) = 1 
 niftiWrite(ip, ippath);
+
+A = niftiRead(ippath)
+
 
 %% Set up the vistasoft session
 params = mrInitDefaultParams;
@@ -110,10 +118,15 @@ params.sessionCode  = sessioncode;
 params.inplane      = ippath;
 
 [p, f, e] = fileparts(datafile);
-params.functionals  = fullfile('.', filesep,'Raw', sprintf('%s%s', f,e));
+params.functionals  = fullfile('.','Raw', sprintf('%s%s', f,e));
 
 % Run it:
 ok = mrInit(params);
+
+params
+dir(fullfile('.', filesep,'Raw'))
+
+
 
 %% Check it
 %{
@@ -135,9 +148,14 @@ plotMeanTSeries(vw, viewGet(vw, 'current scan'), [], false);
 %% Set up prf model
 
 vw = initHiddenInplane();
-
+% edit GLU: dataTYPES is not found, but it was stablished as global in mrInit()
+% Load mrSESSION in here to see if this solves it
+load(fullfile(homedir,'mrSESSION.mat'))
+disp(dataTYPES)
+dataTYPES.scanParams
 % Set default retinotopy stimulus model parameters
 sParams = rmCreateStim(vw);
+sParams
 sParams.stimType   = 'StimFromScan'; % This means the stimulus images will
                                      % be read from a file.
 sParams.stimSize   = stimradius;     % stimulus radius (deg visual angle)
@@ -156,12 +174,11 @@ sParams.hrfType    = 'two gammas (SPM style)';
 sParams.prescanDuration = 0;
 
 
-% edit GLU: dataTYPES is not found, but it was stablished as global in mrInit()
-% Load mrSESSION in here to see if this solves it
-load(fullfile(homedir,'mrSESSION.mat'))
-dataTYPES = dtSet(dataTYPES, 'rm stim params', sParams);
-saveSession();
 
+
+dataTYPES = dtSet(dataTYPES, 'rm stim params', sParams);
+
+saveSession();
 % Check it
 vw = rmLoadParameters(vw);
 

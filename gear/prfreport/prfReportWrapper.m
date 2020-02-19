@@ -184,7 +184,7 @@ for nr=1:length(J.analyze)
 		resname   = split(trunkname, '_');
         resname   = resname{end};
 		% read the nifti and squeeze the result matrix
-        fprintf('Attempting to read %s\n',fname)
+        fprintf('Attempting to read %s\n',fullfile(pwd,fname))
 		tmp       = niftiRead(fname);
         data      = squeeze(tmp.data);	
 	    % asign it to the table
@@ -197,6 +197,8 @@ for nr=1:length(J.analyze)
             case 'theta'     , resname = 'Theta';
             case 'centerx0'  , resname = 'Centerx0';
             case 'centery0'  , resname = 'Centery0';
+            case 'x0'        , resname = 'Centerx0';
+            case 'y0'        , resname = 'Centery0';
         end
         pmEstimates.(resname) = data;	        
     end
@@ -240,6 +242,7 @@ compTable  = pmResultsCompare(SynthDT, resultsNames, resultsFile, ...
     'params', paramDefaults, ...
     'shorten names', J.shortenParamNames, ...
     'short names', shortnames, ...
+    'addsnrcol',false, ...
     'dotSeries', J.doTSeries);
 fprintf('done\n')
 
@@ -309,11 +312,10 @@ saveToType  = J.pmCloudOfResultsParams.saveToType;
 % load(fullfile(pmRootPath,'local','results.mat'));
 saveTo = reportDir;
 %% FIGURE 5
-kk = mrvNewGraphWin('NoiselessCloudPoints','wide','off');
-% Fig size is relative to the screen used. This is for laptop at 1900x1200
-% set(kk,'Position',[0.007 0.62  0.8  0.3]);
+fnameRoot = 'Noisefree_accuracy';
+kk = mrvNewGraphWin(fnameRoot,'wide','off');
 numanalysis = length(J.analyze);
-set(kk,'Units','centimeters','Position',[0 0 5*numanalysis 5.5]);
+set(kk,'Units','centimeters','Position',[0 0 10*numanalysis 10]);
 nslvl  = 'none';
 for na=1:numanalysis
     subplot(1,numanalysis,na)
@@ -336,46 +338,12 @@ for na=1:numanalysis
                  'useellipse', useellipse, ...
                  'newWin'    , false ,'saveTo'     ,'','saveToType', saveToType)
 end
-%{
-subplot(1,4,2)
-tools  = {'afni'};
-useHRF = 'afni_spm';
-nslvl  = 'none';
-pmCloudOfResults(compTable   , tools ,'onlyCenters',onlyCenters ,'userfsize' , userfsize, ...
-                 'centerPerc', centerPerc    ,'useHRF'     ,useHRF,'lineStyle' , lineStyle, ...
-                 'lineWidth' , lineWidth     ,'noiselevel' ,nslvl , 'fontsize', fontsize, ...
-                 'newWin'    , false ,'saveTo'     ,'','saveToType',saveToType)
-
-subplot(1,4,3)
-tools  = {'popeye'};
-useHRF = 'popeye_twogammas';
-nslvl  = 'none';
-pmCloudOfResults(compTable   , tools ,'onlyCenters',onlyCenters ,'userfsize' , userfsize, ...
-                 'centerPerc', centerPerc    ,'useHRF'     ,useHRF,'lineStyle' , lineStyle, ...
-                 'lineWidth' , lineWidth     ,'noiselevel' ,nslvl , 'fontsize', fontsize, ...
-                 'newWin'    , false ,'saveTo'     ,'','saveToType',saveToType)
-
-subplot(1,4,4)
-tools  = {'aprf'};
-useHRF = 'canonical';
-nslvl  = 'none';
-pmCloudOfResults(compTable   , tools ,'onlyCenters',onlyCenters ,'userfsize' , userfsize, ...
-                 'centerPerc', centerPerc    ,'useHRF'     ,useHRF,'lineStyle' , lineStyle, ...
-                 'lineWidth' , 1   ,'noiselevel' ,nslvl , 'fontsize', fontsize, ...
-                 'newWin'    , false ,'saveTo'     ,'','saveToType',saveToType)
-%}
-fnameRoot = 'Noisefree_accuracy';
-set(gca,'FontName', 'Helvetica')
+set(gca,'FontName', 'Arial')
 saveas(kk,fullfile(saveTo, strcat(fnameRoot,'.',saveToType)),saveToType);
 
 
 
 %% FIGURE 7
-% LOW NOISE
-mm = mrvNewGraphWin('NoiselessCloudPoints',[],'off');
-% Fig size is relative to the screen used. This is for laptop at 1900x1200
-%set(mm,'Position',[0.007 0.62  0.8  0.8]);
-set(mm,'Units','centimeters','Position',[0 0 5*numanalysis 5.5*numanalysis]);
 tools   = {};
 useHRFs = {};
 for nj=1:length(J.analyze)
@@ -395,104 +363,54 @@ for nj=1:length(J.analyze)
     tools{nj}   = tool;
     useHRFs{nj} = useHRF;
 end
-% tools   = {'vista','afni','popeye','aprf'};
-% useHRFs = {'vista_twogammas','afni_spm','popeye_twogammas','canonical'};
-nslvl   = 'low';
-np      = 0;
-for tool = tools; for useHRF = useHRFs
-    np=np+1;
-    subplot(numanalysis,numanalysis,np)
-    pmCloudOfResults(compTable   , tool ,'onlyCenters',onlyCenters ,'userfsize' , userfsize, ...
-                 'centerPerc', centerPerc    ,'useHRF'     ,useHRF{:},'lineStyle' , lineStyle, ...
-                 'lineWidth' , lineWidth     ,'noiselevel' ,nslvl , 'addtext',addtext, ...
-                 'useellipse', useellipse, ...
-                 'color', color, 'xlims',xlims,'ylims',ylims,'fontsize', fontsize, ...
-                 'xtick',xtick,'ytick',ytick, 'addcibar', addcibar,'addcihist', addcihist,  ...
-                 'newWin'    , false ,'saveTo'     ,'','saveToType',saveToType)
-end;end
-fnameRoot = ['CloudPlots_4x4_Noise_' nslvl];
-set(gca,'FontName', 'Helvetica')
-saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.',saveToType)),saveToType);
 
-
-% MID NOISE
-mm = mrvNewGraphWin('NoiselessCloudPoints',[],'off');
-% Fig size is relative to the screen used. This is for laptop at 1900x1200
-%set(mm,'Position',[0.007 0.62  0.8  0.8]);
-set(mm,'Units','centimeters','Position',[0 0 20 22]);
-% tools   = {'vista','afni','popeye','aprf'};
-% useHRFs = {'vista_twogammas','afni_spm','popeye_twogammas','canonical'};
-nslvl   = 'mid';
-np      = 0;
-for useHRF = useHRFs; for tool = tools
-    np=np+1;
-    subplot(numanalysis,numanalysis,np)
-    % figure
-    pmCloudOfResults(compTable   , tool ,'onlyCenters',onlyCenters ,'userfsize' , userfsize, ...
-                 'centerPerc', centerPerc    ,'useHRF'     ,useHRF{:},'lineStyle' , lineStyle, ...
-                'lineWidth' , lineWidth     ,'noiselevel' ,nslvl , 'addtext',addtext, ...
-                'xtick',xtick,'ytick',ytick, 'useellipse', useellipse, ...
-                 'color', color, 'xlims',xlims,'ylims',ylims,'fontsize', fontsize,'addcihist', addcihist,  ...
-                 'newWin'    , false ,'saveTo'     ,'','saveToType',saveToType)
-end;end
-fnameRoot = ['CloudPlots_4x4_Noise_' nslvl];
-set(gca,'FontName', 'Helvetica')
-saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.',saveToType)),saveToType);
-
-
-% HIGH NOISE
-%{
-mm = mrvNewGraphWin('NoiselessCloudPoints');
-% Fig size is relative to the screen used. This is for laptop at 1900x1200
-% set(mm,'Position',[0.007 0.62  0.8  0.8]);
-set(mm,'Units','centimeters','Position',[0 0 20 22]);
-tools   = {'vista','afni','popnohrf','aprf'};
-tools   = {'vista','afni','aprf'};
-useHRFs = {'vista_twogammas','afni_spm','popeye_twogammas','canonical'};
-nslvl   = 'high';
-np      = 0;
-for tool = tools; for useHRF = useHRFs
-    np=np+1;
-    subplot(4,4,np)
-    pmCloudOfResults(compTable   , tool ,'onlyCenters',onlyCenters ,'userfsize' , userfsize, ...
-                 'centerPerc', centerPerc    ,'useHRF'     ,useHRF{:},'lineStyle' , lineStyle, ...
-                 'lineWidth' , lineWidth     ,'noiselevel' ,nslvl , 'addtext',addtext, ...
-                 'color', color, 'xlims',xlims,'ylims',ylims,'fontsize', fontsize, ...
-                 'xtick',xtick,'ytick',ytick, 'addcibar', addcibar, ...
-                 'newWin'    , false ,'saveTo'     ,'','saveToType',saveToType)
-end;end
-fnameRoot = ['CloudPlots_4x4_Noise_' nslvl];
-set(gca,'FontName', 'Helvetica')
-saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
-%}
-
+nslvls   = {'low','mid'};
+for nslvl = nslvls
+    fnameRoot = ['CloudPlots_4x4_Noise_' nslvl{:}];
+    mm = mrvNewGraphWin(fnameRoot,[],'off');
+    set(mm,'Units','centimeters','Position',[0 0 10*numanalysis 10*numanalysis]);
+    np      = 0;
+    for tool = tools; for useHRF = useHRFs
+        np=np+1;
+        subplot(numanalysis,numanalysis,np)
+        pmCloudOfResults(compTable   , tool ,'onlyCenters',onlyCenters ,'userfsize' , userfsize, ...
+                     'centerPerc', centerPerc    ,'useHRF'     ,useHRF{:},'lineStyle' , lineStyle, ...
+                     'lineWidth' , lineWidth     ,'noiselevel' ,nslvl{:} , 'useellipse', useellipse, ...
+                     'addtext',addtext, 'adddice',false,'addsnr',false,...
+                     'color', color, 'xlims',xlims,'ylims',ylims,'fontsize', fontsize, ...
+                     'xtick',xtick,'ytick',ytick, 'addcibar', addcibar,'addcihist', addcihist,  ...
+                     'newWin'    , false ,'saveTo'     ,'','saveToType',saveToType)
+    end;end
+    set(gca,'FontName', 'Arial')
+    saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.',saveToType)),saveToType);
+end
 
 
 %% FIGURE 8
-% MID NOISE, ALL MIXED HRFs
-mm = mrvNewGraphWin('MidNoiseMixHRFCloudPoints',[],'off');
-% Fig size is relative to the screen used. This is for laptop at 1900x1200
-% set(mm,'Position',[0.007 0.62  0.8  0.3]);
-set(mm,'Units','centimeters','Position',[0 0 5*numanalysis 5.5]);
-%tools   = {'vista','afni','popeye','aprf'};
 useHRF  = 'mix';
-nslvl   = 'mid';
-np      = 0;
-for tool = tools
-    np=np+1;
-    subplot(1,numanalysis,np)
-    % figure
-    pmCloudOfResults(compTable   , tool ,'onlyCenters',onlyCenters ,'userfsize' , userfsize, ...
-                 'centerPerc', centerPerc    ,'useHRF'     ,useHRF ,'lineStyle' , lineStyle, ...
-                 'lineWidth' , lineWidth     ,'noiselevel' ,nslvl , 'addtext',addtext, ...
-                 'color', color, 'xlims',xlims,'ylims',ylims,'fontsize', fontsize, ...
-                 'useellipse', useellipse, ...
-                 'xtick',xtick,'ytick',ytick, 'addcihist', addcihist, ...
-                 'newWin'    , false ,'saveTo'     ,'','saveToType',saveToType)
+nslvls  = {'low','mid'};
+for nslvl=nslvls   
+    fnameRoot = ['CloudPlots_MixHRF_Noise_HIST' nslvl{:}];
+    mm = mrvNewGraphWin(fnameRoot,[],'off');
+    set(mm,'Units','centimeters','Position',[0 0 10*numanalysis 10]);
+    np      = 0;
+    for tool = tools
+        np=np+1;
+        subplot(1,numanalysis,np)
+        % figure
+        pmCloudOfResults(compTable   , tool ,'onlyCenters',onlyCenters ,'userfsize' , userfsize, ...
+                     'centerPerc', centerPerc    ,'useHRF'     ,useHRF ,'lineStyle' , lineStyle, ...
+                     'lineWidth' , lineWidth     ,'noiselevel' ,nslvl{:} , 'addtext',addtext, ...
+                     'color', color, 'xlims',xlims,'ylims',ylims,'fontsize', fontsize, ...
+                     'useellipse', useellipse, ...
+                     'xtick',xtick,'ytick',ytick, 'addcihist', addcihist, ...
+                     'newWin'    , false ,'saveTo'     ,'','saveToType',saveToType)
+    end
+    set(gca,'FontName', 'Arial')
+    saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.',saveToType)),saveToType);
 end
-fnameRoot = ['CloudPlots_MixHRF_Noise_HIST' nslvl];
-set(gca,'FontName', 'Helvetica')
-saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.',saveToType)),saveToType);
+
+
 fprintf('done\n')
 end  % createplots
 

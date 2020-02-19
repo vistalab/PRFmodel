@@ -10,6 +10,7 @@ addpath(genpath('/data/localhome/glerma/toolboxes/JSONio'));
 addpath(genpath('/data/localhome/glerma/toolboxes/freesurfer_mrtrix_afni_matlab_tools'));
 addpath(genpath('/data/localhome/glerma/toolboxes/vistasoft'));
 addpath(genpath('/data/localhome/glerma/toolboxes/PRFmodel'));
+rmpath(genpath('/data/localhome/glerma/toolboxes/PRFmodel/local'));
 
 mcc -m -R -nodisplay -a /data/localhome/glerma/toolboxes/PRFmodel/data -d compiled prfanalyze_vista.m 
 exit

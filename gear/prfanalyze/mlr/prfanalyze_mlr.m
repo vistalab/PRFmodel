@@ -55,8 +55,8 @@ if ~isempty(opts_file)
     disp('These are the contents of the json file:')
     tmp
     if ~isempty(tmp)
-        opts.vista = tmp;
-        opts = {'options', opts};
+        opt.options.mlr = tmp.options;
+        opts = {'options', opt};
     else
         opts = {};
     end

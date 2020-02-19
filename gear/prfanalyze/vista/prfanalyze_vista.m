@@ -3,10 +3,11 @@ function prfanalyze_vista(opts_file, json_file, bold_file, stim_file, output_dir
 % (C) Vista Lab, Stanford University, 2019
 % 
 %{
-bold_file  = '/data/localhome/glerma/toolboxes/PRFmodel/local/output/alex/BIDS/sub-alexsynth/ses-stim5v02/func/sub-alexsynth_ses-stim5v02_task-prf_acq-normal_run-01_bold.nii.gz';
-json_file  = '/data/localhome/glerma/toolboxes/PRFmodel/local/output/alex/BIDS/derivatives/prfsynth/sub-alexsynth/ses-stim5v02/sub-alexsynth_ses-stim5v02_task-prf_acq-normal_run-01_bold.json';
-stim_file  = '/data/localhome/glerma/toolboxes/PRFmodel/local/output/alex/BIDS/stimuli/sub-alexsynth_ses-stim5v02_task-prf_apertures.nii.gz';
-output_dir = '/data/localhome/glerma/toolboxes/PRFmodel/local/output/alex';
+bold_file  = '/data/localhome/glerma/toolboxes/PRFmodel/local/paper02/BIDS/sub-paper/ses-sess02/func/sub-paper_ses-sess02_task-prf_acq-normal_run-01_bold.nii.gz';
+json_file  = '/data/localhome/glerma/toolboxes/PRFmodel/local/paper02/BIDS/derivatives/prfsynth/sub-paper/ses-sess02/sub-paper_ses-sess02_task-prf_acq-normal_run-01_bold.json';
+stim_file  = '/data/localhome/glerma/toolboxes/PRFmodel/local/paper02/BIDS/stimuli/sub-paper_ses-sess02_task-prf_apertures.nii.gz';
+output_dir = '/data/localhome/glerma/toolboxes/PRFmodel/local/paper02';
+opts_file  = '/data/localhome/glerma/toolboxes/PRFmodel/local/paper02/prfanalyze_vista_config_paper_sess02.json'
 %}
     
 %% Initial checks
@@ -55,8 +56,8 @@ if ~isempty(opts_file)
     disp('These are the contents of the json file:')
     tmp
     if ~isempty(tmp)
-        opts.vista = tmp;
-        opts = {'options', opts};
+        opt.options.vista = tmp;
+        opts = {'options', opt};
     else
         opts = {};
     end

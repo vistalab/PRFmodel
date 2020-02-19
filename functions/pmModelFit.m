@@ -74,6 +74,8 @@ allOptions  = p.Results.options;
 % be taken from the defaults 
 allOptions  = pmParamsCompletenessCheck(allOptions, options);
 
+disp('This is the options file comming in:')
+allOptions
 
 %% Convert the input
 % Check if the pm-s come in a table or alone

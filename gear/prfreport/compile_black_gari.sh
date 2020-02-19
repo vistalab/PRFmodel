@@ -9,6 +9,7 @@ addpath(genpath('/data/localhome/glerma/toolboxes/vistasoft'));
 addpath(genpath('/data/localhome/glerma/toolboxes/garikoitzanalyzePRF'));
 addpath(genpath('/data/localhome/glerma/toolboxes/JSONio'));
 addpath(genpath('/data/localhome/glerma/toolboxes/PRFmodel'));
+rmpath(genpath('/data/localhome/glerma/toolboxes/PRFmodel/local'));
 
 mcc -m -R -nodisplay -d compiled prfReportWrapper.m 
 exit

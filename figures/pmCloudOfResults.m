@@ -78,7 +78,7 @@ else
 end
 
 if newWin
-    mrvNewGraphWin(sprintf('Clouds, %s',useHRF));
+    mrvNewGraphWin(sprintf('Clouds, %s',useHRF),'wide');
 end
 % Inside function operations
 % Check that only one size value has been passed
@@ -296,39 +296,40 @@ if addcibar && ~strcmp(noiseLevel, "none")
     %}
 end
 
+
 if addcihist && ~strcmp(noiseLevel, "none")
     % Create new axes
     bigax = xlims(2)-xlims(1);
     smax  = 0.3 * bigax;
     startx = xlims(1)+0.12*smax;
-    starty = ylims(1)+0.12*smax;
+    starty = ylims(1)+0.2*smax;
     endx   = xlims(1)+smax;
     endy   = ylims(1)+smax;
+    % Find equivalencies
+    realxbeg = 0; % degrees
+    realxend = 6; % degrees
+    gt       = unique(dt.synth.sMaj);
+    rgt      = rescale([realxbeg, gt, realxend],startx,endx);
+    % Where to write text
     textx  = mean([startx,endx]);
     texty  = mean([starty,ylims(1)]);
     hax = plot([startx, endx],starty*[1,1],'Color','k','LineStyle','-','LineWidth',1);hold on;
     vax = plot(startx*[1,1],[starty, endy],'Color','k','LineStyle','-','LineWidth',1);
     % Calculate the size density function
-    [pdfsizes,xsizes] = ksdensity(Sizes);
-    % Store the limits
-    origStartx = xsizes(1);
-    origEndx   = xsizes(end);
-    % Find ground truth location
-    gt                  = unique(dt.synth.sMaj);
-    [~,groundtruthloc]  = min(abs(xsizes - (gt  * ones(size(xsizes)))));
+    [pdfsizes,xsizes] = ksdensity(Sizes,'Support','positive','BoundaryCorrection','reflection');
     % Rescale the values to be inside the new axes
-    rxsizes   = rescale(xsizes,startx,endx);
+    tmp = rescale([realxbeg, xsizes(end), realxend],startx,endx);
+    rxsizes   = rescale(xsizes,startx,tmp(2));
     rpdfsizes = rescale(pdfsizes,starty,endy);
-    % Calculate rescaled gt
-    rgt     = rxsizes(groundtruthloc);
     % Plot it
     plot(rxsizes,rpdfsizes,'Color','k','LineStyle','-','LineWidth',1.5); hold on;
     % Add line where the ground truth is
-    hmin = plot(rgt*[1,1],[starty rpdfsizes(groundtruthloc)],'Color','b','LineStyle','-','LineWidth',2);hold on;
+    hmin = plot(rgt(2)*[1,1],[starty endy],'Color','b','LineStyle','--','LineWidth',1.5);hold on;
     % Add a text with the ground truth value
-    text(startx, texty, sprintf('%.2g',origStartx));
-    text(rgt, texty, sprintf('%.2g',gt));
-    text(endx, texty, sprintf('%.2g deg (RF size), Ratio(mean(fit./gt)): %.2g',origEndx, mean(Sizes./gt)));
+    %  (use the percentile min and max)
+    text(startx, texty, sprintf('%i',realxbeg), 'FontSize',10);
+    text(endx, texty, sprintf('%i deg',realxend), 'FontSize',10);
+    text(rgt(2), texty, sprintf('%i',gt), 'FontSize',10);
 end
 
 if addtext
