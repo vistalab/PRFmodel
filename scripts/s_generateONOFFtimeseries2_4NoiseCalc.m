@@ -455,7 +455,7 @@ saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
 
 
 
-% Fit the parameters in pmNoise until we have similar values
+%% Fit the parameters in pmNoise until we have similar values
 % It is already a signal percent change
 % No need to create noise free signal and substract. Our noise is already fMRI
 % BOLD signal percent change
@@ -486,13 +486,14 @@ Fsynth          = Fsynth(1:round((pm.timePointsN/2)));
 Fsynthmax       = Fsynth;
 pm.plot('what','both','window',false,'addtext',false,'color',gcolor)
 xlabel('Time [sec]'),set(gca,'FontSize',16)
-ylabel('BOLD contrast')
+ylabel('SFC')
 ylim([-0.2,0.3])
 pm.compute
 title('Low noise voxel')
 text(1,-0.15,sprintf('Contr.(s+n):%0.2f | Contr.(s): %0.2f | SNR: %0.2f', ...
                     (max(pm.BOLDnoise)-min(pm.BOLDnoise))/2, (max(pm.BOLD)-min(pm.BOLD))/2, pm.SNR), ...
      'FontSize',16,'FontWeight','bold')
+
 
 subplot(2,3,2)
 % Change for mid voxel
@@ -560,7 +561,39 @@ fnameRoot = 'SyntheticVoxelTimeSeriesAndSpectrum';
 saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
 
 
+% Another calculation related to snr
+pm                       = prfModel;
+pm.TR                    = 1;
+pm.BOLDcontrast          = 4;
+pm.Noise.jitter          = [0,0]; % [freq, ampl]
+pm.signalPercentage      = 'frac';
 
+pm.Stimulus.durationSecs = 200;
+pm.Noise.setVoxelDefaults('mid noise');
+
+pm.Noise.seed            = 12347;
+pm.compute;pm.SNR
+mid1                     = pm.BOLDnoise;
+pm.Noise.seed            = 11111;
+pm.compute;pm.SNR
+mid2                     = pm.BOLDnoise;
+pm.Noise.seed            = 54321;
+pm.compute;pm.SNR
+mid3                     = pm.BOLDnoise;
+pm.Noise.seed            = 22222;
+pm.compute;pm.SNR
+mid4                     = pm.BOLDnoise;
+pm.Noise.seed            = 33333;
+pm.compute;pm.SNR
+mid5                     = pm.BOLDnoise;
+% Calculate the mean and the snr
+mid    = mean([mid1;mid2;mid3]);
+midsnr = snr(pm.BOLD, (mid-pm.BOLD))
+
+pm.Noise.setVoxelDefaults('low noise');
+pm.Noise.seed            = 12345;
+pm.compute;
+pm.SNR
 
 
 %% Plot the noise distribuion now

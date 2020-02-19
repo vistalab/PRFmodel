@@ -1,6 +1,53 @@
 function pmCloudOfResults(compTable, tools,varargin)
 %pmCloudOfResults Return a distribution plot for several noise values
 %   It return only one plot, it need to be composited with another script
+% Examples
+
+%{
+
+close all; clear all; clc;
+    load('/Users/glerma/toolboxes/PRFmodel/local/paper02/sub-paper_ses-sess02-prf_acq-normal_run-01_bold.mat');
+    useHRF      = 'mix';  % {'vista_twogammas','afni_spm','popeye_twogammas','canonical'};
+    tools       = {'vista','afni','popeye','aprf'};
+    onlyCenters = false;
+    userfsize   = 2;
+    centerPerc  = 90;
+    lineStyle   = '-';
+    lineWidth   = 0.7;
+    color       = [.5,.5,.5];
+    xlims       = [-2,8];
+    ylims       = [-2,8];
+    fontsize    = 14;
+    useellipse  = false;
+    xtick       = [1,2,3,4,5];
+    ytick       = [1,2,3,4,5];
+    addcihist   = true;
+    nslvl       = 'mid';
+    numanalysis = length(tools);
+    addtext     = true;
+    saveToType  = 'svg';
+
+    fnameRoot = ['CloudPlots_MixHRF_Noise_HIST' nslvl];
+    mm = mrvNewGraphWin(fnameRoot,[],'on');
+    set(mm,'Units','centimeters','Position',[0 0 10*numanalysis 10]);
+    np      = 0;
+    for tool = tools
+        np=np+1;
+        subplot(1,numanalysis,np)
+        pmCloudOfResults(compTable   , tool , ...
+                         'onlyCenters',onlyCenters, 'userfsize' , userfsize, ...
+                         'centerPerc', centerPerc, 'useHRF', useHRF , ...
+                         'lineStyle' , lineStyle, 'lineWidth' , lineWidth, ...
+                         'noiselevel' ,nslvl , 'addtext',addtext, ...
+                         'color', color, 'xlims',xlims,'ylims',ylims, ...
+                         'xtick',xtick,'ytick',ytick, ...
+                         'fontsize', fontsize, 'addcihist', addcihist, ...
+                         'useellipse', useellipse, ...
+                         'newWin', false ,'saveTo','', 'saveToType',saveToType)
+        end
+     set(gca,'FontName', 'Arial')
+
+%}
 
 %% Read the inputs
 % Make varargin lower case, remove white spaces...
@@ -8,26 +55,26 @@ varargin = mrvParamFormat(varargin);
 % Parse
 p = inputParser;
 p.addRequired('compTable');
-p.addRequired('tools'                    , @iscell);
-p.addParameter('centerdistr'  , true    , @islogical);
-p.addParameter('onlycenters'  , false    , @islogical);
+p.addRequired('tools'                     , @iscell);
+p.addParameter('centerdistr'  , true      , @islogical);
+p.addParameter('onlycenters'  , false     , @islogical);
 p.addParameter('location'     , 'all');
-p.addParameter('userfsize'    , 1        , @isnumeric);
-p.addParameter('userfsizemin' , 1        , @isnumeric);
-p.addParameter('centerperc'   , 50       , @isnumeric);
-p.addParameter('usehrf'       , 'mix'    , @ischar);
-p.addParameter('linestyle'    , '-'      , @ischar);
-p.addParameter('linewidth'    , .7       , @isnumeric);
-p.addParameter('fontsize'     , 14       , @isnumeric);
-p.addParameter('newwin'       , true     , @islogical);
-p.addParameter('noiselevel'   , 'none'   , @ischar);
-p.addParameter('saveto'       , ''       , @ischar);
-p.addParameter('savetotype'   , 'png'    , @ischar);
+p.addParameter('userfsize'    , 1         , @isnumeric);
+p.addParameter('userfsizemin' , 1         , @isnumeric);
+p.addParameter('centerperc'   , 50        , @isnumeric);
+p.addParameter('usehrf'       , 'mix'     , @ischar);
+p.addParameter('linestyle'    , '-'       , @ischar);
+p.addParameter('linewidth'    , .7        , @isnumeric);
+p.addParameter('fontsize'     , 14        , @isnumeric);
+p.addParameter('newwin'       , true      , @islogical);
+p.addParameter('noiselevel'   , 'none'    , @ischar);
+p.addParameter('saveto'       , ''        , @ischar);
+p.addParameter('savetotype'   , 'png'     , @ischar);
 p.addParameter('color'        , 'old'             );
-p.addParameter('addcibar'     , false    , @islogical);
-p.addParameter('addcihist'    , false    , @islogical);
-p.addParameter('useellipse'   , false    , @islogical);
-p.addParameter('addtext'      , true     , @islogical);
+p.addParameter('addcibar'     , false     , @islogical);
+p.addParameter('addcihist'    , false     , @islogical);
+p.addParameter('useellipse'   , false     , @islogical);
+p.addParameter('addtext'      , true      , @islogical);
 p.addParameter('adddice'      , false     , @islogical);
 p.addParameter('addsnr'       , false     , @islogical);
 p.addParameter('xlims'        , [.8,5]    , @isnumeric);
@@ -301,34 +348,34 @@ if addcihist && ~strcmp(noiseLevel, "none")
     bigax = xlims(2)-xlims(1);
     smax  = 0.3 * bigax;
     startx = xlims(1)+0.12*smax;
-    starty = ylims(1)+0.12*smax;
+    starty = ylims(1)+0.2*smax;
     endx   = xlims(1)+smax;
     endy   = ylims(1)+smax;
+    % Find equivalencies
+    realxbeg = 0; % degrees
+    realxend = 6; % degrees
+    gt       = unique(dt.synth.sMaj);
+    rgt      = rescale([realxbeg, gt, realxend],startx,endx);
+    % Where to write text
     textx  = mean([startx,endx]);
     texty  = mean([starty,ylims(1)]);
     hax = plot([startx, endx],starty*[1,1],'Color','k','LineStyle','-','LineWidth',1);hold on;
     vax = plot(startx*[1,1],[starty, endy],'Color','k','LineStyle','-','LineWidth',1);
     % Calculate the size density function
-    [pdfsizes,xsizes] = ksdensity(Sizes);
-    % Store the limits
-    origStartx = xsizes(1);
-    origEndx   = xsizes(end);
-    % Find ground truth location
-    gt                  = unique(dt.synth.sMaj);
-    [~,groundtruthloc]  = min(abs(xsizes - (gt  * ones(size(xsizes)))));
+    [pdfsizes,xsizes] = ksdensity(Sizes,'Support','positive','BoundaryCorrection','reflection');
     % Rescale the values to be inside the new axes
-    rxsizes   = rescale(xsizes,startx,endx);
+    tmp = rescale([realxbeg, xsizes(end), realxend],startx,endx);
+    rxsizes   = rescale(xsizes,startx,tmp(2));
     rpdfsizes = rescale(pdfsizes,starty,endy);
-    % Calculate rescaled gt
-    rgt     = rxsizes(groundtruthloc);
     % Plot it
     plot(rxsizes,rpdfsizes,'Color','k','LineStyle','-','LineWidth',1.5); hold on;
     % Add line where the ground truth is
-    hmin = plot(rgt*[1,1],[starty rpdfsizes(groundtruthloc)],'Color','b','LineStyle','-','LineWidth',2);hold on;
+    hmin = plot(rgt(2)*[1,1],[starty endy],'Color','b','LineStyle','--','LineWidth',1.5);hold on;
     % Add a text with the ground truth value
-    text(startx, texty, sprintf('%.2g',origStartx));
-    text(rgt, texty, sprintf('%.2g',gt));
-    text(endx, texty, sprintf('%.2g deg (RF size), Ratio(mean(fit./gt)): %.2g',origEndx, mean(Sizes./gt)));
+    %  (use the percentile min and max)
+    text(startx, texty, sprintf('%i',realxbeg), 'FontSize',10);
+    text(endx, texty, sprintf('%i deg',realxend), 'FontSize',10);
+    text(rgt(2), texty, sprintf('%i',gt), 'FontSize',10);
 end
 
 if addtext
