@@ -51,6 +51,11 @@ if 'subjectName' not in conf or not pimms.is_str(conf['subjectName']):
     die('config.json does not contain a valid "subjectName" entry')
 if 'sessionName' not in conf or not pimms.is_str(conf['sessionName']):
     die('config.json does not contain a valid "sessionName" entry')
+if 'isPRFSynthData' not in conf:
+    note('Warning: "isPRFSynthData" not found in config JSON; assuming True.')
+    conf['isPRFSynthData'] = True
+    synthQ = True
+else: synthQ = False
 
 # we just have to find the relevant files then echo them for the calling script; in the case of the
 # config file, we write out a new one in the /running directory
@@ -121,12 +126,27 @@ for flnm in os.listdir(func_dir):
     if not (flnm.startswith(bold_prefix) and flnm.endswith(bold_suffix)): continue
     runid = flnm[pn:-sn]
     bold_image = os.path.join(func_dir, flnm)
-    # we also need the stimulus json file, which is in the derivatives directory
-    stimjs_file = os.path.join(
-        bids_dir, 'derivatives', 'prfsynth', 'sub-'+sub, 'ses-'+ses,
-        'sub-%s_ses-%s%s_run-%s_bold.json' % (sub, ses, bids_fields, runid))
-    if not os.path.isfile(stimjs_file):
-        die("Stimulus JSON file (%s) not found" % stimjs_file)
+    # if the data are from prfsynth, we also need the stimulus json file, which is in the
+    # derivatives directory
+    if synthQ:
+        stimjs_file = os.path.join(
+            bids_dir, 'derivatives', 'prfsynth', 'sub-'+sub, 'ses-'+ses,
+            'sub-%s_ses-%s%s_run-%s_bold.json' % (sub, ses, bids_fields, runid))
+        if not os.path.isfile(stimjs_file):
+            die("Stimulus JSON file (%s) not found" % stimjs_file)
+    else:
+        # otherwise, we assume that the required options are in the config.json file
+        if 'stimulus' not in conf:
+            die("In config.json, isPRFSynthData is False, but no stimulus settings were given.")
+        stim = conf['stimulus']
+        if not isinstance(stim, dict):
+            die('In config.json, stimulus data must be a dictionary')
+        stim['isPRFSynthData'] = False
+        # make a temporary file
+        import tempfile
+        (fl, stimjs_file) = tempfile.mkstemp(suffix='.json', text=True)
+        json.dump(stim, fl)
+        close(fl)
     # okay, we have the files; run the solver script!
     try:
         pid = os.fork()
