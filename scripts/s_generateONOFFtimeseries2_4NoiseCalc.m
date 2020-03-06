@@ -464,7 +464,7 @@ pm                       = prfModel;
 pm.TR                    = 1;
 pm.BOLDcontrast          = 4;
 pm.Noise.jitter          = [0,0]; % [freq, ampl]
-pm.signalPercentage      = 'frac';
+pm.signalPercentage      = 'spc';
 
 pm.Stimulus.durationSecs = 200;
 pm.compute;
@@ -486,13 +486,14 @@ Fsynth          = Fsynth(1:round((pm.timePointsN/2)));
 Fsynthmax       = Fsynth;
 pm.plot('what','both','window',false,'addtext',false,'color',gcolor)
 xlabel('Time [sec]'),set(gca,'FontSize',16)
-ylabel('SFC')
-ylim([-0.2,0.3])
+ylabel('SPC')
+ylim([-15,20])
+yticks([-10:10:10])
 pm.compute
 title('Low noise voxel')
-text(1,-0.15,sprintf('Contr.(s+n):%0.2f | Contr.(s): %0.2f | SNR: %0.2f', ...
-                    (max(pm.BOLDnoise)-min(pm.BOLDnoise))/2, (max(pm.BOLD)-min(pm.BOLD))/2, pm.SNR), ...
-     'FontSize',16,'FontWeight','bold')
+% text(1,-10,sprintf('Contr.(s+n):%0.2f | Contr.(s): %0.2f | SNR: %0.2f', ...
+%                     (max(pm.BOLDnoise)-min(pm.BOLDnoise))/2, (max(pm.BOLD)-min(pm.BOLD))/2, pm.SNR), ...
+%      'FontSize',16,'FontWeight','bold')
 
 
 subplot(2,3,2)
@@ -507,13 +508,14 @@ Fsynth          = Fsynth(1:round((pm.timePointsN/2)));
 Fsynthmid       = Fsynth;
 pm.plot('what','both','window',false,'addtext',false,'color',bcolor)
 set(gca,'FontSize',16);
-ylim([-0.2,0.3])
+ylim([-15,20])
+yticks([-10:10:10])
 xlabel('Time [sec]'), 
 pm.compute
 title('Mid noise voxel')
-text(1,-0.15,sprintf('Contr.(s+n):%0.2f | Contr.(s): %0.2f | SNR: %0.2f', ...
-                    (max(pm.BOLDnoise)-min(pm.BOLDnoise))/2, (max(pm.BOLD)-min(pm.BOLD))/2, pm.SNR), ...
-     'FontSize',16,'FontWeight','bold')
+% text(1,-10,sprintf('Contr.(s+n):%0.2f | Contr.(s): %0.2f | SNR: %0.2f', ...
+%                     (max(pm.BOLDnoise)-min(pm.BOLDnoise))/2, (max(pm.BOLD)-min(pm.BOLD))/2, pm.SNR), ...
+%      'FontSize',16,'FontWeight','bold')
 
 subplot(2,3,3)
 % Change for min voxel
@@ -526,13 +528,14 @@ Fsynth(2:end-1) = 2*Fsynth(2:end-1);
 Fsynth          = Fsynth(1:round((pm.timePointsN/2)));
 Fsynthmin       = Fsynth;
 pm.plot('what','both','window',false,'addtext',false,'color',rcolor);
-ylim([-0.2,0.3])
+ylim([-15,20])
+yticks([-10:10:10])
 xlabel('Time [sec]'), set(gca,'FontSize',16)
 pm.compute
 title('High noise voxel')
-text(1,-0.15,sprintf('Contr.(s+n):%0.2f | Contr.(s): %0.2f | SNR: %0.2f', ...
-                    (max(pm.BOLDnoise)-min(pm.BOLDnoise))/2, (max(pm.BOLD)-min(pm.BOLD))/2, pm.SNR), ...
-     'FontSize',16,'FontWeight','bold')
+% text(1,-10,sprintf('Contr.(s+n):%0.2f | Contr.(s): %0.2f | SNR: %0.2f', ...
+%                     (max(pm.BOLDnoise)-min(pm.BOLDnoise))/2, (max(pm.BOLD)-min(pm.BOLD))/2, pm.SNR), ...
+%      'FontSize',16,'FontWeight','bold')
 
 subplot(2,3,4)
 plot(sfrequency(2:end,:),Fsynthmax(2:end,:),'-','color',gcolor);hold on;
@@ -561,7 +564,7 @@ fnameRoot = 'SyntheticVoxelTimeSeriesAndSpectrum';
 saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
 
 
-% Another calculation related to snr
+%% Another calculation related to snr
 pm                       = prfModel;
 pm.TR                    = 1;
 pm.BOLDcontrast          = 4;
