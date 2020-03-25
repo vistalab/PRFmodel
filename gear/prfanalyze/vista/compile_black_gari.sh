@@ -9,6 +9,7 @@ addpath(genpath('/data/localhome/glerma/toolboxes/jsonlab_v1.2'));
 addpath(genpath('/data/localhome/glerma/toolboxes/JSONio'));
 addpath(genpath('/data/localhome/glerma/toolboxes/freesurfer_mrtrix_afni_matlab_tools'));
 addpath(genpath('/data/localhome/glerma/toolboxes/vistasoft'));
+rmpath(genpath('/data/localhome/glerma/toolboxes/vistasoft/local'));
 addpath(genpath('/data/localhome/glerma/toolboxes/PRFmodel'));
 rmpath(genpath('/data/localhome/glerma/toolboxes/PRFmodel/local'));
 

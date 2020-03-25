@@ -103,10 +103,11 @@ fmri        = niftiRead(datafile);
 ippath      = fullfile('.', 'Raw', 'inplane.nii.gz');
 ip          = fmri; 
 ip.data     = mean(fmri.data, length(size(fmri.data)));
-ip.dim(end) = 1
+ip.dim      = size(ip.data);
+ip.ndim     = numel(ip.dim);
 niftiWrite(ip, ippath);
 
-A = niftiRead(ippath)
+% A = niftiRead(ippath)
 
 
 %% Set up the vistasoft session

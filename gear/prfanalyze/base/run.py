@@ -135,6 +135,7 @@ for flnm in os.listdir(func_dir):
         if not os.path.isfile(stimjs_file):
             die("Stimulus JSON file (%s) not found" % stimjs_file)
     else:
+        print("[base/run.py] Using real data, not coming from prfsynthesize.")
         # otherwise, we assume that the required options are in the config.json file
         if 'stimulus' not in conf:
             die("In config.json, isPRFSynthData is False, but no stimulus settings were given.")
@@ -145,8 +146,14 @@ for flnm in os.listdir(func_dir):
         # make a temporary file
         import tempfile
         (fl, stimjs_file) = tempfile.mkstemp(suffix='.json', text=True)
-        json.dump(stim, fl)
-        close(fl)
+        print("[base/run.py] This is the temp file with stim info: ")
+        print(stimjs_file)
+        print("[base/run.py] This is the content: ")
+        print(stim)
+        with open(stimjs_file, 'w') as json_data:
+               json.dump(stim, json_data)
+        # json.dump(stim, fl)
+        # close(fl)
     # okay, we have the files; run the solver script!
     try:
         pid = os.fork()
