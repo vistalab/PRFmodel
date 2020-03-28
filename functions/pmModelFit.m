@@ -121,7 +121,7 @@ if iscell(input)
     % end
     % 2: json with the metadata
     synthDT  = struct2table(jsonread(JSONname));
-    if contains('isPRFSynthData',synthDT.Properties.VariableNames)
+    if ismember('isPRFSynthData',synthDT.Properties.VariableNames)
         TRsynth           = TRdata;
         signalPercentage  = 'bold';
         % Check that the stim diameter was passed
