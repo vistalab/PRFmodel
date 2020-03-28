@@ -1230,8 +1230,6 @@ saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
 
 end
 
-
-
 %% Make the MITIGATION PLOT ALL TOGETHER
 if mitigationPLOT
     % We are going to do 2 separate plots at the end

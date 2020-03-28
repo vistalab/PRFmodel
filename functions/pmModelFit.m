@@ -462,7 +462,6 @@ switch prfimplementation
                 
         % Obtain the modelfit,
         pmEstimates = pmVistaObtainPrediction(pmEstimates, results);
-        
         pmEstimates.R2         = calccod(pmEstimates.testdata,  pmEstimates.modelpred,2);
         pmEstimates.rss        = results.model{1}.rss';
         pmEstimates.RMSE       = sqrt(mean((pmEstimates.testdata - pmEstimates.modelpred).^2,2));

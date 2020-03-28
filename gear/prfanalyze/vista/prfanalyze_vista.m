@@ -65,52 +65,8 @@ else
     opts = {};
 end
 
-
-
-
 % Make the output directory
 mkdir(output_dir);
-
-%% Parse the JSON file or object
-%{
-% Create a pm instance, we will use it in both cases
-pm = prfModel;
-% Check if we need to read a json or provide a default one
-if exist(json_file, 'file') == 2
-    J = loadjson(json_file);
-    if iscell(J)
-        J=J{:};
-    end
-else
-    % #TODO --clean this up to be appropriate for prfanalyze-aprf
-    % return the default json and exit
-    DEFAULTS = pm.defaultsTable;
-    % Add two params required to generate the file
-    DEFAULTS.subjectName = "editDefaultSubjectName";
-    DEFAULTS.sessionName = "editDefaultSessionName";
-    DEFAULTS.repeats  = 2;
-    % Reorder fieldnames
-    DEF_colnames = DEFAULTS.Properties.VariableNames;
-    DEF_colnames = DEF_colnames([end-2:end,1:end-3]);
-    DEFAULTS     = DEFAULTS(:,DEF_colnames);
-    % Select filename to be saved
-    fname = fullfile(output_dir, 'defaultParams_ToBeEdited.json');
-    % Encode json
-    jsonString = jsonencode(DEFAULTS);
-    % Format a little bit
-    jsonString = strrep(jsonString, ',', sprintf(',\n'));
-    jsonString = strrep(jsonString, '[{', sprintf('[\n{\n'));
-    jsonString = strrep(jsonString, '}]', sprintf('\n}\n]'));
-
-    % Write it
-    fid = fopen(fname,'w');if fid == -1,error('Cannot create JSON file');end
-    fwrite(fid, jsonString,'char');fclose(fid);
-    % Permissions
-    fileattrib(fname,'+w +x', 'o g'); 
-    disp('defaultParams_ToBeEdited.json written, edit it and pass it to the container to generate synthetic data.')
-    return
-end
-%}
 
 
 %% check that the other relevant files eist
