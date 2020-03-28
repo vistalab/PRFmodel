@@ -87,7 +87,7 @@ if iscell(input)
     BOLDname = input{1};
     JSONname = input{2};
     STIMname = input{3};
-    % Read the files
+    % Check the files
     if ~exist(BOLDname,'file'),error('Cannot find %s',BOLDname),end
     if ~exist(JSONname,'file'),error('Cannot find %s',JSONname),end
     if ~exist(STIMname,'file'),error('Cannot find %s',STIMname),end
@@ -101,62 +101,97 @@ if iscell(input)
     
     % 1: nifti with the synthetic BOLD series
     data     = niftiRead(BOLDname);
-    TRdata   = data.pixdim(4);
+    TRdata   = data.pixdim(end);
     % Synthetic datasets larger than 32000 rows come in more dimensions
     % Convert it to 2D again concatenating
-    [s1,s2,s3,s4] = size(data.data);
-    if s1>1 && s2 == 1 && s3==1 && s4>1
+    % [s1,s2,s3,s4] = size(data.data);
+    % if s1>1 && s2 == 1 && s3==1 && s4>1
         data = squeeze(data.data);
-    elseif s1>1 && s2 > 1 && s3==1 && s4>1
-        % A reshape might do, but just wanted control...
-        tmp = zeros(s1*s2,s4);
-        for jj=1:s2
-            tmp(((jj*s1) - s1 + 1):(jj*s1),:) = squeeze(data.data(:,jj,s3,:));
-        end
-        % We will have many 0 time series, delete them
-        nonzeroindx = ~(sum(tmp,2) == 0);
-        data = tmp(nonzeroindx,:);
-    else
-        error('The dimension of nifti is not recognized')
-    end
+    % elseif s1>1 && s2 > 1 && s3==1 && s4>1
+    %     % A reshape might do, but just wanted control...
+    %     tmp = zeros(s1*s2,s4);
+    %     for jj=1:s2
+    %         tmp(((jj*s1) - s1 + 1):(jj*s1),:) = squeeze(data.data(:,jj,s3,:));
+    %     end
+    %     % We will have many 0 time series, delete them
+    %     nonzeroindx = ~(sum(tmp,2) == 0);
+    %     data = tmp(nonzeroindx,:);
+    % else
+    %     error('The dimension of nifti is not recognized')
+    % end
     % 2: json with the metadata
     synthDT  = struct2table(jsonread(JSONname));
-    for na=1:width(synthDT)
-        if isstruct(synthDT{:,na})
-            synthDT.(synthDT.Properties.VariableNames{na}) = struct2table(synthDT{:,na});
+    if contains('isPRFSynthData',synthDT.Properties.VariableNames)
+        TRsynth           = TRdata;
+        signalPercentage  = 'bold';
+        % Check that the stim diameter was passed
+		stimulus_diameter = synthDT.stimulus_diameter; 
+
+        % 3: nifti with the stimuli
+        stimulus = niftiRead(STIMname);
+		TRstim   = stimulus.pixdim(end);
+        stimulus = squeeze(stimulus.data);
+        % Check dimensions
+        if ~isequal(size(data,2), size(stimulus,3))
+            error('Data and stimulus have different time points')
         end
-    end
-    TRsynth = unique(synthDT.TR); if (length(TRsynth) ~= 1),error('More than 1 TR in synth json'),end
-    signalPercentage = unique(synthDT.signalPercentage); if (length(signalPercentage) ~= 1),error('More than 1 signalPercentage in synth json'),end
-    
-    % 3: nifti with the stimuli
-    stimulus = niftiRead(STIMname);
-    TRstim   = stimulus.pixdim(4);
-    stimulus = squeeze(stimulus.data);
-    % Check dimensions
-    if ~isequal(size(data,2), size(stimulus,3))
-        error('Data and stimulus have different time points')
-    end
-    
-    % Obtain the main parameters required for analysis
-    % TR
-    if isclose(TRdata,TRstim,'tolerance',0.001) && isclose(TRstim,TRsynth,'tolerance',0.001)
-        TR = TRdata;
+
+        % Obtain the main parameters required for analysis
+        % TR
+        if isclose(TRdata,TRstim,'tolerance',0.001) && isclose(TRstim,TRsynth,'tolerance',0.001)
+            TR = TRdata;
+        else
+            error('Data and stimulus have different TR')
+        end
+        % Stimulus related
+        Stimulus.ResizedHorz = size(stimulus,2);
+        Stimulus.ResizedVert = size(stimulus,1);
+        Stimulus.fieldofviewHorz = stimulus_diameter;
+        Stimulus.fieldofviewVert = stimulus_diameter;
+        Stimulus.spatialSampleHorz = Stimulus.fieldofviewHorz / Stimulus.ResizedHorz;
+        Stimulus.spatialSampleVert = Stimulus.fieldofviewVert / Stimulus.ResizedVert;
+        stimradius    = Stimulus.fieldofviewHorz / 2;
+        % BOLD related
+        BOLDmeanValue = 10000; % Not used by mrVista, fix for the other tools 
+        if (size(stimulus,3) == size(data,2)),timePointsN = size(data,2), end
+
     else
-        error('Data and stimulus have different TR')
+        for na=1:width(synthDT)
+            if isstruct(synthDT{:,na})
+                synthDT.(synthDT.Properties.VariableNames{na}) = struct2table(synthDT{:,na});
+            end
+        end
+        TRsynth = unique(synthDT.TR); if (length(TRsynth) ~= 1),error('More than 1 TR in synth json'),end
+        signalPercentage = unique(synthDT.signalPercentage); if (length(signalPercentage) ~= 1),error('More than 1 signalPercentage in synth json'),end
+        % 3: nifti with the stimuli
+        stimulus = niftiRead(STIMname);
+        TRstim   = stimulus.pixdim(4);
+        stimulus = squeeze(stimulus.data);
+        % Check dimensions
+        if ~isequal(size(data,2), size(stimulus,3))
+            error('Data and stimulus have different time points')
+        end
+        
+        % Obtain the main parameters required for analysis
+        % TR
+        if isclose(TRdata,TRstim,'tolerance',0.001) && isclose(TRstim,TRsynth,'tolerance',0.001)
+            TR = TRdata;
+        else
+            error('Data and stimulus have different TR')
+        end
+        % Stimulus related
+        Stimulus.ResizedHorz = unique(synthDT.Stimulus.ResizedHorz); if (length(Stimulus.ResizedHorz) ~= 1),error('More than 1 ResizedHorz in synth json'),end
+        Stimulus.ResizedVert = unique(synthDT.Stimulus.ResizedVert); if (length(Stimulus.ResizedVert) ~= 1),error('More than 1 ResizedVert in synth json'),end
+        Stimulus.fieldofviewHorz = unique(synthDT.Stimulus.fieldofviewHorz);if (length(Stimulus.fieldofviewHorz) ~= 1),error('More than 1 fieldofviewHorz in synth json'),end
+        Stimulus.fieldofviewVert = unique(synthDT.Stimulus.fieldofviewVert);if (length(Stimulus.fieldofviewVert) ~= 1),error('More than 1 fieldofviewVert in synth json'),end
+        Stimulus.spatialSampleHorz = Stimulus.fieldofviewHorz/Stimulus.ResizedHorz;
+        Stimulus.spatialSampleVert = Stimulus.fieldofviewVert / Stimulus.ResizedVert;
+        stimradius    = Stimulus.fieldofviewHorz / 2;
+        % BOLD related
+        BOLDmeanValue = unique(synthDT.BOLDmeanValue);
+        if (length(BOLDmeanValue) ~= 1),error('More than 1 BOLDmeanValue in synth json'),end
+        if (size(stimulus,3) == size(data,2)),timePointsN = size(data,2), end
     end
-    % Stimulus related
-    Stimulus.ResizedHorz = unique(synthDT.Stimulus.ResizedHorz); if (length(Stimulus.ResizedHorz) ~= 1),error('More than 1 ResizedHorz in synth json'),end
-    Stimulus.ResizedVert = unique(synthDT.Stimulus.ResizedVert); if (length(Stimulus.ResizedVert) ~= 1),error('More than 1 ResizedVert in synth json'),end
-    Stimulus.fieldofviewHorz = unique(synthDT.Stimulus.fieldofviewHorz);if (length(Stimulus.fieldofviewHorz) ~= 1),error('More than 1 fieldofviewHorz in synth json'),end
-    Stimulus.fieldofviewVert = unique(synthDT.Stimulus.fieldofviewVert);if (length(Stimulus.fieldofviewVert) ~= 1),error('More than 1 fieldofviewVert in synth json'),end
-    Stimulus.spatialSampleHorz = Stimulus.fieldofviewHorz/Stimulus.ResizedHorz;
-    Stimulus.spatialSampleVert = Stimulus.fieldofviewVert / Stimulus.ResizedVert;
-    stimradius    = Stimulus.fieldofviewHorz / 2;
-    % BOLD related
-    BOLDmeanValue = unique(synthDT.BOLDmeanValue);
-    if (length(BOLDmeanValue) ~= 1),error('More than 1 BOLDmeanValue in synth json'),end
-    if (size(stimulus,3) == size(data,2)),timePointsN = size(data,2), end
 else
     niftiInputs = false;
     if ~istable(input)

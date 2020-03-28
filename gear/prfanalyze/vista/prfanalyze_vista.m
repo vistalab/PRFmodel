@@ -9,6 +9,13 @@ stim_file  = '/data/localhome/glerma/toolboxes/PRFmodel/local/paper02/BIDS/stimu
 output_dir = '/data/localhome/glerma/toolboxes/PRFmodel/local/paper02';
 opts_file  = '/data/localhome/glerma/toolboxes/PRFmodel/local/paper02/prfanalyze_vista_config_paper_sess02.json'
 %}
+%{
+bold_file  = '/black/localhome/glerma/TESTDATA/prfmodel/jon_box/BIDS/sub-01/ses-01/func/sub-01_ses-01_task-prf_acq-normal_run-01_bold.nii.gz';
+json_file  = '/black/localhome/glerma/TESTDATA/prfmodel/jon_box/tmpStim.json';
+stim_file  = '/black/localhome/glerma/TESTDATA/prfmodel/jon_box/BIDS/stimuli/sub-01_ses-01_task-prf_apertures.nii.gz';
+output_dir = '/black/localhome/glerma/TESTDATA/prfmodel/jon_box';
+opts_file  = '/black/localhome/glerma/TESTDATA/prfmodel/jon_box/prfanalyze-config-vista.json'
+%}
     
 %% Initial checks
 
@@ -66,7 +73,7 @@ else
 end
 
 % Make the output directory
-mkdir(output_dir);
+if ~exist(output_dir,'dir');mkdir(output_dir);end
 
 
 %% check that the other relevant files eist
@@ -81,13 +88,24 @@ end
 
 %% Call pmModelFit!
 disp('================================================================================');
-disp(opts_file);
 disp(bold_file);
 disp(json_file);
 disp(stim_file);
+disp(opts_file);
+disp(opts{1})
+disp('opts{2}.options.vista')
+opts{2}.options.vista
+disp('opts{2}.options.vista.options')
+opts{2}.options.vista.options
+disp('opts{2}.options.vistai.stimulus')
+opts{2}.options.vista.stimulus
 disp('--------------------------------------------------------------------------------');
 
-[pmEstimates, results] = pmModelFit({bold_file, json_file, stim_file}, 'vista', opts{:});
+% Create the struct options
+options = struct();
+options.vista = opts{2}.options.vista.options;
+
+[pmEstimates, results] = pmModelFit({bold_file, json_file, stim_file}, 'vista', 'options',options);
 %% Write out the results
 estimates_file = fullfile(output_dir, 'estimates.mat');
 estimates = struct(pmEstimates);
