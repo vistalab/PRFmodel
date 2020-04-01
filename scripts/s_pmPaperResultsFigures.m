@@ -6,8 +6,8 @@
 
 % close all;clear all;clc
 % tbUse prfmodel;
-saveTo = '/Users/glerma/gDrive/STANFORD/PROJECTS/2019_PRF_Validation_methods_(Gari)/__PUBLISH__/PAPER_SUBMISSION02/Figures/RAW';
-
+% saveTo = '/Users/glerma/gDrive/STANFORD/PROJECTS/2019_PRF_Validation_methods_(Gari)/__PUBLISH__/PAPER_SUBMISSION02/Figures/RAW';
+saveTo = '/Users/glerma/gDrive/STANFORD/PROJECTS/2019_PRF_Validation_methods_(Gari)/__PUBLISH__/PAPER_SUBMISSION02/REVIEW_01/Figures/RAW';
 
 % Control execution of the script file
 defineFileNames              = false;
@@ -1277,41 +1277,42 @@ if mitigationPLOT
     
     
     % Time and frequency domain
-    fnameRoot = 'Mitigation_B_timeSeries';
+    fnameRoot = 'Mitigation_B_timeSeries_spc';
     xx = mrvNewGraphWin(fnameRoot);
     set(xx,'Position',[0.007 0.62  .4  .6]);
     subplot(2,1,1)
 
     pm                   = prfModel;
-    pm.signalPercentage  = 'frac'
-    pm.BOLDcontrast      = 10;
+    pm.signalPercentage  = 'spc';
+    pm.BOLDcontrast      = 5;
     pm.RF.sigmaMajor     = 1;
     pm.RF.sigmaMinor     = pm.RF.sigmaMajor;
     pm.Noise.seed        = 'none';
-    pm.HRF.Type          = 'vista_twogammas';
-    pm.HRF.normalize     = 'none';
+    pm.HRF.Type          = 'canonical';
+    pm.HRF.normalize     = 'norm';
     pm.Stimulus.durationSecs = 300;
     pm.compute
-    pm.plot('what','nonoise','color',[.8 0 0],'window',false); hold on
+    pm.SNR
+    pm.plot('what','nonoise','color',[.8 0 0],'window',false,'line','-'); hold on
 
     pm.Stimulus.Shuffle      = true;
     pm.Stimulus.shuffleSeed  = 12345;
     pm.compute
-    pm.plot('what','nonoise','color',[0 0 0.8],'window',false);
+    pm.SNR
+    pm.plot('what','nonoise','color',[0 0.8 0],'window',false,'line','-');
     set(gca,'FontSize',14,'FontWeight','bold')
-
 
 
     subplot(2,1,2)
 
     pm                   = prfModel;
-    pm.signalPercentage  = 'frac'
-    pm.BOLDcontrast      = 10;
+    pm.signalPercentage  = 'spc'
+    pm.BOLDcontrast      = 5;
     pm.RF.sigmaMajor     = 1;
     pm.RF.sigmaMinor     = pm.RF.sigmaMajor;
     pm.Noise.seed        = 'none';
-    pm.HRF.Type          = 'vista_twogammas';
-    pm.HRF.normalize     = 'none';
+    pm.HRF.Type          = 'canonical';
+    pm.HRF.normalize     = 'norm';
     pm.Stimulus.durationSecs = 300;
     pm.compute
     pm.plot('what','componentfft','color',[.8 0 0],'window',false); hold on

@@ -164,7 +164,7 @@ pm.Stimulus.Shuffle = true;
         pm.RF.sigmaMinor = pm.RF.sigmaMajor;
         pm.HRF.Type = 'canonical';
         pm.Stimulus.Shuffle = true;
-        pm.Stimulus.shuffleSeed = '12345;
+        pm.Stimulus.shuffleSeed = '12345';
         pm.compute
         pm.SNR
         pm.plot('what','nonoise','color','b','window',true); hold on
@@ -185,7 +185,7 @@ pm.Stimulus.Shuffle = true;
         pm = prfModel;
         pm.RF.sigmaMajor = 1;
         pm.RF.sigmaMinor = pm.RF.sigmaMajor;
-        pm.signalPercentage='bold';
+        pm.signalPercentage='spc';
         pm.HRF.Type = 'boynton';
         pm.HRF.normalize = 'sum';
         pm.Stimulus.Shuffle = false;
@@ -199,7 +199,7 @@ pm.Stimulus.Shuffle = true;
         pm = prfModel;
         pm.RF.sigmaMajor = 1;
         pm.RF.sigmaMinor = pm.RF.sigmaMajor;
-        pm.signalPercentage='bold';
+        pm.signalPercentage='spc';
         pm.HRF.Type = 'boynton';
         pm.Stimulus.Shuffle = true;
         pm.Stimulus.shuffleSeed = 12345;
@@ -252,7 +252,7 @@ pm.Noise.seed=12345;
        % Check mean BOLD, range, contrast
        pm = prfModel;
        pm.BOLDcontrast = 8;
-       pm.signalPercentage='frac';
+       pm.signalPercentage='spc';
        pm.Noise.seed = 12345
        pm.Noise.setVoxelDefaults('low')
        pm.Noise.compute
@@ -832,7 +832,7 @@ pm.Noise.seed=12345;
                 case {'nonoise','noiseless','noisefree'}
                     pm.computeBOLD
                     if w;mrvNewGraphWin([pm.Type 'Synthetic BOLD signal (no noise)']);end
-                    plot(pm.timePointsSeries, pm.BOLD,'o','color',c,'LineStyle',line);
+                    plot(pm.timePointsSeries, pm.BOLD,'color',c,'LineStyle',line);
                 case 'withnoise'
                     pm.compute;
                     if w;mrvNewGraphWin([pm.Type 'Synthetic BOLD signal (noise)']);end
