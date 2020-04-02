@@ -18,7 +18,7 @@ opts_file  = '/black/localhome/glerma/TESTDATA/prfmodel/jon_box/prfanalyze-confi
 %}
     
 %% Initial checks
-
+tic
 % If nothing was passed in, display help and return
 if nargin == 0
     help_file = '/opt/help.txt';
@@ -124,7 +124,7 @@ fwrite(fid, jsonString,'char');fclose(fid);
 
 % Permissions
 fileattrib(output_dir,'+w +x', 'o'); 
-
+toc
 return 
 
 
