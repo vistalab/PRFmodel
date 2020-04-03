@@ -30,10 +30,10 @@ function die {
 }
 # How we get the tr-len out of a nifti:
 function getTRLEN {
-    TRLEN="`python -c \"import neuropythy as ny, pimms; im = ny.load('$1', to='image'); print(pimms.mag(ny.to_image_spec(im)['voxel_duration'], 'seconds')); exit();\"`"
+    TRLEN="`python -c \"import neuropythy as ny, pimms; im = ny.load('$1', to='image'); print(pimms.mag(ny.to_image_spec(im)['voxel_duration'], 'seconds')); exit();\" | sed 's/None/null/g'`"
 }
 function getFRAMES {
-    FRAMES="`python -c \"import neuropythy as ny; im = ny.load('$1', to='image'); print(np.squeeze(im.dataobj).shape[-1]); exit();\"`"
+    FRAMES="`python -c \"import neuropythy as ny, numpy as np; im = ny.load('$1', to='image'); print(np.squeeze(im.dataobj).shape[-1]); exit();\"`"
 }
 function getSLICES {
     SLICES="`python -c \"import neuropythy as ny; im = ny.load('$1', to='image'); print(im.shape[2]); exit();\"`"
