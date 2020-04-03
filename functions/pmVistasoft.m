@@ -90,7 +90,7 @@ ni = niftiRead(fullfile(homedir, 'Stimuli', sprintf('%s%s', f, e)));
 images = squeeze(ni.data);
 pixdim = niftiGet(ni, 'pixdim');
 tr     = pixdim(end);
-sprintf('/n/n USING TR:%2.2f/n/n',tr)
+sprintf('\n\n USING TR:%2.2f \n\n',tr)
 stimulus.seq = 1:size(images,3);
 stimulus.seqtiming = (stimulus.seq-1) * tr;
 

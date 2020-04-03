@@ -493,13 +493,18 @@ switch prfimplementation
             PMs                    = input.pm;
             for ii=1:height(pmEstimates); pmEstimates{ii,'testdata'}=PMs(ii).BOLDnoise;end
         end
-                
+        % Obtain the variance explained
+        varexp         = 1-results.model{1}.rss./results.model{1}.rawrss;
+        pmEstimates.R2 = varexp';
                 
         % Obtain the modelfit,
-        pmEstimates = pmVistaObtainPrediction(pmEstimates, results);
-        pmEstimates.R2         = calccod(pmEstimates.testdata,  pmEstimates.modelpred,2);
-        pmEstimates.rss        = results.model{1}.rss';
-        pmEstimates.RMSE       = sqrt(mean((pmEstimates.testdata - pmEstimates.modelpred).^2,2));
+        % Obtaining the prediction is too costly for big datasets, we can always use this function:
+        % pmEstimates = pmVistaObtainPrediction(pmEstimates, results);
+        % For now, make the output same as the input, to avoid problems downstream
+        pmEstimates.modelpred = pmEstimates.testdata;
+        % pmEstimates.R2         = calccod(pmEstimates.testdata,  pmEstimates.modelpred,2);
+        % pmEstimates.R2        = results.model{1}.varExp';
+        % pmEstimates.RMSE       = sqrt(mean((pmEstimates.testdata - pmEstimates.modelpred).^2,2));
         % errperf(T,P,'mae')
     case {'mrtools','mlrtools','mlr'}
         % Read the options
@@ -1002,8 +1007,8 @@ switch prfimplementation
 end
 
 % Make the order of pmEstimates is always the same, this is required for the unpacking python function in prfanalyze
-% TODO: make it order and count independent
-pmEstimates = pmEstimates(:,{'testdata','Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor','modelpred'});
+% This was fixed in python already
+% pmEstimates = pmEstimates(:,{'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor','R2','testdata','modelpred'});
 
 
 end

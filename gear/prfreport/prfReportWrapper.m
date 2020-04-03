@@ -29,6 +29,8 @@ function prfReportWrapper(json, output_dir)
     output_dir = fullfile(pmRootPath,'local','paper02');
     % jsonPath   = fullfile(pmRootPath,'local','paper02','BIDS','derivatives','prfreport','sub-paper','ses-001','prfreport-configuration-paper-001.json');
     jsonPath   = fullfile(pmRootPath,'local','paper02','prfreport-configuration-paper-225.json');
+    jsonPath   = fullfile(pmRootPath,'local','borrar','prfreport-config_sub-001_sess-20200320.json');
+    output_dir = fullfile(pmRootPath,'local','borrar');
     prfReportWrapper(jsonPath, output_dir);
 
 %}
@@ -80,10 +82,11 @@ else
     DEFAULTS.sessionName = "editDefaultSessionName";
     % But we can compare several diferent analyses to the same data
         analyze             = struct(); 
-        analyze(1).Type     = "valid: aprf popeye vista afni";
-        analyze(2).Type     = "there can be more than one";
+        analyze(1).Type     = "vista";
     DEFAULTS.analyze        = analyze;
-    DEFAULTS.createplots    = false;
+    DEFAULTS.createplot5    = false;
+    DEFAULTS.createplot7    = true;
+    DEFAULTS.createplot8    = false;
     % Other params
         resultParams        = struct();
         resultParams(1).name = "Centerx0";
@@ -105,9 +108,9 @@ else
     % pmCloudOfResults params
         pmCloudOfResultsParams = struct();
         pmCloudOfResultsParams.onlyCenters = false;
-        pmCloudOfResultsParams.userfsize   = 2;
+        pmCloudOfResultsParams.userfsize   = 1;
         pmCloudOfResultsParams.centerPerc  = 90;
-        pmCloudOfResultsParams.useHRF      = "{}";
+        pmCloudOfResultsParams.useHRF      = "{'vista_twogammas'}";
         pmCloudOfResultsParams.lineStyle   = "-";
         pmCloudOfResultsParams.lineWidth   = 0.7;
         pmCloudOfResultsParams.fontsize    = 14;
@@ -115,14 +118,14 @@ else
         pmCloudOfResultsParams.addtext     = true;
         pmCloudOfResultsParams.useellipse  = false;
         pmCloudOfResultsParams.color       = [0.5,0.5,0.5];
-        pmCloudOfResultsParams.xlims       = [0, 5.5];
-        pmCloudOfResultsParams.ylims       = [0, 5.5];
-        pmCloudOfResultsParams.xtick       = [1:5];
-        pmCloudOfResultsParams.ytick       = [1:5];
-        pmCloudOfResultsParams.addcihist   = true;
+        pmCloudOfResultsParams.xlims       = [-2, 2];
+        pmCloudOfResultsParams.ylims       = [-2, 2];
+        pmCloudOfResultsParams.xtick       = [-2,-1,0,1,2];
+        pmCloudOfResultsParams.ytick       = [-2,-1,0,1,2];
+        pmCloudOfResultsParams.addcihist   = false;
         pmCloudOfResultsParams.addcibar    = false;
         pmCloudOfResultsParams.newWin      = false;
-        pmCloudOfResultsParams.saveToType  = 'svg';
+        pmCloudOfResultsParams.saveToType  = 'png';
     DEFAULTS.pmCloudOfResultsParams        = pmCloudOfResultsParams;  
     % Select filename to be saved
     fname = fullfile(output_dir, 'prfreport-configuration-defaults.json');
@@ -170,7 +173,11 @@ if ~TESTMODE
     resultsFile = {};
     resultsNames= {};
     for nr=1:length(J.analyze)
-        antype           = J.analyze{nr}.Type;
+        if nr==1
+            antype           = J.analyze.Type;
+        else
+            antype           = J.analyze{nr}.Type;
+        end
         resultsNames{nr} = antype; 
         resultDir = fullfile(BIDSdir,'derivatives',['prfanalyze-' antype],...
                                       ['sub-' J.subjectName],['ses-' J.sessionName]);
@@ -299,7 +306,6 @@ else
 end
 
 %% Generate the output figures
-if J.createplots
     % Change some defaults for the plots
     set(0,'defaultAxesFontName', 'Arial')
     set(0,'defaultTextFontName', 'Arial')
@@ -328,15 +334,21 @@ if J.createplots
     saveToType  = J.pmCloudOfResultsParams.saveToType;
     % load(fullfile(pmRootPath,'local','results.mat'));
     saveTo = reportDir;
+    numanalysis = length(J.analyze);
+
+if J.createplot5
     %% FIGURE 5
     fnameRoot = 'Noisefree_accuracy';
     kk = mrvNewGraphWin(fnameRoot,'wide','off');
-    numanalysis = length(J.analyze);
     set(kk,'Units','centimeters','Position',[0 0 10*numanalysis 10]);
     nslvl  = 'none';
     for na=1:numanalysis
         subplot(1,numanalysis,na)
-        tools  = J.analyze{na}.Type;
+        if na==1
+            tools  = J.analyze.Type;
+        else   
+            tools  = J.analyze{na}.Type;
+        end
         switch tools
             case {'vista','mrvista','vistasoft'}
                 useHRF = 'vista_twogammas';
@@ -347,7 +359,7 @@ if J.createplots
             case {'aprf','analyzeprf'}
                 useHRF = 'canonical';
             otherwise
-                warning('%s not recorded, using vista_twogammas as default',J.analyze{na})
+                warning('%s not recorded, using vista_twogammas as default',tools)
         end    
         pmCloudOfResults(compTable   , {tools} ,'onlyCenters',onlyCenters ,'userfsize' , userfsize, ...
                      'centerPerc', centerPerc ,'useHRF'     ,useHRF,'lineStyle' , lineStyle, ...
@@ -357,14 +369,19 @@ if J.createplots
     end
     set(gca,'FontName', 'Arial')
     saveas(kk,fullfile(saveTo, strcat(fnameRoot,'.',saveToType)),saveToType);
+end
 
 
-
+if J.createplot7
     %% FIGURE 7
     tools   = {};
     useHRFs = {};
     for nj=1:length(J.analyze)
-        tool = J.analyze{nj}.Type;
+        if nj==1
+            tool = J.analyze.Type;
+        else
+            tool = J.analyze{nj}.Type;
+        end
         switch tool
             case {'vista','mrvista','vistasoft'}
                 useHRF = 'vista_twogammas';
@@ -375,13 +392,13 @@ if J.createplots
             case {'aprf','analyzeprf'}
                 useHRF = 'canonical';
             otherwise
-                warning('%s not recorded, using vista_twogammas as default',J.analyze{na})
+                warning('%s not recorded, using vista_twogammas as default',tool)
         end    
         tools{nj}   = tool;
         useHRFs{nj} = useHRF;
     end
 
-    nslvls   = {'low','mid'};
+    nslvls = unique(compTable.noiseLevel);
     for nslvl = nslvls
         fnameRoot = ['CloudPlots_4x4_Noise_' nslvl{:}];
         mm = mrvNewGraphWin(fnameRoot,[],'off');
@@ -401,11 +418,12 @@ if J.createplots
         set(gca,'FontName', 'Arial')
         saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.',saveToType)),saveToType);
     end
+end
 
-
+if J.createplot8
     %% FIGURE 8
     useHRF  = 'mix';
-    nslvls  = {'low','mid'};
+    nslvls = unique(compTable.noiseLevel);
     for nslvl=nslvls   
         fnameRoot = ['CloudPlots_MixHRF_Noise_HIST' nslvl{:}];
         mm = mrvNewGraphWin(fnameRoot,[],'off');

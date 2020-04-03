@@ -5,7 +5,7 @@
 
 function help {
     cat <<EOF
-prfanalyze.sh is a script for running the various prfanalyze-* Docker images
+run_prfanalyze.sh is a script for running the various prfanalyze-* Docker images
 that were produced in conjunction with the paper "A validation framework for
 neuroimaging software: the case of population receptive fields" by
 Lerma-Usabiaga, Benson, Winawer, and Wandell (DOI: 10.1101/2020.01.07.897991).
@@ -18,8 +18,8 @@ In order to run, this script needs three things:
 Additionally, an input directory (if separate from the output directory) may be
 provided.
 
-The syntax for running prfanalyze.sh is as follows:
- > prfanalyze.sh <vista|afni|aprf|popeye> <output directory> <config.json path>
+The syntax for running run_prfanalyze.sh is as follows:
+ > run_prfanalyze.sh <vista|afni|aprf|popeye> <output directory> <config.json path>
  - The input directory may be provided as an optional fourth argument.
  - The following optional arguments may also be provided:
    * --help or -h prints this message then exits.
@@ -186,7 +186,7 @@ OUTPUT="$ABSPATH"
 }
 
 # Okay, let's print a diagnostic message (if verbose is on)
-note "Running prfanalyze.sh with the following options:"
+note "Running run_prfanalyze.sh with the following options:"
 note "   solver: $SOLVER"
 note "   docker: $DOCKER"
 note "   config: $CONFIG"

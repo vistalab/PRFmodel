@@ -205,6 +205,7 @@ paramDefaults = {'Centerx0','Centery0','Theta','sigmaMinor','sigmaMajor'};
 if ~strcmp(synthDT.Properties.VariableNames{end},'pm')
     synthDT = pmForwardModelCalculate(synthDT);
 end
+
 [compTable, tSeries] = pmResultsCompare(synthDT, ... % Defines the input params
                             {prfimplementation}, ... % Analysis names we want to see: 'aPRF','vista',
                             {results}, ...
