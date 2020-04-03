@@ -178,9 +178,9 @@ PARAMETERS.Stimulus.expName = string(PARAMETERS.Stimulus.expName);
 % Generate the same thing from the json file
 synthDT = pmForwardModelTableCreate(PARAMETERS, 'repeats', J.repeats);
 % I am having trouble with the parallel toolbox in docker, it takes too much memory. I am going to stablish a limit of 32000 for now
-if height(synthDT) > 32000
-	error("Attempting to write more than 32000 per dimension (%i). TODO: Matlab's niftiwrite will automatically use Nifti-2 to write 2^63 -1 (instead of the current 2^15 -1.", height(synthDT))
-end
+% if height(synthDT) > 32000
+% 	error("Attempting to write more than 32000 per dimension (%i). TODO: Matlab's niftiwrite will automatically use Nifti-2 to write 2^63 -1 (instead of the current 2^15 -1.", height(synthDT))
+% end
 pmForwardModelCalculate(synthDT, 'useparallel',J.useparallel,'writefiles',true,'outputdir',output_dir,'subjectname',J.subjectName); 
 %% Generate the files
 
