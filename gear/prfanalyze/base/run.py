@@ -15,11 +15,6 @@ verbose     = os.environ.get('VERBOSE', '0').strip() == '1'
 force       = os.environ.get('FORCE', '0').strip() == '1'
 bids_fields = os.environ.get('FIELDS', 'task-prf_acq-normal')
 solver_name = os.environ.get('PRF_SOLVER', None)
-if solver_name is None:
-    print("WARNING: The PRF_SOLVER environment variable is not set; using 'base'")
-    solver_name = 'base'
-if not solver_name.startswith('prfanalyze-'):
-    solver_name = 'prfanalyze-' + solver_name
 bids_fieldmap = [ss.split('-') for ss in bids_fields.split('_')]
 bids_fields_noacq = '_'.join(['-'.join(ff) for ff in bids_fieldmap if ff[0] != 'acq'])
 if bids_fields != '': bids_fields = '_' + bids_fields
@@ -56,6 +51,16 @@ if 'isPRFSynthData' not in conf:
     conf['isPRFSynthData'] = True
     synthQ = True
 else: synthQ = False
+if 'solver' in conf:
+    solver_name = conf['solver']
+
+# now that we've read in the solver from the config we can process it.
+if solver_name is None:
+    print("WARNING: The PRF_SOLVER environment variable is not set; using 'base'")
+    solver_name = 'base'
+if not solver_name.startswith('prfanalyze-'):
+    solver_name = 'prfanalyze-' + solver_name
+
 
 # we just have to find the relevant files then echo them for the calling script; in the case of the
 # config file, we write out a new one in the /running directory
