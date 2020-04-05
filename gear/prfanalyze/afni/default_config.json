@@ -3,5 +3,8 @@
     "sessionName": "editThis",
     "solver":      "afni",
     "options": {
+                 "hrf":"SPM",
+                 "model":"afni6"
+
     }
 }

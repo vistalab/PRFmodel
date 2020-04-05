@@ -37,7 +37,9 @@ DTcalc = table();
 if useparallel
 	%%%%%   CLUSTER PARPOOL    %%%%%%
 	myclusterLocal = parcluster('local');
-	NumWorkers = myclusterLocal.NumWorkers;
+    disp('Number of workers:')
+	NumWorkers = myclusterLocal.NumWorkers
+    
 	% [st, re] = system('qstat -g c | grep matlab.q');
 	% [Tok, Rem] = strtok(re);
 	% [Tok, Rem] = strtok(Rem);
@@ -84,8 +86,8 @@ tmpName = tempname(fullfile(pmRootPath,'local'));
 mkdir(tmpName);
         
 tic
-% parfor (nn=1:nchcks, NumWorkers)
-for nn=1:nchcks
+parfor (nn=1:nchcks, NumWorkers)
+% for nn=1:nchcks
     DT = DTcc{nn};
     % Initialize prev variables, for parallel toolbox
     dtprev = [];
