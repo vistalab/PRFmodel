@@ -506,6 +506,7 @@ switch prfimplementation
         % pmEstimates.R2        = results.model{1}.varExp';
         % pmEstimates.RMSE       = sqrt(mean((pmEstimates.testdata - pmEstimates.modelpred).^2,2));
         % errperf(T,P,'mae')
+    
     case {'mrtools','mlrtools','mlr'}
         % Read the options
         options = allOptions.mlr;
@@ -579,8 +580,7 @@ switch prfimplementation
         else
             warning('mrtool (mlr) was run and it could find ~/.mrDefaults.mat to be deleted, check if it was writtme somewhere else')
         end
-        
-        
+               
     case {'afni', 'simpleafni', 'basicafni', 'afni_4', 'afni4', ...
             'afni6', 'afni_6','withsigmaratio', ...
             'afni_dog', 'afnidog', 'dog'}
@@ -908,7 +908,7 @@ switch prfimplementation
                 % Theta in radiansm, constraints from -90 to +90
                 pmEstimates.sigmaMajor = (results(:,4) .* results(:,5)) * Stimulus.fieldofviewHorz/2;
                 pmEstimates.sigmaMinor = results(:,4) * Stimulus.fieldofviewHorz/2;
-                pmEstimates.Theta      = results(:,6);
+                pmEstimates.Theta      = results(:,6) - deg2rad(90);
             case {'afni_dog', 'afnidog', 'dog', 'Conv_PRF_DOG'}
                 % 6-param 'Difference of Gaussians' PRF Model
                 % As Conv_PRF, but with second A and sigma

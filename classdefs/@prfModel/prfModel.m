@@ -539,8 +539,6 @@ pm.Noise.seed=12345;
                     pm.BOLD = 2 * pm.BOLDcontrast/100 * pm.BOLDconv;
                 case {'spc'}
                     pm.BOLD = 2 * pm.BOLDcontrast * pm.BOLDconv;
-                case {'frac', 'fractional'}
-                    pm.BOLD = 2 * pm.BOLDcontrast/100 * pm.BOLDconv;
                 case {'bold'}
                     pm.BOLD = pm.BOLDmeanValue * (1 + 2 * pm.BOLDcontrast/100 * pm.BOLDconv);
                 otherwise
