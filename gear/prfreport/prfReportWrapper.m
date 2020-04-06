@@ -238,7 +238,6 @@ if ~TESTMODE
     fprintf('files loaded and table created.\n')
 end
 
-
 %% Concatenate synthetic data params and the actual results
 % Define how to manage this, as input in the config?
 % anNames = fieldnames(res);
@@ -277,7 +276,6 @@ if ~exist(reportDir,'dir');mkdir(reportDir);end
 % Generate filenames
 fname_trunk = ['sub-' J.subjectName '_ses-' J.sessionName '-prf_acq-normal_run-01_bold'];
 reportFile  = fullfile(reportDir,[fname_trunk '.mat']);
-
 
 if ~TESTMODE
     % Save the file
@@ -448,7 +446,6 @@ if J.createplot8
 
     fprintf('done\n')
 end  % createplots
-
 
 %% Change file attributes and close
 if isdeployed

@@ -79,8 +79,9 @@ p.addParameter('adddice'      , false     , @islogical);
 p.addParameter('addsnr'       , false     , @islogical);
 p.addParameter('xlims'        , [.8,5]    , @isnumeric);
 p.addParameter('ylims'        , [.8,5]    , @isnumeric);
-p.addParameter('xtick'        , [2:4]    , @isnumeric);
-p.addParameter('ytick'        , [2:4]    , @isnumeric);
+p.addParameter('xtick'        , [2:4]     , @isnumeric);
+p.addParameter('ytick'        , [2:4]     , @isnumeric);
+p.addParameter('synthbluelinewidth',2     ,@isnumeric);
 
 % Parse. Assign result inside each case
 p.parse(compTable, tools, varargin{:});
@@ -114,6 +115,7 @@ xlims         = p.Results.xlims;
 ylims         = p.Results.ylims; 
 xtick         = p.Results.xtick; 
 ytick         = p.Results.ytick; 
+synthBLueLineWidth=p.Results.synthbluelinewidth;
 
 %% Do the thing
 if color=='old'
@@ -244,8 +246,8 @@ else
     if useEllipse
         if (length(unique(dt.synth.x0)) == 1 && length(unique(dt.synth.y0)) == 1)
             h = drawellipse(unique(dt.synth.x0),unique(dt.synth.y0),unique(dt.synth.Th),...
-                        userfsize/2, userfsizemin/2);
-            set(h,'LineWidth',2.5,'LineStyle','--','Color',Cs(1,:));
+                        userfsize, userfsizemin);
+            set(h,'LineWidth',synthBLueLineWidth,'LineStyle','--','Color',Cs(1,:));
         else
             % xys = unique(dt.synth(:,{'x0','y0'}));
             % for nx=1:height(xys)

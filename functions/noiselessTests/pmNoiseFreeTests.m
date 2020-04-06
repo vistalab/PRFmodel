@@ -100,15 +100,16 @@ allOptions  = pmParamsCompletenessCheck(allOptions, options);
 %% Create the test data
 COMBINE_PARAMETERS                        = struct();
 if ellipse
-    COMBINE_PARAMETERS.TR                   = [1.5];
+    COMBINE_PARAMETERS.TR                 = [2];
     COMBINE_PARAMETERS.RF                 = struct();
     COMBINE_PARAMETERS.RF.Centerx0        = 3;%[3]; 
     COMBINE_PARAMETERS.RF.Centery0        = 3;%[3];
-    COMBINE_PARAMETERS.RF.Theta           = deg2rad(45);%[deg2rad(135)]; 
-    COMBINE_PARAMETERS.RF.sigmaMajor      = [1,2,3];
-    COMBINE_PARAMETERS.RF.sigmaMinor      = [1,2]; 
+    COMBINE_PARAMETERS.RF.Theta           = deg2rad(80);%[deg2rad(135)]; 
+    COMBINE_PARAMETERS.RF.sigmaMajor      = [0.5,1,2,3];
+    COMBINE_PARAMETERS.RF.sigmaMinor      = [0.5,1,2,3]; 
     % COMBINE_PARAMETERS.RF.sigmaMajor      = [1,2,4]/2;
     % COMBINE_PARAMETERS.RF.sigmaMinor      = [1,2]/2; 
+    COMBINE_PARAMETERS.Stimulus.durationSecs = 400;
 else
     COMBINE_PARAMETERS.TR                 = [1.5];
     COMBINE_PARAMETERS.RF                 = struct();
@@ -117,6 +118,7 @@ else
     COMBINE_PARAMETERS.RF.Theta           = [0]; %, deg2rad(45)];
     COMBINE_PARAMETERS.RF.sigmaMajor      = [1,2];% [1,2];
     COMBINE_PARAMETERS.RF.sigmaMinor      = "same";
+    COMBINE_PARAMETERS.Stimulus.durationSecs = 300;
 end
 if stimshuffle
     COMBINE_PARAMETERS.Stimulus.Shuffle   = true;
@@ -137,7 +139,6 @@ switch prfimplementation
 end
 
 COMBINE_PARAMETERS.HRF                   = HRF;
-COMBINE_PARAMETERS.Stimulus.durationSecs = 300;
 Noise(1).seed                    = 'none';
 % Noise(1).seed                    = 'random';
 COMBINE_PARAMETERS.Noise         = Noise;
