@@ -109,8 +109,9 @@ else
         pmCloudOfResultsParams = struct();
         pmCloudOfResultsParams.onlyCenters = false;
         pmCloudOfResultsParams.userfsize   = 1;
+        pmCloudOfResultsParams.location    = [0,0];
         pmCloudOfResultsParams.centerPerc  = 90;
-        pmCloudOfResultsParams.useHRF      = "{'vista_twogammas'}";
+        pmCloudOfResultsParams.useHRF      = "{vista_twogammas'}";
         pmCloudOfResultsParams.lineStyle   = "-";
         pmCloudOfResultsParams.lineWidth   = 0.7;
         pmCloudOfResultsParams.fontsize    = 14;
@@ -173,7 +174,7 @@ if ~TESTMODE
     resultsFile = {};
     resultsNames= {};
     for nr=1:length(J.analyze)
-        if nr==1
+        if ~iscell(J.analyze)
             antype           = J.analyze.Type;
         else
             antype           = J.analyze{nr}.Type;
@@ -223,7 +224,7 @@ if ~TESTMODE
 
         % We are always going to add by default the R2
         % This will be calculated between the testdata and modelpred
-        pmEstimates.R2 = calccod(pmEstimates.testdata,  pmEstimates.modelpred,2);
+        % pmEstimates.ccR2 = calccod(pmEstimates.testdata,  pmEstimates.modelpred,2);
 
         % If one of the elements is missing, fill it with zeros. 
         % Popeye was not providing Theta.
@@ -240,13 +241,6 @@ end
 
 
 %% Concatenate synthetic data params and the actual results
-% Define how to manage this, as input in the config?
-% anNames = fieldnames(res);
-% Select the result files
-% ress = [{res.(anNames{1})}];
-% for an =2:length(anNames)
-%     ress = [ress, {res.(anNames{an})}];
-% end
 if ~TESTMODE
     fprintf('[prfreport] Concatenating results from tools with synthetic ground-truth...')
     if length(J.resultParams) ~= length(J.resultParamsShort)
@@ -316,6 +310,7 @@ end
     % TODO: add defaults if variables not set in the json file
     onlyCenters = J.pmCloudOfResultsParams.onlyCenters;
     userfsize   = J.pmCloudOfResultsParams.userfsize;
+    location    = J.pmCloudOfResultsParams.location;
     useHRF      = J.pmCloudOfResultsParams.useHRF;
     centerPerc  = J.pmCloudOfResultsParams.centerPerc;
     lineStyle   = J.pmCloudOfResultsParams.lineStyle;
@@ -344,7 +339,7 @@ if J.createplot5
     nslvl  = 'none';
     for na=1:numanalysis
         subplot(1,numanalysis,na)
-        if na==1
+        if ~iscell(J.analyze)
             tools  = J.analyze.Type;
         else   
             tools  = J.analyze{na}.Type;
@@ -364,7 +359,7 @@ if J.createplot5
         pmCloudOfResults(compTable   , {tools} ,'onlyCenters',onlyCenters ,'userfsize' , userfsize, ...
                      'centerPerc', centerPerc ,'useHRF'     ,useHRF,'lineStyle' , lineStyle, ...
                      'lineWidth' , lineWidth, 'noiselevel' ,nslvl , 'fontsize', fontsize, ...
-                     'useellipse', useellipse, ...
+                     'useellipse', useellipse, 'location',location,...
                      'newWin'    , false ,'saveTo'     ,'','saveToType', saveToType)
     end
     set(gca,'FontName', 'Arial')
@@ -377,13 +372,13 @@ if J.createplot7
     tools   = {};
     useHRFs = {};
     for nj=1:length(J.analyze)
-        if nj==1
+        if ~iscell(J.analyze)
             tool = J.analyze.Type;
         else
             tool = J.analyze{nj}.Type;
         end
         switch tool
-            case {'vista','mrvista','vistasoft'}
+            case {'vista','mrvista','vistasoft','vista4','vista6'}
                 useHRF = 'vista_twogammas';
             case {'pop','popeye'}
                 useHRF = 'popeye_twogammas';
@@ -393,12 +388,13 @@ if J.createplot7
                 useHRF = 'canonical';
             otherwise
                 warning('%s not recorded, using vista_twogammas as default',tool)
+                useHRF = 'vista_twogammas';
         end    
         tools{nj}   = tool;
         useHRFs{nj} = useHRF;
     end
 
-    nslvls = unique(compTable.noiseLevel);
+    nslvls = unique(compTable.noiseLevel)';
     for nslvl = nslvls
         fnameRoot = ['CloudPlots_4x4_Noise_' nslvl{:}];
         mm = mrvNewGraphWin(fnameRoot,[],'off');
@@ -410,7 +406,7 @@ if J.createplot7
             pmCloudOfResults(compTable   , tool ,'onlyCenters',onlyCenters ,'userfsize' , userfsize, ...
                          'centerPerc', centerPerc    ,'useHRF'     ,useHRF{:},'lineStyle' , lineStyle, ...
                          'lineWidth' , lineWidth     ,'noiselevel' ,nslvl{:} , 'useellipse', useellipse, ...
-                         'addtext',addtext, 'adddice',false,'addsnr',false,...
+                         'addtext',addtext, 'adddice',false,'addsnr',false,'location',location,...
                          'color', color, 'xlims',xlims,'ylims',ylims,'fontsize', fontsize, ...
                          'xtick',xtick,'ytick',ytick, 'addcibar', addcibar,'addcihist', addcihist,  ...
                          'newWin'    , false ,'saveTo'     ,'','saveToType',saveToType)
@@ -423,7 +419,7 @@ end
 if J.createplot8
     %% FIGURE 8
     useHRF  = 'mix';
-    nslvls = unique(compTable.noiseLevel);
+    nslvls = unique(compTable.noiseLevel)';
     for nslvl=nslvls   
         fnameRoot = ['CloudPlots_MixHRF_Noise_HIST' nslvl{:}];
         mm = mrvNewGraphWin(fnameRoot,[],'off');
@@ -437,7 +433,7 @@ if J.createplot8
                          'centerPerc', centerPerc    ,'useHRF'     ,useHRF ,'lineStyle' , lineStyle, ...
                          'lineWidth' , lineWidth     ,'noiselevel' ,nslvl{:} , 'addtext',addtext, ...
                          'color', color, 'xlims',xlims,'ylims',ylims,'fontsize', fontsize, ...
-                         'useellipse', useellipse, ...
+                         'useellipse', useellipse, 'location',location,...
                          'xtick',xtick,'ytick',ytick, 'addcihist', addcihist, ...
                          'newWin'    , false ,'saveTo'     ,'','saveToType',saveToType)
         end
