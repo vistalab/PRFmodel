@@ -41,22 +41,6 @@ if ischar(json_file)
 end
 
 % read in the opts file
-%{
-opts = {};
-if ~isempty(opts_file)
-    tmp = loadjson(opts_file);
-    if ~isempty(tmp)
-        % tmp = tmp.options;
-        fs = fields(tmp);
-        for ii = 1:numel(fs)
-            opts{end+1} = fs{ii};
-            opts{end+1} = getfield(tmp, fs{ii});
-        end
-    end
-end
-%}
-
-% read in the opts file
 if ~isempty(opts_file)
     fprintf('This is the config.json file being read: %s\n',opts_file)
     tmp = loadjson(opts_file);
