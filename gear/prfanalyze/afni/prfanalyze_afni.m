@@ -34,16 +34,14 @@ if ~isempty(opts_file)
     disp('These are the contents of the json file:')
     tmp
     if ~isempty(tmp)
-        opt.options.afni = tmp.options;
-        opts.afni = tmp;
-        opts = {'options', opts};
+        options = struct();
+        options.afni = tmp;
     else
         opts = {};
     end
 else
     opts = {};
 end
-
 
 
 
@@ -100,7 +98,7 @@ if exist(stim_file, 'file') ~= 2
 end
 
 %% Call pmModelFit!
-[pmEstimates, results] = pmModelFit({bold_file, json_file, stim_file}, 'afni', opts{:});
+[pmEstimates, results] = pmModelFit({bold_file, json_file, stim_file}, 'afni', 'options',options);
 
 %% Write out the results
 estimates_file = fullfile(output_dir, 'estimates.mat');
