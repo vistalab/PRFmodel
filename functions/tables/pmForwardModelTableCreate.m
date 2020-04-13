@@ -260,4 +260,6 @@ if repeats > 1
     synthDT = repmat(synthDT,[repeats,1]);
 end
 
+% Add other variables 
+synthDT.SNR = 999 * ones(height(synthDT),1);
 

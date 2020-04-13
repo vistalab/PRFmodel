@@ -186,8 +186,11 @@ parfor (nn=1:nchcks, NumWorkers)
         
         %% Assign it to the cell array (or Write back the updated pm model)
         DT.pm(ii) = pm;
-        % Save the SNR as well
-        DT.SNR    = pm.SNR;
+        % Save the SNR as well (it will be Inf if it is noiseless, but we will
+        % write to json and better if it is a number as 999)
+        if ~isinf(pm.SNR)
+            DT.SNR(ii) = pm.SNR;
+        end
         
         %% Save as the previous one
         dtprev = dt;
