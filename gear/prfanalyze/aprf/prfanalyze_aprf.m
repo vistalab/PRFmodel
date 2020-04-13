@@ -26,21 +26,23 @@ if ischar(json_file)
     end
 end
 
+
 % read in the opts file
 if ~isempty(opts_file)
-	fprintf('This is the config.json file being read: %s\n',opts_file)
+    fprintf('This is the config.json file being read: %s\n',opts_file)
     tmp = loadjson(opts_file);
-	disp('These are the contents of the json file:')
-	tmp
+    disp('These are the contents of the json file:')
+    tmp
     if ~isempty(tmp)
-        opts.aprf = tmp;
-        opts = {'options', opts};
+        options = struct();
+        options.vista = tmp;
     else
         opts = {};
     end
 else
     opts = {};
 end
+
 
 % Make the output directory
 mkdir(output_dir);
@@ -95,7 +97,7 @@ if exist(stim_file, 'file') ~= 2
 end
 
 %% Call pmModelFit!
-[pmEstimates, results] = pmModelFit({bold_file, json_file, stim_file}, 'aprf', opts{:});
+[pmEstimates, results] = pmModelFit({bold_file, json_file, stim_file}, 'aprf', 'options',options);
 
 %% Write out the results
 estimates_file = fullfile(output_dir, 'estimates.mat');
