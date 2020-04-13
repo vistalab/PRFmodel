@@ -86,36 +86,36 @@ p.addParameter('synthbluelinewidth',2     ,@isnumeric);
 % Parse. Assign result inside each case
 p.parse(compTable, tools, varargin{:});
 % Read here only the generic ones
-onlyCenters   = p.Results.onlycenters;
-location      = p.Results.location;
-centerDistr   = p.Results.centerdistr;
-userfsize     = p.Results.userfsize;
+onlyCenters        = p.Results.onlycenters;
+location           = p.Results.location;
+centerDistr        = p.Results.centerdistr;
+userfsize          = p.Results.userfsize;
 if contains('userfsizemin',p.UsingDefaults)
-    userfsizemin  = userfsize;
+    userfsizemin   = userfsize;
 else
-   userfsizemin  = p.Results.userfsizemin; 
+   userfsizemin    = p.Results.userfsizemin; 
 end
-centerPerc    = p.Results.centerperc;
-useHRF        = p.Results.usehrf;
-lineStyle     = p.Results.linestyle;
-lineWidth     = p.Results.linewidth;
-fontsize      = p.Results.fontsize;
-newWin        = p.Results.newwin;
-noiseLevel    = p.Results.noiselevel; noiseLevel  = string(noiseLevel);  
-saveTo        = p.Results.saveto;
-saveToType    = p.Results.savetotype; 
-color         = p.Results.color; 
-addcibar      = p.Results.addcibar; 
-addcihist     = p.Results.addcihist; 
-useEllipse    = p.Results.useellipse; 
-addtext       = p.Results.addtext; 
-adddice       = p.Results.adddice; 
-addsnr        = p.Results.addsnr; 
-xlims         = p.Results.xlims; 
-ylims         = p.Results.ylims; 
-xtick         = p.Results.xtick; 
-ytick         = p.Results.ytick; 
-synthBLueLineWidth=p.Results.synthbluelinewidth;
+centerPerc         = p.Results.centerperc;
+useHRF             = p.Results.usehrf;
+lineStyle          = p.Results.linestyle;
+lineWidth          = p.Results.linewidth;
+fontsize           = p.Results.fontsize;
+newWin             = p.Results.newwin;
+noiseLevel         = p.Results.noiselevel; noiseLevel  = string(noiseLevel);  
+saveTo             = p.Results.saveto;
+saveToType         = p.Results.savetotype; 
+color              = p.Results.color; 
+addcibar           = p.Results.addcibar; 
+addcihist          = p.Results.addcihist; 
+useEllipse         = p.Results.useellipse; 
+addtext            = p.Results.addtext; 
+adddice            = p.Results.adddice; 
+addsnr             = p.Results.addsnr; 
+xlims              = p.Results.xlims; 
+ylims              = p.Results.ylims; 
+xtick              = p.Results.xtick; 
+ytick              = p.Results.ytick; 
+synthBLueLineWidth = p.Results.synthbluelinewidth;
 
 %% Do the thing
 if color=='old'

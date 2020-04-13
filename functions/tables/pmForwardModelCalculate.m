@@ -93,7 +93,6 @@ parfor (nn=1:nchcks, NumWorkers)
     dtprev = [];
     pmprev = [];
     for ii=1:DTheight{nn}
-        
         %%  Do it row to row and parameter to parameter first, for debugging
         dispat = 100; if height(DT)<dispat;dispat=2;end
         if mod(ii,dispat)==0
@@ -104,7 +103,6 @@ parfor (nn=1:nchcks, NumWorkers)
         % we need a fresh copy of the prfModel class here, otherwise it references
         % the same one and changes are not persistent
         pm     = prfModel;
-        
         %% High Level Variables
         isprfmodel = @(x)(isa(x,'prfModel'));
         for vn = dt.Properties.VariableNames
@@ -188,6 +186,8 @@ parfor (nn=1:nchcks, NumWorkers)
         
         %% Assign it to the cell array (or Write back the updated pm model)
         DT.pm(ii) = pm;
+        % Save the SNR as well
+        DT.SNR    = pm.SNR;
         
         %% Save as the previous one
         dtprev = dt;
@@ -239,9 +239,9 @@ end
 if writefiles
     disp('Concatenating the nifti and json files back')
     % BOLD files
-    fname1 = fullfile(tmpName, sprintf('%s_%04i.nii.gz', subjectName,1));
-    BOLDnifti = niftiRead(fname1);
-    BOLDdata  = BOLDnifti.data;
+    fname1         = fullfile(tmpName, sprintf('%s_%04i.nii.gz', subjectName,1));
+    BOLDnifti      = niftiRead(fname1);
+    BOLDdata       = BOLDnifti.data;
     % json file
     jsonSynthFile1 = fullfile(tmpName, sprintf('%s_%04i.json', subjectName,1));
     jsonfile       = jsonread(jsonSynthFile1);
@@ -288,8 +288,8 @@ if writefiles
 else
     disp('Concatenating the .mat files back')
     for nn=1:nchcks
-        fName = fullfile(tmpName, sprintf('tmpDT_%04i.mat',nn));
-        tmp   = load(fName,'DT');
+        fName  = fullfile(tmpName, sprintf('tmpDT_%04i.mat',nn));
+        tmp    = load(fName,'DT');
         DTcalc = [DTcalc; tmp.DT];
     end
 end

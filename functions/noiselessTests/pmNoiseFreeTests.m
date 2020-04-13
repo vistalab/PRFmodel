@@ -66,6 +66,7 @@ p.addRequired('prfimplementation',@ischar);
 p.addParameter('usenifti'   ,  false           , @islogical);
 p.addParameter('plotit'     ,  false           , @islogical);
 p.addParameter('ellipse'    ,  false           , @islogical);
+p.addParameter('eccen'      ,  false           , @islogical);
 p.addParameter('stimshuffle',  false           , @islogical);
 % Implementation specifics
     options       = struct();
@@ -90,6 +91,7 @@ p.parse(prfimplementation,varargin{:});
 useNifti    = p.Results.usenifti;
 plotit      = p.Results.plotit;
 ellipse     = p.Results.ellipse;
+eccen       = p.Results.eccen;
 stimshuffle = p.Results.stimshuffle;
 
 allOptions  = p.Results.options;
@@ -98,26 +100,37 @@ allOptions  = p.Results.options;
 allOptions  = pmParamsCompletenessCheck(allOptions, options);
 
 %% Create the test data
-COMBINE_PARAMETERS                        = struct();
+COMBINE_PARAMETERS                           = struct();
 if ellipse
-    COMBINE_PARAMETERS.TR                 = [2];
-    COMBINE_PARAMETERS.RF                 = struct();
-    COMBINE_PARAMETERS.RF.Centerx0        = 3;%[3]; 
-    COMBINE_PARAMETERS.RF.Centery0        = 3;%[3];
-    COMBINE_PARAMETERS.RF.Theta           = deg2rad(80);%[deg2rad(135)]; 
-    COMBINE_PARAMETERS.RF.sigmaMajor      = [0.5,1,2,3];
-    COMBINE_PARAMETERS.RF.sigmaMinor      = [0.5,1,2,3]; 
-    % COMBINE_PARAMETERS.RF.sigmaMajor      = [1,2,4]/2;
-    % COMBINE_PARAMETERS.RF.sigmaMinor      = [1,2]/2; 
+    COMBINE_PARAMETERS.TR                    = [2];
+    COMBINE_PARAMETERS.Type                  = "linear";
+    COMBINE_PARAMETERS.cssexp                = 0.05;
+    COMBINE_PARAMETERS.RF                    = struct();
+    COMBINE_PARAMETERS.RF.Centerx0           = 3;%[3]; 
+    COMBINE_PARAMETERS.RF.Centery0           = 3;%[3];
+    COMBINE_PARAMETERS.RF.Theta              = deg2rad(80);%[deg2rad(135)]; 
+    COMBINE_PARAMETERS.RF.sigmaMajor         = [0.5,1,2,3];
+    COMBINE_PARAMETERS.RF.sigmaMinor         = [0.5,1,2,3];
+    COMBINE_PARAMETERS.Stimulus.durationSecs = 400;
+elseif eccen
+    COMBINE_PARAMETERS.TR                    = [2];
+    COMBINE_PARAMETERS.Type                  = "linear";
+    COMBINE_PARAMETERS.cssexp                = 0.05;
+    COMBINE_PARAMETERS.RF                    = struct();
+    COMBINE_PARAMETERS.RF.Centerx0           = [0.7071,1.5152,2.3234,3.1315,3.9396,4.7477,5.5558,6.3640]; 
+    COMBINE_PARAMETERS.RF.Centery0           = "same";
+    COMBINE_PARAMETERS.RF.Theta              = 0; 
+    COMBINE_PARAMETERS.RF.sigmaMajor         = [0.5,1,1.5,2,3];
+    COMBINE_PARAMETERS.RF.sigmaMinor         = [0.5,1,1.5,2,3]; 
     COMBINE_PARAMETERS.Stimulus.durationSecs = 400;
 else
-    COMBINE_PARAMETERS.TR                 = [1.5];
-    COMBINE_PARAMETERS.RF                 = struct();
-    COMBINE_PARAMETERS.RF.Centerx0        = [0,3]; 
-    COMBINE_PARAMETERS.RF.Centery0        = [0,3];
-    COMBINE_PARAMETERS.RF.Theta           = [0]; %, deg2rad(45)];
-    COMBINE_PARAMETERS.RF.sigmaMajor      = [1,2];% [1,2];
-    COMBINE_PARAMETERS.RF.sigmaMinor      = "same";
+    COMBINE_PARAMETERS.TR                    = [1.5];
+    COMBINE_PARAMETERS.RF                    = struct();
+    COMBINE_PARAMETERS.RF.Centerx0           = [0,3]; 
+    COMBINE_PARAMETERS.RF.Centery0           = [0,3];
+    COMBINE_PARAMETERS.RF.Theta              = [0]; %, deg2rad(45)];
+    COMBINE_PARAMETERS.RF.sigmaMajor         = [1,2];% [1,2];
+    COMBINE_PARAMETERS.RF.sigmaMinor         = "same";
     COMBINE_PARAMETERS.Stimulus.durationSecs = 300;
 end
 if stimshuffle
