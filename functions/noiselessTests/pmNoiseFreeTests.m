@@ -151,12 +151,12 @@ switch prfimplementation
         error('%s not yet implemented',prfimplementation);
 end
 
-COMBINE_PARAMETERS.HRF                   = HRF;
+COMBINE_PARAMETERS.HRF           = HRF;
 Noise(1).seed                    = 'none';
 % Noise(1).seed                    = 'random';
 COMBINE_PARAMETERS.Noise         = Noise;
 synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats', 1);
-synthDT = pmForwardModelCalculate(synthDT);
+synthDT = pmForwardModelCalculate(synthDT,'useparallel',true);
 
 if useNifti
     % This is for nifti in pmModelFit purposes

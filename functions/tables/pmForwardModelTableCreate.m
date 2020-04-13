@@ -262,4 +262,7 @@ end
 
 % Add other variables 
 synthDT.SNR = 999 * ones(height(synthDT),1);
+% Change the order
+synthDT = synthDT(:,[1:(end-2),end,(end-1)]);
+
 
