@@ -1230,11 +1230,5 @@ function pmEstimates = pmVistaObtainPrediction(pmEstimates, results)
         % Add it to the return table
         pmEstimates.modelpred(voxel,:) = prediction';
     end
-
-
-    
-    
-    
-    
     
 end

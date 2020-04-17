@@ -397,7 +397,6 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
 
         end
         
-        
         % Plot it
         function plot(noise,varargin)
             % Read the inputs

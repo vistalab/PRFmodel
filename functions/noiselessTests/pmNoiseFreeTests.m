@@ -103,7 +103,7 @@ allOptions  = pmParamsCompletenessCheck(allOptions, options);
 COMBINE_PARAMETERS                           = struct();
 if ellipse
     COMBINE_PARAMETERS.TR                    = [2];
-    COMBINE_PARAMETERS.Type                  = "linear";
+    COMBINE_PARAMETERS.Type                  = "css";
     COMBINE_PARAMETERS.cssexp                = 0.05;
     COMBINE_PARAMETERS.RF                    = struct();
     COMBINE_PARAMETERS.RF.Centerx0           = 3;%[3]; 
