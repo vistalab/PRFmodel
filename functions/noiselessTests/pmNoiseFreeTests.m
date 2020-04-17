@@ -103,7 +103,7 @@ allOptions  = pmParamsCompletenessCheck(allOptions, options);
 COMBINE_PARAMETERS                           = struct();
 if ellipse
     COMBINE_PARAMETERS.TR                    = [2];
-    COMBINE_PARAMETERS.Type                  = "css";
+    COMBINE_PARAMETERS.Type                  = "linear";
     COMBINE_PARAMETERS.cssexp                = 0.05;
     COMBINE_PARAMETERS.RF                    = struct();
     COMBINE_PARAMETERS.RF.Centerx0           = 3;%[3]; 
@@ -120,7 +120,7 @@ elseif eccen
     COMBINE_PARAMETERS.RF.Centerx0           = [0.7071,1.5152,2.3234,3.1315,3.9396,4.7477,5.5558,6.3640]; 
     COMBINE_PARAMETERS.RF.Centery0           = "same";
     COMBINE_PARAMETERS.RF.Theta              = 0; 
-    COMBINE_PARAMETERS.RF.sigmaMajor         = [0.5,1,1.5,2,3];
+    COMBINE_PARAMETERS.RF.sigmaMajor         = [0.5,1,1.5,2,3,4];
     COMBINE_PARAMETERS.RF.sigmaMinor         = [0.5,1,1.5,2,3]; 
     COMBINE_PARAMETERS.Stimulus.durationSecs = 400;
 else
@@ -189,7 +189,7 @@ switch prfimplementation
         options.vista            = allOptions.vista;
         options.vista.model      = 'one gaussian';
         options.vista.grid       = false;  % if true, returns gFit
-        options.vista.wSearch    = 'coarse to fine'; 
+        options.vista.wSearch    = 'coarse to fine and hrf'; 
         options.vista.detrend    = 0;
         options.vista.keepAllPoints            = true; 
         options.vista.numberStimulusGridPoints =  50;  

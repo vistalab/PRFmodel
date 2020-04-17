@@ -441,12 +441,23 @@ if CircularVsElliptical
     
 end
 
-%% Noiseless plots: accuracy
-% Calculate data first:
-[afnicompTable , afnitSeries , afniresults]  = pmNoiseFreeTests('afni6','ellipse',true);
-[vistacompTable, vistatSeries, vistaresults] = pmNoiseFreeTests('vista6','ellipse',true);
+%% FIG 1: Noiseless plots: accuracy
+sub = 'ellipse'; ses = 'noiselesssimplev2';
+p = ['/Users/glerma/toolboxes/PRFmodel/local/' sub '/BIDS/derivatives/prfreport/sub-' sub '/ses-' ses];
+if ~isdir(p); mkdir(p); end
+f = ['sub-' sub '_ses-' ses '-prf_acq-normal_run-01_bold.mat'];
+if isfile(fullfile(p,f))
+    load(fullfile(p,f))
+else
+    % Calculate data
+    [afnicompTable , afnitSeries , afniresults]  = pmNoiseFreeTests('afni6' , 'ellipse', true);
+    [vistacompTable, vistatSeries, vistaresults] = pmNoiseFreeTests('vista6', 'ellipse', true);
+    % Save it so that we don't need to generate every time
+    compTable        = afnicompTable;
+    compTable.vista6 = vistacompTable.vista6;
+    save(fullfile(p,f), 'compTable')
+end
 
-% [cssvistacompTable, cssvistatSeries, cssvistaresults] = pmNoiseFreeTests('vista6','ellipse',true);
 
 % RATIO 1
 fnameRoot = 'ELLIP_NoiselessCloudPoints4ratios_RATIO1'; ext = 'png';
@@ -464,7 +475,7 @@ addcihist = false;
 
 % plot AFNI
 for nr = 1:length(ratios)
-    subplot(nrows,ncols,nr+length(ratios))
+    subplot(nrows,ncols,nr)
     r      = ratios(nr);
     tools  = {'afni6'};
     useHRF = 'afni_spm';
@@ -485,7 +496,7 @@ for nr = 1:length(ratios)
 end
 % Plot mrVista
 for nr = 1:length(ratios)
-    subplot(nrows,ncols,nr)
+    subplot(nrows,ncols,nr+length(ratios))
     r      = ratios(nr);
     tools  = {'vista6'};
     useHRF = 'vista_twogammas';
@@ -505,16 +516,6 @@ for nr = 1:length(ratios)
                      'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
 end
 saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);    
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -545,7 +546,7 @@ addcihist = false;
 % Plot each tool separately
 % Plot mrVista
 for nr = 1:length(ratios)
-    subplot(nrows,ncols,nr)
+    subplot(nrows,ncols,nr+length(ratios))
     r      = ratios(nr);
     tools  = {'vista6'};
     useHRF = 'vista_twogammas';
@@ -566,7 +567,7 @@ for nr = 1:length(ratios)
 end
 % plot afni
 for nr = 1:length(ratios)
-    subplot(nrows,ncols,nr+length(ratios))
+    subplot(nrows,ncols,nr)
     r      = ratios(nr);
     tools  = {'afni6'};
     useHRF = 'afni_spm';
@@ -576,8 +577,10 @@ for nr = 1:length(ratios)
         case 3,   sMin=1; sMaj=3; useellipse=true;
         case 4,   sMin=.5; sMaj=2; useellipse=true;
         otherwise, error('Ratio %i not contemplated',r)
-    end
-    pmCloudOfResults(afnicompTable, tools ,'onlyCenters',false , ...
+    end 
+    A = afnicompTable;
+    A.afni6.Th = A.afni6.Th + deg2rad(90);
+    pmCloudOfResults(A, tools ,'onlyCenters',false , ...
         'userfsize' , sMaj, 'userfsizemin' , sMin, 'useellipse',useellipse, ...
         'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
         'lineWidth' , 1     ,'noiselevel' ,nslvl , 'addcihist', addcihist,...
@@ -587,7 +590,7 @@ for nr = 1:length(ratios)
 end
 saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);    
 
-%% Noiseless: eccentricity plots, but noiseless
+%% FIG 2: Noiseless: eccentricity plots, but noiseless
 sub = 'ellipse'; ses = 'noiselessv2';
 p = ['/Users/glerma/toolboxes/PRFmodel/local/' sub '/BIDS/derivatives/prfreport/sub-' sub '/ses-' ses];
 f = ['sub-' sub '_ses-' ses '-prf_acq-normal_run-01_bold.mat'];
@@ -595,8 +598,8 @@ if isfile(fullfile(p,f))
     load(fullfile(p,f))
 else
     % Calculate data
-    [afnicompTable , afnitSeries , afniresults]  = pmNoiseFreeTests('afni6' );% , 'eccen',true);
-    [vistacompTable, vistatSeries, vistaresults] = pmNoiseFreeTests('vista6');% , 'eccen',true);
+    [afnicompTable , afnitSeries , afniresults]  = pmNoiseFreeTests('afni6' ,'eccen',true);
+    [vistacompTable, vistatSeries, vistaresults] = pmNoiseFreeTests('vista6','eccen',true);
     % Save it so that we don't need to generate every time
     compTable        = afnicompTable;
     compTable.vista6 = vistacompTable.vista6;
@@ -606,9 +609,8 @@ end
 
 
 % INDIVIDUAL PLOTS
+%{
 locs      = unique(vistacompTable.synth.x0);
-locations = [3.1315, 3.1315];
-locations = [3,3];
 for nl = 1:length(locs)
     location = locations(nl,:);
     fnameRoot = sprintf('ELLIP_NoiselessCloudPoints4ratios_ECCEN-%1.2f',location(1)); ext = 'png';
@@ -670,8 +672,7 @@ for nl = 1:length(locs)
     end
     saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);
 end   
-
-
+%}
 
 
 
@@ -681,8 +682,8 @@ fnameBegin = 'NoiselessEccSimRatio1and2';
 ext        = 'png';
 nlvl       = "none";
 eccenInGT  = true;
-checksizes = [0.5,1,2,3];
-ellipsizes = {[1,0.5],[2,1], [3,1.5]};
+checksizes = [0.5    ,     1,       2,    3];
+ellipsizes = {[1,0.5], [2,1], [3,1.5], [4,2]};
 tools      = {'afni6'          , 'vista6'};  % 'vista6' 'afni6' 'vista4' 'afni4'
 % for vista is vista_twogammas, but only one value in synth, see B table
 useHRFs    = {'afni_spm'       , 'afni_spm' };
@@ -692,7 +693,7 @@ nrow = 2, ncol = 4;
 % Create main plot with the ground truth lines
 fnameEnd   = sprintf('TR-%i_Dur-%is_Noise-%s',tr,duration,nlvl);
 fnameRoot  = strcat(fnameBegin,'-', fnameEnd);
-Cs         = 0.65*distinguishable_colors(1+length(eccenvals),'w');
+
 disp(fnameRoot)
 kk = mrvNewGraphWin(fnameRoot);
 % Fig size is relative to the screen used. This is for laptop at 1900x1200
@@ -730,41 +731,40 @@ for nt=1:length(tools)
         dt = dt(dt.HRFtype==string(useHRF),:);
         % Obtain eccen  vals, this is going to be the x axis
         eccenvals = unique(dt.synth.eccen);
+        Cs         = 0.65*distinguishable_colors(1+length(eccenvals),'w');
         
         % Select a size, lets take the smalles one for now
         dtcirc  = dt(dt.synth.aspect==1,:);
         dtcirc  = dtcirc(dtcirc.synth.sMaj==checksize,:);
         assert(unique(dtcirc.synth.sMin)==checksize)
         aspect1   = unique(dtcirc.(tool).aspect);
-        if (np ~= 1 && np ~= 5)
-            dtellip = dt(dt.synth.aspect==2,:);
-            dtellip = dtellip(dtellip.synth.sMaj == ellipsizes{ns-1}(1),:);
-            assert(unique(dtellip.synth.sMin)    == ellipsizes{ns-1}(2));
-            aspect2   = unique(dtellip.(tool).aspect);
-        end
+
+        dtellip = dt(dt.synth.aspect==2,:);
+        dtellip = dtellip(dtellip.synth.sMaj == ellipsizes{ns}(1),:);
+        assert(unique(dtellip.synth.sMin)    == ellipsizes{ns}(2));
+        aspect2   = unique(dtellip.(tool).aspect);
+        
 
         ystart=zeros(size(eccenvals));
         ystop=8*ones(size(eccenvals));
         plot([eccenvals.';eccenvals.'],[ystart.';ystop.'],'LineWidth',.7,'LineStyle','-.','Color','k')
         hold on
         
-        a = plot(eccenvals, aspect1,'-x','Color',0.75*[0 1 0]);
-        if (np ~= 1 && np ~= 5)
-            b = plot(eccenvals, aspect2,'-co');
-            plot([0,max(eccenvals)],[2,2],'LineWidth',1.5,'LineStyle','--','Color','c');
-        end
-        plot([0,max(eccenvals)],[1,1],'LineWidth',1.5,'LineStyle','--','Color',0.75*[0 1 0])
+        a = plot(eccenvals, aspect1,'-kx');
+        b = plot(eccenvals, aspect2,'--ko');
+        % Add dashed lines with GT
+        % plot([0,max(eccenvals)],[2,2],'LineWidth',1.5,'LineStyle','--','Color','c');
+        % plot([0,max(eccenvals)],[1,1],'LineWidth',1.5,'LineStyle','--','Color',0.75*[0 1 0])
+        
         % Apply percentiles and plot individually
         title(strrep(sprintf('%s_TR-%i_Dur-%is_Size-%0.1g',tool,tr,duration,checksize),'_','\_'))
         xlabel('Eccentricity')
         ylabel('pRF aspect ratio')
         ylim([0,8]);
         set(gca, 'FontSize', 16)
-        if (np ~= 1 && np ~= 5)
-            legend([a,b],{'Ground Truth Ellipticity = 1', 'Ground Truth Ellipticity = 2'})
-        else
-            legend(a,{'Ground Truth Ellipticity = 1'})
-        end
+        legend([a,b],{'Ground truth aspect ratio = 1', ...
+                     ['Ground truth aspect ratio = 2 (' ...
+                     num2str(ellipsizes{ns}(1)) '/' num2str(ellipsizes{ns}(2)) ')']})
     end
 end
 saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);    

@@ -104,13 +104,18 @@ parfor (nn=1:nchcks, NumWorkers)
         % the same one and changes are not persistent
         pm     = prfModel;
         %% High Level Variables
+        % Create function that validates that it is a prfmodel
         isprfmodel = @(x)(isa(x,'prfModel'));
-        for vn = dt.Properties.VariableNames
-            if ~istable(dt.(vn{:})) && ~isprfmodel(dt.(vn{:}))
-                if iscell(dt.(vn{:}))
-                    pm.(vn{:}) = dt.(vn{:}){:};
+        % There are several object types at the top level, do different things
+        varNames = dt.Properties.VariableNames;
+        for vn = 1:length(varNames)
+            thisVarName = varNames{vn};
+            thisVar = dt.(thisVarName);
+            if ~istable(thisVar) && ~isprfmodel(thisVar)
+                if iscell(thisVar)
+                    pm.(thisVarName) = thisVar{:};
                 else
-                    pm.(vn{:}) = dt.(vn{:});
+                    pm.(thisVarName) = thisVar;
                 end
             end
         end
