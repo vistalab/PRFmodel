@@ -611,6 +611,7 @@ end
 % INDIVIDUAL PLOTS
 %{
 locs      = unique(vistacompTable.synth.x0);
+locations = [locs,locs];
 for nl = 1:length(locs)
     location = locations(nl,:);
     fnameRoot = sprintf('ELLIP_NoiselessCloudPoints4ratios_ECCEN-%1.2f',location(1)); ext = 'png';
