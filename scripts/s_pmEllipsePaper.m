@@ -218,151 +218,6 @@ pmCloudOfResults(A.compTable   , tools ,'onlyCenters',false ,'userfsize' , 2, ..
 fnameRoot = 'Noisefree_accuracy_3sizes_lownoise';
 saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.svg')),'svg');
 
-%% Noiseless plots: accuracy
-% Calculate data first:
-[afnicompTable , afnitSeries , afniresults]  = pmNoiseFreeTests('afni6','ellipse',true);
-[vistacompTable, vistatSeries, vistaresults] = pmNoiseFreeTests('vista6','ellipse',true);
-
-[cssvistacompTable, cssvistatSeries, cssvistaresults] = pmNoiseFreeTests('vista6','ellipse',true);
-
-% RATIO 1
-fnameRoot = 'ELLIP_NoiselessCloudPoints4ratios_RATIO1'; ext = 'png';
-kk = mrvNewGraphWin(fnameRoot);
-% Fig size is relative to the screen used. This is for laptop at 1900x1200
-set(kk,'Position',[0.007 0.62  0.4  0.3]);
-nrows  = 2; ncols = 4;
-ratios = [0.5,1,2,3];
-
-% Apply params to all
-nslvl  = 'none';
-addcihist = false;
-
-% Plot each tool separately
-% Plot mrVista
-for nr = 1:length(ratios)
-    subplot(nrows,ncols,nr)
-    r      = ratios(nr);
-    tools  = {'vista6'};
-    useHRF = 'vista_twogammas';
-    switch r
-        case 0.5,   sMin=0.5; sMaj=0.5; useellipse=true;
-        case 1  ,   sMin=1  ; sMaj=1  ; useellipse=true;
-        case 2  ,   sMin=2  ; sMaj=2  ; useellipse=true;
-        case 3  ,   sMin=3  ; sMaj=3  ; useellipse=true;
-        otherwise, error('Ratio %i not contemplated',r)
-    end
-    pmCloudOfResults(vistacompTable   , tools ,'onlyCenters',false , ...
-                     'userfsize'  , sMaj, 'userfsizemin' , sMin, 'useellipse',useellipse, ...
-                     'centerPerc' , 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
-                     'lineWidth'  , 1     ,'noiselevel' ,nslvl , 'addcihist', addcihist,...
-                     'centerDistr', false,'synthbluelinewidth',1.5,...
-                     'xlims',[0, 6],'ylims',[0, 6], 'xtick',[0,1,2,3,4,5,6],'ytick',[0,1,2,3,4,5,6], ...
-                     'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
-end
-% plot AFNI
-for nr = 1:length(ratios)
-    subplot(nrows,ncols,nr+length(ratios))
-    r      = ratios(nr);
-    tools  = {'afni6'};
-    useHRF = 'afni_spm';
-    switch r
-        case 0.5,   sMin=0.5; sMaj=0.5; useellipse=true;
-        case 1  ,   sMin=1  ; sMaj=1  ; useellipse=true;
-        case 2  ,   sMin=2  ; sMaj=2  ; useellipse=true;
-        case 3  ,   sMin=3  ; sMaj=3  ; useellipse=true;
-        otherwise, error('Ratio %i not contemplated',r)
-    end
-    pmCloudOfResults(afnicompTable, tools ,'onlyCenters',false , ...
-        'userfsize' , sMaj, 'userfsizemin' , sMin, 'useellipse',useellipse, ...
-        'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
-        'lineWidth' , 1     ,'noiselevel' ,nslvl , 'addcihist', addcihist,...
-        'centerDistr', false,'synthbluelinewidth',1.5,...
-        'xlims',[0, 6],'ylims',[0, 6], 'xtick',[0,1,2,3,4,5,6],'ytick',[0,1,2,3,4,5,6], ...
-        'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
-end
-saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-% RATIO others
-fnameRoot = 'ELLIP_NoiselessCloudPoints4ratios_RATIOrest'; ext = 'png';
-kk = mrvNewGraphWin(fnameRoot);
-% Fig size is relative to the screen used. This is for laptop at 1900x1200
-set(kk,'Position',[0.007 0.62  0.4  0.3]);
-nrows  = 2; ncols = 4;
-ratios = [1.5,2,3,4];
-
-% Apply params to all
-nslvl  = 'none';
-addcihist = false;
-
-% Plot each tool separately
-% Plot mrVista
-for nr = 1:length(ratios)
-    subplot(nrows,ncols,nr)
-    r      = ratios(nr);
-    tools  = {'vista6'};
-    useHRF = 'vista_twogammas';
-    switch r
-        case 1.5, sMin=2; sMaj=3; useellipse=true;
-        case 2,   sMin=1; sMaj=2; useellipse=true;
-        case 3,   sMin=1; sMaj=3; useellipse=true;
-        case 4,   sMin=.5; sMaj=2; useellipse=true;
-        otherwise, error('Ratio %i not contemplated',r)
-    end
-    pmCloudOfResults(vistacompTable   , tools ,'onlyCenters',false , ...
-                     'userfsize'  , sMaj, 'userfsizemin' , sMin, 'useellipse',useellipse, ...
-                     'centerPerc' , 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
-                     'lineWidth'  , 1     ,'noiselevel' ,nslvl , 'addcihist', addcihist,...
-                     'centerDistr', false,'synthbluelinewidth',1.5,...
-                     'xlims',[0, 6],'ylims',[0, 6], 'xtick',[0,1,2,3,4,5,6],'ytick',[0,1,2,3,4,5,6], ...
-                     'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
-end
-% plot afni
-for nr = 1:length(ratios)
-    subplot(nrows,ncols,nr+length(ratios))
-    r      = ratios(nr);
-    tools  = {'afni6'};
-    useHRF = 'afni_spm';
-    switch r
-        case 1.5, sMin=2; sMaj=3; useellipse=true;
-        case 2,   sMin=1; sMaj=2; useellipse=true;
-        case 3,   sMin=1; sMaj=3; useellipse=true;
-        case 4,   sMin=.5; sMaj=2; useellipse=true;
-        otherwise, error('Ratio %i not contemplated',r)
-    end
-    pmCloudOfResults(afnicompTable, tools ,'onlyCenters',false , ...
-        'userfsize' , sMaj, 'userfsizemin' , sMin, 'useellipse',useellipse, ...
-        'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
-        'lineWidth' , 1     ,'noiselevel' ,nslvl , 'addcihist', addcihist,...
-        'centerDistr', false,'synthbluelinewidth',1.5,...
-        'xlims',[0, 6],'ylims',[0, 6], 'xtick',[0,1,2,3,4,5,6],'ytick',[0,1,2,3,4,5,6], ...
-        'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
-end
-saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);    
-             
 %% HRF EFFECT PLOTS
     COMBINE_PARAMETERS                       = struct();
     COMBINE_PARAMETERS.RF.Centerx0           = [3];
@@ -586,6 +441,152 @@ if CircularVsElliptical
     
 end
 
+%% Noiseless plots: accuracy
+% Calculate data first:
+[afnicompTable , afnitSeries , afniresults]  = pmNoiseFreeTests('afni6','ellipse',true);
+[vistacompTable, vistatSeries, vistaresults] = pmNoiseFreeTests('vista6','ellipse',true);
+
+% [cssvistacompTable, cssvistatSeries, cssvistaresults] = pmNoiseFreeTests('vista6','ellipse',true);
+
+% RATIO 1
+fnameRoot = 'ELLIP_NoiselessCloudPoints4ratios_RATIO1'; ext = 'png';
+kk = mrvNewGraphWin(fnameRoot);
+% Fig size is relative to the screen used. This is for laptop at 1900x1200
+set(kk,'Position',[0.007 0.62  0.4  0.3]);
+nrows  = 2; ncols = 4;
+ratios = [0.5,1,2,3];
+
+% Apply params to all
+nslvl  = 'none';
+addcihist = false;
+
+% Plot each tool separately
+
+% plot AFNI
+for nr = 1:length(ratios)
+    subplot(nrows,ncols,nr+length(ratios))
+    r      = ratios(nr);
+    tools  = {'afni6'};
+    useHRF = 'afni_spm';
+    switch r
+        case 0.5,   sMin=0.5; sMaj=0.5; useellipse=true;
+        case 1  ,   sMin=1  ; sMaj=1  ; useellipse=true;
+        case 2  ,   sMin=2  ; sMaj=2  ; useellipse=true;
+        case 3  ,   sMin=3  ; sMaj=3  ; useellipse=true;
+        otherwise, error('Ratio %i not contemplated',r)
+    end
+    pmCloudOfResults(afnicompTable, tools ,'onlyCenters',false , ...
+        'userfsize' , sMaj, 'userfsizemin' , sMin, 'useellipse',useellipse, ...
+        'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
+        'lineWidth' , 1     ,'noiselevel' ,nslvl , 'addcihist', addcihist,...
+        'centerDistr', false,'synthbluelinewidth',1.5,...
+        'xlims',[0, 6],'ylims',[0, 6], 'xtick',[0,1,2,3,4,5,6],'ytick',[0,1,2,3,4,5,6], ...
+        'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+end
+% Plot mrVista
+for nr = 1:length(ratios)
+    subplot(nrows,ncols,nr)
+    r      = ratios(nr);
+    tools  = {'vista6'};
+    useHRF = 'vista_twogammas';
+    switch r
+        case 0.5,   sMin=0.5; sMaj=0.5; useellipse=true;
+        case 1  ,   sMin=1  ; sMaj=1  ; useellipse=true;
+        case 2  ,   sMin=2  ; sMaj=2  ; useellipse=true;
+        case 3  ,   sMin=3  ; sMaj=3  ; useellipse=true;
+        otherwise, error('Ratio %i not contemplated',r)
+    end
+    pmCloudOfResults(vistacompTable   , tools ,'onlyCenters',false , ...
+                     'userfsize'  , sMaj, 'userfsizemin' , sMin, 'useellipse',useellipse, ...
+                     'centerPerc' , 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
+                     'lineWidth'  , 1     ,'noiselevel' ,nslvl , 'addcihist', addcihist,...
+                     'centerDistr', false,'synthbluelinewidth',1.5,...
+                     'xlims',[0, 6],'ylims',[0, 6], 'xtick',[0,1,2,3,4,5,6],'ytick',[0,1,2,3,4,5,6], ...
+                     'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+end
+saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+% RATIO others
+fnameRoot = 'ELLIP_NoiselessCloudPoints4ratios_RATIOrest'; ext = 'png';
+kk = mrvNewGraphWin(fnameRoot);
+% Fig size is relative to the screen used. This is for laptop at 1900x1200
+set(kk,'Position',[0.007 0.62  0.4  0.3]);
+nrows  = 2; ncols = 4;
+ratios = [1.5,2,3,4];
+
+% Apply params to all
+nslvl  = 'none';
+addcihist = false;
+
+% Plot each tool separately
+% Plot mrVista
+for nr = 1:length(ratios)
+    subplot(nrows,ncols,nr)
+    r      = ratios(nr);
+    tools  = {'vista6'};
+    useHRF = 'vista_twogammas';
+    switch r
+        case 1.5, sMin=2; sMaj=3; useellipse=true;
+        case 2,   sMin=1; sMaj=2; useellipse=true;
+        case 3,   sMin=1; sMaj=3; useellipse=true;
+        case 4,   sMin=.5; sMaj=2; useellipse=true;
+        otherwise, error('Ratio %i not contemplated',r)
+    end
+    pmCloudOfResults(vistacompTable   , tools ,'onlyCenters',false , ...
+                     'userfsize'  , sMaj, 'userfsizemin' , sMin, 'useellipse',useellipse, ...
+                     'centerPerc' , 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
+                     'lineWidth'  , 1     ,'noiselevel' ,nslvl , 'addcihist', addcihist,...
+                     'centerDistr', false,'synthbluelinewidth',1.5,...
+                     'xlims',[0, 6],'ylims',[0, 6], 'xtick',[0,1,2,3,4,5,6],'ytick',[0,1,2,3,4,5,6], ...
+                     'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+end
+% plot afni
+for nr = 1:length(ratios)
+    subplot(nrows,ncols,nr+length(ratios))
+    r      = ratios(nr);
+    tools  = {'afni6'};
+    useHRF = 'afni_spm';
+    switch r
+        case 1.5, sMin=2; sMaj=3; useellipse=true;
+        case 2,   sMin=1; sMaj=2; useellipse=true;
+        case 3,   sMin=1; sMaj=3; useellipse=true;
+        case 4,   sMin=.5; sMaj=2; useellipse=true;
+        otherwise, error('Ratio %i not contemplated',r)
+    end
+    pmCloudOfResults(afnicompTable, tools ,'onlyCenters',false , ...
+        'userfsize' , sMaj, 'userfsizemin' , sMin, 'useellipse',useellipse, ...
+        'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
+        'lineWidth' , 1     ,'noiselevel' ,nslvl , 'addcihist', addcihist,...
+        'centerDistr', false,'synthbluelinewidth',1.5,...
+        'xlims',[0, 6],'ylims',[0, 6], 'xtick',[0,1,2,3,4,5,6],'ytick',[0,1,2,3,4,5,6], ...
+        'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+end
+saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);    
+
 %% Noiseless: eccentricity plots, but noiseless
 sub = 'ellipse'; ses = 'noiselessv2';
 p = ['/Users/glerma/toolboxes/PRFmodel/local/' sub '/BIDS/derivatives/prfreport/sub-' sub '/ses-' ses];
@@ -682,7 +683,7 @@ nlvl       = "none";
 eccenInGT  = true;
 checksizes = [0.5,1,2,3];
 ellipsizes = {[1,0.5],[2,1], [3,1.5]};
-tools      = {'vista6'         , 'afni6'};  % 'vista6' 'afni6' 'vista4' 'afni4'
+tools      = {'afni6'          , 'vista6'};  % 'vista6' 'afni6' 'vista4' 'afni4'
 % for vista is vista_twogammas, but only one value in synth, see B table
 useHRFs    = {'afni_spm'       , 'afni_spm' };
 duration   = 400;
