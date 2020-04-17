@@ -181,8 +181,8 @@ for nt=1:length(tools)
     Sizemin = Sizemin(inRange);
     Thetas  = Thetas(inRange);
     if addsnr
-        SNR     = dt.snr;
-        SNR     = SNR(inRange);
+        SNR     = dt.SNR;
+        % SNR     = SNR(inRange);
         % Calculate mean and std of SNR
         meanSNR = mean(SNR);
         stdSNR  = std(SNR);
@@ -224,6 +224,10 @@ for nt=1:length(tools)
     if adddice && addsnr && addtext
         text(1.1*xlims(1),1.1*ylims(1),sprintf('DICE:%.2f(±%.2f) | SNR:%.2f(±%.2f)',...
                           meanDiceVal, stdDiceVal,meanSNR, stdSNR), ...
+             'FontWeight','bold','FontSize',12)
+    end
+    if addsnr
+        text(1.1*xlims(1),1.1*ylims(1),sprintf('SNR:%.2g(±%.2g)',meanSNR, stdSNR), ...
              'FontWeight','bold','FontSize',12)
     end
     hold on; grid on;axis equal

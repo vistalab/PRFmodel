@@ -594,8 +594,8 @@ if isfile(fullfile(p,f))
     load(fullfile(p,f))
 else
     % Calculate data
-    [afnicompTable , afnitSeries , afniresults]  = pmNoiseFreeTests('afni6' , 'eccen',true);
-    [vistacompTable, vistatSeries, vistaresults] = pmNoiseFreeTests('vista6', 'eccen',true);
+    [afnicompTable , afnitSeries , afniresults]  = pmNoiseFreeTests('afni6' );% , 'eccen',true);
+    [vistacompTable, vistatSeries, vistaresults] = pmNoiseFreeTests('vista6');% , 'eccen',true);
     % Save it so that we don't need to generate every time
     compTable        = afnicompTable;
     compTable.vista6 = vistacompTable.vista6;
@@ -606,7 +606,8 @@ end
 
 % INDIVIDUAL PLOTS
 locs      = unique(vistacompTable.synth.x0);
-locations = [loc, loc];
+locations = [3.1315, 3.1315];
+locations = [3,3];
 for nl = 1:length(locs)
     location = locations(nl,:);
     fnameRoot = sprintf('ELLIP_NoiselessCloudPoints4ratios_ECCEN-%1.2f',location(1)); ext = 'png';
@@ -619,7 +620,29 @@ for nl = 1:length(locs)
     % Apply params to all
     nslvl  = 'none';
     addcihist = false;
-
+    % plot AFNI
+    for nr = 1:length(ratios)
+        subplot(nrows,ncols,nr+length(ratios))
+        r      = ratios(nr);
+        tools  = {'afni6'};
+        useHRF = 'afni_spm';
+        switch r
+            case 0.5,   sMin=0.5; sMaj=0.5; useellipse=true;
+            case 1  ,   sMin=1  ; sMaj=1  ; useellipse=true;
+            case 2  ,   sMin=2  ; sMaj=2  ; useellipse=true;
+            case 3  ,   sMin=3  ; sMaj=3  ; useellipse=true;
+            otherwise, error('Ratio %i not contemplated',r)
+        end
+        pmCloudOfResults(afnicompTable, tools ,'onlyCenters',false , ...
+            'userfsize' , sMaj, 'userfsizemin' , sMin, 'useellipse',useellipse, ...
+            'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
+            'lineWidth' , 1     ,'noiselevel' ,nslvl , 'addcihist', addcihist,...
+            'centerDistr', false,'synthbluelinewidth',1.5,...
+            'location', location, ...
+            'xlims',[location(1)-3.5, location(1)+3.5],...
+            'ylims',[location(1)-3.5, location(1)+3.5], ... % 'xtick',[0,1,2,3,4,5,6],'ytick',[0,1,2,3,4,5,6], ...
+            'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
+    end
     % Plot each tool separately
     % Plot mrVista
     for nr = 1:length(ratios)
@@ -643,29 +666,6 @@ for nl = 1:length(locs)
                          'xlims',[location(1)-3.5, location(1)+3.5], ...
                          'ylims',[location(1)-3.5, location(1)+3.5], ... % 'xtick',[0,1,2,3,4,5,6],'ytick',[0,1,2,3,4,5,6], ...
                          'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
-    end
-    % plot AFNI
-    for nr = 1:length(ratios)
-        subplot(nrows,ncols,nr+length(ratios))
-        r      = ratios(nr);
-        tools  = {'afni6'};
-        useHRF = 'afni_spm';
-        switch r
-            case 0.5,   sMin=0.5; sMaj=0.5; useellipse=true;
-            case 1  ,   sMin=1  ; sMaj=1  ; useellipse=true;
-            case 2  ,   sMin=2  ; sMaj=2  ; useellipse=true;
-            case 3  ,   sMin=3  ; sMaj=3  ; useellipse=true;
-            otherwise, error('Ratio %i not contemplated',r)
-        end
-        pmCloudOfResults(afnicompTable, tools ,'onlyCenters',false , ...
-            'userfsize' , sMaj, 'userfsizemin' , sMin, 'useellipse',useellipse, ...
-            'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
-            'lineWidth' , 1     ,'noiselevel' ,nslvl , 'addcihist', addcihist,...
-            'centerDistr', false,'synthbluelinewidth',1.5,...
-            'location', location, ...
-            'xlims',[location(1)-3.5, location(1)+3.5],...
-            'ylims',[location(1)-3.5, location(1)+3.5], ... % 'xtick',[0,1,2,3,4,5,6],'ytick',[0,1,2,3,4,5,6], ...
-            'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
     end
     saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);
 end   
@@ -769,26 +769,31 @@ end
 saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);    
 
 %% FIGURE 7 equivalent with Vista6 and Afni6
-sub = 'ellipse'; ses = 'sizesv2';
+sub = 'ellipse'; ses = 'eccsv2';
 p = ['/Users/glerma/toolboxes/PRFmodel/local/' sub '/BIDS/derivatives/prfreport/sub-' sub '/ses-' ses];
 f = ['sub-' sub '_ses-' ses '-prf_acq-normal_run-01_bold.mat'];
 A = load(fullfile(p,f))
+% It seems that AFNI-s theta was not correctly corrected. This has been fixed now. 
+% It only affects to results in sub-ellipse/ses-*v2
+if strcmp(tool,'afni6');A.compTable.afni6.Th = A.compTable.afni6.Th + deg2rad(90);end
+% Add the SNR values (this will come from prfreport in the future)
+sub = 'ellipse'; ses = 'eccsv2SNR';
+p = ['/Users/glerma/toolboxes/PRFmodel/local/' sub '/BIDS/derivatives/prfsynth/sub-' sub '/ses-' ses];
+f = ['sub-' sub '_ses-' ses '_task-prf_acq-normal_run-01_bold.json'];
+B = struct2table(jsondecode(fileread(fullfile(p,f))));
+A.compTable.SNR = B.SNR;
+
 
 tools   = {'vista6','afni6'};
 set(0,'defaultAxesFontName', 'Arial')
 set(0,'defaultTextFontName', 'Arial')
 
 
-
-
-
-
-
 % RATIO 1
 % Generic values coming from the config.json
 onlyCenters = false;
 userfsize   = 2;
-location    = [3,3]; % [3.1315,3.1315];
+location    = [3.1315,3.1315];  % [3,3]; % 
 useHRF      = {};
 centerPerc  = 90;
 lineStyle   = '-';
@@ -839,9 +844,9 @@ for nslvl = noiselevel
                 'centerPerc', centerPerc    ,'useHRF'     ,useHRF{:},...
                 'lineStyle' , lineStyle, ...
                 'lineWidth' , lineWidth     ,'noiselevel' ,nslvl{:} , ...
-                'useellipse', useellipse, ...
+                'useellipse', useellipse, 'addsnr',true,...
                 'location',location,...
-                'addtext',addtext, 'adddice',false,'addsnr',false,...
+                'addtext',addtext, 'adddice',false,'addsnr',true,...
                 'color', color, 'xlims',xlims,'ylims',ylims,'fontsize', fontsize, ...
                 'xtick',xtick,'ytick',ytick, 'addcibar', addcibar,'addcihist', addcihist,  ...
                 'newWin'    , newWin ,'saveTo'     ,'','saveToType',saveToType)
@@ -849,7 +854,13 @@ for nslvl = noiselevel
     set(gca,'FontName', 'Arial')
     saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.',saveToType)),saveToType);
 end
-             
+
+
+
+
+
+
+
 
 
 
@@ -860,7 +871,7 @@ end
 onlyCenters = false;
 userfsize   = 2;
 userfsizemin= 1;
-location    = [3,3]; 
+location    = [3.1315,3.1315];  % [3,3]; % 
 useHRF      = {};
 centerPerc  = 90;
 lineStyle   = '-';
@@ -880,6 +891,9 @@ newWin      = false;
 saveToType  = 'png';
 numanalysis = length(tools);
 useHRFs     = {};
+
+
+
 for nj=1:numanalysis
     tool = tools{nj};
     switch tool
@@ -901,7 +915,8 @@ for nslvl = noiselevel
     mm        = mrvNewGraphWin(fnameRoot,[]);  % add off to run it in the server or Docker container
     set(mm,'Units','centimeters','Position',[0 0 10*numanalysis 10*numanalysis]);
     np      = 0;
-    for tool = tools; for useHRF = useHRFs
+    for tool = tools 
+        for useHRF = useHRFs
             np=np+1;
             subplot(numanalysis,numanalysis,np)
             pmCloudOfResults(A.compTable   , tool ,'onlyCenters',onlyCenters ,...
@@ -909,9 +924,9 @@ for nslvl = noiselevel
                 'centerPerc', centerPerc    ,'useHRF'     ,useHRF{:},...
                 'lineStyle' , lineStyle, ...
                 'lineWidth' , lineWidth     ,'noiselevel' ,nslvl{:} , ...
-                'useellipse', useellipse, ...
+                'useellipse', useellipse, 'addsnr',true,...
                 'location'  , location,...
-                'addtext'   , addtext, 'adddice',false,'addsnr',false,...
+                'addtext'   , addtext, 'adddice',false,'addsnr',true,...
                 'color'     , color, 'xlims',xlims,'ylims',ylims,'fontsize', fontsize, ...
                 'xtick'     , xtick,'ytick',ytick, 'addcibar', addcibar,'addcihist', addcihist,  ...
                 'newWin'    , newWin ,'saveTo'     ,'','saveToType',saveToType)
@@ -924,129 +939,364 @@ end
 sub = 'ellipse'; ses = 'eccsv2';
 p = ['/Users/glerma/toolboxes/PRFmodel/local/' sub '/BIDS/derivatives/prfreport/sub-' sub '/ses-' ses];
 f = ['sub-' sub '_ses-' ses '-prf_acq-normal_run-01_bold.mat'];
-load(fullfile(p,f))
+A = load(fullfile(p,f))
+% It seems that AFNI-s theta was not correctly corrected. This has been fixed now. 
+% It only affects to results in sub-ellipse/ses-*v2
+if strcmp(tool,'afni6');A.compTable.afni6.Th = A.compTable.afni6.Th + deg2rad(90);end
+% Add the SNR values (this will come from prfreport in the future)
+sub = 'ellipse'; ses = 'eccsv2SNR';
+p = ['/Users/glerma/toolboxes/PRFmodel/local/' sub '/BIDS/derivatives/prfsynth/sub-' sub '/ses-' ses];
+f = ['sub-' sub '_ses-' ses '_task-prf_acq-normal_run-01_bold.json'];
+B = struct2table(jsondecode(fileread(fullfile(p,f))));
+A.compTable.SNR = B.SNR;
 
-
-fnameBegin = 'SilsonEccSim';
+% SAME HRF; RATIO 1 and 2
+fnameBegin = 'SilsonEccSimHRFok';
 ext        = 'png';
-nlvl       = {"mid","low"};
+nlvls      = {"mid","low"};
 centerPerc = 50;
 eccenInGT  = true;
 checksizes = [0.5,1,2,3];
+ellipsizes = {[1,0.5],[2,1],[4,2],[6,3]};
 tools      = {'vista6'          , 'afni6'};  % 'vista6' 'afni6' 'vista4' 'afni4'
-useHRFs    = {'afni_spm','vista_twogammas' };
+useHRFs    = {'vista_twogammas' ,'afni_spm'};
 duration   = 400;
 tr         = 2;
-
+nrow = 2; ncol=4;
 for nlvl = nlvls
     nlvl = nlvl{:};
-for nt=1:length(tools)
-    tool   = tools{nt};
-    useHRF = useHRFs{nt};
-    for ns=1:length(checksizes)
-    checksize  = checksizes(ns);
-    dt         = compTable;
-    % MAKE THIS A FUNCTION
-    % Obtain eccentricity and polar angle
-    [TH,R]         = cart2pol(dt.synth.x0, dt.synth.y0);
-    dt.synth.angle = rad2deg(TH);
-    dt.synth.eccen = R;
-    dt.synth.aspect= dt.synth.sMaj ./ dt.synth.sMin;
-
-    [TH,R]               = cart2pol(dt.(tool).x0, dt.(tool).y0);
-    dt.(tool).angle  = rad2deg(TH);
-    dt.(tool).eccen  = R;
-    dt.(tool).aspect = dt.(tool).sMaj  ./ dt.(tool).sMin;
-
-    % Check that we are getting the values we want
-    xvalues = unique(dt.synth.eccen);
-    isclose(linspace(1,9,8)',xvalues,'tolerance',0.001);
-
-    % Filter all that we can filter
-    % Noise levels
-    dt = dt(dt.noiseLevel==nlvl,:);
-    % Assert and remove the rest options
-    nls=unique(dt.noiseLevel);assert(nls==nlvl);
-    % Aspect ratio: start with synthesized aspect ratio = 1
-    dt = dt(dt.synth.aspect==1,:);
-    nls=unique(dt.synth.aspect);assert(nls==1);
-    % Select a size, lets take the smalles one for now
-    dt = dt(dt.synth.sMaj==checksize,:);
-    assert(unique(dt.synth.sMin)==checksize)
-
-    % Check percentage is 100 based
-    if centerPerc < 1; centerPerc = centerPerc*100; end
-    % Define the required confidence intervals as two percentiles
-    twoTailedRange = (100 - centerPerc) / 2;
-
-    % We want to use just its own HRF, remove the vista one
-    dt = dt(dt.HRFtype==string(useHRF),:);
-
-    % Obtain eccen  vals, this is going to be the x axis
-    eccenvals = unique(dt.synth.eccen);
-
-
     % Create main plot with the ground truth lines
-    fnameEnd = sprintf('%s_TR-%i_Dur-%is_Noise-%s_C.I.-%i_GTsize-%ideg',...
-                       tool,tr,duration,nlvl,centerPerc,unique(dt.synth.sMaj));                   
-    fnameRoot = strcat(fnameBegin,'-', fnameEnd); 
+    fnameEnd = sprintf('TR-%i_Dur-%is_Noise-%s_C.I.-%i',...
+        tr,duration,nlvl,centerPerc);
+    fnameRoot = strcat(fnameBegin,'-', fnameEnd);
     disp(fnameRoot)
     kk = mrvNewGraphWin(fnameRoot);
     % Fig size is relative to the screen used. This is for laptop at 1900x1200
-    set(kk,'Position',[0.007 0.62  0.4  0.3]);
-    ystart=zeros(size(eccenvals));
-    ystop=8*ones(size(eccenvals));
-    plot([eccenvals.';eccenvals.'],[ystart.';ystop.'], ...
-        'LineWidth',.7,'LineStyle','-.','Color','k')
-    hold on
-    plot([0,max(eccenvals)],[1,1],'LineWidth',1.5,'LineStyle','--','Color',0.75*[0 1 0])
-    
-    Cs              = 0.65*distinguishable_colors(1+length(eccenvals),'w');
-    
-    % Apply percentiles and plot individually
-    for ne=1:length(eccenvals)
-        C           = Cs(ne,:);
-        ecc         = eccenvals(ne);
-        aspect      = dt.(tool).aspect(dt.synth.eccen==ecc);
-        realeccen   = dt.(tool).eccen(dt.synth.eccen==ecc);
-        B           = prctile(aspect, [twoTailedRange, 100 - twoTailedRange]);
-        inRange     = aspect>=B(1) & aspect<=B(2);
-        % Apply
-        aspectci    = aspect(inRange);
-        realeccenci = realeccen(inRange);
-        % Medians
-        aspectmed   = median(aspectci);
-        aspectmin   = min(aspectci);
-        aspectmax   = max(aspectci);
-        realeccenmed= median(realeccenci);
-        realeccenmin= min(realeccenci);
-        realeccenmax= max(realeccenci);
+    set(kk,'Position',[0.007 0.62  1  0.5]);
+    np=0;
+    for nt=1:length(tools)
+        tool   = tools{nt};
+        useHRF = useHRFs{nt};
+        for ns=1:length(checksizes)
+            np=np+1;
+            subplot(nrow,ncol,np)
+            checksize  = checksizes(ns);
+            ellipsize  = ellipsizes{ns};
+            dt         = A.compTable;
+            % MAKE THIS A FUNCTION
+            % Obtain eccentricity and polar angle
+            [TH,R]         = cart2pol(dt.synth.x0, dt.synth.y0);
+            dt.synth.angle = rad2deg(TH);
+            dt.synth.eccen = R;
+            dt.synth.aspect= dt.synth.sMaj ./ dt.synth.sMin;
 
-        % Plot it
+            [TH,R]           = cart2pol(dt.(tool).x0, dt.(tool).y0);
+            dt.(tool).angle  = rad2deg(TH);
+            dt.(tool).eccen  = R;
+            dt.(tool).aspect = dt.(tool).sMaj  ./ dt.(tool).sMin;
 
-        if eccenInGT
-            scatter(ecc,aspectmed,80,C,'filled')
-            vax = plot(ecc * [1,1],...
-                [aspectmin  , aspectmax], ...
-                'Color',C,'LineStyle','-','LineWidth',3); %
-        else
-            scatter(realeccenmed,aspectmed,60,C,'filled')
-            hax = plot([realeccenmin, realeccenmax],...
-                aspectmed*[1,1], ...
-                'Color',C,'LineStyle','-','LineWidth',2); % 'Color','k',
-            vax = plot(realeccenmed * [1,1],...
-                [aspectmin  , aspectmax], ...
-                'Color',C,'LineStyle','-','LineWidth',2); %
+            % Check that we are getting the values we want
+            xvalues = unique(dt.synth.eccen);
+            isclose(linspace(1,9,8)',xvalues,'tolerance',0.001);
+
+            % Filter all that we can filter
+            % Noise levels
+            dt = dt(dt.noiseLevel==nlvl,:);
+            % Assert and remove the rest options
+            nls=unique(dt.noiseLevel);assert(nls==nlvl);
+            % Check percentage is 100 based
+            if centerPerc < 1; centerPerc = centerPerc*100; end
+            % Define the required confidence intervals as two percentiles
+            twoTailedRange = (100 - centerPerc) / 2;
+            % We want to use just its own HRF, remove the vista one
+            dt = dt(dt.HRFtype==string(useHRF),:);
+            
+          
+            
+            % Aspect ratio: 1
+            dtcirc = dt(dt.synth.aspect==1,:);
+            nls=unique(dtcirc.synth.aspect);assert(nls==1);
+            % Select the size
+            dtcirc = dtcirc(dtcirc.synth.sMaj==checksize,:);
+            assert(unique(dtcirc.synth.sMin)==checksize)
+            SNRcirc     = dtcirc.SNR;
+            meanSNRcirc = mean(SNRcirc);
+            stdSNRcirc  = std(SNRcirc);
+            
+            
+            
+            % Aspect ratio: 2
+            dtellip = dt(dt.synth.aspect==2,:);
+            nls=unique(dtellip.synth.aspect);assert(nls==2);
+            % Select the size
+            dtellip = dtellip(dtellip.synth.sMaj==ellipsize(1),:);
+            assert(unique(dtellip.synth.sMin)==ellipsize(2))
+            SNRellip     = dtellip.SNR;
+            meanSNRellip = mean(SNRellip);
+            stdSNRellip  = std(SNRellip);
+            
+            
+            % Obtain eccen  vals, this is going to be the x axis
+            eccenvals = unique(dt.synth.eccen);
+
+            
+            ystart=zeros(size(eccenvals));
+            ystop=8*ones(size(eccenvals));
+            plot([eccenvals.';eccenvals.'],[ystart.';ystop.'], ...
+                'LineWidth',.7,'LineStyle','-.','Color','k')
+            hold on
+            plot([0,max(eccenvals)],[1,1],'LineWidth',1.5,'LineStyle','--','Color',0.75*[0 1 0])
+            plot([0,max(eccenvals)],[2,2],'LineWidth',1.5,'LineStyle','--','Color','c')
+            Cs              = 0.65*distinguishable_colors(1+length(eccenvals),'w');
+
+            % Apply percentiles and plot individually
+            for ne=1:length(eccenvals)
+                C           = Cs(ne,:);
+                ecc         = eccenvals(ne);
+                aspectcirc  = dtcirc.(tool).aspect(dtcirc.synth.eccen==ecc);
+                aspectellip = dtellip.(tool).aspect(dtellip.synth.eccen==ecc);
+                realeccencirc   = dtcirc.(tool).eccen(dtcirc.synth.eccen==ecc);
+                realeccenellip  = dtellip.(tool).eccen(dtellip.synth.eccen==ecc);
+                Bcirc           = prctile(aspectcirc, [twoTailedRange, 100 - twoTailedRange]);
+                Bellip          = prctile(aspectellip, [twoTailedRange, 100 - twoTailedRange]);
+                inRangecirc     = aspectcirc>=Bcirc(1) & aspectcirc<=Bcirc(2);
+                inRangeellip    = aspectellip>=Bellip(1) & aspectellip<=Bellip(2);
+                % Apply
+                aspectcicirc    = aspectcirc(inRangecirc);
+                realeccencicirc = realeccencirc(inRangecirc);
+                
+                aspectciellip    = aspectellip(inRangeellip);
+                realeccenciellip = realeccenellip(inRangeellip);
+                
+                % Medians
+                aspectmedcirc   = median(aspectcicirc);
+                aspectmincirc   = min(aspectcicirc);
+                aspectmaxcirc   = max(aspectcicirc);
+                realeccenmedcirc= median(realeccencicirc);
+                realeccenmincirc= min(realeccencicirc);
+                realeccenmaxcirc= max(realeccencicirc);
+
+                aspectmedellip   = median(aspectciellip);
+                aspectminellip   = min(aspectciellip);
+                aspectmaxellip   = max(aspectciellip);
+                realeccenmedellip= median(realeccenciellip);
+                realeccenminellip= min(realeccenciellip);
+                realeccenmaxellip= max(realeccenciellip);
+                
+                
+                
+                % Plot it
+                if eccenInGT
+                    a = scatter(ecc,aspectmedcirc,80,0.75*[0 1 0],'filled');
+                    vax = plot(ecc * [1,1],...
+                        [aspectmincirc  , aspectmaxcirc], ...
+                        'Color',0.75*[0 1 0],'LineStyle','-','LineWidth',3);
+                    
+                    b = scatter(ecc+.15,aspectmedellip,80,'c','filled');
+                    vax = plot((ecc+.15) * [1,1],...
+                        [aspectminellip  , aspectmaxellip], ...
+                        'Color','c','LineStyle','-','LineWidth',3);
+                else
+                    scatter(realeccenmed,aspectmed,60,0.75*[0 1 0],'filled')
+                    hax = plot([realeccenmin, realeccenmax],...
+                        aspectmed*[1,1], ...
+                        'Color',0.75*[0 1 0],'LineStyle','-','LineWidth',2); % 'Color','k',
+                    vax = plot(realeccenmed * [1,1],...
+                        [aspectmin  , aspectmax], ...
+                        'Color',0.75*[0 1 0],'LineStyle','-','LineWidth',2); %
+                end
+            end
+            % SNR will be calculated at the level of the graph
+            text(1.1*xlims(1),1.1*ylims(1), ...
+                 sprintf('SNRcirc:%.2g(±%.2g) | SNRellip:%.2g(±%.2g)', ...
+                         meanSNRcirc, stdSNRcirc,meanSNRellip, stdSNRellip), ...
+             'FontWeight','bold','FontSize',12)
+            legend([a,b],{'G.T. Aspect = 1', 'G.T. Aspect = 2'})
+            title(strrep(sprintf('%s_TR-%i_Dur-%is_Noise-%s_C.I.-%i_size-%0.1g',...
+                    tool,tr,duration,nlvl,centerPerc,checksize),'_','\_'))
+            
+            xlabel('Eccentricity')
+            ylabel('pRF aspect ratio')
+            ylim([0,8]);
+            set(gca, 'FontSize', 16) 
         end
     end
-    title(strrep(fnameRoot,'_','\_'))
-    xlabel('Eccentricity (dashed=ground truth)')
-    ylabel('pRF aspect ratio (ground truth=1)')
-    ylim([0,8]);
-    set(gca, 'FontSize', 16)
     saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);    
+end
+
+% THE OTHER HRF; RATIO 1 and 2
+fnameBegin = 'SilsonEccSimHRFinv';
+ext        = 'png';
+nlvls      = {"mid","low"};
+centerPerc = 50;
+eccenInGT  = true;
+checksizes = [0.5,1,2,3];
+ellipsizes = {[1,0.5],[2,1],[4,2],[6,3]};
+tools      = {'vista6'          , 'afni6'};  % 'vista6' 'afni6' 'vista4' 'afni4'
+useHRFs    = {'afni_spm','vista_twogammas'};
+duration   = 400;
+tr         = 2;
+nrow = 2; ncol=4;
+for nlvl = nlvls
+    nlvl = nlvl{:};
+    % Create main plot with the ground truth lines
+    fnameEnd = sprintf('TR-%i_Dur-%is_Noise-%s_C.I.-%i',...
+        tr,duration,nlvl,centerPerc);
+    fnameRoot = strcat(fnameBegin,'-', fnameEnd);
+    disp(fnameRoot)
+    kk = mrvNewGraphWin(fnameRoot);
+    % Fig size is relative to the screen used. This is for laptop at 1900x1200
+    set(kk,'Position',[0.007 0.62  1  0.5]);
+    np=0;
+    for nt=1:length(tools)
+        tool   = tools{nt};
+        useHRF = useHRFs{nt};
+        for ns=1:length(checksizes)
+            np=np+1;
+            subplot(nrow,ncol,np)
+            checksize  = checksizes(ns);
+            ellipsize  = ellipsizes{ns};
+            dt         = A.compTable;
+            % MAKE THIS A FUNCTION
+            % Obtain eccentricity and polar angle
+            [TH,R]         = cart2pol(dt.synth.x0, dt.synth.y0);
+            dt.synth.angle = rad2deg(TH);
+            dt.synth.eccen = R;
+            dt.synth.aspect= dt.synth.sMaj ./ dt.synth.sMin;
+
+            [TH,R]           = cart2pol(dt.(tool).x0, dt.(tool).y0);
+            dt.(tool).angle  = rad2deg(TH);
+            dt.(tool).eccen  = R;
+            dt.(tool).aspect = dt.(tool).sMaj  ./ dt.(tool).sMin;
+
+            % Check that we are getting the values we want
+            xvalues = unique(dt.synth.eccen);
+            isclose(linspace(1,9,8)',xvalues,'tolerance',0.001);
+
+            % Filter all that we can filter
+            % Noise levels
+            dt = dt(dt.noiseLevel==nlvl,:);
+            % Assert and remove the rest options
+            nls=unique(dt.noiseLevel);assert(nls==nlvl);
+            % Check percentage is 100 based
+            if centerPerc < 1; centerPerc = centerPerc*100; end
+            % Define the required confidence intervals as two percentiles
+            twoTailedRange = (100 - centerPerc) / 2;
+            % We want to use just its own HRF, remove the vista one
+            dt = dt(dt.HRFtype==string(useHRF),:);
+            
+          
+            
+            % Aspect ratio: 1
+            dtcirc = dt(dt.synth.aspect==1,:);
+            nls=unique(dtcirc.synth.aspect);assert(nls==1);
+            % Select the size
+            dtcirc = dtcirc(dtcirc.synth.sMaj==checksize,:);
+            assert(unique(dtcirc.synth.sMin)==checksize)
+            SNRcirc     = dtcirc.SNR;
+            meanSNRcirc = mean(SNRcirc);
+            stdSNRcirc  = std(SNRcirc);
+            
+            
+            
+            % Aspect ratio: 2
+            dtellip = dt(dt.synth.aspect==2,:);
+            nls=unique(dtellip.synth.aspect);assert(nls==2);
+            % Select the size
+            dtellip = dtellip(dtellip.synth.sMaj==ellipsize(1),:);
+            assert(unique(dtellip.synth.sMin)==ellipsize(2))
+            SNRellip     = dtellip.SNR;
+            meanSNRellip = mean(SNRellip);
+            stdSNRellip  = std(SNRellip);
+            
+            
+            % Obtain eccen  vals, this is going to be the x axis
+            eccenvals = unique(dt.synth.eccen);
+
+            
+            ystart=zeros(size(eccenvals));
+            ystop=8*ones(size(eccenvals));
+            plot([eccenvals.';eccenvals.'],[ystart.';ystop.'], ...
+                'LineWidth',.7,'LineStyle','-.','Color','k')
+            hold on
+            plot([0,max(eccenvals)],[1,1],'LineWidth',1.5,'LineStyle','--','Color',0.75*[0 1 0])
+            plot([0,max(eccenvals)],[2,2],'LineWidth',1.5,'LineStyle','--','Color','c')
+            Cs              = 0.65*distinguishable_colors(1+length(eccenvals),'w');
+
+            % Apply percentiles and plot individually
+            for ne=1:length(eccenvals)
+                C           = Cs(ne,:);
+                ecc         = eccenvals(ne);
+                aspectcirc  = dtcirc.(tool).aspect(dtcirc.synth.eccen==ecc);
+                aspectellip = dtellip.(tool).aspect(dtellip.synth.eccen==ecc);
+                realeccencirc   = dtcirc.(tool).eccen(dtcirc.synth.eccen==ecc);
+                realeccenellip  = dtellip.(tool).eccen(dtellip.synth.eccen==ecc);
+                Bcirc           = prctile(aspectcirc, [twoTailedRange, 100 - twoTailedRange]);
+                Bellip          = prctile(aspectellip, [twoTailedRange, 100 - twoTailedRange]);
+                inRangecirc     = aspectcirc>=Bcirc(1) & aspectcirc<=Bcirc(2);
+                inRangeellip    = aspectellip>=Bellip(1) & aspectellip<=Bellip(2);
+                % Apply
+                aspectcicirc    = aspectcirc(inRangecirc);
+                realeccencicirc = realeccencirc(inRangecirc);
+                
+                aspectciellip    = aspectellip(inRangeellip);
+                realeccenciellip = realeccenellip(inRangeellip);
+                
+                % Medians
+                aspectmedcirc   = median(aspectcicirc);
+                aspectmincirc   = min(aspectcicirc);
+                aspectmaxcirc   = max(aspectcicirc);
+                realeccenmedcirc= median(realeccencicirc);
+                realeccenmincirc= min(realeccencicirc);
+                realeccenmaxcirc= max(realeccencicirc);
+
+                aspectmedellip   = median(aspectciellip);
+                aspectminellip   = min(aspectciellip);
+                aspectmaxellip   = max(aspectciellip);
+                realeccenmedellip= median(realeccenciellip);
+                realeccenminellip= min(realeccenciellip);
+                realeccenmaxellip= max(realeccenciellip);
+                
+                
+                
+                % Plot it
+                if eccenInGT
+                    a = scatter(ecc,aspectmedcirc,80,0.75*[0 1 0],'filled');
+                    vax = plot(ecc * [1,1],...
+                        [aspectmincirc  , aspectmaxcirc], ...
+                        'Color',0.75*[0 1 0],'LineStyle','-','LineWidth',3);
+                    
+                    b = scatter(ecc+.15,aspectmedellip,80,'c','filled');
+                    vax = plot((ecc+.15) * [1,1],...
+                        [aspectminellip  , aspectmaxellip], ...
+                        'Color','c','LineStyle','-','LineWidth',3);
+                else
+                    scatter(realeccenmed,aspectmed,60,0.75*[0 1 0],'filled')
+                    hax = plot([realeccenmin, realeccenmax],...
+                        aspectmed*[1,1], ...
+                        'Color',0.75*[0 1 0],'LineStyle','-','LineWidth',2); % 'Color','k',
+                    vax = plot(realeccenmed * [1,1],...
+                        [aspectmin  , aspectmax], ...
+                        'Color',0.75*[0 1 0],'LineStyle','-','LineWidth',2); %
+                end
+            end
+            % SNR will be calculated at the level of the graph
+            text(1.1*xlims(1),1.1*ylims(1), ...
+                 sprintf('SNRcirc:%.2g(±%.2g) | SNRellip:%.2g(±%.2g)', ...
+                         meanSNRcirc, stdSNRcirc,meanSNRellip, stdSNRellip), ...
+             'FontWeight','bold','FontSize',12)
+            legend([a,b],{'G.T. Aspect = 1', 'G.T. Aspect = 2'})
+            title(strrep(sprintf('%s_TR-%i_Dur-%is_Noise-%s_C.I.-%i_size-%0.1g',...
+                    tool,tr,duration,nlvl,centerPerc,checksize),'_','\_'))
+            
+            xlabel('Eccentricity')
+            ylabel('pRF aspect ratio')
+            ylim([0,8]);
+            set(gca, 'FontSize', 16) 
+        end
     end
-end;end
+    saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);    
+end
 
 %% Silson 2018 plot: SIZE vs ASPECT
 sub = 'ellipse'; ses = 'sizesv2';
