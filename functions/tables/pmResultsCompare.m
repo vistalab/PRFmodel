@@ -76,14 +76,17 @@ for ni=1:length(params)
     end
 end
 % Add the HRF type
-newDT.HRFtype   = synthDT.HRF.Type;
+newDT.HRFtype    = synthDT.HRF.Type;
 % Add the TR type
-newDT.TR        = synthDT.TR;
+newDT.TR         = synthDT.TR;
 % Add the Noise type param
 newDT.noiseLevel = synthDT.Noise.voxel;
 newDT.noiseLevel(synthDT.Noise.seed=="none") = repmat({'none'},[length(newDT.noiseLevel(synthDT.Noise.seed=="none")),1]);
+% Add SNR
+newDT.SNR        = synthDT.SNR;
 
 % If requested, add the snr param
+%{
 if addSnrCol
     newDT.snr = zeros(height(newDT),1);
     pms       = synthDT.pm;
@@ -91,6 +94,7 @@ if addSnrCol
         newDT.snr(ns) = pms(ns).SNR;
     end
 end
+%}
 
 for ii=1:length(resNames)
     newDT.(resNames{ii}) = resDT{ii}(:,toolresults);
