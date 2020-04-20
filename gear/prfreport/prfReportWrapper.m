@@ -31,6 +31,8 @@ function prfReportWrapper(json, output_dir)
     jsonPath   = fullfile(pmRootPath,'local','paper02','prfreport-configuration-paper-225.json');
     jsonPath   = fullfile(pmRootPath,'local','borrar','prfreport-config_sub-001_sess-20200320.json');
     output_dir = fullfile(pmRootPath,'local','borrar');
+    jsonPath   = fullfile(pmRootPath,'local','ellipse','prfreport-configuration_sub-ellipse_ses-eccsv2TR1.json');
+    output_dir = fullfile(pmRootPath,'local','ellipse');
     prfReportWrapper(jsonPath, output_dir);
 
 %}
@@ -96,6 +98,7 @@ else
         resultParams(5).name = "sigmaMajor";
         resultParams(6).name = "R2";
     DEFAULTS.resultParams      = resultParams;    
+
         resultParamsShort(1).shortname = "x0";
         resultParamsShort(2).shortname = "y0";
         resultParamsShort(3).shortname = "Th";
@@ -103,6 +106,7 @@ else
         resultParamsShort(5).shortname = "sMaj";
         resultParamsShort(6).shortname = "R2";
     DEFAULTS.resultParamsShort = resultParamsShort;    
+
     DEFAULTS.shortenParamNames = true;
     DEFAULTS.doTSeries         = false;
     % pmCloudOfResults params
