@@ -188,6 +188,7 @@ switch prfimplementation
     case {'vista','mrvista','vistasoft','vista4'}
         options.vista            = allOptions.vista;
         options.vista.model      = 'one gaussian';
+        % options.vista.model      = 'one oval gaussian';
         options.vista.grid       = false;  % if true, returns gFit
         options.vista.wSearch    = 'coarse to fine and hrf'; 
         options.vista.detrend    = 0;

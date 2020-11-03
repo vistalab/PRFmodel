@@ -745,7 +745,7 @@ switch prfimplementation
         end
         
         %% SET OTHER CONTROL ENVIROMENTAL VARIABLES
-        % Not sure about the options here
+        % Not sure about the options here, Reynolds sent them to us
         setenv('AFNI_MODEL_DEBUG', '3');
         setenv('AFNI_MODEL_PRF_ON_GRID', 'NO');
         setenv('AFNI_MODEL_PRF_RAM_STATS', 'N');
@@ -844,8 +844,6 @@ switch prfimplementation
             '-jobs 36' ... % num2str(c.NumWorkers)...
             ]);
         toc
-        
-        
         
         %% Read the results back to Matlab
         kk = which('BrikLoad');
