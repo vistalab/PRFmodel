@@ -1,0 +1,63 @@
+% SCRIPT s00_MainFiguresScript.m
+%        Downloads the data and
+%        Generates the figures in the publication
+%        (add citation here)
+% 
+% Note: png files are for validations, for the paper the files are saved as svg
+%       and then edited in Affinnity Designer into the final form
+
+%% PREPARE ENVIRONMENT
+clear all; close all; clc
+
+doYouUseToolboxToolbox = true;
+
+% Load dependencies
+if doYouUseToolboxToolbox
+    % Download and add this config file
+    yourToolboxToolboxRegistryConfigurationsFolder='~/toolboxes/ToolboxRegistry/configurations/';
+    configFile = fullfile(yourToolboxToolboxRegistryConfigurationsFolder,'PRFmodel.json');
+    if ~exist(configFile,'file')
+        websave(configFile,'https://github.com/garikoitz/ToolboxRegistry/blob/master/configurations/PRFmodel.json')
+    end
+    tbUse PRFmodel
+else
+    % If not a ToolboxToolbox user:
+    softDir = '~/soft/';
+    if ~exist(softDir,'dir');mkdir(softDir);end
+    cd(softDir);
+    % PRFmodel
+    system('git clone https://github.com/vistalab/PRFmodel.git')
+    addpath(genpath(fullfile(softDir,'PRFmodel')));
+    % Vistasoft
+    system('git clone https://github.com/vistalab/vistasoft.git')
+    addpath(genpath(fullfile(softDir,'vistasoft')));
+    % Check more, maybe there are more dependencies
+end
+
+%% DOWNLOAD DATA
+% Download synthetic data
+ellipsezip = websave(fullfile(pmRootPath,'local','ellipse.zip'),'https://osf.io/27axp/download');
+unzip(ellipsezip);
+% NO
+
+
+
+
+% Download experimental data
+realdatazip = websave(fullfile(pmRootPath,'local','realdata.zip'),'https://osf.io/s9fd5/download');
+unzip(realdatazip);
+
+
+
+
+%% FIGURE CALLS
+saveFigTo = '~/Downloads/TEST'; if ~isfolder(saveFigTo); mkdir(saveFigTo); end
+fileType  = 'png';
+ConfInt   = 50;
+
+s01_Ellipse_Fig1(saveFigTo,fileType);
+s02_Ellipse_Fig2(saveFigTo,fileType);
+s03_Ellipse_Fig3(saveFigTo,fileType); % todo: download files from OSF
+s04_5_Ellipse_Fig4_5(saveFigTo,fileType,ConfInt); % todo: download files from OSF
+s06_S7_S8_Ellipse_Fig6_S7_S8(saveFigTo,fileType); % todo: download files from OSF
+ss06_Ellipse_FigS6(saveFigTo,fileType);

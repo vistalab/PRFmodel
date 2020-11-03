@@ -5,7 +5,7 @@
 clear all; close all; clc
 % p = '/Users/glerma/gDrive/STANFORD/PROJECTS/2019_PRF_Validation_methods_(Gari)/__PUBLISH__/ELLIPTICAL';
 % f = 'sub-ellipse_ses-sess02-prf_acq-normal_run-01_bold.mat';
-
+tbUse prfmodel
 
 saveTo = '~/gDrive/STANFORD/PROJECTS/2019_PRF_Validation_methods_(Gari)/__PUBLISH__/ELLIPTICAL/Figures/RAW';
 %}
@@ -339,10 +339,6 @@ pmCloudOfResults(compTable   , tools ,'onlyCenters', false ,'userfsize' , 2, 'ce
                  'location', [3,0], ... % 'all', ... % [3,3], ...
                  'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
                           
-%%
-% [kkvistacompTable, kkvistatSeries, kkvistaresults] = pmNoiseFreeTests('vista6','ellipse',true);             
-% [kkafnicompTable, kkafnitSeries, kkafniresults] = pmNoiseFreeTests('afni6','ellipse',true);
-
 %% CircularVsElliptical
 if CircularVsElliptical
         COMBINE_PARAMETERS                       = struct();
@@ -442,16 +438,19 @@ if CircularVsElliptical
 end
 
 %% FIG 1: Noiseless plots: accuracy
+clear all; close all; clc
+saveTo = '~/gDrive/STANFORD/PROJECTS/2019_PRF_Validation_methods_(Gari)/__PUBLISH__/ELLIPTICAL/Figures/RAW';
+
 sub = 'ellipse'; ses = 'noiselesssimplev2';
 p = ['/Users/glerma/toolboxes/PRFmodel/local/' sub '/BIDS/derivatives/prfreport/sub-' sub '/ses-' ses];
 if ~isdir(p); mkdir(p); end
 f = ['sub-' sub '_ses-' ses '-prf_acq-normal_run-01_bold.mat'];
 if isfile(fullfile(p,f))
-    load(fullfile(p,f))
+    load(fullfile(p,f));
 else
     % Calculate data
-    [afnicompTable , afnitSeries , afniresults]  = pmNoiseFreeTests('afni6' , 'ellipse', true);
-    [vistacompTable, vistatSeries, vistaresults] = pmNoiseFreeTests('vista6', 'ellipse', true);
+    [afnicompTable , afnitSeries , afniresults]  = pmNoiseFreeTests('afni6' , 'ellipse', true, 'usenifti',true);
+    [vistacompTable, vistatSeries, vistaresults] = pmNoiseFreeTests('vista6', 'ellipse', true, 'usenifti',true);
     % Save it so that we don't need to generate every time
     compTable        = afnicompTable;
     compTable.vista6 = vistacompTable.vista6;
@@ -460,7 +459,7 @@ end
 
 
 % RATIO 1
-fnameRoot = 'ELLIP_NoiselessCloudPoints4ratios_RATIO1'; ext = 'png';
+fnameRoot = 'ELLIP_NoiselessCloudPoints4ratios_RATIO1'; ext = 'svg';
 kk = mrvNewGraphWin(fnameRoot);
 % Fig size is relative to the screen used. This is for laptop at 1900x1200
 set(kk,'Position',[0.007 0.62  0.4  0.3]);
@@ -486,7 +485,7 @@ for nr = 1:length(ratios)
         case 3  ,   sMin=3  ; sMaj=3  ; useellipse=true;
         otherwise, error('Ratio %i not contemplated',r)
     end
-    pmCloudOfResults(afnicompTable, tools ,'onlyCenters',false , ...
+    pmCloudOfResults(compTable, tools ,'onlyCenters',false , ...
         'userfsize' , sMaj, 'userfsizemin' , sMin, 'useellipse',useellipse, ...
         'centerPerc', 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
         'lineWidth' , 1     ,'noiselevel' ,nslvl , 'addcihist', addcihist,...
@@ -499,7 +498,7 @@ for nr = 1:length(ratios)
     subplot(nrows,ncols,nr+length(ratios))
     r      = ratios(nr);
     tools  = {'vista6'};
-    useHRF = 'vista_twogammas';
+    useHRF = 'afni_spm';  % it is really vista_twogammas, but not in the table
     switch r
         case 0.5,   sMin=0.5; sMaj=0.5; useellipse=true;
         case 1  ,   sMin=1  ; sMaj=1  ; useellipse=true;
@@ -507,7 +506,7 @@ for nr = 1:length(ratios)
         case 3  ,   sMin=3  ; sMaj=3  ; useellipse=true;
         otherwise, error('Ratio %i not contemplated',r)
     end
-    pmCloudOfResults(vistacompTable   , tools ,'onlyCenters',false , ...
+    pmCloudOfResults(compTable   , tools ,'onlyCenters',false , ...
                      'userfsize'  , sMaj, 'userfsizemin' , sMin, 'useellipse',useellipse, ...
                      'centerPerc' , 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
                      'lineWidth'  , 1     ,'noiselevel' ,nslvl , 'addcihist', addcihist,...
@@ -518,21 +517,9 @@ end
 saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);    
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+% {
 % RATIO others
-fnameRoot = 'ELLIP_NoiselessCloudPoints4ratios_RATIOrest'; ext = 'png';
+fnameRoot = 'ELLIP_NoiselessCloudPoints4ratios_RATIOrest'; ext = 'svg';
 kk = mrvNewGraphWin(fnameRoot);
 % Fig size is relative to the screen used. This is for laptop at 1900x1200
 set(kk,'Position',[0.007 0.62  0.4  0.3]);
@@ -549,7 +536,7 @@ for nr = 1:length(ratios)
     subplot(nrows,ncols,nr+length(ratios))
     r      = ratios(nr);
     tools  = {'vista6'};
-    useHRF = 'vista_twogammas';
+    useHRF = 'afni_spm';  % see above
     switch r
         case 1.5, sMin=2; sMaj=3; useellipse=true;
         case 2,   sMin=1; sMaj=2; useellipse=true;
@@ -557,7 +544,7 @@ for nr = 1:length(ratios)
         case 4,   sMin=.5; sMaj=2; useellipse=true;
         otherwise, error('Ratio %i not contemplated',r)
     end
-    pmCloudOfResults(vistacompTable   , tools ,'onlyCenters',false , ...
+    pmCloudOfResults(compTable   , tools ,'onlyCenters',false , ...
                      'userfsize'  , sMaj, 'userfsizemin' , sMin, 'useellipse',useellipse, ...
                      'centerPerc' , 90    ,'useHRF'     ,useHRF,'lineStyle' , '-', ...
                      'lineWidth'  , 1     ,'noiselevel' ,nslvl , 'addcihist', addcihist,...
@@ -578,7 +565,7 @@ for nr = 1:length(ratios)
         case 4,   sMin=.5; sMaj=2; useellipse=true;
         otherwise, error('Ratio %i not contemplated',r)
     end 
-    A = afnicompTable;
+    A = compTable;
     A.afni6.Th = A.afni6.Th + deg2rad(90);
     pmCloudOfResults(A, tools ,'onlyCenters',false , ...
         'userfsize' , sMaj, 'userfsizemin' , sMin, 'useellipse',useellipse, ...
@@ -589,6 +576,7 @@ for nr = 1:length(ratios)
         'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
 end
 saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);    
+%}
 
 %% FIG 2: Noiseless: eccentricity plots, but noiseless
 sub = 'ellipse'; ses = 'noiselessv2';
@@ -680,7 +668,7 @@ end
 % SUMMARY PLOT: RATIO 1 and 2
 % As a summary, plot the eccen vs aspect ratio
 fnameBegin = 'NoiselessEccSimRatio1and2';
-ext        = 'png';
+ext        = 'svg';
 nlvl       = "none";
 eccenInGT  = true;
 checksizes = [0.5    ,     1,       2,    3];
@@ -759,25 +747,29 @@ for nt=1:length(tools)
         
         % Apply percentiles and plot individually
         title(strrep(sprintf('%s_TR-%i_Dur-%is_Size-%0.1g',tool,tr,duration,checksize),'_','\_'))
-        xlabel('Eccentricity')
+        xlabel('Eccentricity (deg)')
         ylabel('pRF aspect ratio')
         ylim([0,8]);
         set(gca, 'FontSize', 16)
-        legend([a,b],{'Ground truth aspect ratio = 1', ...
-                     ['Ground truth aspect ratio = 2 (' ...
-                     num2str(ellipsizes{ns}(1)) '/' num2str(ellipsizes{ns}(2)) ')']})
+        legend([a,b],{['G.T. aspect ratio = 1 (' ...
+                     num2str(checksize) 'deg /' num2str(checksize) 'deg)'], ...
+                     ['G.T. aspect ratio = 2 (' ...
+                     num2str(ellipsizes{ns}(1)) 'deg/' num2str(ellipsizes{ns}(2)) 'deg)']})
     end
 end
 saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);    
 
-%% FIGURE 7 equivalent with Vista6 and Afni6
+%% FIG3: PLOS Comp Bio Figure 7 equivalent with Vista6 and Afni6, and histograms
+clear all; close all; clc
+saveTo = '~/gDrive/STANFORD/PROJECTS/2019_PRF_Validation_methods_(Gari)/__PUBLISH__/ELLIPTICAL/Figures/RAW';
+
 sub = 'ellipse'; ses = 'eccsv2';
 p = ['/Users/glerma/toolboxes/PRFmodel/local/' sub '/BIDS/derivatives/prfreport/sub-' sub '/ses-' ses];
 f = ['sub-' sub '_ses-' ses '-prf_acq-normal_run-01_bold.mat'];
 A = load(fullfile(p,f))
 % It seems that AFNI-s theta was not correctly corrected. This has been fixed now. 
 % It only affects to results in sub-ellipse/ses-*v2
-if strcmp(tool,'afni6');A.compTable.afni6.Th = A.compTable.afni6.Th + deg2rad(90);end
+% if strcmp(tool,'afni6');A.compTable.afni6.Th = A.compTable.afni6.Th + deg2rad(90);end
 % Add the SNR values (this will come from prfreport in the future)
 sub = 'ellipse'; ses = 'eccsv2SNR';
 p = ['/Users/glerma/toolboxes/PRFmodel/local/' sub '/BIDS/derivatives/prfsynth/sub-' sub '/ses-' ses];
@@ -786,7 +778,7 @@ B = struct2table(jsondecode(fileread(fullfile(p,f))));
 A.compTable.SNR = B.SNR;
 
 
-tools   = {'vista6','afni6'};
+tools   = {'afni6','vista6'};
 set(0,'defaultAxesFontName', 'Arial')
 set(0,'defaultTextFontName', 'Arial')
 
@@ -801,7 +793,7 @@ centerPerc  = 90;
 lineStyle   = '-';
 lineWidth   = 0.7;
 fontsize    = 14;
-noiselevel  = {'low','mid'};
+noiselevel  = {'low'};
 addtext     = true;
 useellipse  = true;
 color       = [0.5,0.5,0.5];
@@ -812,7 +804,7 @@ ytick       = [1,2,3,4,5];
 addcihist   = false;
 addcibar    = false;
 newWin      = false;
-saveToType  = 'png';
+saveToType  = 'svg';
 
 numanalysis = length(tools);
 
@@ -838,22 +830,69 @@ for nslvl = noiselevel
     mm        = mrvNewGraphWin(fnameRoot,[]);  % add off to run it in the server or Docker container
     set(mm,'Units','centimeters','Position',[0 0 10*numanalysis 10*numanalysis]);
     np      = 0;
-    for tool = tools; for useHRF = useHRFs
-            np=np+1;
-            subplot(numanalysis,numanalysis,np)
-            pmCloudOfResults(A.compTable   , tool ,'onlyCenters',onlyCenters ,...
-                'userfsize' , userfsize, ...
-                'centerPerc', centerPerc    ,'useHRF'     ,useHRF{:},...
-                'lineStyle' , lineStyle, ...
-                'lineWidth' , lineWidth     ,'noiselevel' ,nslvl{:} , ...
-                'useellipse', useellipse, 'addsnr',true,...
-                'location',location,...
-                'addtext',addtext, 'adddice',false,'addsnr',true,...
-                'color', color, 'xlims',xlims,'ylims',ylims,'fontsize', fontsize, ...
-                'xtick',xtick,'ytick',ytick, 'addcibar', addcibar,'addcihist', addcihist,  ...
-                'newWin'    , newWin ,'saveTo'     ,'','saveToType',saveToType)
-        end;end
-    set(gca,'FontName', 'Arial')
+    
+    % AFNI
+    subplot(numanalysis,numanalysis,1)
+    tool = {'afni6'}; useHRF = 'afni_spm';
+    pmCloudOfResults(A.compTable   , tool ,'onlyCenters',onlyCenters ,...
+        'userfsize' , userfsize, ...
+        'centerPerc', centerPerc    ,'useHRF'     ,useHRF,...
+        'lineStyle' , lineStyle, ...
+        'lineWidth' , lineWidth     ,'noiselevel' ,nslvl{:} , ...
+        'useellipse', useellipse, 'addsnr',true,...
+        'location',location,...
+        'addtext',addtext, 'adddice',false,'addsnr',true,...
+        'color', color, 'xlims',xlims,'ylims',ylims,'fontsize', fontsize, ...
+        'xtick',xtick,'ytick',ytick, 'addcibar', addcibar,'addcihist', addcihist,  ...
+        'newWin'    , newWin ,'saveTo'     ,'','saveToType',saveToType)
+    % Hist
+    subplot(numanalysis,numanalysis,2)
+    tt = A.compTable.afni6(A.compTable.noiseLevel==string(nslvl{:}) & ...
+                           A.compTable.HRFtype==string(useHRF) & ...
+                           A.compTable.synth.sMaj==2 & ...
+                           A.compTable.synth.sMin==2 & ...
+                           A.compTable.synth.x0==3.1315 & ...
+                           A.compTable.synth.y0==3.1315,:);
+    aspect    = tt.sMaj  ./ tt.sMin;
+    h = histogram(aspect,15);hold on
+    medaspect = median(aspect);
+    plot(medaspect*[1,1],[0,18],'r-','LineWidth',1)
+    set(h,'LineWidth',2,'EdgeColor','k','FaceAlpha',1,'FaceColor','k');hold on
+    title('AFNI Elliptical')
+    xlabel('Aspect Ratio')    
+    set(gca,'FontName', 'Arial','FontSize',16)
+    
+    % VISTA
+    subplot(numanalysis,numanalysis,3)
+    tool = {'vista6'}; useHRF = 'vista_twogammas';
+    pmCloudOfResults(A.compTable   , tool ,'onlyCenters',onlyCenters ,...
+        'userfsize' , userfsize, ...
+        'centerPerc', centerPerc    ,'useHRF'     ,useHRF,...
+        'lineStyle' , lineStyle, ...
+        'lineWidth' , lineWidth     ,'noiselevel' ,nslvl{:} , ...
+        'useellipse', useellipse, 'addsnr',true,...
+        'location',location,...
+        'addtext',addtext, 'adddice',false,'addsnr',true,...
+        'color', color, 'xlims',xlims,'ylims',ylims,'fontsize', fontsize, ...
+        'xtick',xtick,'ytick',ytick, 'addcibar', addcibar,'addcihist', addcihist,  ...
+        'newWin'    , newWin ,'saveTo'     ,'','saveToType',saveToType)
+    % Hist
+    subplot(numanalysis,numanalysis,4)
+    tt = A.compTable.vista6(A.compTable.noiseLevel==string(nslvl{:}) & ...
+                            A.compTable.HRFtype==string(useHRF) & ...
+                            A.compTable.synth.sMaj==2 & ...
+                            A.compTable.synth.sMin==2 & ...
+                            A.compTable.synth.x0==3.1315 & ...
+                            A.compTable.synth.y0==3.1315,:);
+    aspect    = tt.sMaj  ./ tt.sMin;
+    h = histogram(aspect,15); hold on
+    set(h,'LineWidth',2,'EdgeColor','k','FaceAlpha',1,'FaceColor','k');hold on
+    medaspect = median(aspect);
+    plot(medaspect*[1,1],[0,18],'r-','LineWidth',1)
+    title('mrVista Elliptical')
+    xlabel('Aspect Ratio')
+    set(gca,'FontName', 'Arial','FontSize',16)
+    
     saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.',saveToType)),saveToType);
 end
 
@@ -869,6 +908,7 @@ end
 
 
 % RATIO 2
+%{
 % Generic values coming from the config.json
 onlyCenters = false;
 userfsize   = 2;
@@ -936,39 +976,48 @@ for nslvl = noiselevel
     set(gca,'FontName', 'Arial')
     saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.',saveToType)),saveToType);
 end
+%}
 
 %% Silson 2018 plot: TR=2 ECCEN vs ASPECT
+clear all; close all; clc
+saveTo = '~/gDrive/STANFORD/PROJECTS/2019_PRF_Validation_methods_(Gari)/__PUBLISH__/ELLIPTICAL/Figures/RAW';
+
 sub = 'ellipse'; ses = 'eccsv2';
 p = ['/Users/glerma/toolboxes/PRFmodel/local/' sub '/BIDS/derivatives/prfreport/sub-' sub '/ses-' ses];
 f = ['sub-' sub '_ses-' ses '-prf_acq-normal_run-01_bold.mat'];
-A = load(fullfile(p,f))
+A2 = load(fullfile(p,f))
 % It seems that AFNI-s theta was not correctly corrected. This has been fixed now. 
 % It only affects to results in sub-ellipse/ses-*v2
-if strcmp(tool,'afni6');A.compTable.afni6.Th = A.compTable.afni6.Th + deg2rad(90);end
+% if strcmp(tool,'afni6');A.compTable.afni6.Th = A.compTable.afni6.Th + deg2rad(90);end
 % Add the SNR values (this will come from prfreport in the future)
 sub = 'ellipse'; ses = 'eccsv2SNR';
 p = ['/Users/glerma/toolboxes/PRFmodel/local/' sub '/BIDS/derivatives/prfsynth/sub-' sub '/ses-' ses];
 f = ['sub-' sub '_ses-' ses '_task-prf_acq-normal_run-01_bold.json'];
 B = struct2table(jsondecode(fileread(fullfile(p,f))));
-A.compTable.SNR = B.SNR;
+A2.compTable.SNR = B.SNR;
 
 % SAME HRF; RATIO 1 and 2
 fnameBegin = 'SilsonEccSimHRFok';
-ext        = 'png';
+ext        = 'svg';
 nlvls      = {"mid","low"};
 centerPerc = 50;
 eccenInGT  = true;
 checksizes = [0.5,1,2,3];
 ellipsizes = {[1,0.5],[2,1],[4,2],[6,3]};
-xlims       = [0,10];
-ylims       = [0,10];
+xlims      = [0,10];
+ylims      = [0,10];
 tools      = {'afni6'   , 'vista6'};  
 useHRFs    = {'afni_spm', 'vista_twogammas'};
 duration   = 400;
 tr         = 2;
+N          = 100;  % Repeated values
 nrow = 2; ncol=4;
-for nlvl = nlvls
-    nlvl = nlvl{:};
+for nn = 1:length(nlvls)
+    nlvl = nlvls{nn};
+    
+    % Filter noise values
+    DT   = A2.compTable(A2.compTable.noiseLevel==nlvl,:);
+
     % Create main plot with the ground truth lines
     fnameEnd = sprintf('TR-%i_Dur-%is_Noise-%s_C.I.-%i',...
         tr,duration,nlvl,centerPerc);
@@ -981,31 +1030,34 @@ for nlvl = nlvls
     for nt=1:length(tools)
         tool   = tools{nt};
         useHRF = useHRFs{nt};
+        dt = DT;
+        % MAKE THIS A FUNCTION
+        % Obtain eccentricity and polar angle
+        [TH,R]         = cart2pol(dt.synth.x0, dt.synth.y0);
+        dt.synth.angle = rad2deg(TH);
+        dt.synth.eccen = R;
+        dt.synth.aspect= dt.synth.sMaj ./ dt.synth.sMin;
+        
+        [TH,R]           = cart2pol(dt.(tool).x0, dt.(tool).y0);
+        dt.(tool).angle  = rad2deg(TH);
+        dt.(tool).eccen  = R;
+        dt.(tool).aspect = dt.(tool).sMaj  ./ dt.(tool).sMin;
+        
+
+        
+        
         for ns=1:length(checksizes)
             np=np+1;
             subplot(nrow,ncol,np)
             checksize  = checksizes(ns);
             ellipsize  = ellipsizes{ns};
-            dt         = A.compTable;
-            % MAKE THIS A FUNCTION
-            % Obtain eccentricity and polar angle
-            [TH,R]         = cart2pol(dt.synth.x0, dt.synth.y0);
-            dt.synth.angle = rad2deg(TH);
-            dt.synth.eccen = R;
-            dt.synth.aspect= dt.synth.sMaj ./ dt.synth.sMin;
 
-            [TH,R]           = cart2pol(dt.(tool).x0, dt.(tool).y0);
-            dt.(tool).angle  = rad2deg(TH);
-            dt.(tool).eccen  = R;
-            dt.(tool).aspect = dt.(tool).sMaj  ./ dt.(tool).sMin;
 
             % Check that we are getting the values we want
             xvalues = unique(dt.synth.eccen);
             isclose(linspace(1,9,8)',xvalues,'tolerance',0.001);
 
             % Filter all that we can filter
-            % Noise levels
-            dt = dt(dt.noiseLevel==nlvl,:);
             % Assert and remove the rest options
             nls=unique(dt.noiseLevel);assert(nls==nlvl);
             % Check percentage is 100 based
@@ -1116,8 +1168,8 @@ for nlvl = nlvls
                          meanSNRcirc, stdSNRcirc,meanSNRellip, stdSNRellip), ...
              'FontWeight','bold','FontSize',12)
             legend([as,bs],...
-                {sprintf('G.T. Aspect = 1(%g/%g)',checksize,checksize), ...
-                sprintf('G.T. Aspect = 2(%g/%g)',ellipsize(1),ellipsize(2))})
+                {sprintf('G.T. Aspect = 1(%g deg/%g deg)',checksize,checksize), ...
+                sprintf('G.T. Aspect = 2(%g deg/%g deg)',ellipsize(1),ellipsize(2))})
             title(strrep(sprintf('%s_TR-%i_Dur-%is_Noise-%s_C.I.-%i_size-%0.1g',...
                     tool,tr,duration,nlvl,centerPerc,checksize),'_','\_'))
             
@@ -1126,9 +1178,22 @@ for nlvl = nlvls
             ylim([0,8]);
             set(gca, 'FontSize', 16) 
         end
+        
+        
+        
     end
     saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);    
 end
+
+
+
+
+
+
+
+
+
+
 
 % THE OTHER HRF; RATIO 1 and 2
 %{
@@ -1306,15 +1371,19 @@ for nlvl = nlvls
 end
 %}
 
-%% Silson 2018 plot: TR=2 ECCEN vs ASPECT
+%% Silson 2018 plot: TR=1 ECCEN vs ASPECT
+% clear all; close all; clc
+saveTo = '~/gDrive/STANFORD/PROJECTS/2019_PRF_Validation_methods_(Gari)/__PUBLISH__/ELLIPTICAL/Figures/RAW';
+
+
 sub = 'ellipse'; ses = 'eccsv2TR1';
 p = ['/Users/glerma/toolboxes/PRFmodel/local/' sub '/BIDS/derivatives/prfreport/sub-' sub '/ses-' ses];
 f = ['sub-' sub '_ses-' ses '-prf_acq-normal_run-01_bold.mat'];
-A = load(fullfile(p,f))
+A1 = load(fullfile(p,f))
 
 % SAME HRF; RATIO 1 and 2
-fnameBegin = 'SilsonEccSimHRFok';
-ext        = 'png';
+fnameBegin = 'SilsonEccSimHRFokTR1';
+ext        = 'svg';
 nlvls      = {"mid","low"};
 centerPerc = 50;
 eccenInGT  = true;
@@ -1346,7 +1415,7 @@ for nlvl = nlvls
             subplot(nrow,ncol,np)
             checksize  = checksizes(ns);
             ellipsize  = ellipsizes{ns};
-            dt         = A.compTable;
+            dt         = A1.compTable;
             % MAKE THIS A FUNCTION
             % Obtain eccentricity and polar angle
             [TH,R]         = cart2pol(dt.synth.x0, dt.synth.y0);
@@ -1476,8 +1545,8 @@ for nlvl = nlvls
                          meanSNRcirc, stdSNRcirc,meanSNRellip, stdSNRellip), ...
              'FontWeight','bold','FontSize',12)
             legend([as,bs],...
-                {sprintf('G.T. Aspect = 1(%g/%g)',checksize,checksize), ...
-                sprintf('G.T. Aspect = 2(%g/%g)',ellipsize(1),ellipsize(2))})
+                {sprintf('G.T. Aspect = 1(%g deg/%g deg)',checksize,checksize), ...
+                sprintf('G.T. Aspect = 2(%g deg/%g deg)',ellipsize(1),ellipsize(2))})
             title(strrep(sprintf('%s_TR-%i_Dur-%is_Noise-%s_C.I.-%i_size-%0.1g',...
                     tool,tr,duration,nlvl,centerPerc,checksize),'_','\_'))
             
@@ -1666,7 +1735,28 @@ for nlvl = nlvls
 end
 %}
 
+%% SAVE A1 and A2 for CUMSUM plot at the end
+dt = [A1.compTable; A2.compTable];
+% Calculate the overal aspect ratio
+tools = {'synth','afni6','vista6'};
+for nt=1:length(tools)
+    dt.(tools{nt}).aspect = dt.(tools{nt}).sMaj ./ dt.(tools{nt}).sMin;
+    [TH,R] = cart2pol(dt.(tools{nt}).x0, dt.(tools{nt}).y0);
+    dt.(tools{nt}).angle = rad2deg(TH);
+    dt.(tools{nt}).eccen = R;
+    dt.(tools{nt}).area  = pmEllipseArea(2*dt.(tools{nt}).sMaj, 2*dt.(tools{nt}).sMin);
+end
+% GT aspect ratio is always one
+dtaspect2 = dt(dt.synth.aspect==2,:);
+dt        = dt(dt.synth.aspect==1,:);
+
+save(fullfile(pmRootPath,'local','A1A2dt.mat'),'dt')
+save(fullfile(pmRootPath,'local','A1A2dtaspect2.mat'),'dtaspect2')
+
 %% Silson 2018 plot: TR=2 SIZE vs ASPECT
+clear all; close all; clc
+saveTo = '~/gDrive/STANFORD/PROJECTS/2019_PRF_Validation_methods_(Gari)/__PUBLISH__/ELLIPTICAL/Figures/RAW';
+
 sub = 'ellipse'; ses = 'sizesv2';
 p = ['/Users/glerma/toolboxes/PRFmodel/local/' sub '/BIDS/derivatives/prfreport/sub-' sub '/ses-' ses];
 f = ['sub-' sub '_ses-' ses '-prf_acq-normal_run-01_bold.mat'];
@@ -1677,10 +1767,12 @@ p = ['/Users/glerma/toolboxes/PRFmodel/local/' sub '/BIDS/derivatives/prfsynth/s
 f = ['sub-' sub '_ses-' ses '_task-prf_acq-normal_run-01_bold.json'];
 B = struct2table(jsondecode(fileread(fullfile(p,f))));
 compTable.SNR = B.SNR;
+B2.compTable = compTable;
+
 
 
 fnameBegin = 'SilsonSizeSim';
-ext        = 'png';
+ext        = 'svg';
 nlvls       = {"mid","low"};
 centerPerc = 50;
 eccenInGT  = true;
@@ -1688,6 +1780,139 @@ tools      = {'vista6'          , 'afni6'};  % 'vista6' 'afni6' 'vista4' 'afni4'
 useHRFs    = {'vista_twogammas' , 'afni_spm'};
 duration   = 400;
 tr         = 2;
+% tool       = 'afni6'; 
+% useHRF     = 'afni_spm';
+for nlvl = nlvls
+    nlvl = nlvl{:};
+    for nt=1:length(tools)
+        tool   = tools{nt};
+        useHRF = useHRFs{nt};
+        dt     = compTable;
+        % MAKE THIS A FUNCTION
+        % Obtain eccentricity and polar angle
+        [TH,R]         = cart2pol(dt.synth.x0, dt.synth.y0);
+        dt.synth.angle = rad2deg(TH);
+        dt.synth.eccen = R;
+        dt.synth.aspect= dt.synth.sMaj ./ dt.synth.sMin;
+
+        [TH,R]           = cart2pol(dt.(tool).x0, dt.(tool).y0);
+        dt.(tool).angle  = rad2deg(TH);
+        dt.(tool).eccen  = R;
+        dt.(tool).aspect = dt.(tool).sMaj  ./ dt.(tool).sMin;
+
+        % Filter all that we can filter
+        % Noise levels
+        dt = dt(dt.noiseLevel==nlvl,:);
+        % Assert and remove the rest options
+        nls=unique(dt.noiseLevel);assert(nls==nlvl);
+        % Aspect ratio: start with synthesized aspect ratio = 1
+        dt = dt(dt.synth.aspect==1,:);
+        nls=unique(dt.synth.aspect);assert(nls==1);
+
+        % Check percentage is 100 based
+        if centerPerc < 1; centerPerc = centerPerc*100; end
+        % Define the required confidence intervals as two percentiles
+        twoTailedRange = (100 - centerPerc) / 2;
+
+        % We want to use just its own HRF, remove the other one
+        dt = dt(dt.HRFtype==string(useHRF),:);
+
+        % Obtain size  vals, this is going to be the x axis
+        sizes = unique(dt.synth.sMaj);
+
+
+        % Create main plot with the ground truth lines
+        fnameEnd = sprintf('%s_TR-%i_Dur-%is_Noise-%s_C.I.-%i',...
+                           tool,tr,duration,nlvl,centerPerc); 
+        fnameRoot = strcat(fnameBegin,'-', fnameEnd); 
+        disp(fnameRoot)
+        kk = mrvNewGraphWin(fnameRoot);
+        % Fig size is relative to the screen used. This is for laptop at 1900x1200
+        set(kk,'Position',[0.007 0.62  0.4  0.4]);
+        ystart=ones(size(sizes));
+        ystop=6*ones(size(sizes));
+        plot([sizes.';sizes.'],[ystart.';ystop.'], ...
+            'LineWidth',.7,'LineStyle','-.','Color','k')
+        hold on
+        % plot([0,6],[1,1],'LineWidth',1.5,'LineStyle','--','Color','k') % 0.75*[0 1 0])
+        % Cs              = 0.65*distinguishable_colors(1+length(sizes),'w');
+        % Apply percentiles and plot individually
+        for ne=1:length(sizes)
+            ecc          = sizes(ne);
+            aspect       = dt.(tool).aspect(dt.synth.sMaj==ecc);
+            realeccen    = dt.(tool).eccen(dt.synth.sMaj==ecc);
+            B            = prctile(aspect, [twoTailedRange, 100 - twoTailedRange]);
+            inRange      = aspect>=B(1) & aspect<=B(2);
+            snrperecc    = dt.SNR(dt.synth.sMaj==ecc);
+            % Apply
+            aspectci     = aspect(inRange);
+            realeccenci  = realeccen(inRange);
+            % Medians
+            aspectmed    = median(aspectci);
+            aspectmin    = min(aspectci);
+            aspectmax    = max(aspectci);
+            
+            realeccenmed = median(realeccenci);
+            realeccenmin = min(realeccenci);
+            realeccenmax = max(realeccenci);
+
+            snrpereccmed = median(snrperecc);
+            
+            % Plot it
+            if eccenInGT
+                scatter(ecc,aspectmed,80,'k','filled')
+                vax = plot(ecc * [1,1],...
+                    [aspectmin  , aspectmax], ...
+                    'Color','k','LineStyle','-','LineWidth',3); %
+                
+                text(ecc, 0, sprintf(' %0.2gdB',snrpereccmed),...
+                    'FontSize',12,'Rotation',90)
+            else
+                scatter(realeccenmed,aspectmed,60,C,'filled')
+                hax = plot([realeccenmin, realeccenmax],...
+                    aspectmed*[1,1], ...
+                    'Color','k','LineStyle','-','LineWidth',2); % 'Color','k',
+                vax = plot(realeccenmed * [1,1],...
+                    [aspectmin  , aspectmax], ...
+                    'Color','k','LineStyle','-','LineWidth',2); %
+            end
+        end
+
+        title(strrep(fnameRoot,'_','\_'))
+        xlabel('Radius size (dashed=ground truth)')
+        ylabel('pRF aspect ratio (ground truth=1)')
+        ylim([0,8]);
+        set(gca, 'FontSize', 16)
+        saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);    
+end
+end
+
+%% Silson 2018 plot: TR=1 SIZE vs ASPECT
+% clear all; close all; clc
+saveTo = '~/gDrive/STANFORD/PROJECTS/2019_PRF_Validation_methods_(Gari)/__PUBLISH__/ELLIPTICAL/Figures/RAW';
+
+sub = 'ellipse'; ses = 'sizesv2TR1';
+p = ['/Users/glerma/toolboxes/PRFmodel/local/' sub '/BIDS/derivatives/prfreport/sub-' sub '/ses-' ses];
+f = ['sub-' sub '_ses-' ses '-prf_acq-normal_run-01_bold.mat'];
+load(fullfile(p,f))
+% Add the SNR values (this will come from prfreport in the future)
+sub = 'ellipse'; ses = 'sizesv2SNR';
+p = ['/Users/glerma/toolboxes/PRFmodel/local/' sub '/BIDS/derivatives/prfsynth/sub-' sub '/ses-' ses];
+f = ['sub-' sub '_ses-' ses '_task-prf_acq-normal_run-01_bold.json'];
+B = struct2table(jsondecode(fileread(fullfile(p,f))));
+compTable.SNR = B.SNR;
+B1.compTable = compTable;
+
+
+fnameBegin = 'SilsonSizeSimTR1';
+ext        = 'svg';
+nlvls       = {"mid","low"};
+centerPerc = 50;
+eccenInGT  = true;
+tools      = {'vista6'          , 'afni6'};  % 'vista6' 'afni6' 'vista4' 'afni4'
+useHRFs    = {'vista_twogammas' , 'afni_spm'};
+duration   = 400;
+tr         = 1;
 % tool       = 'afni6'; 
 % useHRF     = 'afni_spm';
 for nlvl = nlvls
@@ -1795,124 +2020,252 @@ for nlvl = nlvls
 end
 end
 
-%% Silson 2018 plot: TR=1 SIZE vs ASPECT
-sub = 'ellipse'; ses = 'sizesv2TR1';
-p   = ['/Users/glerma/toolboxes/PRFmodel/local/' sub '/BIDS/derivatives/prfreport/sub-' sub '/ses-' ses];
-f   = ['sub-' sub '_ses-' ses '-prf_acq-normal_run-01_bold.mat'];
-load(fullfile(p,f))
-
-
-
-fnameBegin = 'SilsonSizeSimTR1';
-ext        = 'png';
-nlvls       = {"mid","low"};
-centerPerc = 50;
-eccenInGT  = true;
-tools      = {'vista6'          , 'afni6'};  % 'vista6' 'afni6' 'vista4' 'afni4'
-useHRFs    = {'vista_twogammas' , 'afni_spm'};
-duration   = 400;
-tr         = 1;
-% tool       = 'afni6'; 
-% useHRF     = 'afni_spm';
-for nlvl = nlvls
-    nlvl = nlvl{:};
+%% SAVE B1 and B2 for CUMSUM plot at the end
+dt = [B1.compTable; B2.compTable];
+% Calculate the overal aspect ratio
+tools = {'synth','afni6','vista6'};
 for nt=1:length(tools)
-    tool   = tools{nt};
-    useHRF = useHRFs{nt};
-    dt     = compTable;
-    % MAKE THIS A FUNCTION
-    % Obtain eccentricity and polar angle
-    [TH,R]         = cart2pol(dt.synth.x0, dt.synth.y0);
-    dt.synth.angle = rad2deg(TH);
-    dt.synth.eccen = R;
-    dt.synth.aspect= dt.synth.sMaj ./ dt.synth.sMin;
-
-    [TH,R]           = cart2pol(dt.(tool).x0, dt.(tool).y0);
-    dt.(tool).angle  = rad2deg(TH);
-    dt.(tool).eccen  = R;
-    dt.(tool).aspect = dt.(tool).sMaj  ./ dt.(tool).sMin;
-
-    % Filter all that we can filter
-    % Noise levels
-    dt = dt(dt.noiseLevel==nlvl,:);
-    % Assert and remove the rest options
-    nls=unique(dt.noiseLevel);assert(nls==nlvl);
-    % Aspect ratio: start with synthesized aspect ratio = 1
-    dt = dt(dt.synth.aspect==1,:);
-    nls=unique(dt.synth.aspect);assert(nls==1);
-
-    % Check percentage is 100 based
-    if centerPerc < 1; centerPerc = centerPerc*100; end
-    % Define the required confidence intervals as two percentiles
-    twoTailedRange = (100 - centerPerc) / 2;
-
-    % We want to use just its own HRF, remove the other one
-    dt = dt(dt.HRFtype==string(useHRF),:);
-
-    % Obtain size  vals, this is going to be the x axis
-    sizes = unique(dt.synth.sMaj);
-
-
-    % Create main plot with the ground truth lines
-    fnameEnd = sprintf('%s_TR-%i_Dur-%is_Noise-%s_C.I.-%i',...
-                       tool,tr,duration,nlvl,centerPerc); 
-    fnameRoot = strcat(fnameBegin,'-', fnameEnd); 
-    disp(fnameRoot)
-    kk = mrvNewGraphWin(fnameRoot);
-    % Fig size is relative to the screen used. This is for laptop at 1900x1200
-    set(kk,'Position',[0.007 0.62  0.4  0.4]);
-    ystart=zeros(size(sizes));
-    ystop=6*ones(size(sizes));
-    plot([sizes.';sizes.'],[ystart.';ystop.'], ...
-        'LineWidth',.7,'LineStyle','-.','Color','k')
-    hold on
-    plot([0,6],[1,1],'LineWidth',1.5,'LineStyle','--','Color',0.75*[0 1 0])
-    Cs              = 0.65*distinguishable_colors(1+length(sizes),'w');
-    % Apply percentiles and plot individually
-    for ne=1:length(sizes)
-        C           = Cs(ne,:);
-        ecc         = sizes(ne);
-        aspect      = dt.(tool).aspect(dt.synth.sMaj==ecc);
-        realeccen   = dt.(tool).eccen(dt.synth.sMaj==ecc);
-        B           = prctile(aspect, [twoTailedRange, 100 - twoTailedRange]);
-        inRange     = aspect>=B(1) & aspect<=B(2);
-        % Apply
-        aspectci    = aspect(inRange);
-        realeccenci = realeccen(inRange);
-        % Medians
-        aspectmed   = median(aspectci);
-        aspectmin   = min(aspectci);
-        aspectmax   = max(aspectci);
-        realeccenmed= median(realeccenci);
-        realeccenmin= min(realeccenci);
-        realeccenmax= max(realeccenci);
-
-        % Plot it
-
-        if eccenInGT
-            scatter(ecc,aspectmed,80,C,'filled')
-            vax = plot(ecc * [1,1],...
-                [aspectmin  , aspectmax], ...
-                'Color',C,'LineStyle','-','LineWidth',3); %
-        else
-            scatter(realeccenmed,aspectmed,60,C,'filled')
-            hax = plot([realeccenmin, realeccenmax],...
-                aspectmed*[1,1], ...
-                'Color',C,'LineStyle','-','LineWidth',2); % 'Color','k',
-            vax = plot(realeccenmed * [1,1],...
-                [aspectmin  , aspectmax], ...
-                'Color',C,'LineStyle','-','LineWidth',2); %
-        end
-    end
-    
-    title(strrep(fnameRoot,'_','\_'))
-    xlabel('Radius size (dashed=ground truth)')
-    ylabel('pRF aspect ratio (ground truth=1)')
-    ylim([0,8]);
-    set(gca, 'FontSize', 16)
-    saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);    
+    dt.(tools{nt}).aspect = dt.(tools{nt}).sMaj ./ dt.(tools{nt}).sMin;
+    [TH,R] = cart2pol(dt.(tools{nt}).x0, dt.(tools{nt}).y0);
+    dt.(tools{nt}).angle = rad2deg(TH);
+    dt.(tools{nt}).eccen = R;
+    dt.(tools{nt}).area  = pmEllipseArea(2*dt.(tools{nt}).sMaj, 2*dt.(tools{nt}).sMin);
 end
-end
+% GT aspect ratio is always one
+dt = dt(dt.synth.aspect==1,:);
+
+save(fullfile(pmRootPath,'local','B1B2dt.mat'),'dt')
+
+%% Combined histograms: aspect1 (run twice, tr=1, tr=2)
+clear all; close all; clc
+saveTo = '~/gDrive/STANFORD/PROJECTS/2019_PRF_Validation_methods_(Gari)/__PUBLISH__/ELLIPTICAL/Figures/RAW';
+
+% Plot the histograms for afni and vista with low and mid
+% Read the synthetic data
+
+A1A2 = load(fullfile(pmRootPath,'local','A1A2dt.mat'));
+A1A2 = A1A2.dt;
+% Apply the same restrictions as above, to the synth table
+%{
+A1A2 = A1A2(A1A2.synth.sMaj > sMajMIN & ...
+            A1A2.synth.sMin > sMinMIN & ...
+            A1A2.synth.sMaj < sMajMAX & ...
+            A1A2.synth.eccen > eccenMIN & ...
+            A1A2.synth.eccen < eccenMAX,:);
+%}
+B1B2 = load(fullfile(pmRootPath,'local','B1B2dt.mat'));
+B1B2 = B1B2.dt;
+% Apply the same restrictions as above, to the synth table
+%{
+B1B2 = B1B2(B1B2.synth.sMaj > sMajMIN & ...
+            B1B2.synth.sMin > sMinMIN & ...
+            B1B2.synth.sMaj < sMajMAX & ...
+            B1B2.synth.eccen > eccenMIN & ...
+            B1B2.synth.eccen < eccenMAX,:);
+%}        
+        
+A1A2 = [A1A2;B1B2];  % synth.aspect is already = 1
+A1A2.afni6.TR  = A1A2.TR;
+A1A2.vista6.TR = A1A2.TR;
+sMajMIN     = 1;
+sMinMIN     = 1;
+sMajMAX     = 4;
+eccenMIN    = 2;
+eccenMAX    = 6;
+tr          = 1;
+
+histbins    = 100;
+
+afnilow   = A1A2.afni6(A1A2.noiseLevel=="low" & A1A2.HRFtype=="afni_spm" & ...
+            A1A2.synth.sMaj > sMajMIN & ...
+            A1A2.synth.sMin > sMinMIN & ...
+            A1A2.synth.sMaj < sMajMAX & ...
+            A1A2.synth.eccen > eccenMIN & ...
+            A1A2.synth.eccen < eccenMAX,:);
+            B=prctile(afnilow.aspect,[5,95]);inR=afnilow.aspect>=B(1) & afnilow.aspect<=B(2);
+            afnilow=afnilow(inR,:);
+afnimid   = A1A2.afni6(A1A2.noiseLevel=="mid" & A1A2.HRFtype=="afni_spm" & ...
+            A1A2.synth.sMaj > sMajMIN & ...
+            A1A2.synth.sMin > sMinMIN & ...
+            A1A2.synth.sMaj < sMajMAX & ...
+            A1A2.synth.eccen > eccenMIN & ...
+            A1A2.synth.eccen < eccenMAX,:);
+            B=prctile(afnimid.aspect,[5,95]);inR=afnimid.aspect>=B(1) & afnimid.aspect<=B(2);
+            afnimid=afnimid(inR,:);
+vistalow  = A1A2.vista6(A1A2.noiseLevel=="low" & A1A2.HRFtype=="vista_twogammas" & ...
+            A1A2.synth.sMaj > sMajMIN & ...
+            A1A2.synth.sMin > sMinMIN & ...
+            A1A2.synth.sMaj < sMajMAX & ...
+            A1A2.synth.eccen > eccenMIN & ...
+            A1A2.synth.eccen < eccenMAX,:);
+            B=prctile(vistalow.aspect,[5,95]);inR=vistalow.aspect>=B(1) & vistalow.aspect<=B(2);
+            vistalow=vistalow(inR,:);
+vistamid  = A1A2.vista6(A1A2.noiseLevel=="mid" & A1A2.HRFtype=="vista_twogammas" & ...
+            A1A2.synth.sMaj > sMajMIN & ...
+            A1A2.synth.sMin > sMinMIN & ...
+            A1A2.synth.sMaj < sMajMAX & ...
+            A1A2.synth.eccen > eccenMIN & ...
+            A1A2.synth.eccen < eccenMAX,:);
+            B=prctile(vistamid.aspect,[5,95]);inR=vistamid.aspect>=B(1) & vistamid.aspect<=B(2);
+            vistamid=vistamid(inR,:);
+
+fnameRoot = sprintf('Histograms_Synth_Aspect-1_TR-%i',tr);
+disp(fnameRoot)
+saveToType = 'svg';
+kk = mrvNewGraphWin(fnameRoot);
+% Fig size is relative to the screen used. This is for laptop at 1900x1200
+set(kk,'Position',[0.007 0.62  1  1]);
+
+subplot(2,2,1)
+aspect = afnilow.aspect(afnilow.TR==tr);
+h = histogram(aspect, histbins,'Normalization','probability'); hold on
+set(h,'LineWidth',2,'EdgeColor','k','FaceAlpha',1,'FaceColor','k');hold on
+medaspect = median(aspect);
+a=plot(medaspect*[1,1],[0,max(h.Values)],'r-','LineWidth',1);
+title(sprintf('Afni low noise, TR=%g',tr))
+xlabel('Aspect Ratio (GT Aspect = 1)')
+set(gca,'FontName', 'Arial','FontSize',16)
+
+subplot(2,2,2)
+aspect = afnimid.aspect(afnimid.TR==tr);
+h = histogram(aspect,histbins,'Normalization','probability'); hold on
+set(h,'LineWidth',2,'EdgeColor','k','FaceAlpha',1,'FaceColor','k');hold on
+medaspect = median(aspect);
+a=plot(medaspect*[1,1],[0,max(h.Values)],'r-','LineWidth',1);
+title(sprintf('Afni mid noise, TR=%g',tr))
+xlabel('Aspect Ratio (GT Aspect = 1)')
+set(gca,'FontName', 'Arial','FontSize',16)
+
+subplot(2,2,3)
+aspect = vistalow.aspect(vistalow.TR==tr);
+h = histogram(aspect,histbins,'Normalization','probability'); hold on
+set(h,'LineWidth',2,'EdgeColor','k','FaceAlpha',1,'FaceColor','k');hold on
+medaspect = median(aspect);
+a=plot(medaspect*[1,1],[0,max(h.Values)],'r-','LineWidth',1);
+title(sprintf('mrVista low noise, TR=%g',tr))
+xlabel('Aspect Ratio (GT Aspect = 1)')
+set(gca,'FontName', 'Arial','FontSize',16)
+
+subplot(2,2,4)
+aspect = vistamid.aspect(vistamid.TR==tr);
+h = histogram(aspect,histbins,'Normalization','probability'); hold on
+set(h,'LineWidth',2,'EdgeColor','k','FaceAlpha',1,'FaceColor','k');hold on
+medaspect = median(aspect);
+a=plot(medaspect*[1,1],[0,max(h.Values)],'r-','LineWidth',1);
+title(sprintf('mrVista mid noise, TR=%g',tr))
+xlabel('Aspect Ratio (GT Aspect = 1)')
+set(gca,'FontName', 'Arial','FontSize',16)
+
+
+saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.',saveToType)),saveToType);
+
+%% Combined histograms: aspect2 (run twice, tr=1, tr=2)
+clear all; close all; clc
+saveTo = '~/gDrive/STANFORD/PROJECTS/2019_PRF_Validation_methods_(Gari)/__PUBLISH__/ELLIPTICAL/Figures/RAW';
+
+% Plot the histograms for afni and vista with low and mid
+% Read the synthetic data
+
+A1A2 = load(fullfile(pmRootPath,'local','A1A2dtaspect2.mat'));
+A1A2 = A1A2.dtaspect2;
+        
+A1A2.afni6.TR  = A1A2.TR;
+A1A2.vista6.TR = A1A2.TR;
+sMajMIN     = 1;
+sMajMAX     = 4;
+eccenMIN    = 2;
+eccenMAX    = 6;
+aspectMAX   = 5;
+tr          = 1;
+
+histbins    = 50;
+
+afnilow   = A1A2.afni6(A1A2.noiseLevel=="low" & A1A2.HRFtype=="afni_spm" & ...
+            A1A2.synth.sMaj > sMajMIN & ...
+            A1A2.synth.sMaj < sMajMAX & ...
+            A1A2.afni6.aspect < aspectMAX & ...
+            A1A2.synth.eccen  > eccenMIN & ...
+            A1A2.synth.eccen  < eccenMAX,:);
+            % B=prctile(afnilow.aspect,[5,95]);inR=afnilow.aspect>=B(1) & afnilow.aspect<=B(2);
+            % afnilow=afnilow(inR,:);
+afnimid   = A1A2.afni6(A1A2.noiseLevel=="mid" & A1A2.HRFtype=="afni_spm" & ...
+            A1A2.synth.sMaj > sMajMIN & ...
+            A1A2.synth.sMaj < sMajMAX & ...
+            A1A2.afni6.aspect < aspectMAX & ...
+            A1A2.synth.eccen > eccenMIN & ...
+            A1A2.synth.eccen < eccenMAX,:);
+            % B=prctile(afnimid.aspect,[5,95]);inR=afnimid.aspect>=B(1) & afnimid.aspect<=B(2);
+            % afnimid=afnimid(inR,:);
+vistalow  = A1A2.vista6(A1A2.noiseLevel=="low" & A1A2.HRFtype=="vista_twogammas" & ...
+            A1A2.synth.sMaj > sMajMIN & ...
+            A1A2.synth.sMaj < sMajMAX & ...
+            A1A2.vista6.aspect < aspectMAX & ...
+            A1A2.synth.eccen > eccenMIN & ...
+            A1A2.synth.eccen < eccenMAX,:);
+            % B=prctile(vistalow.aspect,[5,95]);inR=vistalow.aspect>=B(1) & vistalow.aspect<=B(2);
+            % vistalow=vistalow(inR,:);
+vistamid  = A1A2.vista6(A1A2.noiseLevel=="mid" & A1A2.HRFtype=="vista_twogammas" & ...
+            A1A2.synth.sMaj > sMajMIN & ...
+            A1A2.synth.sMaj < sMajMAX & ...
+            A1A2.vista6.aspect < aspectMAX & ...
+            A1A2.synth.eccen > eccenMIN & ...
+            A1A2.synth.eccen < eccenMAX,:);
+            % B=prctile(vistamid.aspect,[5,95]);inR=vistamid.aspect>=B(1) & vistamid.aspect<=B(2);
+            % vistamid=vistamid(inR,:);
+
+fnameRoot = sprintf('Histograms_Synth_Aspect-2_TR-%i',tr);
+disp(fnameRoot)
+saveToType = 'svg';
+kk = mrvNewGraphWin(fnameRoot);
+% Fig size is relative to the screen used. This is for laptop at 1900x1200
+set(kk,'Position',[0.007 0.62  1  1]);
+
+subplot(2,2,1)
+aspect = afnilow.aspect(afnilow.TR==tr);
+h = histogram(aspect, histbins,'Normalization','probability'); hold on
+set(h,'LineWidth',2,'EdgeColor','k','FaceAlpha',1,'FaceColor','k');hold on
+medaspect = median(aspect);
+a=plot(medaspect*[1,1],[0,max(h.Values)],'r-','LineWidth',1);
+title(sprintf('Afni low noise, TR=%g',tr))
+xlabel('Aspect Ratio (GT Aspect = 2)')
+xlim([1,5])
+set(gca,'FontName', 'Arial','FontSize',16)
+
+subplot(2,2,2)
+aspect = afnimid.aspect(afnimid.TR==tr);
+h = histogram(aspect,histbins,'Normalization','probability'); hold on
+set(h,'LineWidth',2,'EdgeColor','k','FaceAlpha',1,'FaceColor','k');hold on
+medaspect = median(aspect);
+a=plot(medaspect*[1,1],[0,max(h.Values)],'r-','LineWidth',1);
+title(sprintf('Afni mid noise, TR=%g',tr))
+xlabel('Aspect Ratio (GT Aspect = 2)')
+xlim([1,5])
+set(gca,'FontName', 'Arial','FontSize',16)
+
+subplot(2,2,3)
+aspect = vistalow.aspect(vistalow.TR==tr);
+h = histogram(aspect,histbins,'Normalization','probability'); hold on
+set(h,'LineWidth',2,'EdgeColor','k','FaceAlpha',1,'FaceColor','k');hold on
+medaspect = median(aspect);
+a=plot(medaspect*[1,1],[0,max(h.Values)],'r-','LineWidth',1);
+title(sprintf('mrVista low noise, TR=%g',tr))
+xlabel('Aspect Ratio (GT Aspect = 2)')
+xlim([1,5])
+set(gca,'FontName', 'Arial','FontSize',16)
+
+subplot(2,2,4)
+aspect = vistamid.aspect(vistamid.TR==tr);
+h = histogram(aspect,histbins,'Normalization','probability'); hold on
+set(h,'LineWidth',2,'EdgeColor','k','FaceAlpha',1,'FaceColor','k');hold on
+medaspect = median(aspect);
+a=plot(medaspect*[1,1],[0,max(h.Values)],'r-','LineWidth',1);
+title(sprintf('mrVista mid noise, TR=%g',tr))
+xlabel('Aspect Ratio (GT Aspect = 2)')
+xlim([1,5])
+set(gca,'FontName', 'Arial','FontSize',16)
+
+
+saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.',saveToType)),saveToType);
 
 %% Silson 2018 plot: SIZEfit vs SIZEsynth
 sub = 'ellipse'; ses = 'sizesv2';
@@ -2080,11 +2433,12 @@ set(gca,'ylim',[1,5])
 
 
 % DATA
-sub = 'ellipse'; ses = 'sess04';
-p = ['/Users/glerma/toolboxes/PRFmodel/local/' sub '/BIDS/derivatives/prfreport/sub-' sub '/ses-' ses '/v2'];
-f = ['sub-' sub '_ses-' ses '-prf_acq-normal_run-01_bold.mat'];
-SS = load(fullfile(p,f));
-A = SS.compTable;
+proj = 'ellipse'; sub = 'ellipse'; ses = 'thetasv2';
+p    = ['/Users/glerma/toolboxes/PRFmodel/local/' ...
+         sub '/BIDS/derivatives/prfreport/sub-' sub '/ses-' ses];
+f    = ['sub-' sub '_ses-' ses '-prf_acq-normal_run-01_bold.mat'];
+SS   = load(fullfile(p,f));
+A    = SS.compTable;
 % Silson 2018 plot: THETA vs ANGLE
 
 % VARIABLES
@@ -2272,55 +2626,42 @@ end;end;end
 % How much greater?  If your estimate is < (1.2?  1.3?) then the data are
 % consistent with a circle.
 
-
-
 % Noisy Circle Tests.m
 % We have some results in mrVista with simulated data that are not perfect but
 % that can be explained by the very nature of the calculation. 
-percentil      = 50;
-twoTailedRange = percentil/2;
-noiseFactor  = 0.7; % Std. Dev.
+
+noiseFactor  = .7; % Std. Dev.
 radiuses     = [0.25:0.25:6]';  % degrees
-freeRatiosMn = zeros(size(radiuses)); 
-freeRatiosSt = zeros(size(radiuses)); 
-limRatiosMn  = zeros(size(radiuses)); 
-limRatiosSt  = zeros(size(radiuses)); 
+% freeRatiosMn = zeros(size(radiuses)); 
+% freeRatiosSt = zeros(size(radiuses)); 
+limRatiosMed  = zeros(size(radiuses)); 
+limRatiosMin  = zeros(size(radiuses)); 
+limRatiosMax  = zeros(size(radiuses)); 
 for nr=1:length(radiuses)
     radius = radiuses(nr);
     % Generate the random two radiuses
     rng(44444,'twister')
     n1    = noiseFactor * randn(1000,1);
     R1    = radius + n1;
-    R1ind = R1 > 0;
+    R1ind = R1 > 0.01;
     
     rng(54321,'twister')
     n2    = noiseFactor * randn(1000,1);
     R2    = radius + n2;
-    R2ind = R2 > 0;
+    R2ind = R2 > 0.01;
     
     % Combine all positive radius (AND)
     Rind = R1ind & R2ind;
     R1   = R1(Rind);
     R2   = R2(Rind);
 
-    % Calculate the free ratio
-    freeRatio        = R1 ./ R2;
-    freeRatiosMn(nr) = mean(freeRatio);
-    freeRatiosSt(nr) = std(freeRatio);
     % Calculate the ratio that is always positive
     limRatio         = max([R1,R2],[],2) ./ min([R1,R2],[],2);
     
-    
-    % Obtain the center 50 percentile, as we did with the prf data
-    B       = prctile(limRatio, [twoTailedRange, 100 - twoTailedRange]);
-    inRange = limRatio>=B(1) & limRatio<=B(2);
-    % Apply
-    limRatioci    = limRatio(inRange);
-    
-    
-    
-    limRatiosMn(nr)  = mean(limRatioci);
-    limRatiosSt(nr)  = std(limRatioci);
+    % Calculate median, min and max
+    limRatiosMed(nr)  = median(limRatio);
+    limRatiosMin(nr)  = min(limRatio);
+    limRatiosMax(nr)  = max(limRatio);
 end
     
 ext       = 'svg';
@@ -2339,20 +2680,15 @@ hold on
 % Cs              = 0.65*distinguishable_colors(1+length(sizes),'w');
 % Apply percentiles and plot individually
 for ne=1:length(radiuses)
-    rad         = radiuses(ne);
-    freeRatioMn = freeRatiosMn(ne);
-    freeRatioSt = freeRatiosSt(ne);
-    limRatioMn  = limRatiosMn(ne);
-    limRatioSt  = limRatiosSt(ne);
+    rad          = radiuses(ne);
+    limRatioMed  = limRatiosMed(ne);
+    limRatioMin  = limRatiosMin(ne);
+    limRatioMax  = limRatiosMax(ne);
         
     % Plot it
-    a   = scatter(rad,freeRatioMn,80,'k','filled')
-    vax = plot(rad * [1,1],[freeRatioMn-freeRatioSt, freeRatioMn+freeRatioSt], ...
-            'Color','k','LineStyle','-','LineWidth',3);
-        
-    % b   = scatter(rad+0.15,limRatioMn,80,'k^','filled')
-    % vax = plot(rad * [1,1],[freeRatioMn-freeRatioSt, freeRatioMn+freeRatioSt], ...
-    %         'Color','k','LineStyle',':','LineWidth',3);    
+    b   = scatter(rad,limRatioMed,80,'ko','filled');
+    vax = plot(rad * [1,1],[limRatioMin, limRatioMax], ...
+             'Color','k','LineStyle',':','LineWidth',3);    
 end
 
 % legend([a,b], {'Free Ratios','Limited Ratios'})
@@ -2363,9 +2699,1188 @@ ylim([0,8]);
 set(gca, 'FontSize', 16)
 saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);
 
+%% READ: Silson 2018 plot: Real Data 7T
+
+% Filter data:
+% Size: both radius at least 1 deg
+% Eccen: bigger than 2deg, less than 6
+
+% TASKS:
+% Download new data
+% 3 subject mixed
+% left and right mixed
+% - plot size vs aspect as well
+% - make range a little bit biiger to find errors predicted by synthetic
+% - spearate V1v-d from V2v-d
+% plot histograms of aspect ratios
+% think about the limitations we add to the data?
+% V1-V2 should be around 1-2 deg, check kendrick kay and noah
+% filter by R2, bigger than 45%
+% check radiality: correlation plot between angle and Theta, if it is organized
+% around zero, there is a relationship (the difference is zero)
+
+clear all; close all;
+saveTo = '~/gDrive/STANFORD/PROJECTS/2019_PRF_Validation_methods_(Gari)/__PUBLISH__/ELLIPTICAL/Figures/RAW';
+
+proj   = 'realdata';
+% tools  = {'afni6','afni4','vista6','vista4'};
+tools  = {'vista6','vista4'};
+subs   = {'115017','164131','536647'}; 
+ses    = '01';
+run    = '01';
+% Read labels from FS
+setenv('SUBJECTS_DIR','/Applications/freesurfer/subjects')
+hemis  = {'lh','rh'};
+% The mask labels where copied to the fsaverage folder, but they are in
+% prfmodel/scripts/realDataAnalysis/
+labels = {'V1_exvivo','V2_exvivo', ...
+          'V1_exvivo.thresh','V2_exvivo.thresh', 'dorsalV1V2V3Mask'};
+kklab = struct();
+for nh=[1,2]; for nl=1:length(labels)
+    tmp = read_label('fsaverage',[hemis{nh} '.' labels{nl}]);
+    kklab.(hemis{nh}).(strrep(labels{nl},'.','_')) = tmp(:,1) + 1;  % fs is a zero based index
+    
+end;end
+lhben   = MRIread(fullfile(pmRootPath,'scripts/readDataAnalysis/fsaverageLabels','lh.benson14_varea.v4_0.mgz'));
+rhben   = MRIread(fullfile(pmRootPath,'scripts/readDataAnalysis/fsaverageLabels','rh.benson14_varea.v4_0.mgz'));
+ltmpmgh = lhben;
+rtmpmgh = rhben;
+kklab.lh.bensonV1V2V3 = lhben.vol;
+kklab.rh.bensonV1V2V3 = rhben.vol;
+% Now we need to obtain the final labels, separating dorsal and ventral as well
+kklab.lh.V1  = find(kklab.lh.bensonV1V2V3==1);
+kklab.lh.V2  = find(kklab.lh.bensonV1V2V3==2);
+kklab.lh.V3  = find(kklab.lh.bensonV1V2V3==3);
+kklab.rh.V1  = find(kklab.rh.bensonV1V2V3==1);
+kklab.rh.V2  = find(kklab.rh.bensonV1V2V3==2);
+kklab.rh.V3  = find(kklab.rh.bensonV1V2V3==3);
+% Separated dorsal
+il1=ismember(kklab.lh.V1,kklab.lh.dorsalV1V2V3Mask); kklab.lh.V1d = kklab.lh.V1(il1);
+il2=ismember(kklab.lh.V2,kklab.lh.dorsalV1V2V3Mask); kklab.lh.V2d = kklab.lh.V2(il2);
+il3=ismember(kklab.lh.V3,kklab.lh.dorsalV1V2V3Mask); kklab.lh.V3d = kklab.lh.V3(il3);
+ir1=ismember(kklab.rh.V1,kklab.lh.dorsalV1V2V3Mask); kklab.rh.V1d = kklab.rh.V1(ir1);
+ir2=ismember(kklab.rh.V2,kklab.lh.dorsalV1V2V3Mask); kklab.rh.V2d = kklab.rh.V2(ir2);
+ir3=ismember(kklab.rh.V3,kklab.lh.dorsalV1V2V3Mask); kklab.rh.V3d = kklab.rh.V3(ir3);
+% Separated ventral
+kklab.lh.V1v = kklab.lh.V1(~il1);
+kklab.lh.V2v = kklab.lh.V2(~il2);
+kklab.lh.V3v = kklab.lh.V3(~il3);
+kklab.rh.V1v = kklab.rh.V1(~ir1);
+kklab.rh.V2v = kklab.rh.V2(~ir2);
+kklab.rh.V3v = kklab.rh.V3(~ir3);
+
+% Read the data, but we need to get one with all the data together, and another
+% one with regions separated. 
+
+% TODO: WORST CODE EVER BELOW
+% JUST ADD TEH WHOLE fsaverage and then filter it...    
+
+compTable   = struct();
+bylabel     = struct();
+bylabelsums = struct();
+for nt=1:length(tools)
+    tool  = tools{nt};
+    disp(tool)   
+    subestimates   = table();
+    bylabel.(tool) = struct();
+    % Do the links here to have life easier afterwards
+    bylabelsums.(tool).V1    =  table();
+    bylabelsums.(tool).V2    =  table();
+    bylabelsums.(tool).V3    =  table();
+    % lh-rh-Dorsal
+    bylabelsums.(tool).V1d   =  table();
+    bylabelsums.(tool).V2d   =  table();
+    bylabelsums.(tool).V3d   =  table();
+    % lh-rh-Ventral
+    bylabelsums.(tool).V1v   =  table();
+    bylabelsums.(tool).V2v   =  table();
+    bylabelsums.(tool).V3v   =  table();
+    for ns=1:length(subs)
+        sub   = subs{ns};
+        disp(sub)
+        p     = ['/Users/glerma/toolboxes/PRFmodel/local/' proj '/BIDS/derivatives/prfanalyze-' tool '/sub-' sub '/ses-' ses];
+        bylabel.(tool).(['s' sub]) = struct();
+        % Copy the code from prfReportWrapper to create the tables
+        %% Read the results back to Matlab
+        % Read all the nifti-s for this type of tool 
+        cd(p)
+        niftis = dir(['*run-' run '*.nii.gz']);
+        if length(niftis) < 6
+            error('Not enough nifti result files in output, at least there should be x0,y0,sigmamajor,sigmaminor,theta and modelpred')
+        end
+        filesRead = 0;
+
+        pmEstimates = table();
+        bylabel.(tool).(['s' sub]).lhV1_exvivo =  table();
+        bylabel.(tool).(['s' sub]).lhV2_exvivo =  table();
+        bylabel.(tool).(['s' sub]).rhV1_exvivo =  table();
+        bylabel.(tool).(['s' sub]).rhV2_exvivo =  table();
+        
+        % Benson V1-V2-V3
+        bylabel.(tool).(['s' sub]).lhV1  =  table();
+        bylabel.(tool).(['s' sub]).lhV2  =  table();
+        bylabel.(tool).(['s' sub]).lhV3  =  table();
+        bylabel.(tool).(['s' sub]).rhV1  =  table();
+        bylabel.(tool).(['s' sub]).rhV2  =  table();
+        bylabel.(tool).(['s' sub]).rhV3  =  table();
+        % Dorsal
+        bylabel.(tool).(['s' sub]).lhV1d =  table();
+        bylabel.(tool).(['s' sub]).lhV2d =  table();
+        bylabel.(tool).(['s' sub]).lhV3d =  table();
+        bylabel.(tool).(['s' sub]).rhV1d =  table();
+        bylabel.(tool).(['s' sub]).rhV2d =  table();
+        bylabel.(tool).(['s' sub]).rhV3d =  table();
+        % Ventral
+        bylabel.(tool).(['s' sub]).lhV1v =  table();
+        bylabel.(tool).(['s' sub]).lhV2v =  table();
+        bylabel.(tool).(['s' sub]).lhV3v =  table();
+        bylabel.(tool).(['s' sub]).rhV1v =  table();
+        bylabel.(tool).(['s' sub]).rhV2v =  table();
+        bylabel.(tool).(['s' sub]).rhV3v =  table();
+        % Do the links here to have life easier afterwards
+        bylabel.(tool).(['s' sub]).V1    =  table();
+        bylabel.(tool).(['s' sub]).V2    =  table();
+        bylabel.(tool).(['s' sub]).V3    =  table();
+        % lh-rh-Dorsal
+        bylabel.(tool).(['s' sub]).V1d   =  table();
+        bylabel.(tool).(['s' sub]).V2d   =  table();
+        bylabel.(tool).(['s' sub]).V3d   =  table();
+        % lh-rh-Ventral
+        bylabel.(tool).(['s' sub]).V1v   =  table();
+        bylabel.(tool).(['s' sub]).V2v   =  table();
+        bylabel.(tool).(['s' sub]).V3v   =  table();
+        
+        for nn=1:length(niftis)
+            fname = niftis(nn).name
+            % Assume always it will be .nii.gz and that the . has not been used in the filename
+            trunkname = split(fname,'.');
+            if length(trunkname) ~= 3; error('%s should be a filename with no dots and .nii.gz',fname);end	
+            trunkname = trunkname{1};
+            resname   = split(trunkname, '_');
+            resname   = resname{end};
+            % read the nifti and squeeze the result matrix
+            fprintf('Attempting to read %s\n',fullfile(pwd,fname))
+            tmp       = niftiRead(fname);
+            data      = squeeze(tmp.data);	
+            % Data can be separated in different labels
+            lhtmpfs   = zeros(1,163842);
+            rhtmpfs   = zeros(1,163842);
+            % Assign our results to a real brain
+            lV1l = length(kklab.lh.V1_exvivo);
+            lV2l = length(kklab.lh.V2_exvivo);
+            rV1l = length(kklab.rh.V1_exvivo);
+            rV2l = length(kklab.rh.V2_exvivo);
+            lhtmpfs(kklab.lh.V1_exvivo) = data(1:lV1l,1)';
+            lhtmpfs(kklab.lh.V2_exvivo) = data(lV1l+1 : lV1l+lV2l,1)';
+            rhtmpfs(kklab.rh.V1_exvivo) = data(lV1l+lV2l+1:lV1l+lV2l+rV1l,1)';
+            rhtmpfs(kklab.rh.V2_exvivo) = data(lV1l+lV2l+rV1l+1:lV1l+lV2l+rV1l+rV2l,1)';
+            % Now is better if we use Noah's separation, this is in kklab.lh.bensonV1V2V3
+            %{
+            lV1fnamemgz = fullfile(p,[trunkname  '_lh_V1.mgz']);
+            lV2fnamemgz = fullfile(p,[trunkname  '_lh_V2.mgz']);
+            rV1fnamemgz = fullfile(p,[trunkname  '_rh_V1.mgz']);
+            rV2fnamemgz = fullfile(p,[trunkname  '_rh_V2.mgz']);
+            lV1file=ltmpmgh;lV1file.vol=lhtmpfs;MRIwrite(lV1file,lV1fnamemgz);
+            lV2file=ltmpmgh;lV2file.vol=lhtmpfs;MRIwrite(lV2file,lV2fnamemgz);
+            rV1file=rtmpmgh;rV1file.vol=rhtmpfs;MRIwrite(rV1file,rV1fnamemgz);
+            rV2file=rtmpmgh;rV2file.vol=rhtmpfs;MRIwrite(rV2file,rV2fnamemgz);
+            %}
+            % asign it to the table
+            switch resname
+                case 'sigmaminor', resname = 'sMin';
+                case 'sigmamajor', resname = 'sMaj';
+                case 'theta'     , resname = 'Th';
+                case 'centerx0'  , resname = 'x0';
+                case 'centery0'  , resname = 'y0';
+            end
+            pmEstimates.(resname) = data;	        
+            
+            % Now assign it to a structute with all values separated
+            bylabel.(tool).(['s' sub]).lhV1_exvivo.(resname) = data(1:lV1l,1);
+            bylabel.(tool).(['s' sub]).lhV2_exvivo.(resname) = data(lV1l+1 : lV1l+lV2l,1);
+            bylabel.(tool).(['s' sub]).rhV1_exvivo.(resname) = data(lV1l+lV2l+1:lV1l+lV2l+rV1l,1);
+            bylabel.(tool).(['s' sub]).rhV2_exvivo.(resname) = data(lV1l+lV2l+rV1l+1:lV1l+lV2l+rV1l+rV2l,1);
+            % Benson V1-V2-V3
+            bylabel.(tool).(['s' sub]).lhV1.(resname) = lhtmpfs(kklab.lh.V1)';
+            bylabel.(tool).(['s' sub]).lhV2.(resname) = lhtmpfs(kklab.lh.V2)';
+            bylabel.(tool).(['s' sub]).lhV3.(resname) = lhtmpfs(kklab.lh.V3)';
+            bylabel.(tool).(['s' sub]).rhV1.(resname) = rhtmpfs(kklab.rh.V1)';
+            bylabel.(tool).(['s' sub]).rhV2.(resname) = rhtmpfs(kklab.rh.V2)';
+            bylabel.(tool).(['s' sub]).rhV3.(resname) = rhtmpfs(kklab.rh.V3)';
+            % Dorsal
+            bylabel.(tool).(['s' sub]).lhV1d.(resname) = lhtmpfs(kklab.lh.V1d)';
+            bylabel.(tool).(['s' sub]).lhV2d.(resname) = lhtmpfs(kklab.lh.V2d)';
+            bylabel.(tool).(['s' sub]).lhV3d.(resname) = lhtmpfs(kklab.lh.V3d)';
+            bylabel.(tool).(['s' sub]).rhV1d.(resname) = rhtmpfs(kklab.rh.V1d)';
+            bylabel.(tool).(['s' sub]).rhV2d.(resname) = rhtmpfs(kklab.rh.V2d)';
+            bylabel.(tool).(['s' sub]).rhV3d.(resname) = rhtmpfs(kklab.rh.V3d)';
+            % Ventral
+            bylabel.(tool).(['s' sub]).lhV1v.(resname) = lhtmpfs(kklab.lh.V1v)';
+            bylabel.(tool).(['s' sub]).lhV2v.(resname) = lhtmpfs(kklab.lh.V2v)';
+            bylabel.(tool).(['s' sub]).lhV3v.(resname) = lhtmpfs(kklab.lh.V3v)';
+            bylabel.(tool).(['s' sub]).rhV1v.(resname) = rhtmpfs(kklab.rh.V1v)';
+            bylabel.(tool).(['s' sub]).rhV2v.(resname) = rhtmpfs(kklab.rh.V2v)';
+            bylabel.(tool).(['s' sub]).rhV3v.(resname) = rhtmpfs(kklab.rh.V3v)';
+            % Do the links here to have life easier afterwards
+            bylabel.(tool).(['s' sub]).V1.(resname) = [lhtmpfs(kklab.lh.V1),rhtmpfs(kklab.rh.V1)]';
+            bylabel.(tool).(['s' sub]).V2.(resname) = [lhtmpfs(kklab.lh.V2),rhtmpfs(kklab.rh.V2)]';
+            bylabel.(tool).(['s' sub]).V3.(resname) = [lhtmpfs(kklab.lh.V3),rhtmpfs(kklab.rh.V3)]';
+            % lh-rh-Dorsal
+            bylabel.(tool).(['s' sub]).V1d.(resname) = [lhtmpfs(kklab.lh.V1d),rhtmpfs(kklab.rh.V1d)]';
+            bylabel.(tool).(['s' sub]).V2d.(resname) = [lhtmpfs(kklab.lh.V2d),rhtmpfs(kklab.rh.V2d)]';
+            bylabel.(tool).(['s' sub]).V3d.(resname) = [lhtmpfs(kklab.lh.V3d),rhtmpfs(kklab.rh.V3d)]';
+            % lh-rh-Ventral
+            bylabel.(tool).(['s' sub]).V1v.(resname) = [lhtmpfs(kklab.lh.V1v),rhtmpfs(kklab.rh.V1v)]';
+            bylabel.(tool).(['s' sub]).V2v.(resname) = [lhtmpfs(kklab.lh.V2v),rhtmpfs(kklab.rh.V2v)]';
+            bylabel.(tool).(['s' sub]).V3v.(resname) = [lhtmpfs(kklab.lh.V3v),rhtmpfs(kklab.rh.V3v)]';
+        end
+        % Concatenate different subjects
+        subestimates = [subestimates;pmEstimates];
+        
+        bylabelsums.(tool).V1    =  [bylabelsums.(tool).V1; bylabel.(tool).(['s' sub]).V1];
+        bylabelsums.(tool).V2    =  [bylabelsums.(tool).V2; bylabel.(tool).(['s' sub]).V2];
+        bylabelsums.(tool).V3    =  [bylabelsums.(tool).V3; bylabel.(tool).(['s' sub]).V3];
+        % lh-rh-Dorsal
+        bylabelsums.(tool).V1d   =  [bylabelsums.(tool).V1d; bylabel.(tool).(['s' sub]).V1d];
+        bylabelsums.(tool).V2d   =  [bylabelsums.(tool).V2d; bylabel.(tool).(['s' sub]).V2d];
+        bylabelsums.(tool).V3d   =  [bylabelsums.(tool).V3d; bylabel.(tool).(['s' sub]).V3d];
+        % lh-rh-Ventral
+        bylabelsums.(tool).V1v   =  [bylabelsums.(tool).V1v; bylabel.(tool).(['s' sub]).V1v];
+        bylabelsums.(tool).V2v   =  [bylabelsums.(tool).V2v; bylabel.(tool).(['s' sub]).V2v];
+        bylabelsums.(tool).V3v   =  [bylabelsums.(tool).V3v; bylabel.(tool).(['s' sub]).V3v];
+    end
+    compTable.(tool) = subestimates;
+    compTable.(tool).R2 = calccod(compTable.(tool).modelpred', compTable.(tool).testdata')';
+end
+
+nonfilteredbuylabelsums = bylabelsums;
+
+%% PLOT 6 (A,B,C,D): Silson 2018 plot: Real Data 7T, ONLY VISTA
+% restart every time
+bylabelsums = nonfilteredbuylabelsums;
+
+doSave     = true;
+ext        = 'svg';
+centerPerc = 90;
+eccenInGT  = true;
+xlims      = [0,10];
+ylims      = [0,10];
+tools      = {'vista6'}; 
+useLabels  = {    'V1d', 'V2d', 'V3d','V1v', 'V2v', 'V3v'};
+Cs         = .65*[1 0 0; 0 1 0; 0 0 1;1 0 0; 0 1 0; 0 0 1];
+marks      =     [  '*',   '*',   '*',  'o',   'o',   'o',];
+lstyle     =     { '-.',  '-.',  '-.',  '-',   '-',   '-'};
+
+% Obtain the same eccentricities as in the simulations
+eccenvalues = linspace(1.5,6.5,6);
+
+% useLabels  = {'V1','V2','V3'};
+duration   = 300;
+tr         = 1;
+% Filter results
+sMajMIN    = 1 ;%.5; % 1;
+sMinMIN    = 1 ;%.5; % .75;
+sMajMAX    = 3% 1.5% 3; % 4;
+eccenMIN   = 2;%1% 2;
+eccenMAX   = 6% 6;
+minR2      = 0.25;
+% How many bins
+NeccenBins = 6;
+NareaBins  = NeccenBins;
+%close all
+tools  = {'vista4','vista6'};
+subs   = {'115017','164131','536647'};
+
+bylabelsums = nonfilteredbuylabelsums;
+% Apply the restrictions
+for nt=1:length(tools)
+    tool = tools{nt};
+    for nl = 1:length(useLabels)
+        lab = useLabels{nl};
+        [TH,R]      = cart2pol(bylabelsums.(tool).(lab).x0, bylabelsums.(tool).(lab).y0);
+        bylabelsums.(tool).(lab).angle = rad2deg(TH);
+        bylabelsums.(tool).(lab).eccen = R;
+        bylabelsums.(tool).(lab).area  = pmEllipseArea(2*bylabelsums.(tool).(lab).sMaj, 2*bylabelsums.(tool).(lab).sMin);
+        bylabelsums.(tool).(lab) = bylabelsums.(tool).(lab)(...
+                                        bylabelsums.(tool).(lab).sMaj  > sMajMIN & ...
+                                        bylabelsums.(tool).(lab).sMin  > sMinMIN & ...
+                                        bylabelsums.(tool).(lab).sMaj  < sMajMAX & ...
+                                        bylabelsums.(tool).(lab).eccen > eccenMIN & ...
+                                        bylabelsums.(tool).(lab).eccen < eccenMAX & ...
+                                        bylabelsums.(tool).(lab).r2    > minR2,:);
+        % Theta can only be [-90,+90]
+        % Vista and Afni treat it differently it seems
+        % I added 90 deg to AFNI, but I still don't know if I need it or not. Remove it
+        theta            = rad2deg(bylabelsums.(tool).(lab).Th - deg2rad(90));
+        theta(theta>180) = theta(theta>180) -180;
+        theta(theta>90)  = theta(theta>90) -180;
+        bylabelsums.(tool).(lab).Th = theta;
+        % We can express the theta in the same way, because we only care about the
+        % radiality, not the exact angle
+        angle            = bylabelsums.(tool).(lab).angle;
+        angle(angle>180) = angle(angle>180) - 180;
+        angle(angle>90)  = angle(angle>90) - 180;
+        bylabelsums.(tool).(lab).angle = angle;
+        
+        bylabelsums.(tool).(lab).aspect = bylabelsums.(tool).(lab).sMaj  ./ bylabelsums.(tool).(lab).sMin;
+        
+        
+    end
+end
+% Read the synthetic data as well, this is the eccenv2 dataset, with mid and low
+% noise levels, with TR=1 and 2, duration 400, and the ground truth aspect ratio
+% limited to 1
+
+
+
+% Generated TR=1, Dur=300 data to plot alongside with the real data
+sub = 'ellipse'; ses = 'tr1dur300v2';
+p = ['/Users/glerma/toolboxes/PRFmodel/local/' sub '/BIDS/derivatives/prfreport/sub-' sub '/ses-' ses];
+f = ['sub-' sub '_ses-' ses '-prf_acq-normal_run-01_bold.mat'];
+tools = {'synth','vista4','vista6'};
+
+C = load(fullfile(p,f));
+dt = C.compTable;
+for nt=1:length(tools)
+    dt.(tools{nt}).aspect = dt.(tools{nt}).sMaj ./ dt.(tools{nt}).sMin;
+    [TH,R] = cart2pol(dt.(tools{nt}).x0, dt.(tools{nt}).y0);
+    dt.(tools{nt}).angle = rad2deg(TH);
+    dt.(tools{nt}).eccen = R;
+    dt.(tools{nt}).area  = pmEllipseArea(2*dt.(tools{nt}).sMaj, 2*dt.(tools{nt}).sMin);
+end
+% GT aspect ratio is always one
+dt   = dt(dt.synth.aspect==1,:);
+A1A2 = dt;
+%{
+A1A2 = A1A2(A1A2.vista6.sMaj >= 0.5 & ...
+             A1A2.vista6.sMaj < sMajMAX & ...
+             A1A2.vista6.eccen > eccenMIN & ...
+             A1A2.vista6.eccen < eccenMAX & ...
+         A1A2.HRFtype=="vista_twogammas", :);
+%}
+% {
+A1A2 = A1A2(A1A2.vista6.sMaj >= sMajMIN  & ...
+             A1A2.vista6.sMaj <= sMajMAX & ...
+             A1A2.vista6.eccen >= eccenMIN & ...
+             A1A2.vista6.eccen <= eccenMAX , :); % & ...
+         % A1A2.HRFtype=="vista_twogammas", :);
+%}
+%{
+A1A2 = A1A2(A1A2.HRFtype=="vista_twogammas", :);
+%}
+%{
+A1A2 = A1A2(A1A2.HRFtype=="afni_spm", :);
+%}
+unique(A1A2.synth.sMaj)
+unique(A1A2.synth.sMin)
+unique(A1A2.synth.eccen)
+unique(A1A2.HRFtype)
+unique(A1A2.noiseLevel)
+
+aspect1  = A1A2.vista6.aspect(A1A2.noiseLevel=="low");
+B1=prctile(aspect1, [5, 95]);inRange1 = aspect1 >= B1(1) & aspect1 <= B1(2);
+aspect1  = aspect1(inRange1);
+sprintf('Low noise: Min aspect ratio for vista 6 is %g and max is %g', min(aspect1),max(aspect1))
+
+
+aspect2  = A1A2.vista6.aspect(A1A2.noiseLevel=="mid");
+B2=prctile(aspect2, [5, 95]);inRange2 = aspect2 >= B2(1) & aspect2 <= B2(2);
+aspect2  = aspect2(inRange2);
+sprintf('Mid noise: Min aspect ratio for vista 6 is %g and max is %g', min(aspect2),max(aspect2))
+
+mediansyntheticdatalow = median(aspect1);
+mediansyntheticdatamid = median(aspect2);
+
+% Discretize by label, to bin the eccentricities
+A1A2.vista6.Y = zeros(size(A1A2.vista6.aspect));
+A1A2.vista6.Y(A1A2.noiseLevel=="mid") = discretize(A1A2.vista6.eccen(A1A2.noiseLevel=="mid"),eccenvalues); 
+A1A2.vista6.Y(A1A2.noiseLevel=="low") = discretize(A1A2.vista6.eccen(A1A2.noiseLevel=="low"),eccenvalues); 
+A1A2low = A1A2(A1A2.noiseLevel=="low", :);
+A1A2mid = A1A2(A1A2.noiseLevel=="mid", :);
+% Apply percentiles and plot individually
+% Create the vectors and then plot all together
+vistaMedLowEcc = zeros(1,length(eccenvalues)-1);
+vistaMedMidEcc = zeros(1,length(eccenvalues)-1);
+for ne=1:(length(eccenvalues)-1)
+    aspecclow = A1A2low.vista6.aspect(A1A2low.vista6.Y==ne);
+    aspeccmid = A1A2mid.vista6.aspect(A1A2mid.vista6.Y==ne);
+    % Median
+    vistaMedLowEcc(ne) = median(aspecclow);
+    vistaMedMidEcc(ne) = median(aspeccmid);
+end
+
+% prepare data
+tool = 'vista6';
+for nl  = 1:length(useLabels)
+    lab = useLabels{nl};
+    % Discretize by label, to bin the eccentricities
+    bylabelsums.(tool).(lab).Y = discretize(bylabelsums.(tool).(lab).eccen,eccenvalues); 
+    % Apply percentiles and plot individually
+    % Create the vectors and then plot all together
+    aspectmedecc.(lab) = zeros(1,length(eccenvalues)-1);
+    aspectminecc.(lab) = zeros(1,length(eccenvalues)-1);
+    aspectmaxecc.(lab) = zeros(1,length(eccenvalues)-1);
+    
+    for ne=1:(length(eccenvalues)-1)
+        % ECC - ASPECT
+        aspecc = bylabelsums.(tool).(lab).aspect(bylabelsums.(tool).(lab).Y==ne);
+        % Median and std
+        if isempty(aspecc)
+            aspectmedecc.(lab)(ne) = 0;
+            aspectminecc.(lab)(ne) = 0;
+            aspectmaxecc.(lab)(ne) = 0;
+        else
+            aspectmedecc.(lab)(ne) = median(aspecc);
+            aspectminecc.(lab)(ne) = min(aspecc);  % They use SEM, check
+            aspectmaxecc.(lab)(ne) = max(aspecc);
+        end
+    end
+end
 
 
 
 
 
+
+
+
+
+% PLOT 6A
+fnameBegin = 'RealData_SilsonEcc&Size';
+% Create main plot with the ground truth lines
+fnameEnd = sprintf('TR-%i_Dur-%is_C.I.-%i',tr,duration,centerPerc);
+fnameRoot = strcat(fnameBegin,'-', fnameEnd);
+disp(fnameRoot)
+kk = mrvNewGraphWin(fnameRoot);
+% Fig size is relative to the screen used. This is for laptop at 1900x1200
+set(kk,'Position',[0.007 0.62  .5 0.4]);
+% ECCEN vs ASPECT
+% Plot it
+E = eccenvalues;
+Emidpoints = mean([E(2:end);E(1:end-1)]);
+as = [];
+for nl  = 1:length(useLabels)
+    lab = useLabels{nl};
+    as = [as;plot(Emidpoints,aspectmedecc.(lab),'Color',Cs(nl,:), ...
+              ... % marks(nl),'MarkerSize',12, ...
+              'LineStyle',lstyle{nl},'LineWidth',2)];hold on
+    % a  = plot([Emidpoints;Emidpoints] ,...
+    %           [aspectminecc  ; aspectmaxecc], ...
+    %           'Color','k','LineStyle','-','LineWidth',3);  % 0.75*[0 1 0]
+end
+
+lowplot = plot(Emidpoints, vistaMedLowEcc,'k--','LineWidth',3);
+midplot = plot(Emidpoints, vistaMedMidEcc,'k:','LineWidth',3);
+
+legend([useLabels,'Synth Low Noise','Synth Mid Noise'], 'Location','eastoutside')
+title(strrep(sprintf('%s_TR-%i_Dur-%is_C.I.-%i',...
+    tool,tr,duration,centerPerc),'_','\_'))
+grid on
+xlabel('Eccentricity (deg)')
+ylabel('pRF aspect ratio')
+xlim([Emidpoints(1)-.2,Emidpoints(end)+.2]);
+ylim([1,2])
+xticks(Emidpoints)
+set(gca, 'FontSize', 16) 
+
+
+% SAVE 6A
+if doSave;saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);  end
+
+
+
+% PLOT 6B
+aspects = [];
+fnameBegin = 'RealData_AspectHistogram_Separated';
+% Create main plot with the ground truth lines
+fnameEnd = sprintf('TR-%i_Dur-%is_C.I.-%i',tr,duration,centerPerc);
+fnameRoot = strcat(fnameBegin,'-', fnameEnd);
+disp(fnameRoot)
+kk = mrvNewGraphWin(fnameRoot);
+% Fig size is relative to the screen used. This is for laptop at 1900x1200
+set(kk,'Position',[0.007 0.62  .5  .5]);
+% SET UP DATA
+% Here is the aspect we want to plot
+% bylabelsums.(tool).(lab).aspect
+tool = 'vista6';
+for nl  = 1:length(useLabels)
+    subplot(2,3,nl)
+    lab = useLabels{nl};
+    % Obtain aspect
+    aspectvista = bylabelsums.(tool).(lab).aspect;
+    aspects = [aspects;aspectvista];
+    
+    % Plot it
+    h = histogram(aspectvista,20,'Normalization','probability');
+    set(h,'LineWidth',2,'EdgeColor',[.5 .5 .5],'EdgeAlpha',0,'FaceAlpha',1,'FaceColor',[.5 .5 .5]);hold on
+    plot(median(aspectvista)*[1,1],[0,max(h.Values)],'r-')    
+    
+    % Add the low noise and mid noise lines now
+
+    
+    xlim([1,2.8])
+    ylim([0,0.35])
+    % legend({lab,'median','Synth Low Noise','Synth Mid Noise'});
+    title(lab)
+    xlabel('Aspect Ratio')
+end
+% SAVE PLOT 6B
+if doSave;saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);  end
+
+
+
+
+
+
+% PLOT 6C
+fnameBegin = 'RealData_AspectHistogram_Combined';
+% Create main plot with the ground truth lines
+fnameEnd = sprintf('TR-%i_Dur-%is_C.I.-%i',tr,duration,centerPerc);
+fnameRoot = strcat(fnameBegin,'-', fnameEnd);
+disp(fnameRoot)
+kk = mrvNewGraphWin(fnameRoot);
+% Fig size is relative to the screen used. This is for laptop at 1900x1200
+set(kk,'Position',[0.007 0.62  .5  .5]);
+
+binWidth = 0.05;
+
+aspect2  = aspect2(aspect2 < 4);
+% hmid = histogram(aspect2,'DisplayStyle','stairs','BinWidth',h.BinWidth,'Normalization','probability');
+hmid = histogram(aspect2,'BinWidth',binWidth,'Normalization','probability');
+% set(hmid,'LineWidth',2,'EdgeColor',[.5 .5 .5 ],'LineStyle','-','EdgeAlpha',.5,'FaceAlpha',.5,'FaceColor',[.5 .5 .5 ]);
+set(hmid,'LineWidth',2,'EdgeColor','k','FaceAlpha',1,'FaceColor','k');hold on
+blow = plot(median(aspect2)*[1,1],[0,.1],'LineWidth',2,'Color','k','LineStyle','-'); 
+
+
+h = histogram(aspects,35,'Normalization','probability','BinWidth',binWidth);hold on
+% set(h,'LineWidth',2,'EdgeColor','k','FaceAlpha',1,'FaceColor','k');
+set(h,'LineWidth',2,'EdgeColor',[.5 .5 .5 ],'LineStyle','-','EdgeAlpha',0,'FaceAlpha',.75,'FaceColor',[.5 .5 .5 ]);
+a = plot(median(aspects)*[1,1],[0,.1],'Color',[.5 .5 .5 ]);
+
+tool = 'vista6';
+% Add the low noise and mid noise lines now
+%  aspect1  = aspect1(aspect1 < 4);
+% hlow = histogram(aspect1,'DisplayStyle','stairs','BinWidth',h.BinWidth,'Normalization','probability');
+% hlow = histogram(aspect1,'BinWidth',h.BinWidth,'Normalization','probability');
+% set(hlow,'LineWidth',2,'EdgeColor',[1 .5 .5 ],'LineStyle','-','EdgeAlpha',0,'FaceAlpha',.5,'FaceColor',[1 .5 .5 ]);
+% alow = plot(median(aspect1)*[1,1],[0,.1],'LineWidth',2,'Color',[1 .5 .5 ],'LineStyle','-'); 
+
+xlim([1,3])
+
+% legend([h;a;hlow;hmid],{'Experimental Data','Median of Exp. Data','Synth Low Noise','Synth Mid Noise'});
+
+legend([h;a;hmid;blow],{'Experimental Data','Median of Exp. Data','Synth Mid Noise','Median of Synth. Data'});
+% SAVE PLOT 6C
+if doSave; saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);  end
+
+
+
+
+
+
+
+
+% PLOT 6D  % THETA vs ANGLE
+% prepare data
+tool = 'vista6';
+thetas = [];
+angles = [];
+for nl  = 1:length(useLabels)
+    lab = useLabels{nl};
+    thetas = [thetas;bylabelsums.(tool).(lab).Th];
+    angles = [angles;bylabelsums.(tool).(lab).angle];
+end
+
+fnameBegin = 'RealData_AnglevsTheta';
+% Create main plot with the ground truth lines
+fnameEnd = sprintf('TR-%i_Dur-%is_C.I.-%i',tr,duration,centerPerc);
+fnameRoot = strcat(fnameBegin,'-', fnameEnd);
+disp(fnameRoot)
+kk = mrvNewGraphWin(fnameRoot);
+% Fig size is relative to the screen used. This is for laptop at 1900x1200
+set(kk,'Position',[0.007 0.62  1  0.5]);
+subplot(1,2,1)
+% PLOT 2b
+h = histogram(theta-angle,25,'Normalization','probability');
+set(h,'LineWidth',2,'EdgeColor',[.5 .5 .5],'EdgeAlpha',0,'FaceAlpha',1,'FaceColor',[.5 .5 .5]);hold on
+xlabel('Theta - Angle')
+
+subplot(1,2,2)
+plot(thetas, angles,'ko');xlabel('\Theta (deg)');ylabel('Angle (deg)');hold on
+identityLine(gca)
+xlim([-90,90])
+ylim([-90,90])
+xticks(-90:15:90)
+yticks(-90:15:90)
+% SAVE PLOT 2b
+if doSave; saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);  end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+% REMOVED PLOTS
+%{
+% PLOT OUT 
+fnameBegin = 'RealData_AspectHistogramCumSum';
+% Create main plot with the ground truth lines
+fnameEnd = sprintf('TR-%i_Dur-%is_C.I.-%i',tr,duration,centerPerc);
+fnameRoot = strcat(fnameBegin,'-', fnameEnd);
+disp(fnameRoot)
+kk = mrvNewGraphWin(fnameRoot);
+% Fig size is relative to the screen used. This is for laptop at 1900x1200
+set(kk,'Position',[0.007 0.62  .5  .5]);
+for nt=1:length(tools)
+    tool = tools{nt};
+    subplot(1,1,nt);
+    a = [];
+    for nl = 1:length(useLabels)
+        lab  = useLabels{nl};
+        % Remove 10% of extreme aspect cases
+        B         = prctile(bylabelsums.(tool).(lab).aspect, [5, 95]);
+        inRange   = bylabelsums.(tool).(lab).aspect >= B(1) & bylabelsums.(tool).(lab).aspect <= B(2);
+        aspect    = bylabelsums.(tool).(lab).aspect(inRange);
+        eccen     = bylabelsums.(tool).(lab).eccen(inRange);
+        area      = bylabelsums.(tool).(lab).area(inRange);
+        if length(lab)==3;if lab(3)=='d';linestyle='-.';else;linestyle='-';end;end
+
+        [N,EDGES] = histcounts(bylabelsums.(tool).(lab).aspect(inRange));
+        a = [a; plot(mean([EDGES(2:end);EDGES(1:end-1)]),100*(cumsum(N)/sum(N)),...
+             'Color',Cs(nl,:),'LineStyle',linestyle)];hold on;
+        
+    end
+    
+    % Now add synth data
+    % TR1 vs TR2
+    % aspect1  = A1A2.(tool).aspect(A1A2.TR==1);
+    % B1       = prctile(aspect1, [5, 95]);
+    % inRange1 = aspect1 >= B1(1) & aspect1 <= B1(2);
+    % aspect2  = A1A2.(tool).aspect(A1A2.TR==2);
+    % B2       = prctile(aspect2, [5, 95]);
+    % inRange2 = aspect2 >= B2(1) & aspect2 <= B2(2);
+    
+    
+    % LOW noise MID noise
+    aspect1  = A1A2.(tool).aspect(A1A2.noiseLevel=="low");
+    B1       = prctile(aspect1, [5, 95]);
+    inRange1 = aspect1 >= B1(1) & aspect1 <= B1(2);
+    aspect2  = A1A2.(tool).aspect(A1A2.noiseLevel=="mid");
+    B2       = prctile(aspect2, [5, 95]);
+    inRange2 = aspect2 >= B2(1) & aspect2 <= B2(2);
+    
+    
+    
+    [N1,EDGES1] = histcounts(aspect1(inRange1));
+    a = [a; plot(mean([EDGES1(2:end);EDGES1(1:end-1)]),100*(cumsum(N1)/sum(N1)),'k--','LineWidth',3)];
+    [N2,EDGES2] = histcounts(aspect2(inRange2));
+    a = [a; plot(mean([EDGES2(2:end);EDGES2(1:end-1)]),100*(cumsum(N2)/sum(N2)),'k:','LineWidth',3)];
+    
+    % Add noise ratio
+    % [N,EDGES] = histcounts(limRatio);
+    % a = [a; plot(mean([EDGES(2:end);EDGES(1:end-1)]),100*(cumsum(N)/sum(N)),'k-','LineWidth',2)];
+    
+    % legend(a, [useLabels,{'Synth TR1'},{'Synth TR2'},{'Radius noise'}]);grid on
+    legend(a, [useLabels,{'Synth Low Noise'},{'Synth Mid Noise'}],'location','best');grid on
+    title(tool)
+    xlim([1,4])
+    xlabel('Aspect Ratio')
+    ylabel('Cumulative Frequency (%)')
+    set(gca, 'FontSize', 16) 
+end
+% SAVE PLOT 4
+saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);  
+
+
+
+ 
+%}
+
+%% PLOT 6E: Compare r2 values vista4/vista6
+useLabels = {'V1','V2','V3'};
+saveTo    = '~/gDrive/STANFORD/PROJECTS/2019_PRF_Validation_methods_(Gari)/__PUBLISH__/ELLIPTICAL/Figures/RAW';
+ext       = 'svg';   
+fnameRoot = 'RealData_R2diff_histogram_filteredAsTheRest'
+
+
+
+% kk = mrvNewGraphWin('R2 vista4/vista6');
+% set(kk,'Position',[0.007 0.62  0.6 0.5]);
+% compTable.vista6.R2 = abs(sqrt(compTable.vista6.r2));
+% compTable.vista4.R2 = abs(sqrt(compTable.vista4.r2));
+% % scatter(compTable.vista4.R2,compTable.vista6.R2,3,'b','filled')
+% histogram(compTable.vista6.R2 - compTable.vista4.R2)
+% xlabel('R2, Vista Elliptical - Circular')
+% set(gca,'FontSize',20)
+
+
+% Use the same restrictions we used in the previous plots
+% sMajMIN    = 1;
+% sMinMIN    = 1;
+% sMajMAX    = 3;
+% eccenMIN   = 2;
+% eccenMAX   = 6;
+% minR2      = 0.25;
+
+
+
+% Create intermediate variables
+% R2 in perc
+v6 = 100*compTable.vista6.r2;
+v4 = 100*compTable.vista4.r2;
+% Eccentricity values for filtering
+[~,R6] = cart2pol(compTable.vista6.x0, compTable.vista6.y0);
+[~,R4] = cart2pol(compTable.vista4.x0, compTable.vista4.y0);
+compTable.vista6.eccen = R6;
+compTable.vista4.eccen = R4;
+
+
+% Filter by variance explained
+v6ind = (v6 > 100*minR2) & ...
+        (compTable.vista6.sMaj  > sMajMIN)  & (compTable.vista6.sMaj < sMajMAX) & ...
+        (compTable.vista6.eccen > eccenMIN) & (compTable.vista6.eccen < eccenMAX);
+v4ind = (v4 > 100*minR2) & ...
+        (compTable.vista4.sMaj  > sMajMIN)  & (compTable.vista4.sMaj < sMajMAX) & ...
+        (compTable.vista4.eccen > eccenMIN) & (compTable.vista4.eccen < eccenMAX);
+vind  = v6ind & v4ind;
+% Create filtered version
+v6f   = v6(vind);
+v4f   = v4(vind);
+
+v6m   = median(v6);
+v4m   = median(v4);
+v6fm  = median(v6f);
+v4fm  = median(v4f);
+
+v64   = 100 * (v6m - v4m)/v4m;
+v64f  = 100 * (v6fm - v4fm)/v4fm;
+
+
+kk = mrvNewGraphWin('R2 vista4/vista6');
+set(kk,'Position',[0.007 0.62  0.5 0.5]);
+h = histogram(v6f - v4f,'Normalization','probability');  % 'DisplayStyle','stairs'
+set(h,'LineWidth',2,'EdgeColor',[.5 .5 .5],'EdgeAlpha',0,'FaceAlpha',1,'FaceColor',[.5 .5 .5]);hold on
+a = plot(median(v6f - v4f)*[1,1],[0,max(h.Values)],'r-');
+xlabel('Delta R2 (Elliptical - Circular; in %)')
+legend(a,'Median of the difference')
+xlim([-2,5])
+set(gca,'FontSize',20)
+% title(sprintf('Elliptical median variance explained is %1.2g%% larger than Circular',v64f))
+if doSave; saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext); end
+
+
+
+% Plot scatter of vista4 and vista6 R2 values
+%{
+kk = mrvNewGraphWin('R2 vista4/vista6 COLORS');
+set(kk,'Position',[0.007 0.62  0.6 0.5]);
+R2vals        = struct();
+R2vals.vista6 = [];
+R2vals.vista4 = [];
+useLabels  = {'V1' ,   'V2',   'V3'};
+C =          [1,0,0;  0,1,0;  0,0,1];
+for nt=1:length(tools)
+    tool = tools{nt};
+    Vcolors= [];
+    for nl = 1:length(useLabels)
+        lab    = useLabels{nl};
+        tmpr2  = abs(sqrt(bylabelsums.(tool).(lab).r2));
+        R2vals.(tool) = [R2vals.(tool); tmpr2];
+        Vcolors = [Vcolors; repmat(C(nl,:),[length(tmpr2),1])];
+    end
+end
+scatter(R2vals.vista4,R2vals.vista6,5,Vcolors,'filled')
+xlabel('R2 (Vista Circular)')
+ylabel('R2 (Vista Elliptical)')
+title('Circular vs elliptical variance explained in V1-V2-V3 [R-G-B] (R2=abs(sqrt(r2)))')
+% legend(C,useLabels)
+identityLine(gca)
+set(gca,'FontSize',20)
+%}
+
+
+%% PLOT (together): Silson 2018 plot: Real Data 7T
+
+kk = mrvNewGraphWin('R2');
+set(kk,'Position',[0.007 0.62  0.6 0.5]);
+subplot(1,2,1)
+histogram(compTable.afni6.R2);legend({'AFNI6 R2 with calccod'});
+subplot(1,2,2)
+histogram(abs(sqrt(compTable.vista6.r2)));legend({'VISTA6 sqrt(r2) (rss and rawrss)'});
+
+
+
+
+
+ext        = 'svg';
+centerPerc = 90;
+eccenInGT  = true;
+xlims      = [0,10];
+ylims      = [0,10];
+tools      = {'afni6'   , 'vista6'};  
+duration   = 300;
+tr         = 1;
+% Filter results
+sMajMIN  = 1; % 1;
+sMinMIN  = 0.75; % .75;
+sMajMAX  = 4; % 4;
+eccenMIN = 2;
+eccenMAX = 7;
+minR2    = .6;
+% How many bins
+NeccenBins = 6;
+NareaBins  = NeccenBins;
+%close all
+
+
+
+% AFNI
+afni6 = compTable.afni6;
+[TH,R]      = cart2pol(afni6.x0, afni6.y0);
+afni6.angle = rad2deg(TH);
+afni6.eccen = R;
+afni6.area  = pmEllipseArea(2*afni6.sMaj, 2*afni6.sMin);
+afni6       = afni6(afni6.sMaj > sMajMIN & ...
+                    afni6.sMin > sMinMIN & ...
+                    afni6.sMaj < sMajMAX & ...
+                    afni6.eccen > eccenMIN & ...
+                    afni6.eccen < eccenMAX & ...
+                    afni6.R2 > minR2,:);
+eccen     = afni6.eccen;
+% Theta can only be [-90,+90]
+% Vista and Afni treat it differently it seems
+% I added 90 deg to AFNI, but I still don't know if I need it or not. Remove it
+theta     = rad2deg(afni6.Th - deg2rad(90));
+theta(theta>180) = theta(theta>180) -180;
+theta(theta>90)  = theta(theta>90) -180;
+% We can express the theta in the same way, because we only care about the
+% radiality, not the exact angle
+angle     = afni6.angle;
+angle(angle>180) = angle(angle>180) -180;
+angle(angle>90)  = angle(angle>90) -180;
+
+aspect    = afni6.sMaj  ./ afni6.sMin;
+area      = afni6.area;
+% Remove 10% of extreme aspect cases
+B         = prctile(aspect, [5, 95]);
+inRange   = aspect >= B(1) & aspect <= B(2);
+aspect    = aspect(inRange);
+eccen     = eccen(inRange);
+area      = area(inRange);
+
+% VISTA
+vista6         = compTable.vista6;
+[TH,R]         = cart2pol(vista6.x0, vista6.y0);
+vista6.angle   = rad2deg(TH);
+vista6.eccen   = R;
+vista6.area    = pmEllipseArea(2*vista6.sMaj, 2*vista6.sMin);
+vista6         = vista6(vista6.sMaj > sMajMIN & ...
+                                  vista6.sMin > sMinMIN & ...
+                                  vista6.sMaj < sMajMAX & ...
+                                  vista6.eccen > eccenMIN & ...
+                                  vista6.eccen < eccenMAX &  ...
+                                  vista6.R2 > minR2,:);
+eccenvista     = vista6.eccen;
+thetavista     = rad2deg(vista6.Th);
+thetavista(thetavista>180) = thetavista(thetavista>180) -180;
+thetavista(thetavista>90)  = thetavista(thetavista>90) -180;
+anglevista     = vista6.angle;
+anglevista(anglevista>180) = anglevista(anglevista>180) -180;
+anglevista(anglevista>90)  = anglevista(anglevista>90) -180;
+areavista      = vista6.area;
+aspectvista    = vista6.sMaj  ./ vista6.sMin;
+% Remove 10% of extreme aspect cases
+B              = prctile(aspectvista, [5, 95]);
+inRange        = aspectvista >= B(1) & aspectvista <= B(2);
+aspectvista    = aspectvista(inRange);
+eccenvista     = eccenvista(inRange);
+areavista      = areavista(inRange);
+close all
+
+% Obtain the same eccentricities as in the simulations
+% xvalues = linspace(1,9,8);
+% xvalues(end) = max([max(eccen);max(eccenvista)]);
+
+% Discretize, to bin the eccentricities for afni6
+[Y,E] = discretize(eccen,NeccenBins); 
+% Discretize, to bin the eccentricities for Vista6
+[Yv,E] = discretize(eccenvista,E);
+
+% Discretize, to bin the eccentricities for afni6
+[Z,F] = discretize(area,NareaBins); 
+% Discretize, to bin the eccentricities for Vista6
+[Zv,F] = discretize(areavista,F);
+
+
+% Apply percentiles and plot individually
+% Create the vectors and then plot all together
+
+
+areamedsize = zeros(1,length(E)-1);
+areaminsize = zeros(1,length(E)-1);
+areamaxsize = zeros(1,length(E)-1);
+ 
+arvistmedsize = zeros(1,length(E)-1);
+arvistminsize = zeros(1,length(E)-1);
+arvistmaxsize = zeros(1,length(E)-1);
+ 
+aspectmedecc = zeros(1,length(E)-1);
+aspectminecc = zeros(1,length(E)-1);
+aspectmaxecc = zeros(1,length(E)-1);
+ 
+aspectvistmedecc = zeros(1,length(E)-1);
+aspectvistminecc = zeros(1,length(E)-1);
+aspectvistmaxecc = zeros(1,length(E)-1);
+ 
+aspectmedsize = zeros(1,length(E)-1);
+aspectminsize = zeros(1,length(E)-1);
+aspectmaxsize = zeros(1,length(E)-1);
+ 
+aspectvistmedsize = zeros(1,length(E)-1);
+aspectvistminsize = zeros(1,length(E)-1);
+aspectvistmaxsize = zeros(1,length(E)-1);
+  
+for ne=1:(length(E)-1)
+    % ECC - SIZE
+    % AFNI6
+    arsize          = area(Y==ne);
+    % Median and std
+    areamedsize(ne) = median(arsize);
+    areaminsize(ne) = min(arsize);
+    areamaxsize(ne) = max(arsize);
+    
+    % VISTA6    
+    arvistsize      = areavista(Yv==ne);
+    % Median and std
+    arvistmedsize(ne) = median(arvistsize);
+    arvistminsize(ne) = min(arvistsize);
+    arvistmaxsize(ne) = max(arvistsize);
+    
+    
+    
+    
+    % ECC - ASPECT
+    % AFNI6
+    aspecc       = aspect(Y==ne);
+    % Median and std
+    aspectmedecc(ne) = median(aspecc);
+    aspectminecc(ne) = min(aspecc);
+    aspectmaxecc(ne) = max(aspecc);
+    
+    % VISTA6    
+    aspvistecc   = aspectvista(Yv==ne);
+    % Median and std
+    aspectvistmedecc(ne) = median(aspvistecc);
+    aspectvistminecc(ne) = min(aspvistecc);
+    aspectvistmaxecc(ne) = max(aspvistecc);
+    
+    
+    
+    
+    
+    % SIZE - ASPECT
+    % AFNI6
+    aspsize       = aspect(Z==ne);
+    % Median and std
+    aspectmedsize(ne) = median(aspsize);
+    aspectminsize(ne) = min(aspsize);
+    aspectmaxsize(ne) = max(aspsize);
+    
+    % VISTA6    
+    aspvistsize   = aspectvista(Zv==ne);
+    % Median and std
+    aspectvistmedsize(ne) = median(aspvistsize);
+    aspectvistminsize(ne) = min(aspvistsize);
+    aspectvistmaxsize(ne) = max(aspvistsize);
+end
+
+
+
+
+
+
+% PLOT 1
+fnameBegin = 'RealData_SilsonEcc&Size';
+% Create main plot with the ground truth lines
+fnameEnd = sprintf('TR-%i_Dur-%is_C.I.-%i',tr,duration,centerPerc);
+fnameRoot = strcat(fnameBegin,'-', fnameEnd);
+disp(fnameRoot)
+kk = mrvNewGraphWin(fnameRoot);
+% Fig size is relative to the screen used. This is for laptop at 1900x1200
+set(kk,'Position',[0.007 0.62  1 0.5]);
+
+
+subplot(1,3,1)  % ECCEN vs SIZE
+% Plot it
+Emidpoints = mean([E(2:end);E(1:end-1)]);
+as = scatter(Emidpoints,areamedsize,80,'k','filled');hold on
+a  = plot([Emidpoints;Emidpoints] ,...
+          [areaminsize  ; areamaxsize], ...
+          'Color','k','LineStyle','-','LineWidth',3);  % 0.75*[0 1 0]
+
+bs = scatter(Emidpoints+.1,arvistmedsize,80,'k^','filled');
+b  = plot(([Emidpoints;Emidpoints] +.1), ...
+    [arvistminsize ;arvistmaxsize], ...
+    'Color','k','LineStyle',':','LineWidth',2);
+legend([as,bs],{'AFNI', 'VISTA'})
+title(strrep(sprintf('%s_TR-%i_Dur-%is_C.I.-%i',...
+    tool,tr,duration,centerPerc),'_','\_'))
+
+xlabel('Eccentricity (deg)')
+ylabel('Area (deg^2)')
+xlim([2,Emidpoints(end)+.2]);
+xticks(Emidpoints)
+set(gca, 'FontSize', 16) 
+
+
+subplot(1,3,2)  % ECCEN vs ASPECT
+% Plot it
+Emidpoints = mean([E(2:end);E(1:end-1)]);
+as = scatter(Emidpoints,aspectmedecc,80,'k','filled');hold on
+a  = plot([Emidpoints;Emidpoints] ,...
+          [aspectminecc  ; aspectmaxecc], ...
+          'Color','k','LineStyle','-','LineWidth',3);  % 0.75*[0 1 0]
+
+bs = scatter(Emidpoints+.1,aspectvistmedecc,80,'k^','filled');
+b  = plot(([Emidpoints;Emidpoints] +.1), ...
+    [aspectvistminecc ;aspectvistmaxecc], ...
+    'Color','k','LineStyle',':','LineWidth',2);
+legend([as,bs],{'AFNI', 'VISTA'})
+title(strrep(sprintf('%s_TR-%i_Dur-%is_C.I.-%i',...
+    tool,tr,duration,centerPerc),'_','\_'))
+
+xlabel('Eccentricity (deg)')
+ylabel('pRF aspect ratio')
+xlim([2,Emidpoints(end)+.2]);
+ylim([0,3])
+xticks(Emidpoints)
+set(gca, 'FontSize', 16) 
+
+subplot(1,3,3)  % SIZE vs ASPECT
+% Plot it
+Fmidpoints = mean([F(2:end);F(1:end-1)]);
+as = scatter(Fmidpoints,aspectmedsize,80,'k','filled');hold on
+a  = plot([Fmidpoints;Fmidpoints],...
+     [aspectminsize ;aspectmaxsize], ...
+     'Color','k','LineStyle','-','LineWidth',3);  % 0.75*[0 1 0]
+
+bs = scatter(Fmidpoints+5,aspectvistmedsize,80,'k^','filled');
+b  = plot(([Fmidpoints;Fmidpoints]+5),...
+    [aspectvistminsize  ;aspectvistmaxsize], ...
+    'Color','k','LineStyle',':','LineWidth',2);
+legend([as,bs],{'AFNI', 'VISTA'})
+title(strrep(sprintf('%s_TR-%i_Dur-%is_C.I.-%i',...
+    tool,tr,duration,centerPerc),'_','\_'))
+
+xlabel('Area (deg^2)')
+ylabel('pRF aspect ratio')
+xlim([0,Fmidpoints(end)+8]);
+ylim([0,3])
+xticks(Fmidpoints)
+set(gca, 'FontSize', 16) 
+
+
+
+% SAVE PLOT 1
+saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);  
+
+ 
+
+
+
+
+
+
+
+% PLOT 2  % THETA vs ANGLE
+fnameBegin = 'RealData_AnglevsTheta';
+% Create main plot with the ground truth lines
+fnameEnd = sprintf('TR-%i_Dur-%is_C.I.-%i',tr,duration,centerPerc);
+fnameRoot = strcat(fnameBegin,'-', fnameEnd);
+disp(fnameRoot)
+kk = mrvNewGraphWin(fnameRoot);
+% Fig size is relative to the screen used. This is for laptop at 1900x1200
+set(kk,'Position',[0.007 0.62  .6  0.5]);
+
+subplot(1,2,1)
+% Plot it
+as = plot(angle,theta,'ko');hold on; identityLine(gca)
+legend({'AFNI'})
+xlabel('Angle (deg)')
+ylabel('Theta (deg)')
+set(gca, 'FontSize', 16) 
+
+% close all
+
+subplot(1,2,2)
+bs = plot(anglevista,thetavista,'k^');hold on; identityLine(gca)
+legend({'VISTA'})
+title(strrep(sprintf('%s_TR-%i_Dur-%is_C.I.-%i',...
+    tool,tr,duration,centerPerc),'_','\_'))
+
+xlabel('Angle (deg)')
+ylabel('Theta (deg)')
+set(gca, 'FontSize', 16) 
+
+% SAVE PLOT 2
+saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);  
+
+
+
+
+
+
+
+
+
+% PLOT 3
+fnameBegin = 'RealData_AspectHistogram';
+% Create main plot with the ground truth lines
+fnameEnd = sprintf('TR-%i_Dur-%is_C.I.-%i',tr,duration,centerPerc);
+fnameRoot = strcat(fnameBegin,'-', fnameEnd);
+disp(fnameRoot)
+kk = mrvNewGraphWin(fnameRoot);
+% Fig size is relative to the screen used. This is for laptop at 1900x1200
+set(kk,'Position',[0.007 0.62  .5  1]);
+subplot(2,1,1);
+    histogram(aspect,100);legend({'AFNI'})
+subplot(2,1,2);
+    histogram(aspectvista,100);legend({'VISTA'})
+% SAVE PLOT 3
+saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);  
+
+
+% PLOT 4
+fnameBegin = 'RealData_AspectHistogramCumSum';
+% Create main plot with the ground truth lines
+fnameEnd = sprintf('TR-%i_Dur-%is_C.I.-%i',tr,duration,centerPerc);
+fnameRoot = strcat(fnameBegin,'-', fnameEnd);
+disp(fnameRoot)
+kk = mrvNewGraphWin(fnameRoot);
+% Fig size is relative to the screen used. This is for laptop at 1900x1200
+set(kk,'Position',[0.007 0.62  .5  .5]);
+
+    [N,EDGES] = histcounts(aspectvista);
+    plot(mean([EDGES(2:end);EDGES(1:end-1)]),(cumsum(N)/sum(N)));
+    legend({'VISTA'});grid on
+% SAVE PLOT 4
+saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);  
 
