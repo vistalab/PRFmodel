@@ -2,7 +2,7 @@
 
 [ -z "$USERTAG" ] && USERTAG=garikoitz
 [ -z "$SOLVER"  ] && SOLVER=vista
-[ -z "$VERSION" ] && VERSION=latest
+[ -z "$VERSION" ] && VERSION=2.0.1
 
 SCRIPTPATH="$( cd "$(dirname "$0")" && pwd -P )"
 

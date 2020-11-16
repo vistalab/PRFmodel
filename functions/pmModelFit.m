@@ -499,9 +499,9 @@ switch prfimplementation
                 
         % Obtain the modelfit,
         % Obtaining the prediction is too costly for big datasets, we can always use this function:
-        % pmEstimates = pmVistaObtainPrediction(pmEstimates, results);
+        pmEstimates = pmVistaObtainPrediction(pmEstimates, results);
         % For now, make the output same as the input, to avoid problems downstream
-        pmEstimates.modelpred = pmEstimates.testdata;
+        % pmEstimates.modelpred = pmEstimates.testdata;
         % pmEstimates.R2         = calccod(pmEstimates.testdata,  pmEstimates.modelpred,2);
         % pmEstimates.R2        = results.model{1}.varExp';
         % pmEstimates.RMSE       = sqrt(mean((pmEstimates.testdata - pmEstimates.modelpred).^2,2));
