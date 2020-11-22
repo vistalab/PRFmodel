@@ -1,5 +1,5 @@
 function s03_Ellipse_Fig3(saveTo, saveToType)
-
+if ~isfolder(saveFigTo); mkdir(saveFigTo); end
 % saveTo = '~/gDrive/STANFORD/PROJECTS/2019_PRF_Validation_methods_(Gari)/__PUBLISH__/ELLIPTICAL/Figures/RAW';
 
 sub = 'ellipse'; ses = 'eccsv2';

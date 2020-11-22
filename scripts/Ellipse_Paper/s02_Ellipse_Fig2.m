@@ -1,5 +1,5 @@
 function s02_Ellipse_Fig2(saveTo,ext)
-
+if ~isfolder(saveFigTo); mkdir(saveFigTo); end
 %% FIG 2: Noiseless: eccentricity plots, but noiseless
 sub = 'ellipse'; ses = 'noiselessv2';
 p = fullfile(pmRootPath,'local',sub,'BIDS','derivatives','prfreport',['sub-' sub],['ses-' ses]);

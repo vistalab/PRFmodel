@@ -1,4 +1,7 @@
 function s06_S7_S8_Ellipse_Fig6_S7_S8(saveTo,ext)
+if ~isfolder(saveFigTo); mkdir(saveFigTo); end
+
+
 %% READ: Real Data 7T
 
 % Filter data:
@@ -626,6 +629,22 @@ xlabel('Delta R2 (Elliptical - Circular; in %)')
 legend(a,'Median of the difference')
 xlim([-2,5])
 set(gca,'FontSize',20)
+
+% Print the variance explained for Insub
+%{
+kk = mrvNewGraphWin('R2 vista6 and vista4');
+set(kk,'Position',[0.007 0.62  0.5 0.5]);
+h6 = histogram(v6f,'Normalization','probability');  % 'DisplayStyle','stairs'
+set(h6,'LineWidth',2,'EdgeColor',[.5 .5 .5],'EdgeAlpha',0,'FaceAlpha',1,'FaceColor','k');hold on
+h4 = histogram(v4f,'Normalization','probability');  % 'DisplayStyle','stairs'
+set(h4,'LineWidth',2,'EdgeColor',[.5 .5 .5],'EdgeAlpha',0,'FaceAlpha',.65,'FaceColor',[.5 .5 .5]);
+xlabel('R2 (%)')
+legend('Elliptical Fit','Circular fit')
+xlim([20,100])
+set(gca,'FontSize',20)
+%}
+
+
 % title(sprintf('Elliptical median variance explained is %1.2g%% larger than Circular',v64f))
 if doSave; saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext); end
 

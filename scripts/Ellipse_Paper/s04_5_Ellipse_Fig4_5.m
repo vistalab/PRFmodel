@@ -1,6 +1,6 @@
 function s04_5_Ellipse_Fig4_5(saveTo,ext,centerPerc)
 
-
+if ~isfolder(saveFigTo); mkdir(saveFigTo); end
 %% ECCENTRICITY TR=2
 sub = 'ellipse'; ses = 'eccsv2';
 p = fullfile(pmRootPath,'local',sub,'BIDS','derivatives','prfreport',['sub-' sub],['ses-' ses]);

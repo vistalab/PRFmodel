@@ -1,4 +1,7 @@
 function ss06_Ellipse_FigS6(saveTo,ext)
+if ~isfolder(saveFigTo); mkdir(saveFigTo); end
+
+
 % NoiseCircleTest (Simulation:  Take a circle and make two noisy estimates of
 % its diameter.  (D1 + noise)/(D2 + noise).  This ratio will always be centered
 % on 1.  But now, use the same data to estimate
