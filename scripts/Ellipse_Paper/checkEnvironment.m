@@ -1,8 +1,25 @@
 function checkEnvironment(repeatCalculations)
-%CHECKENVIRONMENT Prepares environment to create figures from downloaded or
-%                 calculated data
+% Prepares the compute environment for reproducing PRF elliptical 
+%
+% Synopsis
+%  checkEnvironment(repeatCalculations)  (maybe pmSetEnvironment)
+%
+% Brief description
+%
+%   Installs the Matlab repositories and the Docker containers needed to
+%   reproduce the figures in the PRF elliptical model paper.
+% 
+% Inputs
+%   repeatCalculations:  If true, the Docker containers are also downloaded
+%                        (Logical) 
+%
+% Outputs
+%
+% See also
+%
 
-% Check if ToolboxToolbox is installed or not
+%% Check if ToolboxToolbox is installed or not
+
 doYouUseToolboxToolbox = false;
 [~,f,~] = fileparts(which('tbUse'));
 if strcmp(f,'tbUse')
@@ -10,9 +27,11 @@ if strcmp(f,'tbUse')
 end
 
 
-% Load dependencies
+%% Load dependencies
+
 if doYouUseToolboxToolbox
-    % Check were the configurations are stores
+    % If the user has ToolboxToolbox from the mighty Brainard, then we
+    % check were the configurations are stored
     tbUse('sample-repo');
     [p,~,~] = fileparts(which('master.txt'));
     yourToolboxToolboxRegistryConfigurationsFolder = ...
@@ -31,36 +50,26 @@ if doYouUseToolboxToolbox
     fprintf('\n------------------------------------------------------------------------\n\n',...
              fullfile(strrep(p,'sample-repo','PRFmodel'),'local'));
 else
-    % If not a ToolboxToolbox user:
-    softDir = '~/softForEllipsePaper/';
-    if ~exist(softDir,'dir');mkdir(softDir);end
-    cd(softDir);
-    % PRFmodel
-    system('git clone https://github.com/vistalab/PRFmodel.git')
-    addpath(genpath(fullfile(softDir,'PRFmodel')));
+    % A disappointing person, like Wandell, who does not yet use
+    % ToolboxToolbox.  We clone the two repositories into local
+    
+    localDir = fullfile(pmRootPath,'local');
+    cd(localDir);
+    % The PRFmodel is already installed.
+    
     % Vistasoft
     system('git clone https://github.com/vistalab/vistasoft.git')
-    addpath(genpath(fullfile(softDir,'vistasoft')));
+    addpath(genpath(fullfile(localDir,'vistasoft')));
+    disp('Vistasoft downloaded and added to path')
+    
     % freesurfer_mrtrix_afni_matlab_tools
     system('git clone https://github.com/garikoitz/freesurfer_mrtrix_afni_matlab_tools.git')
-    addpath(genpath(fullfile(softDir,'freesurfer_mrtrix_afni_matlab_tools')));
-    
-    
-    
-    fprintf('\n\n------------------------------------------------------------------------\n',...
-             fullfile(strrep(p,'sample-repo','PRFmodel'),'local'));
-    fprintf('--> NOTE 1: all required software will be installed in:\n');
-    fprintf('-->         %s\n\n',softDir);
-    
-    fprintf('--> NOTE 2: all required data will be downloaded to the gitignored folder:\n');
-    fprintf('-->         %s',fullfile(softDir,'PRFmodel','local'));
-    fprintf('\n------------------------------------------------------------------------\n\n',...
-             fullfile(strrep(p,'sample-repo','PRFmodel'),'local'));
-      
+    addpath(genpath(fullfile(localDir,'freesurfer_mrtrix_afni_matlab_tools')));
+    disp('Freesurfer tools downloaded and added to path')
     
 end
 
-% Check for the Docker containers
+%% Check for the Docker containers
 if repeatCalculations
     % prfsynth
     dockerPullCommand('garikoitz/prfsynth:2.0.0')

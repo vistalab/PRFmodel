@@ -1,5 +1,17 @@
 % SCRIPT s00_MainFiguresScript.m
-
+%
+% Brief description
+%  
+%  This script has tools to set up your environment to reproduce the
+%  calculations in <PaperName>.  The function 'checkEnvironment' has the
+%  necessary commands for installing and setting up the working
+%  environment.
+%
+%  To begin, we suggest you verify that your Matlab paths and Docker
+%  containers are properly installed.
+%
+%
+%  
 % To obtain the data and replicate the figures, there are two options: 
 %    --- A: Repeat all calculations (it takes many hours and disk space -15Gb-) ---
 %    1) SYNTHESIZE
