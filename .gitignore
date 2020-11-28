@@ -1,6 +1,8 @@
 *~
 .DS_STORE
+PRFmodel.wiki
 *.swp
 */*/compiled/*
 *.err
+*.asv
 
