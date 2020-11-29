@@ -1,7 +1,19 @@
 function pmPrepareData(repeatCalculations, testMode)
-%PREPAREDATA Downloads or calculates the data for the ellipse paper
-
-
+% Download empirical data or calculate synthetic ground-truth data
+%
+%  Synopsis
+%   pmPrepareData(repeatCalculations, testMode)
+%
+% Input:
+%   repeatCalculations:  
+%
+% These data are used for replicating the figures in the paper
+%
+%   Title: 
+%
+%
+% See also
+%
 
 %% DOWNLOAD DATA OR CALCULATE IT
 

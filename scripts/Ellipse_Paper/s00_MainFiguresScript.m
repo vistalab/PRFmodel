@@ -1,29 +1,34 @@
 % SCRIPT s00_MainFiguresScript.m
 %
-% Brief description
-%  
-%  This script has tools to set up your environment to reproduce the
-%  calculations in <PaperName>.  The function 'checkEnvironment' has the
-%  necessary commands for installing and setting up the working
-%  environment.
+% This script sets up your Matlab environment and downloads data needed to
+% reproduce the calculations in
 %
-%  To begin, we suggest you verify that your Matlab paths and Docker
-%  containers are properly installed.
+%      <PaperName>.  
+% 
+% There are two ways to use the script.  In both cases we
 %
+%    * Check the compute environment
+%    * Download the relevant data
 %
-%  
-% To obtain the data and replicate the figures, there are two options: 
-%    --- A: Repeat all calculations (it takes many hours and disk space -15Gb-) ---
-%    1) SYNTHESIZE
-%    2) ANALYZE
-%    3) REPORT
-%    4) MAKE FIGURES
+% A: Repeat calculations from pre-processed data.  This method takes 15
+% minutes and requires about 3GB of data.
+%
+%    1) Download the processed data from the Open Science Foundation (OSF)
+%       site (2.3GB) 
+%    2) Run the Matlab scripts to produce the figures
+%
+% B: Repeat all calculations from scratch.  This method takes several hours
+% and requires a substantial amount of disk space (-15GB-) 
+%
+%    1) Use prfSynthesize to create the ground-truth data (Docker)
+%    2) Use prfAnalyze to estimate the parameters (Docker)
+%    3) Use prfReport to generate the summary statistics (Docker)
+%    4) Run the Matlab scripts that create the published figures
+%
+% See also
+%
 
-%    --- B: Download pre-calculated data ---
-%    1) DOWNLOAD CALCULATIONS FROM OSF (2.3Gb)
-%    2) MAKE FIGURES
-
-% Choose your option: 
+%% Choose your option: 
 repeatCalculations = false; % It will download calculated data (2.4Gb) from OSF
 %                              and plot figures
 % repeatCalculations = true; % (1) It will check you have Docker installed and the
@@ -39,32 +44,51 @@ testMode = true;  % Set to true if you want to test your environment with a smal
                   % dataset before running the long calculations
 
 %% CHECK ENVIRONMENT AND PREPARE DATA
-% If calculations need to be repeated we need to check the containers are installed
+
+% If calculations need to be repeated we need to check the containers are
+% installed %   The function
+%  'checkEnvironment' has the necessary commands for installing and setting
+%  up the working environment.
+%
+%  To begin, we suggest you verify that your Matlab paths and Docker
+%  containers are properly installed.
+%
+%
 pmCheckEnvironment(repeatCalculations)
 
 % Prepare data for the figures (download it or calculate it all)
 pmPrepareData(repeatCalculations, testMode)
 
 %% MAKE THE FIGURES 
-% 
+%{ 
 % Options: 
 % -----------------------
 % 1/ png files are for validations, for the paper the files are saved as svg
 %    and then edited in Affinnity Designer into the final form
     fileType  = 'png'; % or 'svg'
     
-% 2/ Add a local folder to write the figures
-    saveFigTo = '~/Downloads/TEST';  % Folder path
+% 2/ Add a local folder to write the Matlab figures
+    saveFigTo = fullfile(pmRootPath,'local','figures');  % Folder path
+    if ~exist(saveFigTo,'dir'), mkdir(saveFigTo); end
     
 % 3/ Select a confidence interval for the plots. In the manuscript we used just
 %    50% and 90%. Select one and repeat plots. 
     ConfInt   = 50;  % or 90
+%}
 
 % Run the figure scripts: 
 % -----------------------
-s01_Ellipse_Fig1(saveFigTo,fileType);
-s02_Ellipse_Fig2(saveFigTo,fileType);
-s03_Ellipse_Fig3(saveFigTo,fileType); 
-s04_5_Ellipse_Fig4_5(saveFigTo,fileType,ConfInt); 
+s01_Ellipse_Fig1;
+
+s02_Ellipse_Fig2;
+
+s03_Ellipse_Fig3; 
+
+s04_5_Ellipse_Fig4_5;
+
 s06_S7_S8_Ellipse_Fig6_S7_S8(saveFigTo,fileType); 
+
+% Supplementary to Figure 6
 ss06_Ellipse_FigS6(saveFigTo,fileType);
+
+%% END

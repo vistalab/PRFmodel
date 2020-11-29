@@ -1,11 +1,20 @@
 function pmCloudOfResults(compTable, tools,varargin)
 %pmCloudOfResults Return a distribution plot for several noise values
-%   It return only one plot, it need to be composited with another script
-% Examples
+%
+% Synopsis
+%
+% Inputs
+%
+% Outputs
+%   N/A
+%
+% It creates a plot, it need to be composited with another script 
 
+% Examples:
 %{
 
-close all; clear all; clc;
+%    close all; clear all; clc;
+
     load('/Users/glerma/toolboxes/PRFmodel/local/paper02/sub-paper_ses-sess02-prf_acq-normal_run-01_bold.mat');
     useHRF      = 'mix';  % {'vista_twogammas','afni_spm','popeye_twogammas','canonical'};
     tools       = {'vista','afni','popeye','aprf'};
@@ -118,7 +127,7 @@ ytick              = p.Results.ytick;
 synthBLueLineWidth = p.Results.synthbluelinewidth;
 
 %% Do the thing
-if color=='old'
+if isequal(color,'old')
     Cs               = distinguishable_colors(1+length(tools),'w');
     Cs(2,:) = Cs(2,:) * 0.65;
 else
