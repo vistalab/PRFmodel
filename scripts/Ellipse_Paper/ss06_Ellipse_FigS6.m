@@ -1,5 +1,5 @@
 function ss06_Ellipse_FigS6(saveTo,ext)
-if ~isfolder(saveFigTo); mkdir(saveFigTo); end
+if ~isfolder(saveTo); mkdir(saveTo); end
 
 
 % NoiseCircleTest (Simulation:  Take a circle and make two noisy estimates of

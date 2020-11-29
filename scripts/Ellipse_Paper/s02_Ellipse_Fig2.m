@@ -1,5 +1,5 @@
 function s02_Ellipse_Fig2(saveTo,ext)
-if ~isfolder(saveFigTo); mkdir(saveFigTo); end
+if ~isfolder(saveTo); mkdir(saveTo); end
 %% FIG 2: Noiseless: eccentricity plots, but noiseless
 sub = 'ellipse'; ses = 'noiselessv2';
 p = fullfile(pmRootPath,'local',sub,'BIDS','derivatives','prfreport',['sub-' sub],['ses-' ses]);
@@ -30,7 +30,7 @@ tools      = {'afni6'          , 'vista6'};  % 'vista6' 'afni6' 'vista4' 'afni4'
 useHRFs    = {'afni_spm'       , 'afni_spm' };
 duration   = 400;
 tr         = 2;
-nrow = 2, ncol = 4;
+nrow = 2; ncol = 4;
 % Create main plot with the ground truth lines
 fnameEnd   = sprintf('TR-%i_Dur-%is_Noise-%s',tr,duration,nlvl);
 fnameRoot  = strcat(fnameBegin,'-', fnameEnd);

@@ -1,4 +1,4 @@
-function checkEnvironment(repeatCalculations)
+function pmCheckEnvironment(repeatCalculations)
 % Prepares the compute environment for reproducing PRF elliptical 
 %
 % Synopsis
@@ -58,31 +58,47 @@ else
     % The PRFmodel is already installed.
     
     % Vistasoft
-    system('git clone https://github.com/vistalab/vistasoft.git')
-    addpath(genpath(fullfile(localDir,'vistasoft')));
-    disp('Vistasoft downloaded and added to path')
+    if ~isfolder(fullfile(localDir,'vistasoft'))
+        system('git clone https://github.com/vistalab/vistasoft.git')
+        addpath(genpath(fullfile(localDir,'vistasoft')));
+        disp('Vistasoft downloaded and added to path')
+    end
     
     % freesurfer_mrtrix_afni_matlab_tools
-    system('git clone https://github.com/garikoitz/freesurfer_mrtrix_afni_matlab_tools.git')
-    addpath(genpath(fullfile(localDir,'freesurfer_mrtrix_afni_matlab_tools')));
-    disp('Freesurfer tools downloaded and added to path')
+    if ~isfolder(fullfile(localDir,'freesurfer_mrtrix_afni_matlab_tools'))
+        system('git clone https://github.com/garikoitz/freesurfer_mrtrix_afni_matlab_tools.git')
+        addpath(genpath(fullfile(localDir,'freesurfer_mrtrix_afni_matlab_tools')));
+        disp('Freesurfer tools downloaded and added to path')
+    end
     
+    % prfanalyze
+    if ~isfolder(fullfile(localDir,'analyzePRF'))
+        system('git clone https://github.com/garikoitz/analyzePRF.git')
+        addpath(genpath(fullfile(localDir,'analyzePRF')));
+        disp('garikoitzAnalyzePRF tool downloaded and added to path')
+    end
 end
 
 %% Check for the Docker containers
 if repeatCalculations
-    % prfsynth
-    dockerPullCommand('garikoitz/prfsynth:2.0.0')
+    % First, check if the Docker client is there and it can run
+    status = pmDockerConfig;
     
-    % prfanalyze-vista
-    dockerPullCommand('garikoitz/prfanalyze-vista:2.0.0')
-    
-    % prfanalyze-afni
-    dockerPullCommand('garikoitz/prfanalyze-afni:2.0.0')
-        
-    % prfreport
-    dockerPullCommand('garikoitz/prfreport:2.0.0')
-    
+    if ~status
+        % prfsynth
+        pmDockerPullCommand('garikoitz/prfsynth:2.0.0');
+
+        % prfanalyze-vista
+        pmDockerPullCommand('garikoitz/prfanalyze-vista:2.0.0');
+
+        % prfanalyze-afni
+        pmDockerPullCommand('garikoitz/prfanalyze-afni:2.0.0');
+
+        % prfreport
+        pmDockerPullCommand('garikoitz/prfreport:2.0.0');
+    else
+        error('It was not possible to find or launch the Docker client')
+    end
 end
 
 

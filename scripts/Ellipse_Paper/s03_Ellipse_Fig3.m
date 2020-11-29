@@ -1,11 +1,11 @@
 function s03_Ellipse_Fig3(saveTo, saveToType)
-if ~isfolder(saveFigTo); mkdir(saveFigTo); end
+if ~isfolder(saveTo); mkdir(saveTo); end
 % saveTo = '~/gDrive/STANFORD/PROJECTS/2019_PRF_Validation_methods_(Gari)/__PUBLISH__/ELLIPTICAL/Figures/RAW';
 
 sub = 'ellipse'; ses = 'eccsv2';
 p = fullfile(pmRootPath,'local',sub,'BIDS','derivatives','prfreport',['sub-' sub],['ses-' ses]);
 f = ['sub-' sub '_ses-' ses '-prf_acq-normal_run-01_bold.mat'];
-A = load(fullfile(p,f))
+A = load(fullfile(p,f));
 % It seems that AFNI-s theta was not correctly corrected. This has been fixed now. 
 % It only affects to results in sub-ellipse/ses-*v2
 % if strcmp(tool,'afni6');A.compTable.afni6.Th = A.compTable.afni6.Th + deg2rad(90);end

@@ -3,4 +3,5 @@
 *.swp
 */*/compiled/*
 *.err
-
+*.asv
+PRFmodel.wiki

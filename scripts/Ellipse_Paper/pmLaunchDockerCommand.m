@@ -1,4 +1,4 @@
-function launchDockerCommand(varargin)
+function pmLaunchDockerCommand(varargin)
 %LAUNCHDOCKERCOMMAND Launches Dockers based on config files we already have
 
 

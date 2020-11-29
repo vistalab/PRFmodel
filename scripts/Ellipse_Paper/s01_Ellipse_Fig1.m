@@ -1,5 +1,5 @@
 function Fig1(saveTo,ext)
-if ~isfolder(saveFigTo); mkdir(saveFigTo); end
+if ~isfolder(saveTo); mkdir(saveTo); end
 
 %% FIG 1: Noiseless plots: accuracy
 % clear all; close all; clc
