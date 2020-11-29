@@ -1,13 +1,13 @@
 function s04_5_Ellipse_Fig4_5(saveTo,ext,centerPerc)
 
-if ~isfolder(saveFigTo); mkdir(saveFigTo); end
+if ~isfolder(saveTo); mkdir(saveTo); end
 %% ECCENTRICITY TR=2
 sub = 'ellipse'; ses = 'eccsv2';
 p = fullfile(pmRootPath,'local',sub,'BIDS','derivatives','prfreport',['sub-' sub],['ses-' ses]);
 f = ['sub-' sub '_ses-' ses '-prf_acq-normal_run-01_bold.mat'];
 
 
-A2 = load(fullfile(p,f))
+A2 = load(fullfile(p,f));
 % It seems that AFNI-s theta was not correctly corrected. This has been fixed now. 
 % It only affects to results in sub-ellipse/ses-*v2
 % if strcmp(tool,'afni6');A.compTable.afni6.Th = A.compTable.afni6.Th + deg2rad(90);end
@@ -208,7 +208,7 @@ end
 sub = 'ellipse'; ses = 'eccsv2TR1';
 p = fullfile(pmRootPath,'local',sub,'BIDS','derivatives','prfreport',['sub-' sub],['ses-' ses]);
 f = ['sub-' sub '_ses-' ses '-prf_acq-normal_run-01_bold.mat'];
-A1 = load(fullfile(p,f))
+A1 = load(fullfile(p,f));
 
 % SAME HRF; RATIO 1 and 2
 fnameBegin = 'Fig4-5_EccSimHRFokTR1';

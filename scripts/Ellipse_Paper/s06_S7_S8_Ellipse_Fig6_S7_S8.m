@@ -1,5 +1,5 @@
 function s06_S7_S8_Ellipse_Fig6_S7_S8(saveTo,ext)
-if ~isfolder(saveFigTo); mkdir(saveFigTo); end
+if ~isfolder(saveTo); mkdir(saveTo); end
 
 
 %% READ: Real Data 7T
@@ -80,7 +80,7 @@ bylabel     = struct();
 bylabelsums = struct();
 for nt=1:length(tools)
     tool  = tools{nt};
-    disp(tool)   
+    % disp(tool)   
     subestimates   = table();
     bylabel.(tool) = struct();
     % Do the links here to have life easier afterwards
@@ -97,7 +97,7 @@ for nt=1:length(tools)
     bylabelsums.(tool).V3v   =  table();
     for ns=1:length(subs)
         sub   = subs{ns};
-        disp(sub)
+        % disp(sub)
         p = fullfile(pmRootPath,'local',proj,'BIDS','derivatives',['prfanalyze-' tool],['sub-' sub],['ses-' ses]);
         bylabel.(tool).(['s' sub]) = struct();
         % Copy the code from prfReportWrapper to create the tables
@@ -151,7 +151,7 @@ for nt=1:length(tools)
         bylabel.(tool).(['s' sub]).V3v   =  table();
         
         for nn=1:length(niftis)
-            fname = niftis(nn).name
+            fname = niftis(nn).name;
             % Assume always it will be .nii.gz and that the . has not been used in the filename
             trunkname = split(fname,'.');
             if length(trunkname) ~= 3; error('%s should be a filename with no dots and .nii.gz',fname);end	
@@ -159,7 +159,7 @@ for nt=1:length(tools)
             resname   = split(trunkname, '_');
             resname   = resname{end};
             % read the nifti and squeeze the result matrix
-            fprintf('Attempting to read %s\n',fullfile(pwd,fname))
+            % fprintf('Attempting to read %s\n',fullfile(pwd,fname))
             tmp       = niftiRead(fname);
             data      = squeeze(tmp.data);	
             % Data can be separated in different labels
@@ -354,22 +354,26 @@ A1A2 = A1A2(A1A2.HRFtype=="vista_twogammas", :);
 %{
 A1A2 = A1A2(A1A2.HRFtype=="afni_spm", :);
 %}
+
+%{
 unique(A1A2.synth.sMaj)
 unique(A1A2.synth.sMin)
 unique(A1A2.synth.eccen)
 unique(A1A2.HRFtype)
 unique(A1A2.noiseLevel)
+%}
+
 
 aspect1  = A1A2.vista6.aspect(A1A2.noiseLevel=="low");
 B1=prctile(aspect1, [5, 95]);inRange1 = aspect1 >= B1(1) & aspect1 <= B1(2);
 aspect1  = aspect1(inRange1);
-sprintf('Low noise: Min aspect ratio for vista 6 is %g and max is %g', min(aspect1),max(aspect1))
+% sprintf('Low noise: Min aspect ratio for vista 6 is %g and max is %g', min(aspect1),max(aspect1))
 
 
 aspect2  = A1A2.vista6.aspect(A1A2.noiseLevel=="mid");
 B2=prctile(aspect2, [5, 95]);inRange2 = aspect2 >= B2(1) & aspect2 <= B2(2);
 aspect2  = aspect2(inRange2);
-sprintf('Mid noise: Min aspect ratio for vista 6 is %g and max is %g', min(aspect2),max(aspect2))
+% sprintf('Mid noise: Min aspect ratio for vista 6 is %g and max is %g', min(aspect2),max(aspect2))
 
 mediansyntheticdatalow = median(aspect1);
 mediansyntheticdatamid = median(aspect2);
@@ -426,7 +430,7 @@ fnameBegin = 'Fig6-A_RealData_Ecc&Size';
 % Create main plot with the ground truth lines
 fnameEnd = sprintf('TR-%i_Dur-%is_C.I.-%i',tr,duration,centerPerc);
 fnameRoot = strcat(fnameBegin,'-', fnameEnd);
-disp(fnameRoot)
+disp(fnameRoot) 
 kk = mrvNewGraphWin(fnameRoot);
 % Fig size is relative to the screen used. This is for laptop at 1900x1200
 set(kk,'Position',[0.007 0.62  .5 0.4]);
@@ -455,9 +459,9 @@ grid on
 xlabel('Eccentricity (deg)')
 ylabel('pRF aspect ratio')
 xlim([Emidpoints(1)-.2,Emidpoints(end)+.2]);
-ylim([1,2])
-xticks(Emidpoints)
-set(gca, 'FontSize', 16) 
+ylim([1,2]);
+xticks(Emidpoints);
+set(gca, 'FontSize', 16);
 
 if doSave;saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);  end
 
@@ -469,7 +473,7 @@ fnameBegin = 'FigS7_RealData_AspectHistogram_Separated';
 % Create main plot with the ground truth lines
 fnameEnd = sprintf('TR-%i_Dur-%is_C.I.-%i',tr,duration,centerPerc);
 fnameRoot = strcat(fnameBegin,'-', fnameEnd);
-disp(fnameRoot)
+disp(fnameRoot) 
 kk = mrvNewGraphWin(fnameRoot);
 % Fig size is relative to the screen used. This is for laptop at 1900x1200
 set(kk,'Position',[0.007 0.62  .5  .5]);
@@ -510,7 +514,7 @@ fnameBegin = 'Fig6-B_RealData_AspectHistogram_Combined';
 % Create main plot with the ground truth lines
 fnameEnd = sprintf('TR-%i_Dur-%is_C.I.-%i',tr,duration,centerPerc);
 fnameRoot = strcat(fnameBegin,'-', fnameEnd);
-disp(fnameRoot)
+disp(fnameRoot) 
 kk = mrvNewGraphWin(fnameRoot);
 % Fig size is relative to the screen used. This is for laptop at 1900x1200
 set(kk,'Position',[0.007 0.62  .5  .5]);
@@ -538,7 +542,7 @@ tool = 'vista6';
 % set(hlow,'LineWidth',2,'EdgeColor',[1 .5 .5 ],'LineStyle','-','EdgeAlpha',0,'FaceAlpha',.5,'FaceColor',[1 .5 .5 ]);
 % alow = plot(median(aspect1)*[1,1],[0,.1],'LineWidth',2,'Color',[1 .5 .5 ],'LineStyle','-'); 
 
-xlim([1,3])
+xlim([1,3]);
 
 % legend([h;a;hlow;hmid],{'Experimental Data','Median of Exp. Data','Synth Low Noise','Synth Mid Noise'});
 
@@ -562,7 +566,7 @@ fnameBegin = 'FigS8_RealData_AnglevsTheta';
 % Create main plot with the ground truth lines
 fnameEnd = sprintf('TR-%i_Dur-%is_C.I.-%i',tr,duration,centerPerc);
 fnameRoot = strcat(fnameBegin,'-', fnameEnd);
-disp(fnameRoot)
+disp(fnameRoot) 
 kk = mrvNewGraphWin(fnameRoot);
 % Fig size is relative to the screen used. This is for laptop at 1900x1200
 set(kk,'Position',[0.007 0.62  1  0.5]);
@@ -574,11 +578,11 @@ xlabel('Theta - Angle')
 
 subplot(1,2,2)
 plot(thetas, angles,'ko');xlabel('\Theta (deg)');ylabel('Angle (deg)');hold on
-identityLine(gca)
-xlim([-90,90])
-ylim([-90,90])
-xticks(-90:15:90)
-yticks(-90:15:90)
+identityLine(gca);
+xlim([-90,90]);
+ylim([-90,90]);
+xticks(-90:15:90);
+yticks(-90:15:90);
 if doSave; saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);  end
 
 
@@ -586,7 +590,7 @@ if doSave; saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);  end
 useLabels = {'V1','V2','V3'};
 % saveTo    = '~/gDrive/STANFORD/PROJECTS/2019_PRF_Validation_methods_(Gari)/__PUBLISH__/ELLIPTICAL/Figures/RAW';
 % ext       = 'svg';   
-fnameRoot = 'Fig6-C_RealData_R2diff_histogram_filteredAsTheRest'
+fnameRoot = 'Fig6-C_RealData_R2diff_histogram_filteredAsTheRest';
 
 % Create intermediate variables
 % R2 in perc

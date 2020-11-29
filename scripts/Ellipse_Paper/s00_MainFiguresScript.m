@@ -24,14 +24,30 @@
 %    2) MAKE FIGURES
 
 % Choose your option: 
-repeatCalculations = false; % It will download calculated data (2.4Gb and plot
-%                               figures)
-% repeatCalculations = true; % It will start a long process of data synthesis
-%                              and analysis, for the experimental data it will 
-%                              download and analyze it (15Gb aprox total). We
-%                              recommend to use a server for this option. 
+repeatCalculations = false; % It will download calculated data (2.4Gb) from OSF
+%                              and plot figures
+% repeatCalculations = true; % (1) It will check you have Docker installed and the
+%                                  required containers are downloaded. 
+%                              (2) It will start a long process of data synthesis
+%                                  and analysis. 
+%                              (3) It will download the experimental data and
+%                                  analyze it (15Gb aprox). 
+% 
+%                              We recommend to use a server for this option. 
+% 
+testMode = true;  % Set to true if you want to test your environment with a small 
+                  % dataset before running the long calculations
 
-% Other Notes and options: 
+%% CHECK ENVIRONMENT AND PREPARE DATA
+% If calculations need to be repeated we need to check the containers are installed
+pmCheckEnvironment(repeatCalculations)
+
+% Prepare data for the figures (download it or calculate it all)
+pmPrepareData(repeatCalculations, testMode)
+
+%% MAKE THE FIGURES 
+% 
+% Options: 
 % -----------------------
 % 1/ png files are for validations, for the paper the files are saved as svg
 %    and then edited in Affinnity Designer into the final form
@@ -44,14 +60,8 @@ repeatCalculations = false; % It will download calculated data (2.4Gb and plot
 %    50% and 90%. Select one and repeat plots. 
     ConfInt   = 50;  % or 90
 
-%% CHECK ENVIRONMENT AND PREPARE DATA
-% If calculations need to be repeated we need to check the containers are installed
-checkEnvironment(repeatCalculations)
-
-% Either download the calculations from OSF or run everything from scratch
-prepareData(repeatCalculations)
-
-%% MAKE THE FIGURES 
+% Run the figure scripts: 
+% -----------------------
 s01_Ellipse_Fig1(saveFigTo,fileType);
 s02_Ellipse_Fig2(saveFigTo,fileType);
 s03_Ellipse_Fig3(saveFigTo,fileType); 

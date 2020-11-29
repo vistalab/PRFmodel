@@ -1,4 +1,4 @@
-function [status,result] = dockerPullCommand(image)
+function [status,result] = pmDockerPullCommand(image)
 %DOCKERPULLCOMMAND Checks if the required image is downloaded
 %
 % Synopsis

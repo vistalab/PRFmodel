@@ -1,4 +1,4 @@
-function prepareData(repeatCalculations)
+function pmPrepareData(repeatCalculations, testMode)
 %PREPAREDATA Downloads or calculates the data for the ellipse paper
 
 
@@ -6,7 +6,7 @@ function prepareData(repeatCalculations)
 %% DOWNLOAD DATA OR CALCULATE IT
 
 if ~repeatCalculations
-    
+    cd(fullfile(pmRootPath,'local'));
     % Download calculated data from synthetic data (30Mb)
     ellipsezip = websave(fullfile(pmRootPath,'local','ellipse.zip'),'https://osf.io/27axp/download');
     unzip(ellipsezip);
@@ -21,21 +21,21 @@ else
     % --------------
     % 1/ Synthesize
     % --------------
-    launchDockerCommand('prfsynth','ellipse','sizesv2')
+    pmLaunchDockerCommand('prfsynth','ellipse','sizesv2')
     % launchDockerCommand('garikoitz/prfsynth:2.0.0','eccv2')
     % launchDockerCommand('garikoitz/prfsynth:2.0.0','eccv2')
     
     % --------------
     % 2.1/ Analyze-afni
     % --------------
-    launchDockerCommand('prfanalyze','ellipse','sizesv2','afni6')
+    pmLaunchDockerCommand('prfanalyze','ellipse','sizesv2','afni6')
     % launchDockerCommand('garikoitz/prfanalyze-afni:2.0.0','eccv2')
     % launchDockerCommand('garikoitz/prfanalyze-afni:2.0.0','eccv2')
     
     % --------------
     % 2.2/ Analyze-vista
     % --------------
-    launchDockerCommand('prfanalyze','ellipse','sizesv2','vista6')
+    pmLaunchDockerCommand('prfanalyze','ellipse','sizesv2','vista6')
     % launchDockerCommand('garikoitz/prfanalyze-vista:2.0.0','eccv2')
     % launchDockerCommand('garikoitz/prfanalyze-vista:2.0.0','eccv2')
     
@@ -43,7 +43,7 @@ else
     % --------------
     % 3/ Report
     % --------------
-    launchDockerCommand('prfreport','ellipse','sizesv2')
+    pmLaunchDockerCommand('prfreport','ellipse','sizesv2')
     % launchDockerCommand('garikoitz/prfreport:2.0.0','eccv2')
     % launchDockerCommand('garikoitz/prfreport:2.0.0','eccv2')
     
