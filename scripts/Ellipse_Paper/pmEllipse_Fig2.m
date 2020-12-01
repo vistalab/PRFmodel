@@ -1,4 +1,4 @@
-function s02_Ellipse_Fig2
+function pmEllipse_Fig2
 % Make Figure 2
 %
 %
@@ -124,7 +124,9 @@ for nt=1:length(tools)
     end
 end
 
-saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);
+fname = fullfile(saveTo, strcat(fnameRoot,['.' ext]));
+saveas(gcf,fname,ext);
+fprintf('\nSaved %s\n', fname)
 
 end
 

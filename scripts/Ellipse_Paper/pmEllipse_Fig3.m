@@ -1,4 +1,4 @@
-function s03_Ellipse_Fig3
+function pmEllipse_Fig3
 % Make Figure 3
 %
 %
@@ -158,7 +158,9 @@ for nslvl = noiselevel
     xlabel('Aspect Ratio')
     set(gca,'FontName', 'Arial','FontSize',16)
     set(gca,'xlim',[1 5]); grid on;
-    saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.',ext)), ext);
+    fname = fullfile(saveTo, strcat(fnameRoot,['.' ext]));
+    saveas(gcf,fname,ext);
+    fprintf('\nSaved %s\n', fname)
 end
 
 end

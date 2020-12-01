@@ -1,6 +1,15 @@
-function s06_S7_S8_Ellipse_Fig6_S7_S8(saveTo,ext)
-if ~isfolder(saveTo); mkdir(saveTo); end
+function pmEllipse_Fig6_S7_S8
+% Make Figures 6A-B-C, S7 and S8
+% 
+% TODO: separate it in sub-scripts that use the same dataset that we load here
+% 
+% See also
+%  s00_MainFiguresScript
 
+%% Plotting parameters
+ext  = 'png'; % Could be svg
+saveTo = fullfile(pmRootPath,'local','figures');  % Folder path
+if ~exist(saveTo,'dir'), mkdir(saveTo); end
 
 %% READ: Real Data 7T
 
@@ -21,6 +30,9 @@ if ~isfolder(saveTo); mkdir(saveTo); end
 % filter by R2, bigger than 45%
 % check radiality: correlation plot between angle and Theta, if it is organized
 % around zero, there is a relationship (the difference is zero)
+
+fprintf('\n\nLoading experimental HCP 7T data')
+
 
 proj   = 'realdata';
 % tools  = {'afni6','afni4','vista6','vista4'};
@@ -245,6 +257,9 @@ end
 
 nonfilteredbuylabelsums = bylabelsums;
 
+disp ('... done with load')
+
+
 %% PLOT 6 (A,B,C):Real Data 7T, ONLY VISTA
 % restart every time
 bylabelsums = nonfilteredbuylabelsums;
@@ -324,6 +339,8 @@ end
 
 
 % Generated TR=1, Dur=300 data to plot alongside with the real data
+fprintf('\n\nLoading synthetic TR=1 300sec data')
+
 sub = 'ellipse'; ses = 'tr1dur300v2';
 p = fullfile(pmRootPath,'local',sub,'BIDS','derivatives','prfreport',['sub-' sub],['ses-' ses]);
 f = ['sub-' sub '_ses-' ses '-prf_acq-normal_run-01_bold.mat'];
@@ -363,6 +380,7 @@ unique(A1A2.HRFtype)
 unique(A1A2.noiseLevel)
 %}
 
+disp ('... done with load')
 
 aspect1  = A1A2.vista6.aspect(A1A2.noiseLevel=="low");
 B1=prctile(aspect1, [5, 95]);inRange1 = aspect1 >= B1(1) & aspect1 <= B1(2);
@@ -430,7 +448,7 @@ fnameBegin = 'Fig6-A_RealData_Ecc&Size';
 % Create main plot with the ground truth lines
 fnameEnd = sprintf('TR-%i_Dur-%is_C.I.-%i',tr,duration,centerPerc);
 fnameRoot = strcat(fnameBegin,'-', fnameEnd);
-disp(fnameRoot) 
+% disp(fnameRoot) 
 kk = mrvNewGraphWin(fnameRoot);
 % Fig size is relative to the screen used. This is for laptop at 1900x1200
 set(kk,'Position',[0.007 0.62  .5 0.4]);
@@ -463,7 +481,9 @@ ylim([1,2]);
 xticks(Emidpoints);
 set(gca, 'FontSize', 16);
 
-if doSave;saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);  end
+fname = fullfile(saveTo, strcat(fnameRoot,['.' ext]));
+saveas(gcf,fname,ext);
+fprintf('\nSaved %s\n', fname)
 
 
 
@@ -473,7 +493,7 @@ fnameBegin = 'FigS7_RealData_AspectHistogram_Separated';
 % Create main plot with the ground truth lines
 fnameEnd = sprintf('TR-%i_Dur-%is_C.I.-%i',tr,duration,centerPerc);
 fnameRoot = strcat(fnameBegin,'-', fnameEnd);
-disp(fnameRoot) 
+% disp(fnameRoot) 
 kk = mrvNewGraphWin(fnameRoot);
 % Fig size is relative to the screen used. This is for laptop at 1900x1200
 set(kk,'Position',[0.007 0.62  .5  .5]);
@@ -502,7 +522,9 @@ for nl  = 1:length(useLabels)
     title(lab)
     xlabel('Aspect Ratio')
 end
-if doSave;saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);  end
+fname = fullfile(saveTo, strcat(fnameRoot,['.' ext]));
+saveas(gcf,fname,ext);
+fprintf('\nSaved %s\n', fname)
 
 
 
@@ -514,7 +536,7 @@ fnameBegin = 'Fig6-B_RealData_AspectHistogram_Combined';
 % Create main plot with the ground truth lines
 fnameEnd = sprintf('TR-%i_Dur-%is_C.I.-%i',tr,duration,centerPerc);
 fnameRoot = strcat(fnameBegin,'-', fnameEnd);
-disp(fnameRoot) 
+% disp(fnameRoot) 
 kk = mrvNewGraphWin(fnameRoot);
 % Fig size is relative to the screen used. This is for laptop at 1900x1200
 set(kk,'Position',[0.007 0.62  .5  .5]);
@@ -547,7 +569,9 @@ xlim([1,3]);
 % legend([h;a;hlow;hmid],{'Experimental Data','Median of Exp. Data','Synth Low Noise','Synth Mid Noise'});
 
 legend([h;a;hmid;blow],{'Experimental Data','Median of Exp. Data','Synth Mid Noise','Median of Synth. Data'});
-if doSave; saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);  end
+fname = fullfile(saveTo, strcat(fnameRoot,['.' ext]));
+saveas(gcf,fname,ext);
+fprintf('\nSaved %s\n', fname)
 
 
 
@@ -566,7 +590,7 @@ fnameBegin = 'FigS8_RealData_AnglevsTheta';
 % Create main plot with the ground truth lines
 fnameEnd = sprintf('TR-%i_Dur-%is_C.I.-%i',tr,duration,centerPerc);
 fnameRoot = strcat(fnameBegin,'-', fnameEnd);
-disp(fnameRoot) 
+% disp(fnameRoot) 
 kk = mrvNewGraphWin(fnameRoot);
 % Fig size is relative to the screen used. This is for laptop at 1900x1200
 set(kk,'Position',[0.007 0.62  1  0.5]);
@@ -583,7 +607,9 @@ xlim([-90,90]);
 ylim([-90,90]);
 xticks(-90:15:90);
 yticks(-90:15:90);
-if doSave; saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);  end
+fname = fullfile(saveTo, strcat(fnameRoot,['.' ext]));
+saveas(gcf,fname,ext);
+fprintf('\nSaved %s\n', fname)
 
 
 %% PLOT 6C: Compare r2 values vista4/vista6
@@ -650,7 +676,9 @@ set(gca,'FontSize',20)
 
 
 % title(sprintf('Elliptical median variance explained is %1.2g%% larger than Circular',v64f))
-if doSave; saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext); end
+fname = fullfile(saveTo, strcat(fnameRoot,['.' ext]));
+saveas(gcf,fname,ext);
+fprintf('\nSaved %s\n', fname)
 
 end
 

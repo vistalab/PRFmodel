@@ -1,4 +1,4 @@
-function s01_Ellipse_Fig1
+function pmEllipse_Fig1
 % Create Figure 1
 %
 % See also
@@ -94,7 +94,9 @@ for nr = 1:length(ratios)
         'xlims',[0, 6],'ylims',[0, 6], 'xtick',[0,1,2,3,4,5,6],'ytick',[0,1,2,3,4,5,6], ...
         'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
 end
-saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);
+fname = fullfile(saveTo, strcat(fnameRoot,['.' ext]));
+saveas(gcf,fname,ext);
+fprintf('\nSaved %s\n', fname)
 
 % {
 % RATIO others
@@ -155,7 +157,8 @@ for nr = 1:length(ratios)
         'newWin'    , false ,'saveTo'     ,'','saveToType','svg')
 end
 
-saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);
-
+fname = fullfile(saveTo, strcat(fnameRoot,['.' ext]));
+saveas(gcf,fname,ext);
+fprintf('\nSaved %s\n', fname)
 end
 

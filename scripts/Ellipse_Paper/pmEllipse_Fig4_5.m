@@ -1,4 +1,4 @@
-function s04_5_Ellipse_Fig4_5
+function pmEllipse_Fig4_5
 % Make Figures 4 and 5
 %
 % See also
@@ -12,6 +12,8 @@ if ~exist(saveTo,'dir'), mkdir(saveTo); end
 centerPerc = 50;  % Center percentage that we plot
 
 %% ECCENTRICITY TR=2
+fprintf('\n\nLoading ECCENTRICITY TR=2 data')
+
 sub = 'ellipse'; ses = 'eccsv2';
 p = fullfile(pmRootPath,'local',sub,'BIDS','derivatives','prfreport',['sub-' sub],['ses-' ses]);
 f = ['sub-' sub '_ses-' ses '-prf_acq-normal_run-01_bold.mat'];
@@ -26,6 +28,7 @@ p = fullfile(pmRootPath,'local',sub,'BIDS','derivatives','prfsynth',['sub-' sub]
 f = ['sub-' sub '_ses-' ses '_task-prf_acq-normal_run-01_bold.json'];
 B = struct2table(jsondecode(fileread(fullfile(p,f))));
 A2.compTable.SNR = B.SNR;
+disp ('... done with load')
 
 % SAME HRF; RATIO 1 and 2
 fnameBegin = 'Fig4-5_EccSimHRFokTR2';
@@ -53,7 +56,7 @@ for nn = 1:length(nlvls)
     fnameEnd = sprintf('TR-%i_Dur-%is_Noise-%s_C.I.-%i',...
         tr,duration,nlvl,centerPerc);
     fnameRoot = strcat(fnameBegin,'-', fnameEnd);
-    disp(fnameRoot)
+    % disp(fnameRoot)
     kk = mrvNewGraphWin(fnameRoot);
     % Fig size is relative to the screen used. This is for laptop at 1900x1200
     set(kk,'Position',[0.007 0.62  1  0.5]);
@@ -203,15 +206,20 @@ for nn = 1:length(nlvls)
             set(gca, 'FontSize', 16)
         end
     end
-    saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);
+    fname = fullfile(saveTo, strcat(fnameRoot,['.' ext]));
+    saveas(gcf,fname,ext);
+    fprintf('\nSaved %s\n', fname)
 end
 
 
 %% ECCENTRICITY TR=1
+fprintf('\n\nLoading ECCENTRICITY TR=1 data')
+
 sub = 'ellipse'; ses = 'eccsv2TR1';
 p = fullfile(pmRootPath,'local',sub,'BIDS','derivatives','prfreport',['sub-' sub],['ses-' ses]);
 f = ['sub-' sub '_ses-' ses '-prf_acq-normal_run-01_bold.mat'];
 A1 = load(fullfile(p,f));
+disp('... done with load')
 
 % SAME HRF; RATIO 1 and 2
 fnameBegin = 'Fig4-5_EccSimHRFokTR1';
@@ -221,8 +229,8 @@ nlvls      = {"mid","low"};
 eccenInGT  = true;
 checksizes = [0.5,1,2,3];
 ellipsizes = {[1,0.5],[2,1],[4,2],[6,3]};
-xlims       = [0,10];
-ylims       = [0,10];
+xlims      = [0,10];
+ylims      = [0,10];
 tools      = {'afni6'   , 'vista6'};
 useHRFs    = {'afni_spm', 'vista_twogammas'};
 duration   = 400;
@@ -234,7 +242,7 @@ for nlvl = nlvls
     fnameEnd = sprintf('TR-%i_Dur-%is_Noise-%s_C.I.-%i',...
         tr,duration,nlvl,centerPerc);
     fnameRoot = strcat(fnameBegin,'-', fnameEnd);
-    disp(fnameRoot)
+    % disp(fnameRoot)
     kk = mrvNewGraphWin(fnameRoot);
     % Fig size is relative to the screen used. This is for laptop at 1900x1200
     set(kk,'Position',[0.007 0.62  1  0.5]);
@@ -380,7 +388,9 @@ for nlvl = nlvls
             set(gca, 'FontSize', 16)
         end
     end
-    saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);
+    fname = fullfile(saveTo, strcat(fnameRoot,['.' ext]));
+    saveas(gcf,fname,ext);
+    fprintf('\nSaved %s\n', fname)
 end
 
 %% SAVE A1 and A2 for CUMSUM
@@ -404,6 +414,7 @@ save(fullfile(pmRootPath,'local','A1A2dtaspect2.mat'),'dtaspect2')
 
 
 %% SIZES TR=2
+fprintf('\n\nLoading SIZES TR=2 data')
 sub = 'ellipse'; ses = 'sizesv2';
 p = fullfile(pmRootPath,'local',sub,'BIDS','derivatives','prfreport',['sub-' sub],['ses-' ses]);
 f = ['sub-' sub '_ses-' ses '-prf_acq-normal_run-01_bold.mat'];
@@ -417,6 +428,7 @@ B = struct2table(jsondecode(fileread(fullfile(p,f))));
 compTable.SNR = B.SNR;
 B2.compTable = compTable;
 
+disp('... done with load')
 
 
 fnameBegin = 'Fig4-5_SizeSimTR2';
@@ -473,7 +485,7 @@ for nlvl = nlvls
         fnameEnd = sprintf('%s_TR-%i_Dur-%is_Noise-%s_C.I.-%i',...
             tool,tr,duration,nlvl,centerPerc);
         fnameRoot = strcat(fnameBegin,'-', fnameEnd);
-        disp(fnameRoot)
+        % disp(fnameRoot)
         kk = mrvNewGraphWin(fnameRoot);
         % Fig size is relative to the screen used. This is for laptop at 1900x1200
         set(kk,'Position',[0.007 0.62  0.4  0.4]);
@@ -531,11 +543,14 @@ for nlvl = nlvls
         ylabel('pRF aspect ratio (ground truth=1)')
         ylim([0,8]);
         set(gca, 'FontSize', 16)
-        saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);
+        fname = fullfile(saveTo, strcat(fnameRoot,['.' ext]));
+        saveas(gcf,fname,ext);
+        fprintf('\nSaved %s\n', fname)
     end
 end
 
 %% SIZES TR=1
+fprintf('\n\nLoading SIZES TR=1 data')
 
 sub = 'ellipse'; ses = 'sizesv2TR1';
 p = fullfile(pmRootPath,'local',sub,'BIDS','derivatives','prfreport',['sub-' sub],['ses-' ses]);
@@ -548,6 +563,10 @@ f = ['sub-' sub '_ses-' ses '_task-prf_acq-normal_run-01_bold.json'];
 B = struct2table(jsondecode(fileread(fullfile(p,f))));
 compTable.SNR = B.SNR;
 B1.compTable = compTable;
+
+
+disp('... done with load')
+
 
 
 fnameBegin = 'Fig4-5_SizeSimTR1';
@@ -604,7 +623,7 @@ for nlvl = nlvls
         fnameEnd = sprintf('%s_TR-%i_Dur-%is_Noise-%s_C.I.-%i',...
             tool,tr,duration,nlvl,centerPerc);
         fnameRoot = strcat(fnameBegin,'-', fnameEnd);
-        disp(fnameRoot)
+        % disp(fnameRoot)
         kk = mrvNewGraphWin(fnameRoot);
         % Fig size is relative to the screen used. This is for laptop at 1900x1200
         set(kk,'Position',[0.007 0.62  0.4  0.4]);
@@ -662,7 +681,9 @@ for nlvl = nlvls
         ylabel('pRF aspect ratio (ground truth=1)')
         ylim([0,8]);
         set(gca, 'FontSize', 16)
-        saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);
+        fname = fullfile(saveTo, strcat(fnameRoot,['.' ext]));
+        saveas(gcf,fname,ext);
+        fprintf('\nSaved %s\n', fname)    
     end
 end
 
@@ -758,7 +779,7 @@ B=prctile(vistamid.aspect,[5,95]);inR=vistamid.aspect>=B(1) & vistamid.aspect<=B
 vistamid=vistamid(inR,:);
 
 fnameRoot = sprintf('Fig4-5_Histograms_Synth_Aspect-1_TR-%i',tr);
-disp(fnameRoot)
+% disp(fnameRoot)
 % saveToType = 'svg';
 kk = mrvNewGraphWin(fnameRoot);
 % Fig size is relative to the screen used. This is for laptop at 1900x1200
@@ -805,8 +826,9 @@ xlabel('Aspect Ratio (GT Aspect = 1)')
 set(gca,'FontName', 'Arial','FontSize',16)
 
 
-saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.',ext)),ext);
-
+fname = fullfile(saveTo, strcat(fnameRoot,['.' ext]));
+saveas(gcf,fname,ext);
+fprintf('\nSaved %s\n', fname)
 
 %% Combined histograms: aspect2 (run twice, tr=1, tr=2)
 % Plot the histograms for afni and vista with low and mid
@@ -860,7 +882,7 @@ vistamid  = A1A2.vista6(A1A2.noiseLevel=="mid" & A1A2.HRFtype=="vista_twogammas"
 % vistamid=vistamid(inR,:);
 
 fnameRoot = sprintf('Fig4-5_Histograms_Synth_Aspect-2_TR-%i',tr);
-disp(fnameRoot)
+% disp(fnameRoot)
 % saveToType = 'svg';
 kk = mrvNewGraphWin(fnameRoot);
 % Fig size is relative to the screen used. This is for laptop at 1900x1200
@@ -911,7 +933,9 @@ xlim([1,5])
 set(gca,'FontName', 'Arial','FontSize',16)
 
 
-saveas(gcf,fullfile(saveTo, strcat(fnameRoot,'.',ext)),ext);
+fname = fullfile(saveTo, strcat(fnameRoot,['.' ext]));
+saveas(gcf,fname,ext);
+fprintf('\nSaved %s\n', fname)
 
 end
 

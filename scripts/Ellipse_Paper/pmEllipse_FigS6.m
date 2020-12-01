@@ -1,5 +1,14 @@
-function ss06_Ellipse_FigS6(saveTo,ext)
-if ~isfolder(saveTo); mkdir(saveTo); end
+function pmEllipse_FigS6
+% Make Figure S6
+%
+%
+% See also
+%  s00_MainFiguresScript
+
+%%
+ext  = 'png'; % Could be svg
+saveTo = fullfile(pmRootPath,'local','figures');  % Folder path
+if ~exist(saveTo,'dir'), mkdir(saveTo); end
 
 
 % NoiseCircleTest (Simulation:  Take a circle and make two noisy estimates of
@@ -80,7 +89,9 @@ xlabel('Radius')
 ylabel('Aspect Ratio')
 ylim([0,8]);
 set(gca, 'FontSize', 16)
-saveas(gcf,fullfile(saveTo, strcat(fnameRoot,['.' ext])),ext);
+fname = fullfile(saveTo, strcat(fnameRoot,['.' ext]));
+saveas(gcf,fname,ext);
+fprintf('\nSaved %s\n', fname)
 
 
 

@@ -59,36 +59,14 @@ pmCheckEnvironment(repeatCalculations)
 % Prepare data for the figures (download it or calculate it all)
 pmPrepareData(repeatCalculations, testMode)
 
-%% MAKE THE FIGURES 
-%{ 
-% Options: 
-% -----------------------
-% 1/ png files are for validations, for the paper the files are saved as svg
-%    and then edited in Affinnity Designer into the final form
-    fileType  = 'png'; % or 'svg'
-    
-% 2/ Add a local folder to write the Matlab figures
-    saveFigTo = fullfile(pmRootPath,'local','figures');  % Folder path
-    if ~exist(saveFigTo,'dir'), mkdir(saveFigTo); end
-    
-% 3/ Select a confidence interval for the plots. In the manuscript we used just
-%    50% and 90%. Select one and repeat plots. 
-    ConfInt   = 50;  % or 90
-%}
-
-% Run the figure scripts: 
-% -----------------------
-s01_Ellipse_Fig1;
-
-s02_Ellipse_Fig2;
-
-s03_Ellipse_Fig3; 
-
-s04_5_Ellipse_Fig4_5;
-
-s06_S7_S8_Ellipse_Fig6_S7_S8(saveFigTo,fileType); 
-
-% Supplementary to Figure 6
-ss06_Ellipse_FigS6(saveFigTo,fileType);
+%% RUN THE FIGURE SCRIPTS
+% There are some options that can be set inside the scripts
+% 
+pmEllipse_Fig1;
+pmEllipse_Fig2;
+pmEllipse_Fig3; 
+pmEllipse_Fig4_5;
+pmEllipse_Fig6_S7_S8; 
+pmEllipse_FigS6;
 
 %% END
