@@ -65,6 +65,7 @@ pmPrepareData(repeatCalculations, testMode)
 pmEllipse_Fig1;
 pmEllipse_Fig2;
 pmEllipse_Fig3; 
+% pmEllipse_Fig3_TestMode;  % Use it to plot the results of the testMode 
 pmEllipse_Fig4_5;
 pmEllipse_Fig6_S7_S8; 
 pmEllipse_FigS6;

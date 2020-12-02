@@ -20,12 +20,7 @@ else
     solver = varargin{4};
 end
 
-% Be sure the config file is there, otherwise download it all
-cd(fullfile(pmRootPath,'local',sub))
-if ~isfolder(fullfile(pmRootPath,'local',sub,'config_files'))
-    configszip = websave(fullfile(pmRootPath,'local','config_files.zip'),'https://osf.io/zh5cs/download');
-    unzip(configszip);
-end
+
 
 
 % Examples of actual calls in black server
@@ -33,13 +28,32 @@ end
 % ./run_prfanalyze.sh vista $WF /data/localhome/glerma/toolboxes/PRFmodel/local/WORDSFOV/prfanalyze-vista4-config_sub-003_ses-1.json
 % ./run_prfreport.sh $ELLIPSE /data/localhome/glerma/toolboxes/PRFmodel/local/ellipse/prfreport-configuration_sub-ellipse_ses-eccsv2TR1.json
 
+if strcmp(sub,'testmode')
+    teststr = 'testmode_';
+    osfLink = 'https://osf.io/ehws5/download';
+else
+    teststr = '';
+    osfLink = 'https://osf.io/zh5cs/download';
+end
+
+
+% Be sure the config file is there, otherwise download it all
+subDir = fullfile(pmRootPath,'local',sub);
+if ~isfolder(subDir); mkdir(subDir); end
+cd(subDir)
+if ~isfolder(fullfile(pmRootPath,'local',sub,[teststr 'config_files']))
+    configszip = websave(fullfile(pmRootPath,'local',[teststr 'config_files']),osfLink);
+    unzip(configszip);
+end
+
+
 
 
 basedir = fullfile(pmRootPath,'local',sub);
 switch docker
     case {'prfsynth'}
         % This is the config file
-        config_fname = fullfile(pmRootPath,'local',sub,'config_files',...
+        config_fname = fullfile(pmRootPath,'local',sub,[teststr 'config_files'],...
             [docker '-config_sub-' sub '_sess-' ses '.json']);
         % This is the command line
         cmd = [fullfile(pmRootPath,'gear',docker,['run_' docker '.sh']) ' ' basedir ' ' config_fname];
@@ -62,8 +76,13 @@ switch docker
     case {'prfanalyze'}
         d = split(docker,'-');
         % We are going to use this config file for the Docker container
-        config_fname = fullfile(pmRootPath,'local',sub,'config_files',...
+        if strcmp(ses,'tr1dur300v2')
+            config_fname = fullfile(pmRootPath,'local',sub,[teststr 'config_files'],...
+            [docker '-' solver '-config_sub-' sub '_sess-' ses '_solver-' solver '.json']);
+        else
+            config_fname = fullfile(pmRootPath,'local',sub,[teststr 'config_files'],...
             [docker '-' solver(1:end-1) '-config_sub-' sub '_sess-' ses '_solver-' solver '.json']);
+        end
         % Generate the command line to launch the docker container
         cmd = [fullfile(pmRootPath,'gear',docker,'run_prfanalyze.sh --version 2.0.0') ...
                ' ' solver(1:end-1) ' ' basedir ' ' config_fname]
@@ -87,7 +106,7 @@ switch docker
         end    
     case {'prfreport'}
         % This is the config file
-        config_fname = fullfile(pmRootPath,'local',sub,'config_files',...
+        config_fname = fullfile(pmRootPath,'local',sub,[teststr 'config_files'],...
             [docker '-configuration_sub-' sub '_sess-' ses '.json']);
         % This is the command line
         cmd = [fullfile(pmRootPath,'gear',docker,['run_' docker '.sh']) ' ' basedir ' ' config_fname];

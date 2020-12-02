@@ -265,7 +265,6 @@ disp ('... done with load')
 bylabelsums = nonfilteredbuylabelsums;
 
 doSave     = true;
-% ext        = 'svg';
 centerPerc = 90;
 eccenInGT  = true;
 xlims      = [0,10];
@@ -548,13 +547,13 @@ aspect2  = aspect2(aspect2 < 4);
 hmid = histogram(aspect2,'BinWidth',binWidth,'Normalization','probability');
 % set(hmid,'LineWidth',2,'EdgeColor',[.5 .5 .5 ],'LineStyle','-','EdgeAlpha',.5,'FaceAlpha',.5,'FaceColor',[.5 .5 .5 ]);
 set(hmid,'LineWidth',2,'EdgeColor','k','FaceAlpha',1,'FaceColor','k');hold on
-blow = plot(median(aspect2)*[1,1],[0,.1],'LineWidth',2,'Color','k','LineStyle','-'); 
+blow = plot(median(aspect2)*[1,1],[0,.1],'LineWidth',2,'Color','k','LineStyle','--'); 
 
 
 h = histogram(aspects,35,'Normalization','probability','BinWidth',binWidth);hold on
 % set(h,'LineWidth',2,'EdgeColor','k','FaceAlpha',1,'FaceColor','k');
 set(h,'LineWidth',2,'EdgeColor',[.5 .5 .5 ],'LineStyle','-','EdgeAlpha',0,'FaceAlpha',.75,'FaceColor',[.5 .5 .5 ]);
-a = plot(median(aspects)*[1,1],[0,.1],'Color',[.5 .5 .5 ]);
+a = plot(median(aspects)*[1,1],[0,.1],'Color',[.5 .5 .5 ],'LineStyle','--');
 
 tool = 'vista6';
 % Add the low noise and mid noise lines now
@@ -564,7 +563,7 @@ tool = 'vista6';
 % set(hlow,'LineWidth',2,'EdgeColor',[1 .5 .5 ],'LineStyle','-','EdgeAlpha',0,'FaceAlpha',.5,'FaceColor',[1 .5 .5 ]);
 % alow = plot(median(aspect1)*[1,1],[0,.1],'LineWidth',2,'Color',[1 .5 .5 ],'LineStyle','-'); 
 
-xlim([1,3]);
+xlim([1,5]);
 
 % legend([h;a;hlow;hmid],{'Experimental Data','Median of Exp. Data','Synth Low Noise','Synth Mid Noise'});
 

@@ -1,6 +1,8 @@
 function pmEllipse_Fig4_5
 % Make Figures 4 and 5
 %
+% TODO: separate it in sub-scripts that use the same dataset that we load here
+%
 % See also
 %  s00_MainFiguresScript
 
@@ -32,9 +34,7 @@ disp ('... done with load')
 
 % SAME HRF; RATIO 1 and 2
 fnameBegin = 'Fig4-5_EccSimHRFokTR2';
-% ext        = 'svg';
 nlvls      = {"mid","low"};
-% centerPerc = 50;
 eccenInGT  = true;
 checksizes = [0.5,1,2,3];
 ellipsizes = {[1,0.5],[2,1],[4,2],[6,3]};
@@ -793,6 +793,7 @@ medaspect = median(aspect);
 a=plot(medaspect*[1,1],[0,max(h.Values)],'r-','LineWidth',1);
 title(sprintf('Afni low noise, TR=%g',tr))
 xlabel('Aspect Ratio (GT Aspect = 1)')
+xlim([1,5])
 set(gca,'FontName', 'Arial','FontSize',16)
 
 subplot(2,2,2)
@@ -803,6 +804,7 @@ medaspect = median(aspect);
 a=plot(medaspect*[1,1],[0,max(h.Values)],'r-','LineWidth',1);
 title(sprintf('Afni mid noise, TR=%g',tr))
 xlabel('Aspect Ratio (GT Aspect = 1)')
+xlim([1,5])
 set(gca,'FontName', 'Arial','FontSize',16)
 
 subplot(2,2,3)
@@ -813,6 +815,7 @@ medaspect = median(aspect);
 a=plot(medaspect*[1,1],[0,max(h.Values)],'r-','LineWidth',1);
 title(sprintf('mrVista low noise, TR=%g',tr))
 xlabel('Aspect Ratio (GT Aspect = 1)')
+xlim([1,5])
 set(gca,'FontName', 'Arial','FontSize',16)
 
 subplot(2,2,4)
@@ -823,6 +826,7 @@ medaspect = median(aspect);
 a=plot(medaspect*[1,1],[0,max(h.Values)],'r-','LineWidth',1);
 title(sprintf('mrVista mid noise, TR=%g',tr))
 xlabel('Aspect Ratio (GT Aspect = 1)')
+xlim([1,5])
 set(gca,'FontName', 'Arial','FontSize',16)
 
 
