@@ -128,16 +128,18 @@ switch calculateThis
         % --------------
         % 1/ Download the HCP 7T data from OSF
         % --------------
-        fname   = fullfile(pmRootPath,'local','hcp7T.zip');
-        if ~isfile(fname)
-            hcp1    = websave(fullfile(pmRootPath,'local','hcp1.zip'),...
+        %{
+            fname   = fullfile(pmRootPath,'local','hcp7T.zip');
+            if ~isfile(fname)
+                hcp1    = websave(fullfile(pmRootPath,'local','hcp1.zip'),...
                                                'https://osf.io/az5y6/download');
-            hcp2    = websave(fullfile(pmRootPath,'local','hcp2.zip'),...
+                hcp2    = websave(fullfile(pmRootPath,'local','hcp2.zip'),...
                                                'https://osf.io/udzs2/download');
-            concat  = system(['cat ' hcp1 ' ' hcp2 ' > ' fname]);
-        end
-        unzip(fname);
-
+                concat  = system(['cat ' hcp1 ' ' hcp2 ' > ' fname]);
+                unzip(fname);
+            end
+            
+        %}    
 
         % NOTE: same with experimental data. We downloaded the results that we use for
         %       analyses purposes. The data was originally downloaded  from the HCP 7T
