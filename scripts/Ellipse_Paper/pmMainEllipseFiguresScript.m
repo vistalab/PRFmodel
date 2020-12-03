@@ -40,7 +40,7 @@ repeatCalculations = false; % It will download calculated data (2.4Gb) from OSF
 % 
 %                              We recommend to use a server for this option. 
 % 
-testMode = true;  % Set to true if you want to test your environment with a small 
+testMode = false;  % Set to true if you want to test your environment with a small 
                   % dataset before running the long calculations
 
 %% CHECK ENVIRONMENT AND PREPARE DATA

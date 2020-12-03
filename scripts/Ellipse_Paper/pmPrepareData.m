@@ -50,28 +50,25 @@ switch calculateThis
         disp('Data has been downloaded and it is ready to create figures.')
     case {'testData'}
         % --------------
-        % 1/ Synthesize
+        % 1/   Synthesize
         % --------------
         pmLaunchDockerCommand('prfsynth','testmode','testv1')
-        
         % --------------
         % 2.1/ Analyze-afni
         % --------------
         pmLaunchDockerCommand('prfanalyze','testmode','testv1','afni6')
-        
         % --------------
         % 2.2/ Analyze-vista
         % --------------
         pmLaunchDockerCommand('prfanalyze','testmode','testv1','vista6')
-        
         % --------------
-        % 3/ Report
+        % 3/   Report
         % --------------
         pmLaunchDockerCommand('prfreport','testmode','testv1')
         
     case {'allData'}
         %% SYNTHETIC DATA
-        %{
+        % {
             % --------------
             % 1/ Synthesize
             % --------------
@@ -82,14 +79,6 @@ switch calculateThis
             pmLaunchDockerCommand('prfsynth','ellipse','tr1dur300v2')
             pmLaunchDockerCommand('prfsynth','ellipse','thetasv2')
 
-            % SNR calculations done separately in older versions, if rerun not
-            % required again but for the sake of reproducibility maintained
-            % If rerun, remove the SNR part because it already exists. 
-            % Explain this better.
-            pmLaunchDockerCommand('prfsynth','ellipse','sizesv2SNR')
-            pmLaunchDockerCommand('prfsynth','ellipse','eccsv2SNR')
-            pmLaunchDockerCommand('prfsynth','ellipse','thetasv2SNR')
-
             % --------------
             % 2.1/ Analyze-afni
             % --------------
@@ -98,7 +87,7 @@ switch calculateThis
             pmLaunchDockerCommand('prfanalyze','ellipse','sizesv2','afni6')
             pmLaunchDockerCommand('prfanalyze','ellipse','sizesv2TR1','afni6')
             pmLaunchDockerCommand('prfanalyze','ellipse','thetasv2','afni6')
-
+            
             % --------------
             % 2.2/ Analyze-vista
             % --------------
@@ -108,9 +97,7 @@ switch calculateThis
             pmLaunchDockerCommand('prfanalyze','ellipse','sizesv2TR1','vista6')
             pmLaunchDockerCommand('prfanalyze','ellipse','thetasv2','vista6')
             pmLaunchDockerCommand('prfanalyze','ellipse','tr1dur300v2','vista6')
-
-            % Calculate it with vista4 as well to compare R2
-            % pmLaunchDockerCommand('prfanalyze','ellipse','tr1dur300v2','vista4')
+            pmLaunchDockerCommand('prfanalyze','ellipse','tr1dur300v2','vista4')
 
             % --------------
             % 3/ Report
@@ -128,7 +115,7 @@ switch calculateThis
         % --------------
         % 1/ Download the HCP 7T data from OSF
         % --------------
-        %{
+        % {
             fname   = fullfile(pmRootPath,'local','hcp7T.zip');
             if ~isfile(fname)
                 hcp1    = websave(fullfile(pmRootPath,'local','hcp1.zip'),...
@@ -154,9 +141,7 @@ switch calculateThis
         % --------------
         % 2.2/ Analyze-vista
         % --------------
-        % launchDockerCommand('garikoitz/prfanalyze-vista:2.0.0','eccv2')
-        % launchDockerCommand('garikoitz/prfanalyze-vista:2.0.0','eccv2')
-        % launchDockerCommand('garikoitz/prfanalyze-vista:2.0.0','eccv2')
+        pmLaunchDockerCommand('prfanalyze','realdata','tr1dur300v3','vista6')            
 
 
         % --------------

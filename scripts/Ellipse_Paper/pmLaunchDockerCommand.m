@@ -54,7 +54,7 @@ switch docker
     case {'prfsynth'}
         % This is the config file
         config_fname = fullfile(pmRootPath,'local',sub,[teststr 'config_files'],...
-            [docker '-config_sub-' sub '_sess-' ses '.json']);
+            [docker '-config_sub-' sub '_ses-' ses '.json']);
         % This is the command line
         cmd = [fullfile(pmRootPath,'gear',docker,['run_' docker '.sh']) ' ' basedir ' ' config_fname];
         resultFile = fullfile(pmRootPath,'local',sub,'BIDS','derivatives',docker,...
@@ -76,13 +76,10 @@ switch docker
     case {'prfanalyze'}
         d = split(docker,'-');
         % We are going to use this config file for the Docker container
-        if strcmp(ses,'tr1dur300v2')
-            config_fname = fullfile(pmRootPath,'local',sub,[teststr 'config_files'],...
-            [docker '-' solver '-config_sub-' sub '_sess-' ses '_solver-' solver '.json']);
-        else
-            config_fname = fullfile(pmRootPath,'local',sub,[teststr 'config_files'],...
-            [docker '-' solver(1:end-1) '-config_sub-' sub '_sess-' ses '_solver-' solver '.json']);
-        end
+       
+        config_fname = fullfile(pmRootPath,'local',sub,[teststr 'config_files'],...
+            [docker '-' solver(1:end-1) '-config_sub-' sub '_ses-' ses '_solver-' solver '.json']);
+       
         % Generate the command line to launch the docker container
         cmd = [fullfile(pmRootPath,'gear',docker,'run_prfanalyze.sh --version 2.0.0') ...
                ' ' solver(1:end-1) ' ' basedir ' ' config_fname]
@@ -107,7 +104,7 @@ switch docker
     case {'prfreport'}
         % This is the config file
         config_fname = fullfile(pmRootPath,'local',sub,[teststr 'config_files'],...
-            [docker '-configuration_sub-' sub '_sess-' ses '.json']);
+            [docker '-config_sub-' sub '_ses-' ses '.json']);
         % This is the command line
         cmd = [fullfile(pmRootPath,'gear',docker,['run_' docker '.sh']) ' ' basedir ' ' config_fname];
         resultFile = fullfile(pmRootPath,'local',sub,'BIDS','derivatives',docker,...
@@ -128,7 +125,7 @@ switch docker
         end        
 
     otherwise
-        error('%s not recognized, valid options are prfsynth,prfreport,prfanalyze-vista,prfanalyze-afni');
+        error('%s not recognized, valid options are prfsynth, prfreport, prfanalyze-vista, prfanalyze-afni');
 end
 
 
