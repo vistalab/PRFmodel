@@ -707,7 +707,241 @@ save(fullfile(pmRootPath,'local','B1B2dt.mat'),'dt')
 
 
 
-%% Combined histograms: aspect1 (run twice, tr=1, tr=2)
+%% Combined histograms: aspect1 (tr=2)
+
+% Plot the histograms for afni and vista with low and mid
+% Read the synthetic data
+
+A1A2 = load(fullfile(pmRootPath,'local','A1A2dt.mat'));
+A1A2 = A1A2.dt;
+% Apply the same restrictions as above, to the synth table
+%{
+A1A2 = A1A2(A1A2.synth.sMaj > sMajMIN & ...
+            A1A2.synth.sMin > sMinMIN & ...
+            A1A2.synth.sMaj < sMajMAX & ...
+            A1A2.synth.eccen > eccenMIN & ...
+            A1A2.synth.eccen < eccenMAX,:);
+%}
+B1B2 = load(fullfile(pmRootPath,'local','B1B2dt.mat'));
+B1B2 = B1B2.dt;
+% Apply the same restrictions as above, to the synth table
+%{
+B1B2 = B1B2(B1B2.synth.sMaj > sMajMIN & ...
+            B1B2.synth.sMin > sMinMIN & ...
+            B1B2.synth.sMaj < sMajMAX & ...
+            B1B2.synth.eccen > eccenMIN & ...
+            B1B2.synth.eccen < eccenMAX,:);
+%}
+
+A1A2 = [A1A2;B1B2];  % synth.aspect is already = 1
+A1A2.afni6.TR  = A1A2.TR;
+A1A2.vista6.TR = A1A2.TR;
+sMajMIN     = 1;
+sMinMIN     = 1;
+sMajMAX     = 4;
+eccenMIN    = 2;
+eccenMAX    = 6;
+tr          = 2;
+
+histbins    = 100;
+
+afnilow   = A1A2.afni6(A1A2.noiseLevel=="low" & A1A2.HRFtype=="afni_spm" & ...
+    A1A2.synth.sMaj > sMajMIN & ...
+    A1A2.synth.sMin > sMinMIN & ...
+    A1A2.synth.sMaj < sMajMAX & ...
+    A1A2.synth.eccen > eccenMIN & ...
+    A1A2.synth.eccen < eccenMAX,:);
+B=prctile(afnilow.aspect,[5,95]);inR=afnilow.aspect>=B(1) & afnilow.aspect<=B(2);
+afnilow=afnilow(inR,:);
+afnimid   = A1A2.afni6(A1A2.noiseLevel=="mid" & A1A2.HRFtype=="afni_spm" & ...
+    A1A2.synth.sMaj > sMajMIN & ...
+    A1A2.synth.sMin > sMinMIN & ...
+    A1A2.synth.sMaj < sMajMAX & ...
+    A1A2.synth.eccen > eccenMIN & ...
+    A1A2.synth.eccen < eccenMAX,:);
+B=prctile(afnimid.aspect,[5,95]);inR=afnimid.aspect>=B(1) & afnimid.aspect<=B(2);
+afnimid=afnimid(inR,:);
+vistalow  = A1A2.vista6(A1A2.noiseLevel=="low" & A1A2.HRFtype=="vista_twogammas" & ...
+    A1A2.synth.sMaj > sMajMIN & ...
+    A1A2.synth.sMin > sMinMIN & ...
+    A1A2.synth.sMaj < sMajMAX & ...
+    A1A2.synth.eccen > eccenMIN & ...
+    A1A2.synth.eccen < eccenMAX,:);
+B=prctile(vistalow.aspect,[5,95]);inR=vistalow.aspect>=B(1) & vistalow.aspect<=B(2);
+vistalow=vistalow(inR,:);
+vistamid  = A1A2.vista6(A1A2.noiseLevel=="mid" & A1A2.HRFtype=="vista_twogammas" & ...
+    A1A2.synth.sMaj > sMajMIN & ...
+    A1A2.synth.sMin > sMinMIN & ...
+    A1A2.synth.sMaj < sMajMAX & ...
+    A1A2.synth.eccen > eccenMIN & ...
+    A1A2.synth.eccen < eccenMAX,:);
+B=prctile(vistamid.aspect,[5,95]);inR=vistamid.aspect>=B(1) & vistamid.aspect<=B(2);
+vistamid=vistamid(inR,:);
+
+fnameRoot = sprintf('Fig4-5_Histograms_Synth_Aspect-1_TR-%i',tr);
+% disp(fnameRoot)
+% saveToType = 'svg';
+kk = mrvNewGraphWin(fnameRoot);
+% Fig size is relative to the screen used. This is for laptop at 1900x1200
+set(kk,'Position',[0.007 0.62  1  1]);
+
+subplot(2,2,1)
+aspect = afnilow.aspect(afnilow.TR==tr);
+h = histogram(aspect, histbins,'Normalization','probability'); hold on
+set(h,'LineWidth',2,'EdgeColor','k','FaceAlpha',1,'FaceColor','k');hold on
+medaspect = median(aspect);
+a=plot(medaspect*[1,1],[0,max(h.Values)],'r-','LineWidth',1);
+title(sprintf('Afni low noise, TR=%g',tr))
+xlabel('Aspect Ratio (GT Aspect = 1)')
+xlim([1,5])
+set(gca,'FontName', 'Arial','FontSize',16)
+
+subplot(2,2,2)
+aspect = afnimid.aspect(afnimid.TR==tr);
+h = histogram(aspect,histbins,'Normalization','probability'); hold on
+set(h,'LineWidth',2,'EdgeColor','k','FaceAlpha',1,'FaceColor','k');hold on
+medaspect = median(aspect);
+a=plot(medaspect*[1,1],[0,max(h.Values)],'r-','LineWidth',1);
+title(sprintf('Afni mid noise, TR=%g',tr))
+xlabel('Aspect Ratio (GT Aspect = 1)')
+xlim([1,5])
+set(gca,'FontName', 'Arial','FontSize',16)
+
+subplot(2,2,3)
+aspect = vistalow.aspect(vistalow.TR==tr);
+h = histogram(aspect,histbins,'Normalization','probability'); hold on
+set(h,'LineWidth',2,'EdgeColor','k','FaceAlpha',1,'FaceColor','k');hold on
+medaspect = median(aspect);
+a=plot(medaspect*[1,1],[0,max(h.Values)],'r-','LineWidth',1);
+title(sprintf('mrVista low noise, TR=%g',tr))
+xlabel('Aspect Ratio (GT Aspect = 1)')
+xlim([1,5])
+set(gca,'FontName', 'Arial','FontSize',16)
+
+subplot(2,2,4)
+aspect = vistamid.aspect(vistamid.TR==tr);
+h = histogram(aspect,histbins,'Normalization','probability'); hold on
+set(h,'LineWidth',2,'EdgeColor','k','FaceAlpha',1,'FaceColor','k');hold on
+medaspect = median(aspect);
+a=plot(medaspect*[1,1],[0,max(h.Values)],'r-','LineWidth',1);
+title(sprintf('mrVista mid noise, TR=%g',tr))
+xlabel('Aspect Ratio (GT Aspect = 1)')
+xlim([1,5])
+set(gca,'FontName', 'Arial','FontSize',16)
+
+
+fname = fullfile(saveTo, strcat(fnameRoot,['.' ext]));
+saveas(gcf,fname,ext);
+fprintf('\nSaved %s\n', fname)
+
+%% Combined histograms: aspect2 (tr=2)
+% Plot the histograms for afni and vista with low and mid
+% Read the synthetic data
+
+A1A2 = load(fullfile(pmRootPath,'local','A1A2dtaspect2.mat'));
+A1A2 = A1A2.dtaspect2;
+
+A1A2.afni6.TR  = A1A2.TR;
+A1A2.vista6.TR = A1A2.TR;
+sMajMIN     = 1;
+sMajMAX     = 4;
+eccenMIN    = 2;
+eccenMAX    = 6;
+aspectMAX   = 5;
+tr          = 2;
+
+histbins    = 50;
+
+afnilow   = A1A2.afni6(A1A2.noiseLevel=="low" & A1A2.HRFtype=="afni_spm" & ...
+    A1A2.synth.sMaj > sMajMIN & ...
+    A1A2.synth.sMaj < sMajMAX & ...
+    A1A2.afni6.aspect < aspectMAX & ...
+    A1A2.synth.eccen  > eccenMIN & ...
+    A1A2.synth.eccen  < eccenMAX,:);
+% B=prctile(afnilow.aspect,[5,95]);inR=afnilow.aspect>=B(1) & afnilow.aspect<=B(2);
+% afnilow=afnilow(inR,:);
+afnimid   = A1A2.afni6(A1A2.noiseLevel=="mid" & A1A2.HRFtype=="afni_spm" & ...
+    A1A2.synth.sMaj > sMajMIN & ...
+    A1A2.synth.sMaj < sMajMAX & ...
+    A1A2.afni6.aspect < aspectMAX & ...
+    A1A2.synth.eccen > eccenMIN & ...
+    A1A2.synth.eccen < eccenMAX,:);
+% B=prctile(afnimid.aspect,[5,95]);inR=afnimid.aspect>=B(1) & afnimid.aspect<=B(2);
+% afnimid=afnimid(inR,:);
+vistalow  = A1A2.vista6(A1A2.noiseLevel=="low" & A1A2.HRFtype=="vista_twogammas" & ...
+    A1A2.synth.sMaj > sMajMIN & ...
+    A1A2.synth.sMaj < sMajMAX & ...
+    A1A2.vista6.aspect < aspectMAX & ...
+    A1A2.synth.eccen > eccenMIN & ...
+    A1A2.synth.eccen < eccenMAX,:);
+% B=prctile(vistalow.aspect,[5,95]);inR=vistalow.aspect>=B(1) & vistalow.aspect<=B(2);
+% vistalow=vistalow(inR,:);
+vistamid  = A1A2.vista6(A1A2.noiseLevel=="mid" & A1A2.HRFtype=="vista_twogammas" & ...
+    A1A2.synth.sMaj > sMajMIN & ...
+    A1A2.synth.sMaj < sMajMAX & ...
+    A1A2.vista6.aspect < aspectMAX & ...
+    A1A2.synth.eccen > eccenMIN & ...
+    A1A2.synth.eccen < eccenMAX,:);
+% B=prctile(vistamid.aspect,[5,95]);inR=vistamid.aspect>=B(1) & vistamid.aspect<=B(2);
+% vistamid=vistamid(inR,:);
+
+fnameRoot = sprintf('Fig4-5_Histograms_Synth_Aspect-2_TR-%i',tr);
+% disp(fnameRoot)
+% saveToType = 'svg';
+kk = mrvNewGraphWin(fnameRoot);
+% Fig size is relative to the screen used. This is for laptop at 1900x1200
+set(kk,'Position',[0.007 0.62  1  1]);
+
+subplot(2,2,1)
+aspect = afnilow.aspect(afnilow.TR==tr);
+h = histogram(aspect, histbins,'Normalization','probability'); hold on
+set(h,'LineWidth',2,'EdgeColor','k','FaceAlpha',1,'FaceColor','k');hold on
+medaspect = median(aspect);
+a=plot(medaspect*[1,1],[0,max(h.Values)],'r-','LineWidth',1);
+title(sprintf('Afni low noise, TR=%g',tr))
+xlabel('Aspect Ratio (GT Aspect = 2)')
+xlim([1,5])
+set(gca,'FontName', 'Arial','FontSize',16)
+
+subplot(2,2,2)
+aspect = afnimid.aspect(afnimid.TR==tr);
+h = histogram(aspect,histbins,'Normalization','probability'); hold on
+set(h,'LineWidth',2,'EdgeColor','k','FaceAlpha',1,'FaceColor','k');hold on
+medaspect = median(aspect);
+a=plot(medaspect*[1,1],[0,max(h.Values)],'r-','LineWidth',1);
+title(sprintf('Afni mid noise, TR=%g',tr))
+xlabel('Aspect Ratio (GT Aspect = 2)')
+xlim([1,5])
+set(gca,'FontName', 'Arial','FontSize',16)
+
+subplot(2,2,3)
+aspect = vistalow.aspect(vistalow.TR==tr);
+h = histogram(aspect,histbins,'Normalization','probability'); hold on
+set(h,'LineWidth',2,'EdgeColor','k','FaceAlpha',1,'FaceColor','k');hold on
+medaspect = median(aspect);
+a=plot(medaspect*[1,1],[0,max(h.Values)],'r-','LineWidth',1);
+title(sprintf('mrVista low noise, TR=%g',tr))
+xlabel('Aspect Ratio (GT Aspect = 2)')
+xlim([1,5])
+set(gca,'FontName', 'Arial','FontSize',16)
+
+subplot(2,2,4)
+aspect = vistamid.aspect(vistamid.TR==tr);
+h = histogram(aspect,histbins,'Normalization','probability'); hold on
+set(h,'LineWidth',2,'EdgeColor','k','FaceAlpha',1,'FaceColor','k');hold on
+medaspect = median(aspect);
+a=plot(medaspect*[1,1],[0,max(h.Values)],'r-','LineWidth',1);
+title(sprintf('mrVista mid noise, TR=%g',tr))
+xlabel('Aspect Ratio (GT Aspect = 2)')
+xlim([1,5])
+set(gca,'FontName', 'Arial','FontSize',16)
+
+
+fname = fullfile(saveTo, strcat(fnameRoot,['.' ext]));
+saveas(gcf,fname,ext);
+fprintf('\nSaved %s\n', fname)
+
+%% Combined histograms: aspect1 (tr=1)
 
 % Plot the histograms for afni and vista with low and mid
 % Read the synthetic data
@@ -834,7 +1068,7 @@ fname = fullfile(saveTo, strcat(fnameRoot,['.' ext]));
 saveas(gcf,fname,ext);
 fprintf('\nSaved %s\n', fname)
 
-%% Combined histograms: aspect2 (run twice, tr=1, tr=2)
+%% Combined histograms: aspect2 (tr=1)
 % Plot the histograms for afni and vista with low and mid
 % Read the synthetic data
 
@@ -940,6 +1174,7 @@ set(gca,'FontName', 'Arial','FontSize',16)
 fname = fullfile(saveTo, strcat(fnameRoot,['.' ext]));
 saveas(gcf,fname,ext);
 fprintf('\nSaved %s\n', fname)
+
 
 end
 

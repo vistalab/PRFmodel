@@ -1,4 +1,4 @@
-% SCRIPT s00_MainFiguresScript.m
+% SCRIPT pmMainEllipseFiguresScript.m
 %
 % This script sets up your Matlab environment and downloads data needed to
 % reproduce the calculations in
