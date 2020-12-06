@@ -41,15 +41,25 @@ subs   = {'115017','164131','536647'};
 ses    = '01';
 run    = '01';
 % Read labels from FS (it will read them from fsaverage)
-setenv('SUBJECTS_DIR','/Applications/freesurfer/subjects')
+% setenv('SUBJECTS_DIR','/Applications/freesurfer/subjects')
+% subjectsDir = fullfile(pmRootPath,'local','realdata','BIDS','derivatives','freesurfer');
+% fsavgDir    = fullfile(subjectsDir,'fsaverage');
+% if isfolder(fsavgDir)
+%     setenv('SUBJECTS_DIR', subjectsDir)
+% else
+%     error('fsaverage missing in SUBJECTS_DIR: %s', subjectsDir)
+% end
+
 hemis  = {'lh','rh'};
 % The mask labels where copied to the fsaverage folder, but they are in
 % prfmodel/scripts/realDataAnalysis/
 labels = {'V1_exvivo','V2_exvivo', ...
           'V1_exvivo.thresh','V2_exvivo.thresh', 'dorsalV1V2V3Mask'};
 kklab = struct();
+path2label = fullfile(pmRootPath,'scripts','readDataAnalysis','fsaverageLabels');
 for nh=[1,2]; for nl=1:length(labels)
-    tmp = read_label('fsaverage',[hemis{nh} '.' labels{nl}]);
+    labelNameWithPath = fullfile(path2label,[hemis{nh} '.' labels{nl} '.label']);
+    tmp = pmFSread_label('fsaverage',labelNameWithPath,true);
     kklab.(hemis{nh}).(strrep(labels{nl},'.','_')) = tmp(:,1) + 1;  % fs is a zero based index
     
 end;end
@@ -612,9 +622,7 @@ fprintf('\nSaved %s\n', fname)
 
 
 %% PLOT 6C: Compare r2 values vista4/vista6
-useLabels = {'V1','V2','V3'};
-% saveTo    = '~/gDrive/STANFORD/PROJECTS/2019_PRF_Validation_methods_(Gari)/__PUBLISH__/ELLIPTICAL/Figures/RAW';
-% ext       = 'svg';   
+useLabels = {'V1','V2','V3'};   
 fnameRoot = 'Fig6-C_RealData_R2diff_histogram_filteredAsTheRest';
 
 % Create intermediate variables

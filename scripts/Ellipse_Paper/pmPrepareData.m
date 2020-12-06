@@ -86,7 +86,6 @@ switch calculateThis
             pmLaunchDockerCommand('prfanalyze','ellipse','eccsv2TR1','afni6')
             pmLaunchDockerCommand('prfanalyze','ellipse','sizesv2','afni6')
             pmLaunchDockerCommand('prfanalyze','ellipse','sizesv2TR1','afni6')
-            pmLaunchDockerCommand('prfanalyze','ellipse','thetasv2','afni6')
             
             % --------------
             % 2.2/ Analyze-vista
@@ -115,41 +114,27 @@ switch calculateThis
         % --------------
         % 1/ Download the HCP 7T data from OSF
         % --------------
-        % {
-            fname   = fullfile(pmRootPath,'local','hcp7T.zip');
-            if ~isfile(fname)
-                hcp1    = websave(fullfile(pmRootPath,'local','hcp1.zip'),...
-                                               'https://osf.io/az5y6/download');
-                hcp2    = websave(fullfile(pmRootPath,'local','hcp2.zip'),...
-                                               'https://osf.io/udzs2/download');
-                concat  = system(['cat ' hcp1 ' ' hcp2 ' > ' fname]);
-                unzip(fname);
-            end
-            
-        %}    
-
-        % NOTE: same with experimental data. We downloaded the results that we use for
-        %       analyses purposes. The data was originally downloaded  from the HCP 7T
-        %       repository, modified, and then analyzed with the docker containers. 
-        %       We provide the raw, intermediate and processed files in this link:
-        %           hcp_7T_data_and_analysisWithConfig_00 (5Gb) https://osf.io/az5y6/download
-        %           hcp_7T_data_and_analysisWithConfig_01 (4Gb) https://osf.io/udzs2/download
-        %           To link them back together: 
-        %              cat hcp_7T_data_and_analysisWithConfig_00 hcp_7T_data_and_analysisWithConfig_01 > hcp7T.zip
-
+        fname   = fullfile(pmRootPath,'local','hcp7T.zip');
+        if ~isfile(fname)
+            hcp1    = websave(fullfile(pmRootPath,'local','hcp1.zip'),...
+                                           'https://osf.io/az5y6/download');
+            hcp2    = websave(fullfile(pmRootPath,'local','hcp2.zip'),...
+                                           'https://osf.io/udzs2/download');
+            concat  = system(['cat ' hcp1 ' ' hcp2 ' > ' fname]);
+            unzip(fname);
+        end
 
         % --------------
         % 2.2/ Analyze-vista
         % --------------
-        pmLaunchDockerCommand('prfanalyze','realdata','tr1dur300v3','vista6')            
-
-
-        % --------------
-        % 3/ Report
-        % --------------
-        % launchDockerCommand('garikoitz/prfreport:2.0.0','eccv2')
-        % launchDockerCommand('garikoitz/prfreport:2.0.0','eccv2')
-        % launchDockerCommand('garikoitz/prfreport:2.0.0','eccv2')
+        pmLaunchDockerCommand('prfanalyze','115017','01','vista6')
+        pmLaunchDockerCommand('prfanalyze','164131','01','vista6')
+        pmLaunchDockerCommand('prfanalyze','536647','01','vista6')
+        
+        pmLaunchDockerCommand('prfanalyze','115017','01','vista4')
+        pmLaunchDockerCommand('prfanalyze','164131','01','vista4')
+        pmLaunchDockerCommand('prfanalyze','536647','01','vista4')
+        
 end  % END switch calculateThis
 end  % END function
     

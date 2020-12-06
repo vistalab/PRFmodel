@@ -38,26 +38,39 @@ end
 
 
 % Be sure the config file is there, otherwise download it all
-subDir = fullfile(pmRootPath,'local',sub);
-if ~isfolder(subDir); mkdir(subDir); end
-cd(subDir)
-if ~isfolder(fullfile(pmRootPath,'local',sub,[teststr 'config_files']))
-    configszip = websave(fullfile(pmRootPath,'local',[teststr 'config_files']),osfLink);
-    unzip(configszip);
+switch sub
+    case {'ellipse','testmode'}
+        basedir = fullfile(pmRootPath,'local',sub); 
+        if ~isfolder(basedir); mkdir(basedir); end
+        cd(basedir)
+        if ~isfolder(fullfile(pmRootPath,'local',sub,[teststr 'config_files']))
+            configszip = websave(fullfile(pmRootPath,'local',[teststr 'config_files']),osfLink);
+            unzip(configszip);
+        end
+    otherwise
+        basedir = fullfile(pmRootPath,'local','realdata');
+        if ~isfolder(basedir); mkdir(basedir); end
+        cd(basedir)
+        if ~isfolder(fullfile(pmRootPath,'local','realdata',[teststr 'config_files']))
+            configszip = websave(fullfile(pmRootPath,'local',[teststr 'config_files']),osfLink);
+            unzip(configszip);
+        end
 end
 
 
 
 
-basedir = fullfile(pmRootPath,'local',sub);
+
+ %basedir = fullfile(pmRootPath,'local',sub);
 switch docker
     case {'prfsynth'}
         % This is the config file
-        config_fname = fullfile(pmRootPath,'local',sub,[teststr 'config_files'],...
-            [docker '-config_sub-' sub '_ses-' ses '.json']);
+        config_fname = fullfile(basedir,[teststr 'config_files'],...
+                            [docker '-config_sub-' sub '_ses-' ses '.json']);
         % This is the command line
-        cmd = [fullfile(pmRootPath,'gear',docker,['run_' docker '.sh']) ' ' basedir ' ' config_fname];
-        resultFile = fullfile(pmRootPath,'local',sub,'BIDS','derivatives',docker,...
+        cmd = [fullfile(pmRootPath,'gear',docker,['run_' docker '.sh']) ' ' ...
+                                                     basedir ' ' config_fname];
+        resultFile = fullfile(basedir,'BIDS','derivatives',docker,...
                       ['sub-' sub],['ses-' ses],...
                       ['sub-' sub '_ses-' ses '_task-prf_acq-normal_run-01_bold.json']);
         if isfile(resultFile)
@@ -77,16 +90,18 @@ switch docker
         d = split(docker,'-');
         % We are going to use this config file for the Docker container
        
-        config_fname = fullfile(pmRootPath,'local',sub,[teststr 'config_files'],...
-            [docker '-' solver(1:end-1) '-config_sub-' sub '_ses-' ses '_solver-' solver '.json']);
+        config_fname = fullfile(basedir,[teststr 'config_files'],...
+            [docker '-' solver(1:end-1) '-config_sub-' sub '_ses-' ses ...
+                                                    '_solver-' solver '.json']);
        
         % Generate the command line to launch the docker container
         cmd = [fullfile(pmRootPath,'gear',docker,'run_prfanalyze.sh --version 2.0.0') ...
                ' ' solver(1:end-1) ' ' basedir ' ' config_fname]
         % This is one example file in the output, to check if it has already
         % been run
-        resultFile = fullfile(pmRootPath,'local',sub,'BIDS','derivatives',docker,...
-                      ['sub-' sub],['ses-' ses],['sub-' sub '_ses-' ses '_task-prf_acq-normal_run-01_bold.json']);
+        resultFile = fullfile(basedir,'BIDS','derivatives',docker,...
+                      ['sub-' sub],['ses-' ses],...
+                      ['sub-' sub '_ses-' ses '_task-prf_acq-normal_run-01_bold.json']);
         % If we run it already, skip it, otherwise run
         if isfile(resultFile)
             fprintf('\n\nResult file already exists, skipping. \n')
@@ -103,11 +118,11 @@ switch docker
         end    
     case {'prfreport'}
         % This is the config file
-        config_fname = fullfile(pmRootPath,'local',sub,[teststr 'config_files'],...
+        config_fname = fullfile(basedir,[teststr 'config_files'],...
             [docker '-config_sub-' sub '_ses-' ses '.json']);
         % This is the command line
         cmd = [fullfile(pmRootPath,'gear',docker,['run_' docker '.sh']) ' ' basedir ' ' config_fname];
-        resultFile = fullfile(pmRootPath,'local',sub,'BIDS','derivatives',docker,...
+        resultFile = fullfile(basedir,'BIDS','derivatives',docker,...
                       ['sub-' sub],['ses-' ses],...
                       ['sub-' sub '_ses-' ses '_task-prf_acq-normal_run-01_bold.json']);
         if isfile(resultFile)
