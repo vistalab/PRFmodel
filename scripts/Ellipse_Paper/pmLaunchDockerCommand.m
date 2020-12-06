@@ -28,12 +28,13 @@ end
 % ./run_prfanalyze.sh vista $WF /data/localhome/glerma/toolboxes/PRFmodel/local/WORDSFOV/prfanalyze-vista4-config_sub-003_ses-1.json
 % ./run_prfreport.sh $ELLIPSE /data/localhome/glerma/toolboxes/PRFmodel/local/ellipse/prfreport-configuration_sub-ellipse_ses-eccsv2TR1.json
 
+% What is the osf link for the config files?
 if strcmp(sub,'testmode')
     teststr = 'testmode_';
     osfLink = 'https://osf.io/ehws5/download';
 else
     teststr = '';
-    osfLink = 'https://osf.io/zh5cs/download';
+    osfLink = 'https://osf.io/2q9uw/download';
 end
 
 

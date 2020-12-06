@@ -21,17 +21,17 @@ function pmPrepareData(repeatCalculations, testMode)
 
 if ~repeatCalculations
     cd(fullfile(pmRootPath,'local'));
-    % Download calculated data from synthetic data (30Mb)
+    % Download calculated data from synthetic data
     fname = fullfile(pmRootPath,'local','ellipse.zip');
     if ~isfile(fname)
         ellipsezip = websave(fname,'https://osf.io/27axp/download');
         unzip(ellipsezip);
     end
 
-    % Download calculated data from experimental data (2.3Gb)
+    % Download calculated data from experimental data
     fname = fullfile(pmRootPath,'local','realdata.zip');
     if ~isfile(fname)
-        realdatazip = websave(fname,'https://osf.io/s9fd5/download');
+        realdatazip = websave(fname,'https://osf.io/vxcrw/download');
         unzip(realdatazip);
     end
     calculateThis = 'downloadData';
@@ -68,69 +68,63 @@ switch calculateThis
         
     case {'allData'}
         %% SYNTHETIC DATA
-        % {
-            % --------------
-            % 1/ Synthesize
-            % --------------
-            pmLaunchDockerCommand('prfsynth','ellipse','eccsv2')
-            pmLaunchDockerCommand('prfsynth','ellipse','eccsv2TR1')
-            pmLaunchDockerCommand('prfsynth','ellipse','sizesv2')
-            pmLaunchDockerCommand('prfsynth','ellipse','sizesv2TR1')
-            pmLaunchDockerCommand('prfsynth','ellipse','tr1dur300v2')
-            pmLaunchDockerCommand('prfsynth','ellipse','thetasv2')
+        % --------------
+        % 1/ Synthesize
+        % --------------
+        pmLaunchDockerCommand('prfsynth','ellipse','eccsv2')
+        pmLaunchDockerCommand('prfsynth','ellipse','eccsv2TR1')
+        pmLaunchDockerCommand('prfsynth','ellipse','sizesv2')
+        pmLaunchDockerCommand('prfsynth','ellipse','sizesv2TR1')
+        pmLaunchDockerCommand('prfsynth','ellipse','tr1dur300v2')
+        pmLaunchDockerCommand('prfsynth','ellipse','thetasv2')
 
-            % --------------
-            % 2.1/ Analyze-afni
-            % --------------
-            pmLaunchDockerCommand('prfanalyze','ellipse','eccsv2','afni6')
-            pmLaunchDockerCommand('prfanalyze','ellipse','eccsv2TR1','afni6')
-            pmLaunchDockerCommand('prfanalyze','ellipse','sizesv2','afni6')
-            pmLaunchDockerCommand('prfanalyze','ellipse','sizesv2TR1','afni6')
-            
-            % --------------
-            % 2.2/ Analyze-vista
-            % --------------
-            pmLaunchDockerCommand('prfanalyze','ellipse','eccsv2','vista6')
-            pmLaunchDockerCommand('prfanalyze','ellipse','eccsv2TR1','vista6')
-            pmLaunchDockerCommand('prfanalyze','ellipse','sizesv2','vista6')
-            pmLaunchDockerCommand('prfanalyze','ellipse','sizesv2TR1','vista6')
-            pmLaunchDockerCommand('prfanalyze','ellipse','thetasv2','vista6')
-            pmLaunchDockerCommand('prfanalyze','ellipse','tr1dur300v2','vista6')
-            pmLaunchDockerCommand('prfanalyze','ellipse','tr1dur300v2','vista4')
+        % --------------
+        % 2.1/ Analyze-afni
+        % --------------
+        pmLaunchDockerCommand('prfanalyze','ellipse','eccsv2','afni6')
+        pmLaunchDockerCommand('prfanalyze','ellipse','eccsv2TR1','afni6')
+        pmLaunchDockerCommand('prfanalyze','ellipse','sizesv2','afni6')
+        pmLaunchDockerCommand('prfanalyze','ellipse','sizesv2TR1','afni6')
 
-            % --------------
-            % 3/ Report
-            % --------------
-            pmLaunchDockerCommand('prfreport','ellipse','eccsv2')
-            pmLaunchDockerCommand('prfreport','ellipse','eccsv2TR1')
-            pmLaunchDockerCommand('prfreport','ellipse','sizesv2')
-            pmLaunchDockerCommand('prfreport','ellipse','sizesv2TR1')
-            pmLaunchDockerCommand('prfreport','ellipse','tr1dur300v2')
-            pmLaunchDockerCommand('prfreport','ellipse','thetasv2')
-        %}
+        % --------------
+        % 2.2/ Analyze-vista
+        % --------------
+        pmLaunchDockerCommand('prfanalyze','ellipse','eccsv2','vista6')
+        pmLaunchDockerCommand('prfanalyze','ellipse','eccsv2TR1','vista6')
+        pmLaunchDockerCommand('prfanalyze','ellipse','sizesv2','vista6')
+        pmLaunchDockerCommand('prfanalyze','ellipse','sizesv2TR1','vista6')
+        pmLaunchDockerCommand('prfanalyze','ellipse','thetasv2','vista6')
+        pmLaunchDockerCommand('prfanalyze','ellipse','tr1dur300v2','vista6')
+        pmLaunchDockerCommand('prfanalyze','ellipse','tr1dur300v2','vista4')
 
+        % --------------
+        % 3/ Report
+        % --------------
+        pmLaunchDockerCommand('prfreport','ellipse','eccsv2')
+        pmLaunchDockerCommand('prfreport','ellipse','eccsv2TR1')
+        pmLaunchDockerCommand('prfreport','ellipse','sizesv2')
+        pmLaunchDockerCommand('prfreport','ellipse','sizesv2TR1')
+        pmLaunchDockerCommand('prfreport','ellipse','tr1dur300v2')
+        pmLaunchDockerCommand('prfreport','ellipse','thetasv2')
+        
         %% EXPERIMENTAL DATA
-
         % --------------
-        % 1/ Download the HCP 7T data from OSF
+        % 1/ Download the HCP 7T data from OSF, and the config files
         % --------------
-        fname   = fullfile(pmRootPath,'local','hcp7T.zip');
+        fname = fullfile(pmRootPath,'local','hcp7T_only_Data_and_ConfigFiles.zip');
         if ~isfile(fname)
-            hcp1    = websave(fullfile(pmRootPath,'local','hcp1.zip'),...
-                                           'https://osf.io/az5y6/download');
-            hcp2    = websave(fullfile(pmRootPath,'local','hcp2.zip'),...
-                                           'https://osf.io/udzs2/download');
-            concat  = system(['cat ' hcp1 ' ' hcp2 ' > ' fname]);
-            unzip(fname);
+            hcp7tzip = websave(fname,'https://osf.io/5ufmp/download');
+            unzip(hcp7tzip);
         end
 
         % --------------
         % 2.2/ Analyze-vista
         % --------------
+        % Solve with vista-elliptical
         pmLaunchDockerCommand('prfanalyze','115017','01','vista6')
         pmLaunchDockerCommand('prfanalyze','164131','01','vista6')
         pmLaunchDockerCommand('prfanalyze','536647','01','vista6')
-        
+        % Solve with vista-circular
         pmLaunchDockerCommand('prfanalyze','115017','01','vista4')
         pmLaunchDockerCommand('prfanalyze','164131','01','vista4')
         pmLaunchDockerCommand('prfanalyze','536647','01','vista4')
