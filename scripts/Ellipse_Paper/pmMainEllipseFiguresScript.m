@@ -14,11 +14,11 @@
 % minutes and requires about 3GB of data.
 %
 %    1) Download the processed data from the Open Science Foundation (OSF)
-%       site (2.3GB) 
+%       site (750MB) 
 %    2) Run the Matlab scripts to produce the figures
 %
-% B: Repeat all calculations from scratch.  This method takes several hours
-% and requires a substantial amount of disk space (-15GB-) 
+% B: Repeat all calculations from scratch.  This method can take days
+% and requires a substantial amount of disk space (-more than 15GB-) 
 %
 %    1) Use prfSynthesize to create the ground-truth data (Docker)
 %    2) Use prfAnalyze to estimate the parameters (Docker)
@@ -29,14 +29,14 @@
 %
 
 %% Choose your option: 
-repeatCalculations = false; % It will download calculated data (2.4Gb) from OSF
+repeatCalculations = false; % It will download calculated data (750MB)from OSF
 %                              and plot figures
 % repeatCalculations = true; % (1) It will check you have Docker installed and the
 %                                  required containers are downloaded. 
 %                              (2) It will start a long process of data synthesis
 %                                  and analysis. 
 %                              (3) It will download the experimental data and
-%                                  analyze it (15Gb aprox). 
+%                                  analyze it with vista6 and vista4. 
 % 
 %                              We recommend to use a server for this option. 
 % 
