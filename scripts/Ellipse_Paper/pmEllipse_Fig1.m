@@ -25,8 +25,8 @@ if isfile(theFitFile)
     load(theFitFile,'compTable');
 else
     disp('Calculating ground-truth, noise-free, data.')
-    afnicompTable  = pmNoiseFreeTests('afni6' , 'ellipse', true, 'usenifti',true);
-    vistacompTable = pmNoiseFreeTests('vista6', 'ellipse', true, 'usenifti',true);
+    afnicompTable  = pmNoiseFreeTests('afni6' , 'ellipse', true);
+    vistacompTable = pmNoiseFreeTests('vista6', 'ellipse', true);
     
     disp('Saveing ground-truth, noise-free calculations.')
     compTable        = afnicompTable;
