@@ -5,12 +5,12 @@ function pmEllipse_Fig3
 % See also
 %  s00_MainFiguresScript
 
-%%
+%% EDIT IF REQUIRED
 ext  = 'png'; % Could be svg
 saveTo = fullfile(pmRootPath,'local','figures');  % Folder path
 if ~exist(saveTo,'dir'), mkdir(saveTo); end
 
-%%
+%% LOAD THE DATA
 disp('Loading Figure 3 data')
 
 sub = 'ellipse'; ses = 'eccsv2';
@@ -34,7 +34,7 @@ set(0,'defaultTextFontName', 'Arial')
 
 disp('Done with load.')
 
-%% RATIO 1
+%% PLOT
 
 % Generic values coming from the config.json
 onlyCenters = false;
@@ -101,7 +101,7 @@ for nslvl = noiselevel
     
     
     % Select the ground-truth
-    tt = A.compTable.afni6(A.compTable.noiseLevel==string(nslvl{:}) & ...
+    afnitt = A.compTable.afni6(A.compTable.noiseLevel==string(nslvl{:}) & ...
         A.compTable.HRFtype==string(useHRF) & ...
         A.compTable.synth.sMaj==2 & ...
         A.compTable.synth.sMin==2 & ...
@@ -110,13 +110,14 @@ for nslvl = noiselevel
     
     % Calculate the aspect ratios and plot
     subplot(numanalysis,numanalysis,2)
-    aspect    = tt.sMaj  ./ tt.sMin;
-    h = histogram(aspect,15);hold on
+    afnitt.aspect    = afnitt.sMaj  ./ afnitt.sMin;
+    h = histogram(afnitt.aspect,100);hold on
     
     % Plots a red line to show the median value of the aspect ratios
-    medaspect = median(aspect);
+    medaspect  = median(afnitt.aspect);
     plot(medaspect*[1,1],[0,18],'r-','LineWidth',1)
     set(h,'LineWidth',2,'EdgeColor','k','FaceAlpha',1,'FaceColor','k');hold on
+    
     title('AFNI Elliptical')
     xlabel('Aspect Ratio')
     set(gca,'FontName', 'Arial','FontSize',16)
@@ -138,7 +139,7 @@ for nslvl = noiselevel
         'newWin'    , newWin ,'saveTo'     ,'','saveToType',ext)
         
     % Select the aspect ratio data
-    tt = A.compTable.vista6(A.compTable.noiseLevel==string(nslvl{:}) & ...
+    vistatt = A.compTable.vista6(A.compTable.noiseLevel==string(nslvl{:}) & ...
         A.compTable.HRFtype==string(useHRF) & ...
         A.compTable.synth.sMaj==2 & ...
         A.compTable.synth.sMin==2 & ...
@@ -147,12 +148,12 @@ for nslvl = noiselevel
     
     % Calculate the aspect ratio and plot the histogram
     subplot(numanalysis,numanalysis,4)
-    aspect    = tt.sMaj  ./ tt.sMin;
-    h = histogram(aspect,15); hold on
+    vistatt.aspect    = vistatt.sMaj  ./ vistatt.sMin;
+    h = histogram(vistatt.aspect,100); hold on
     set(h,'LineWidth',2,'EdgeColor','k','FaceAlpha',1,'FaceColor','k');hold on
     
     % Plot the red line showing the median
-    medaspect = median(aspect);
+    medaspect = median(vistatt.aspect);
     plot(medaspect*[1,1],[0,18],'r-','LineWidth',1)
     title('mrVista Elliptical')
     xlabel('Aspect Ratio')
@@ -162,6 +163,58 @@ for nslvl = noiselevel
     saveas(gcf,fname,ext);
     fprintf('\nSaved %s\n', fname)
 end
+
+
+
+%% STATS SECTION
+
+synth        = afnitt;
+synth.x0     = 3.1315*ones(height(afnitt),1);
+synth.y0     = 3.1315*ones(height(afnitt),1);
+synth.sMaj   = 2*ones(height(afnitt),1);
+synth.sMin   = 2*ones(height(afnitt),1);
+% See pmEllipse_FigS6.m to understand how this error is calculated. Basically,
+% there is error, and aspect ratio cant go below 1
+synth.aspect = 1.2*ones(height(afnitt),1);
+
+% Calculate Euclidian distances for the centers
+afniCenterDist  = sqrt((synth.x0 - afnitt.x0).^2 + (synth.y0 - afnitt.y0).^2);
+vistaCenterDist = sqrt((synth.x0 - vistatt.x0).^2 + (synth.y0 - vistatt.y0).^2);
+
+% Differences in aspect ratios
+afniAspect  = abs(synth.aspect - afnitt.aspect);
+vistaAspect = abs(synth.aspect - vistatt.aspect);
+     
+fprintf('\nASPECT RATIO GROUND TRUTH = 1')
+fprintf('\npRF Center')
+fprintf('\n[Figure 3: mean(std) vs G.T.] AFNI6: %.2g(%.2g), VISTA6: %.2g(%.2g)',...)
+    mean(afniCenterDist), std(afniCenterDist), ...
+    mean(vistaCenterDist), std(vistaCenterDist))
+[H,P,CI,STATS] = ttest(afniCenterDist,vistaCenterDist);
+fprintf('\n[Figure 3: paired t-test AFNIvsVISTA] t: %.2g, p: %.2g\n',STATS.tstat,P)
+
+
+
+
+fprintf('\npRF Aspect Ratio')
+fprintf('\n[Figure 3: mean(std) vs G.T.] AFNI6: %.2g(%.2g), VISTA6: %.2g(%.2g)\n',...)
+    mean(afniAspect), std(afniAspect), ...
+    mean(vistaAspect), std(vistaAspect))
+[H,P,CI,STATS] = ttest(afniAspect,vistaAspect);
+fprintf('[Figure 3: paired t-test AFNIvsVISTA] t: %.2g, p: %.2g\n',STATS.tstat,P)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 end
 

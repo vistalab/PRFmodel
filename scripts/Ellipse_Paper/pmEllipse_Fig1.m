@@ -160,5 +160,22 @@ end
 fname = fullfile(saveTo, strcat(fnameRoot,['.' ext]));
 saveas(gcf,fname,ext);
 fprintf('\nSaved %s\n', fname)
+
+
+% STATS SECTION
+thresh   = 0.1;
+
+% calculate euclidian distances for the centers
+afniCenterDist  = 100*sum(sqrt((compTable.synth.x0 - compTable.afni6.x0).^2 + (compTable.synth.y0 - compTable.afni6.y0).^2) < thresh)/height(compTable);
+vistaCenterDist = 100*sum(sqrt((compTable.synth.x0 - compTable.vista6.x0).^2 + (compTable.synth.y0 - compTable.vista6.y0).^2) < thresh)/height(compTable);
+
+afnisMaj = 100 * sum(thresh > abs(compTable.synth.sMaj - compTable.afni6.sMaj))/height(compTable);
+afnisMin = 100 * sum(thresh > abs(compTable.synth.sMin - compTable.afni6.sMin))/height(compTable);
+
+vistasMaj = 100 * sum(thresh > abs(compTable.synth.sMaj - compTable.vista6.sMaj))/height(compTable);
+vistasMin = 100 * sum(thresh > abs(compTable.synth.sMin - compTable.vista6.sMin))/height(compTable);
+
+
+
 end
 
