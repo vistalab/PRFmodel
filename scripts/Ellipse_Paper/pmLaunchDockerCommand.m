@@ -8,7 +8,7 @@ function pmLaunchDockerCommand(varargin)
 % solver = 'vista6'
 % sub    = 'ellipse';
 % ses    = 'sizesv2';
-
+dockerVer='2.0.0'; % This is what it went to the paper
 % launchDockerCommand(docker,sub,ses,solver)
 
 docker = varargin{1};
@@ -96,8 +96,9 @@ switch docker
                                                     '_solver-' solver '.json']);
        
         % Generate the command line to launch the docker container
-        cmd = [fullfile(pmRootPath,'gear',docker,'run_prfanalyze.sh --version 2.0.0') ...
-               ' ' solver(1:end-1) ' ' basedir ' ' config_fname]
+        cmd = [fullfile(pmRootPath,'gear',docker,'run_prfanalyze.sh') ...
+               '  --version ' dockerVer ' ' solver(1:end-1) ...
+               ' ' basedir ' ' config_fname]
         % This is one example file in the output, to check if it has already
         % been run
         resultFile = fullfile(basedir,'BIDS','derivatives',docker,...

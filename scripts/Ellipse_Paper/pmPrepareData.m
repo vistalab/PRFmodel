@@ -67,6 +67,7 @@ switch calculateThis
         pmLaunchDockerCommand('prfreport','testmode','testv1')
         
     case {'allData'}
+        v = '2.0.0';
         %% SYNTHETIC DATA
         % --------------
         % 1/ Synthesize
@@ -77,6 +78,7 @@ switch calculateThis
         pmLaunchDockerCommand('prfsynth','ellipse','sizesv2TR1')
         pmLaunchDockerCommand('prfsynth','ellipse','tr1dur300v2')
         pmLaunchDockerCommand('prfsynth','ellipse','thetasv2')
+        pmLaunchDockerCommand('prfsynth','ellipse','tr1dur300v3')
 
         % --------------
         % 2.1/ Analyze-afni
@@ -84,6 +86,8 @@ switch calculateThis
         pmLaunchDockerCommand('prfanalyze','ellipse','eccsv2','afni6')
         pmLaunchDockerCommand('prfanalyze','ellipse','eccsv2TR1','afni6')
         pmLaunchDockerCommand('prfanalyze','ellipse','sizesv2','afni6')
+        pmLaunchDockerCommand('prfanalyze','ellipse','tr1dur300v2','afni6')
+        pmLaunchDockerCommand('prfanalyze','ellipse','tr1dur300v3','afni6')
         pmLaunchDockerCommand('prfanalyze','ellipse','sizesv2TR1','afni6')
 
         % --------------
@@ -95,8 +99,11 @@ switch calculateThis
         pmLaunchDockerCommand('prfanalyze','ellipse','sizesv2TR1','vista6')
         pmLaunchDockerCommand('prfanalyze','ellipse','thetasv2','vista6')
         pmLaunchDockerCommand('prfanalyze','ellipse','tr1dur300v2','vista6')
+        pmLaunchDockerCommand('prfanalyze','ellipse','tr1dur300v3','vista6')
         pmLaunchDockerCommand('prfanalyze','ellipse','tr1dur300v2','vista4')
-
+        pmLaunchDockerCommand('prfanalyze','ellipse','tr1dur300v3','vista4')
+        pmLaunchDockerCommand('prfanalyze','ellipse','tr1dur300v3','afni6')
+        
         % --------------
         % 3/ Report
         % --------------
@@ -105,6 +112,7 @@ switch calculateThis
         pmLaunchDockerCommand('prfreport','ellipse','sizesv2')
         pmLaunchDockerCommand('prfreport','ellipse','sizesv2TR1')
         pmLaunchDockerCommand('prfreport','ellipse','tr1dur300v2')
+        pmLaunchDockerCommand('prfreport','ellipse','tr1dur300v3')
         pmLaunchDockerCommand('prfreport','ellipse','thetasv2')
         
         %% EXPERIMENTAL DATA
