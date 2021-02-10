@@ -7,7 +7,7 @@ function rootPath = pmRootPath()
 % PRFmodel directory structure 
 %
 % Copyright Stanford team, mrVista, 2019
-
+% test
 rootPath = which('pmRootPath');
 
 rootPath = fileparts(rootPath);
