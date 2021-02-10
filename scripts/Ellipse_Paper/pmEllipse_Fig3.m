@@ -177,14 +177,25 @@ synth.sMin   = 2*ones(height(afnitt),1);
 % there is error, and aspect ratio cant go below 1
 synth.aspect = 1.2*ones(height(afnitt),1);
 
-% Calculate Euclidian distances for the centers
-afniCenterDist  = sqrt((synth.x0 - afnitt.x0).^2 + (synth.y0 - afnitt.y0).^2);
-vistaCenterDist = sqrt((synth.x0 - vistatt.x0).^2 + (synth.y0 - vistatt.y0).^2);
-
 % Differences in aspect ratios
 afniAspect  = abs(synth.aspect - afnitt.aspect);
 vistaAspect = abs(synth.aspect - vistatt.aspect);
-     
+
+length(afnitt.aspect)
+sum(afnitt.aspect<1.05)
+sum(afnitt.aspect<1.1)
+std(afnitt.aspect)
+mean(vistatt.aspect)
+std(vistatt.aspect)
+
+% Calculate Euclidian distances for the centers
+% afniCenterDist  = sqrt((synth.x0 - afnitt.x0).^2 + (synth.y0 - afnitt.y0).^2);
+% vistaCenterDist = sqrt((synth.x0 - vistatt.x0).^2 + (synth.y0 - vistatt.y0).^2);
+
+
+  
+
+%{
 fprintf('\nASPECT RATIO GROUND TRUTH = 1')
 fprintf('\npRF Center')
 fprintf('\n[Figure 3: mean(std) vs G.T.] AFNI6: %.2g(%.2g), VISTA6: %.2g(%.2g)',...)
@@ -192,6 +203,9 @@ fprintf('\n[Figure 3: mean(std) vs G.T.] AFNI6: %.2g(%.2g), VISTA6: %.2g(%.2g)',
     mean(vistaCenterDist), std(vistaCenterDist))
 [H,P,CI,STATS] = ttest(afniCenterDist,vistaCenterDist);
 fprintf('\n[Figure 3: paired t-test AFNIvsVISTA] t: %.2g, p: %.2g\n',STATS.tstat,P)
+%}
+
+
 
 
 
