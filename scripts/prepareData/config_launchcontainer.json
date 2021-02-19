@@ -1,0 +1,30 @@
+{
+  "config": {
+    "basedir": "/export/home/glerma/public/Gari/MINI",
+    "rpe": false,
+    "tool": "anatrois_4.0.2-7.1.1",
+    "analysis": "01",
+    "pretoolfs":"anatrois_4.1.0-7.1.1",
+    "preanalysisfs":"01",
+    "pretoolpp":"rtppreproc_1.1.3",
+    "preanalysispp":"01",
+    "codedir":"~/glerma/GIT/launchcontainers",
+    "host": "BCBL",
+    "logdir":"/bcbl/home/home_g-m/glerma/containers/logdir",
+    "tmpdir":"/bcbl/home/home_g-m/glerma/containers/tmpdir",
+    "container":"/bcbl/home/home_g-m/glerma/containers/containers",
+    "qsub":"true"
+  },
+  "BCBL": {
+    "mem":"60G",
+    "que":"long.q",
+    "core":6,
+    "sin_ver":"singularity/3.5.2"
+  },
+  "DIPC": {
+    "mem":"100G",
+    "que":"bcbl",
+    "core":6,
+    "sin_ver":"Singularity/3.5.3-GCC-8.3.0"
+  }
+}

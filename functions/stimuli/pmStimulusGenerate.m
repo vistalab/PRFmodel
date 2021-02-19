@@ -200,7 +200,7 @@ if normalize01
     % Normalize to 0>1 and binarize 
     nstim   = stim - min(stim(:));
     nstim   = nstim ./ max(nstim(:));
-    stim    = stim;
+    stim    = nstim;
     % We cannot binarize if it has not been normalized. 
     % TODO: warning if normalize01 is false and binarize true?
     if binarize
