@@ -13,7 +13,7 @@ solver   = 'vista4';
 [newNames,newStimNames,configNames]=pmRenameFmriprep(basedir,subname,ses,tr,stimDiam,solver)
 
 docker = 'prfanalyze';
-dockerVer = '2.0.2';
+dockerVer = '2.0.0';
 % Launch de docker containers here
 for nc=1:length(configNames)
     config_fname = fullfile(basedir,'BIDS','config_files',configNames{nc});
