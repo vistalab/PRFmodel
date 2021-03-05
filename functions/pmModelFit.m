@@ -1015,8 +1015,8 @@ end
 
 
 function pmEstimates = pmVistaObtainPrediction(pmEstimates, results)
-    % Initialize the results
-    pmEstimates.modelpred = pmEstimates.testdata;
+  % Initialize the results
+    modelpred = pmEstimates.testdata;
 
 
 
@@ -1028,7 +1028,21 @@ function pmEstimates = pmVistaObtainPrediction(pmEstimates, results)
     % rfParams(4) is not used, at least in this function
     % I need to create rfParams = []; per every voxel it seems
     
-    for voxel=1:height(pmEstimates) 
+    
+    
+    %% Compute final predicted time series (and get beta values)
+    % we also add this to the rfParams, to report later
+    
+    M = results;
+    % In resutls we don't have M.tSeries(:,voxel)
+    % I am going to paste the testdata in vertical form.
+    M.tSeries = pmEstimates.testdata';
+    
+
+        
+    parfor voxel=1:height(pmEstimates) 
+        
+                
         rfParams = zeros([1,6]);
         rfParams(1) = results.model{1}.x0(voxel);
         rfParams(2) = results.model{1}.y0(voxel);
@@ -1077,14 +1091,7 @@ function pmEstimates = pmVistaObtainPrediction(pmEstimates, results)
             trends = [trends results.params.analysis.allnuisance];
         end
         
-        %% Compute final predicted time series (and get beta values)
-        % we also add this to the rfParams, to report later
-        M = results;
-        
-        % In resutls we don't have M.tSeries(:,voxel)
-        % I am going to paste the testdata in vertical form. 
-        M.tSeries = pmEstimates.testdata';
-        
+       
         
         switch M.model{1}.description,
             case {'2D pRF fit (x,y,sigma, positive only)',...
@@ -1218,15 +1225,16 @@ function pmEstimates = pmVistaObtainPrediction(pmEstimates, results)
                 
                 
                 
-            otherwise,
+            otherwise
                 error('Unknown modelName: %s', modelName);
-        end;
+        end
         
         % Calculate the prediction
         prediction = [pred trends(:,dcid)] * beta;
         
-        % Add it to the return table
-        pmEstimates.modelpred(voxel,:) = prediction';
+        modelpred(voxel,:) = prediction';
     end
     
+    % Add it to the return table
+    pmEstimates.modelpred = modelpred;
 end
