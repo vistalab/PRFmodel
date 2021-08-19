@@ -9,7 +9,9 @@ output_dir  = '/flywheel/v0/output'
 input_dir   = '/flywheel/v0/input'
 config_file = os.path.join(input_dir, 'config.json')
 bids_dir    = os.path.join(input_dir, 'BIDS')
-bids_link   = '/running/out'
+# bids_link   = '/running/out'
+# Fix so that it works in Singularity
+bids_link   = os.path.join(output_dir,'/running/out')
 opts_file   = os.path.join(bids_link, 'options.json')
 verbose     = os.environ.get('VERBOSE', '0').strip() == '1'
 force       = os.environ.get('FORCE', '0').strip() == '1'
