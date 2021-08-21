@@ -144,24 +144,7 @@ stimulus = reshape(trAdjImages, ...
 
 %% Deal with the data part
 
-
-
-
-
-
-
 %% Launch the analysis
-
-
-
-
-
-
-
-
-
-
-
 
 
 
