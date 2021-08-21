@@ -11,7 +11,7 @@ config_file = os.path.join(input_dir, 'config.json')
 bids_dir    = os.path.join(input_dir, 'BIDS')
 # bids_link   = '/running/out'
 # Fix so that it works in Singularity
-bids_link   = os.path.join(output_dir,'/running/out')
+bids_link   = output_dir
 opts_file   = os.path.join(bids_link, 'options.json')
 verbose     = os.environ.get('VERBOSE', '0').strip() == '1'
 force       = os.environ.get('FORCE', '0').strip() == '1'
@@ -114,12 +114,12 @@ try:
 except Exception:
     die("Error creating output BIDS directory: %s" % outbids_dir)
 note("Output BIDS directory: %s" % outbids_dir)
-# we make a symlink from the output bids dir to /running
-try:
-    if os.path.islink(bids_link): os.remove(bids_link)
-    os.symlink(outbids_dir, bids_link)
-except Exception:
-    die("Could not create output link: %s" % bids_link)
+# # we make a symlink from the output bids dir to /running
+# try:
+#     if os.path.islink(bids_link): os.remove(bids_link)
+#     os.symlink(outbids_dir, bids_link)
+# except Exception:
+#     die("Could not create output link: %s" % bids_link)
 # dump the options file in the output directory
 with open(opts_file, 'w') as fl:
     json.dump(opts, fl)

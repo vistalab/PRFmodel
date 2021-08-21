@@ -2,7 +2,9 @@
 
 [ -z "$USERTAG" ] && USERTAG=garikoitz
 [ -z "$SOLVER"  ] && SOLVER=vista
-[ -z "$VERSION" ] && VERSION=2.0.3
+[ -z "$VERSION" ] && VERSION=2.0.5
+
+# 2.0.5: edited in master, fix in base/run.py for singularity
 
 SCRIPTPATH="$( cd "$(dirname "$0")" && pwd -P )"
 

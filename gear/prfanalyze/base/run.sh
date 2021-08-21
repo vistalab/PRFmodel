@@ -93,7 +93,7 @@ done
 
 # otherwise, we run the following python code to parse the json and run the
 # /solve.sh script!
-mkdir -p /running
+# mkdir -p /running
 export FORCE
 export VERBOSE
 export FIELDS
@@ -101,10 +101,10 @@ export FIELDS
 python /scripts/run.py "$CONFIG_FILE" || die "Python startup script failed!"
 # At this point, the files should have been exported to the appropriate directory,
 # which should be linked to /running/out
-[ -d /running/out ] || die "Python startup script failed to make output link!"
+[ -d $OUTPUT_DIR ] || die "Python startup script failed to make output link!"
 
 # go to the output_bids path and extract subject and session...
-cd -P /running/out
+cd -P $OUTPUT_DIR
 sesdir=$PWD
 subdir=$(dirname $sesdir)
 ses=$(basename $sesdir)
@@ -117,29 +117,29 @@ prefix="sub-${sub}_ses-${ses}"
 [ -n "$FIELDS" ] && prefix="${prefix}_${FIELDS}"
 
 nn=${#prefix}
-if compgen -G "/running/out/*.nii" > /dev/null
-then for fl in /running/out/*.nii
+if compgen -G "$OUTPUT_DIR/*.nii" > /dev/null
+then for fl in $OUTPUT_DIR/*.nii
      do bnm="`basename $fl .nii`"
         dnm="`dirname $fl`"
         [ "${bnm:0:$nn}" = "$prefix" ] || mv "$fl" "${dnm}/${prefix}_${bnm}.nii"
      done
 fi
-if compgen -G "/running/out/*.nii.gz" > /dev/null
-then for fl in /running/out/*.nii.gz
+if compgen -G "$OUTPUT_DIR/*.nii.gz" > /dev/null
+then for fl in $OUTPUT_DIR/*.nii.gz
      do bnm="`basename $fl .nii.gz`"
         dnm="`dirname $fl`"
         [ "${bnm:0:$nn}" = "$prefix" ] || mv "$fl" "${dnm}/${prefix}_${bnm}.nii.gz"
      done
 fi
-if compgen -G "/running/out/*.mat" > /dev/null
-then for fl in /running/out/*.mat
+if compgen -G "$OUTPUT_DIR/*.mat" > /dev/null
+then for fl in $OUTPUT_DIR/*.mat
      do bnm="`basename $fl .mat`"
         dnm="`dirname $fl`"
         [ "${bnm:0:$nn}" = "$prefix" ] || mv "$fl" "${dnm}/${prefix}_${bnm}.mat"
      done
 fi
-if compgen -G "/running/out/*.json" > /dev/null
-then for fl in /running/out/*.json
+if compgen -G "$OUTPUT_DIR/*.json" > /dev/null
+then for fl in $OUTPUT_DIR/*.json
      do bnm="`basename $fl .json`"
         dnm="`dirname $fl`"
         [ "${bnm:0:$nn}" = "$prefix" ] || {
