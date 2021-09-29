@@ -11,7 +11,7 @@ config_file = os.path.join(input_dir, 'config.json')
 bids_dir    = os.path.join(input_dir, 'BIDS')
 # bids_link   = '/running/out'
 # Fix so that it works in Singularity
-bids_link   = output_dir
+bids_link   = os.path.join(output_dir,'out')
 opts_file   = os.path.join(bids_link, 'options.json')
 verbose     = os.environ.get('VERBOSE', '0').strip() == '1'
 force       = os.environ.get('FORCE', '0').strip() == '1'
@@ -120,6 +120,14 @@ note("Output BIDS directory: %s" % outbids_dir)
 #     os.symlink(outbids_dir, bids_link)
 # except Exception:
 #     die("Could not create output link: %s" % bids_link)
+
+# Noahs solution didnt work, there should be a symlink for run.sh
+## # we make a symlink from the output bids dir to /running
+try:
+    if os.path.islink(bids_link): os.remove(bids_link)
+    os.symlink(outbids_dir, bids_link)
+except Exception:
+    die("Could not create output link: %s" % bids_link)
 # dump the options file in the output directory
 with open(opts_file, 'w') as fl:
     json.dump(opts, fl)
@@ -175,7 +183,8 @@ for flnm in os.listdir(func_dir):
     
     nii_base = nib.load(bold_image)
     # If there are things to cleanup we do that; specifically, the estimates.json file:
-    estfl = os.path.join(bids_link, 'estimates.json')
+    # estfl = os.path.join(bids_link, 'estimates.json')
+    estfl = os.path.join(outbids_dir, 'estimates.json')
     if os.path.isfile(estfl):
         note("Processing estimates.json file...")
         import nibabel as nib, numpy as np
@@ -190,13 +199,18 @@ for flnm in os.listdir(func_dir):
             else:
                 im = nib.Nifti2Image(np.reshape(v, (-1, 1, 1, 1)),
                                      nii_base.affine, nii_base.header)
-            im.to_filename(os.path.join(bids_link, 'run-%s_%s.nii.gz' % (runid,k.lower())))
-        os.rename(estfl, os.path.join(bids_link, 'run-%s_estimates.json' % (runid,)))
+            print("Writing the estimates.json to nifti2 in outbids_dir: " + outbids_dir)
+            # im.to_filename(os.path.join(bids_link, 'run-%s_%s.nii.gz' % (runid,k.lower())))
+            im.to_filename(os.path.join(outbids_dir, 'run-%s_%s.nii.gz' % (runid,k.lower())))
+        # os.rename(estfl, os.path.join(bids_link, 'run-%s_estimates.json' % (runid,)))
+        os.rename(estfl, os.path.join(outbids_dir, 'run-%s_estimates.json' % (runid,)))
     else:
         note("No estimates.json file found.")
     # also rename results,.mat if it's there
-    resfli = os.path.join(bids_link, 'results.mat')
-    resflo = os.path.join(bids_link, 'run-%s_results.mat' % (runid,))
+    # resfli = os.path.join(bids_link, 'results.mat')
+    # resflo = os.path.join(bids_link, 'run-%s_results.mat' % (runid,))
+    resfli = os.path.join(outbids_dir, 'results.mat')
+    resflo = os.path.join(outbids_dir, 'run-%s_results.mat' % (runid,))
     if os.path.isfile(resfli): os.rename(resfli, resflo)
     processed += 1
     
