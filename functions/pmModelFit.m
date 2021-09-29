@@ -58,6 +58,7 @@ p.addParameter('useparallel'    ,  true        , @islogical);
                            'wsearch'      , 'coarse to fine', ...
                            'detrend'      , 1               , ...
                            'keepAllPoints', false           , ...
+                           'obtainPreds'  , false           , ...
                            'numberStimulusGridPoints',   50);
     options.afni  = struct('model','afni4', ...
                            'hrf'  , 'SPM');
@@ -457,6 +458,7 @@ switch prfimplementation
         warning('mrvista is assuming all stimuli with same radius. Fix this')
         model         = options.model;
         grid          = options.grid;
+        obtainPreds   = options.obtainPreds;
         % TODO: fix this
         if isfield(options, 'wSearch'); wSearch = options.wSearch;end
         if isfield(options, 'wsearch'); wSearch = options.wsearch;end
@@ -497,11 +499,15 @@ switch prfimplementation
         varexp         = 1-results.model{1}.rss./results.model{1}.rawrss;
         pmEstimates.R2 = varexp';
                 
-        % Obtain the modelfit,
-        % Obtaining the prediction is too costly for big datasets, we can always use this function:
-        pmEstimates = pmVistaObtainPrediction(pmEstimates, results);
-        % For now, make the output same as the input, to avoid problems downstream
-        % pmEstimates.modelpred = pmEstimates.testdata;
+        % Obtain the modelfit if asked
+        % Obtaining the prediction is too costly for big datasets
+        if obtainPreds
+            pmEstimates = pmVistaObtainPrediction(pmEstimates, results);
+        else
+            % Make the output same as the input
+            pmEstimates.modelpred = pmEstimates.testdata;
+        end
+                
         % pmEstimates.R2         = calccod(pmEstimates.testdata,  pmEstimates.modelpred,2);
         % pmEstimates.R2        = results.model{1}.varExp';
         % pmEstimates.RMSE       = sqrt(mean((pmEstimates.testdata - pmEstimates.modelpred).^2,2));
