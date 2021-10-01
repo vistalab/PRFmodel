@@ -203,6 +203,7 @@ switch prfimplementation
         options.vista.detrend    = 0;
         options.vista.keepAllPoints            = true; 
         options.vista.numberStimulusGridPoints =  50;  
+        % options.vista.obtainPreds =  false;  
         results                  = pmModelFit(input,'vistasoft','options',options);
     case {'popeye','pop'}
         results  = pmModelFit(input,'popeye');

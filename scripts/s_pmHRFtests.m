@@ -7,20 +7,20 @@ COMBINE_PARAMETERS                    = struct();
 COMBINE_PARAMETERS.RF.Centerx0        = [0,5,-5];
 COMBINE_PARAMETERS.RF.Centery0        = [0,5,-5];  % [-6 5 4 3 2 1 0 1 2 3 4 5 6];
 COMBINE_PARAMETERS.RF.Theta           = [0]; %, deg2rad(45)];
-COMBINE_PARAMETERS.RF.sigmaMajor      = [0.5,1,2,4,8];  % [1,2,3,4];
+COMBINE_PARAMETERS.RF.sigmaMajor      = [2]; % [0.5,1,2,4,8];  % [1,2,3,4];
 COMBINE_PARAMETERS.RF.sigmaMinor      = 'same'; % 'same' for making it the same to Major
 COMBINE_PARAMETERS.TR                 = [1.5];
     HRF(1).Type                       = 'friston';
-    HRF(2).Type                       = 'boynton';
-    HRF(3).Type                       = 'canonical';
-    HRF(4).Type                       = 'vista_twogammas';
-    HRF(5).Type                       = 'popeye_twogammas';
-    HRF(6).Type                       = 'afni_gam';
-    HRF(7).Type                       = 'afni_spm';
+    % HRF(2).Type                       = 'boynton';
+    % HRF(3).Type                       = 'canonical';
+    % HRF(4).Type                       = 'vista_twogammas';
+    % HRF(5).Type                       = 'popeye_twogammas';
+    % HRF(6).Type                       = 'afni_gam';
+     %HRF(7).Type                       = 'afni_spm';
 COMBINE_PARAMETERS.HRF                = HRF;
 % Right now only the parameter for white noise can be edited. 
-COMBINE_PARAMETERS.Noise.noise2signal = [0:0.05:0.45];
-synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'mult',100);
+% COMBINE_PARAMETERS.Noise.noise2signal = [0:0.05:0.45];
+synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats',5);
 synthDT = pmForwardModelCalculate(synthDT);
 % Save it
 aprfsynthDTfName = ['synthDT_ALL_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
@@ -35,12 +35,14 @@ save(fullfile(pmRootPath,'local',aprfsynthDTfName), 'synthDT');
 aprfresults         = pmModelFit(synthDT, 'aprf', 'useParallel', true);
 aprfresultfName = ['result_ALL_aprf_oneCenter_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
 save(fullfile(pmRootPath,'local',aprfresultfName), 'aprfresults');
+
 % mrvista
 vistaresults    = pmModelFit(synthDT, 'mrvista','model','one gaussian', ...
                                         'grid', false, ... % if true, returns gFit
                                         'wSearch', 'coarse to fine');
 vistaresultfName = ['results_ALL_vista_oneCenter_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];
 save(fullfile(pmRootPath,'local',vistaresultfName), 'vistaresults');
+
 % Afni
 results    = pmModelFit(synthDT, 'afni_4');
 afniresultfName = ['results_ALL_afni_oneCenter_' datestr(datetime,'yyyymmddTHHMMSS','local') '.mat'];

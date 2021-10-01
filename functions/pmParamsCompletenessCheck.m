@@ -15,6 +15,16 @@ function checkedParams = pmParamsCompletenessCheck(passed,defaults)
         if isempty(checkedParams.(requiredFields{nf}))
             checkedParams.(requiredFields{nf}) = defaults.(requiredFields{nf});
         end
+        % Now check the values inside if there is a second level struct
+        if isstruct(checkedParams.(requiredFields{nf}))
+            if ~isequal(fieldnames(checkedParams.(requiredFields{nf})),...
+                        fieldnames(defaults.(requiredFields{nf}))...
+                        )
+                checkedParams.(requiredFields{nf}) = ...
+                    pmParamsCompletenessCheck(checkedParams.(requiredFields{nf}),...
+                                              defaults.(requiredFields{nf}));
+            end
+        end
     end
 end
 
