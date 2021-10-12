@@ -40,7 +40,7 @@ pmNoiseFreeTests('aprfcss')
 %}
 
 %{
-pmNoiseFreeTests('vista')
+[compTable, tSeries, results] = pmNoiseFreeTests('vista');
 %}
 
 %{
@@ -73,11 +73,12 @@ p.addParameter('stimshuffle',  false           , @islogical);
     options.aprf  = struct('seedmode'     , [0 1 2], ...
                            'display'      , 'off'  , ...
                            'usecss'       , true  );
-    options.vista = struct('model'        ,'one gaussian'   , ...
+    options.vista = struct('model'        , 'one gaussian'  ,...
                            'grid'         , false           , ...
                            'wsearch'      , 'coarse to fine', ...
                            'detrend'      , 1               , ...
                            'keepAllPoints', false           , ...
+                           'modelPreds'   , false           , ...
                            'numberStimulusGridPoints',   50);
     options.afni  = struct('model'        , 'afni4', ...
                            'hrf'          , 'SPM');
@@ -126,10 +127,10 @@ elseif eccen
 else
     COMBINE_PARAMETERS.TR                    = [1.5];
     COMBINE_PARAMETERS.RF                    = struct();
-    COMBINE_PARAMETERS.RF.Centerx0           = [0,3]; 
-    COMBINE_PARAMETERS.RF.Centery0           = [0,3];
+    COMBINE_PARAMETERS.RF.Centerx0           = [3]; 
+    COMBINE_PARAMETERS.RF.Centery0           = [3];
     COMBINE_PARAMETERS.RF.Theta              = [0]; %, deg2rad(45)];
-    COMBINE_PARAMETERS.RF.sigmaMajor         = [1,2];% [1,2];
+    COMBINE_PARAMETERS.RF.sigmaMajor         = [2];% [1,2];
     COMBINE_PARAMETERS.RF.sigmaMinor         = "same";
     COMBINE_PARAMETERS.Stimulus.durationSecs = 300;
 end
@@ -155,7 +156,7 @@ COMBINE_PARAMETERS.HRF           = HRF;
 Noise(1).seed                    = 'none';
 % Noise(1).seed                    = 'random';
 COMBINE_PARAMETERS.Noise         = Noise;
-synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats', 1);
+synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats', 2);
 synthDT = pmForwardModelCalculate(synthDT,'useparallel',true);
 
 if useNifti
@@ -187,8 +188,8 @@ switch prfimplementation
         results                 = pmModelFit(input,'afni','options',options);
     case {'vista','mrvista','vistasoft','vista4'}
         options.vista            = allOptions.vista;
-        options.vista.model      = 'one gaussian';
-        % options.vista.model      = 'one oval gaussian';
+        options.vista.model      = 'css';  % 'one gaussian';
+        options.vista.obtainPreds= true;
         options.vista.grid       = false;  % if true, returns gFit
         options.vista.wSearch    = 'coarse to fine and hrf'; 
         options.vista.detrend    = 0;

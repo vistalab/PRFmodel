@@ -77,6 +77,7 @@ allOptions  = pmParamsCompletenessCheck(allOptions, options);
 
 disp('This is the options file comming in:')
 allOptions
+allOptions.vista
 
 %% Convert the input
 % Check if the pm-s come in a table or alone

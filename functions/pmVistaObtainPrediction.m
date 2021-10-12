@@ -16,13 +16,20 @@ function pmEstimates = pmVistaObtainPrediction(pmEstimates, results)
     
     parfor voxel=1:numVoxels 
         thisTestData = testdata(voxel,:);
-        rfParams    = zeros([1,6]);
+        if isfield(results.model{1},'exponent')
+            rfParams    = zeros([1,7]);
+        else
+            rfParams    = zeros([1,6]);
+        end
         rfParams(1) = results.model{1}.x0(voxel);
         rfParams(2) = results.model{1}.y0(voxel);
         rfParams(3) = results.model{1}.sigma.major(voxel);
         % rfParams(4) =  % Esto se asigna luego, suele ser el beta(1)
         rfParams(5) = results.model{1}.sigma.minor(voxel);
         rfParams(6) = results.model{1}.sigma.theta(voxel);
+        if isfield(results.model{1},'exponent')
+            rfParams(7) = results.model{1}.exponent(voxel);
+        end
         
         % %% make RFs
         % RFs = rmPlotGUI_makeRFs(modelName, rfParams, M.params.analysis.X, M.params.analysis.Y);
@@ -73,11 +80,11 @@ function pmEstimates = pmVistaObtainPrediction(pmEstimates, results)
         % M.tSeries = pmEstimates.testdata';
         M.tSeries = thisTestData';
         
-        switch M.model{1}.description,
+        switch M.model{1}.description
             case {'2D pRF fit (x,y,sigma, positive only)',...
                     '2D RF (x,y,sigma) fit (positive only)',...
-                    '1D pRF fit (x,sigma, positive only)'};
-                if recompFit==0,
+                    '1D pRF fit (x,sigma, positive only)'}
+                if recompFit==0
                     beta = rmCoordsGet(M.viewType, model, 'b', coords);
                     beta = beta([1 dcid+1])';
                     
@@ -93,8 +100,8 @@ function pmEstimates = pmVistaObtainPrediction(pmEstimates, results)
                 
                 
             case {'2D pRF fit (x,y,sigma_major,sigma_minor)' ...
-                    'oval 2D pRF fit (x,y,sigma_major,sigma_minor,theta)'};
-                if recompFit==0,
+                    'oval 2D pRF fit (x,y,sigma_major,sigma_minor,theta)'}
+                if recompFit==0
                     beta = rmCoordsGet(M.viewType, model, 'b', coords);
                     beta = beta([1 dcid+1]);
                 else
@@ -107,7 +114,7 @@ function pmEstimates = pmVistaObtainPrediction(pmEstimates, results)
                 
                 rfParams(4) = beta(1);
                 
-            case 'unsigned 2D pRF fit (x,y,sigma)';
+            case 'unsigned 2D pRF fit (x,y,sigma)'
                 if recompFit==0,
                     beta = rmCoordsGet(M.viewType, model, 'b', coords);
                     beta = beta([1 dcid+1]);
