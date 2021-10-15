@@ -30,6 +30,7 @@ p.addRequired('datafile'                        , @ischar);
 p.addRequired('stimradius'                      , @isnumeric);
 p.addParameter('sessioncode'  , 'pRFsynthetic01', @ischar);
 p.addParameter('model'        , 'one gaussian'  , @ischar);
+p.addParameter('fixcssexp'    , 0               , @isnumeric);
 p.addParameter('grid'         , false           , @islogical);
 p.addParameter('wsearch'      , 'coarse to fine', @ischar);
 p.addParameter('detrend'      , 1               , @isnumeric);
@@ -42,6 +43,7 @@ model         = p.Results.model;
 grid          = p.Results.grid;
 wSearch       = p.Results.wsearch;
 detrend       = p.Results.detrend;
+fixcssexp     = p.Results.fixcssexp;
 keepAllPoints = p.Results.keepAllPoints;
 numberStimulusGridPoints = p.Results.numberStimulusGridPoints;
 
@@ -50,7 +52,9 @@ fprintf('\n[pmVistasoft] This is homedir: %s\n',homedir)
 fprintf('\n[pmVistasoft] This is stimfile: %s\n',stimfile)
 fprintf('\n[pmVistasoft] This is datafile: %s\n',datafile)
 fprintf('\n[pmVistasoft] This is stimradius: %i\n',stimradius)
-
+if strcmp(model,'css') && fixcssexp ~= 0
+    fprintf('\n[pmVistasoft] CSS model selected with fixed exponent to %1.2g\n',fixcssexp)
+end
 
 
 % TODO: write all options for wSearch and model
@@ -126,8 +130,8 @@ ok = mrInit(params);
 params
 dir(fullfile('.', filesep,'Raw'))
 
-params
-dir(fullfile('.', filesep,'Raw'))
+% params
+% dir(fullfile('.', filesep,'Raw'))
 
 
 
@@ -192,6 +196,7 @@ vw = initHiddenInplane();
 
 vw = rmMain(vw, [], wSearch, ...
             'model', {model}, ...
+            'fixcssexp',fixcssexp, ... % this is new, fixing exponent
             'matFileName', 'tmpResults', ...
             'keepAllPoints', keepAllPoints, ...
             'numberStimulusGridPoints', numberStimulusGridPoints);

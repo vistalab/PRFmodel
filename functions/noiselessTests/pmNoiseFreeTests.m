@@ -75,10 +75,11 @@ p.addParameter('stimshuffle',  false           , @islogical);
                            'usecss'       , true  );
     options.vista = struct('model'        , 'one gaussian'  ,...
                            'grid'         , false           , ...
-                           'wsearch'      , 'coarse to fine', ...
+                           'wSearch'      , 'coarse to fine', ...
                            'detrend'      , 1               , ...
                            'keepAllPoints', false           , ...
                            'modelPreds'   , false           , ...
+                           'fixcssexp'    , 0               , ...
                            'numberStimulusGridPoints',   50);
     options.afni  = struct('model'        , 'afni4', ...
                            'hrf'          , 'SPM');
@@ -157,7 +158,7 @@ Noise(1).seed                    = 'none';
 % Noise(1).seed                    = 'random';
 COMBINE_PARAMETERS.Noise         = Noise;
 synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats', 2);
-synthDT = pmForwardModelCalculate(synthDT,'useparallel',true);
+synthDT = pmForwardModelCalculate(synthDT,'useparallel',false);
 
 if useNifti
     % This is for nifti in pmModelFit purposes
@@ -189,13 +190,14 @@ switch prfimplementation
     case {'vista','mrvista','vistasoft','vista4'}
         options.vista            = allOptions.vista;
         options.vista.model      = 'css';  % 'one gaussian';
+        options.vista.fixcssexp  = 0.5;
         options.vista.obtainPreds= true;
-        options.vista.grid       = false;  % if true, returns gFit
-        options.vista.wSearch    = 'coarse to fine and hrf'; 
+        options.vista.grid       = false;  % if true, returns only gFit. There is a bug, if you ask wSearch grid fit it does not answer gFit, it does one additionnal step
+        options.vista.wSearch    = 'coarse to fine'; % 'grid fit','coarse to fine','coarse to fine and hrf'; 
         options.vista.detrend    = 0;
         options.vista.keepAllPoints            = true; 
         options.vista.numberStimulusGridPoints =  50;  
-        results                  = pmModelFit(input,'vistasoft','options',options);    
+        [results, allResults]   = pmModelFit(input,'vistasoft','options',options); 
     case {'vistaoval','vista6'}
         options.vista            = allOptions.vista;
         options.vista.model      = 'one oval gaussian';
