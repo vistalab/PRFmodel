@@ -21,8 +21,8 @@ p.parse(input,varargin{:});
 format = p.Results.format;
 
 
-if (isstring(input) || ischar(input))  
-    % TODO: make the system write relative paths... 
+if (isstring(input) || ischar(input))
+    % TODO: make the system write relative paths...
     % Rigth now in the datatables travel absolute paths, and this has
     % problems when reading local data (stim files as here).
     % For now do a check and it the root it not the same as pmRootPath,
@@ -33,14 +33,26 @@ if (isstring(input) || ischar(input))
     rootPath       = strjoin(rootPathParts(1:prfmodelLoc)',filesep);
     restPath       = strjoin(rootPathParts((prfmodelLoc+1):end)',filesep);
     
-    if ~(strcmp(rootPath,pmRootPath))
-        input = fullfile(pmRootPath,restPath,[fn ext]);
-    end
+    %     if ~(strcmp(rootPath,pmRootPath))
+    %         input = fullfile(pmRootPath,restPath,[fn ext]);
+    %     end
     if exist(input,'file')
         % File must contain the variable 'stim' which includes values
         % and ....
         s = load(input);
-        stimValues = s.stim;
+        %       stimValues = s.stim;
+        
+        % [st] adding input to take images as a field
+        if isfield(s,'images') || ~isfield(s,'stim')
+            tempstim = s.images;
+        elseif isfield(s,'stim')
+            tempstim = s.stim;
+        else
+            error("missing stim field in the stim file")
+        end
+        for ei = 1:size(tempstim,3)
+            stimValues(:,:,ei) = tempstim(:,:,ei);
+        end
     else
         error('File not found %s\n',input);
     end
