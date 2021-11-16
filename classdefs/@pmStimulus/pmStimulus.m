@@ -291,21 +291,28 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             end
         end
         function spatialSampleHorz = get.spatialSampleHorz(stim)
-%             spatialSampleHorz = stim.fieldofviewHorz/size(stim.getStimValues,2);
-            spatialSampleHorz = stim.fieldofviewHorz/stim.ResizedHorz;
+            spatialSampleHorz = stim.fieldofviewHorz/size(stim.getStimValues,2);
+            if strcmp(stim.PM.Type,'st')
+                spatialSampleHorz = stim.fieldofviewHorz/stim.ResizedHorz;
+            end
         end
         function spatialSampleVert = get.spatialSampleVert(stim)
             % Obtain the values if it is a path
-%             spatialSampleVert = stim.fieldofviewHorz/size(stim.getStimValues,1);
-            spatialSampleVert = stim.fieldofviewHorz/stim.ResizedHorz;
+            spatialSampleVert = stim.fieldofviewHorz/size(stim.getStimValues,1);
+            if strcmp(stim.PM.Type,'st')
+                spatialSampleVert = stim.fieldofviewHorz/stim.ResizedHorz;
+            end
         end
         function XY = get.XY(stim)
-            x = (-stim.fieldofviewVert:stim.spatialSampleVert:stim.fieldofviewVert);
-            y = (-stim.fieldofviewHorz:stim.spatialSampleHorz:stim.fieldofviewHorz);
-%             x = (stim.spatialSampleVert:stim.spatialSampleVert:stim.fieldofviewVert);
-%             x = x - mean(x);
-%             y = (stim.spatialSampleHorz:stim.spatialSampleHorz:stim.fieldofviewHorz);
-%             y = y - mean(y);
+            if strcmp(stim.PM.Type,'st')
+                x = (-stim.fieldofviewVert:stim.spatialSampleVert:stim.fieldofviewVert);
+                y = (-stim.fieldofviewHorz:stim.spatialSampleHorz:stim.fieldofviewHorz);
+            else
+                x = (stim.spatialSampleVert:stim.spatialSampleVert:stim.fieldofviewVert);
+                x = x - mean(x);
+                y = (stim.spatialSampleHorz:stim.spatialSampleHorz:stim.fieldofviewHorz);
+                y = y - mean(y);
+            end
             % Calculate the spatial sampling parameters
             [X,Y] = meshgrid(x,y);
             XY = [{X},{Y}];
