@@ -314,6 +314,7 @@ pm.Noise.seed=12345;
         RF               ;
         HRF              ;
         Noise            ;
+        Temporal         ;
         % Other required options (double, char, logical)
         signalPercentage ; % Provide results in BOLD signal (bold), in signal percent change (spc) or unitless (none) (default bold)
         BOLDmeanValue    ; % Required mean value of the synthetic BOLD signal (default 10000)
@@ -380,6 +381,7 @@ pm.Noise.seed=12345;
             pm.HRF               = pmHRF(pm); 
             pm.RF                = pmRF(pm);
             pm.Noise             = pmNoise(pm);
+            pm.Temporal          = pmTemporal(pm);
         end
         % Functions that apply the setting of main parameters to subclasses
         function set.TR(pm, tr)
@@ -425,6 +427,7 @@ pm.Noise.seed=12345;
             defaultsTable.RF        = pm.RF.defaultsGet;
             defaultsTable.Stimulus  = pm.Stimulus.defaultsGet;
             defaultsTable.Noise     = pm.Noise.defaultsGet;
+            defaultsTable.Temporal  = pm.Temporal.defaultsGet;
         end
         % Compute synthetic BOLD without noise
         function computeBOLD(pm,varargin)
@@ -444,6 +447,7 @@ pm.Noise.seed=12345;
                 pm.Stimulus.compute;
                 pm.RF.compute;
                 pm.HRF.compute;
+                pm.Temporal.compute;
             end            
             % Load stimulus
             stimValues = pm.Stimulus.getStimValues;
@@ -501,6 +505,8 @@ pm.Noise.seed=12345;
                     
                     pm.BOLD = conv2(timeSeries, getcanonicalhrf(pm.TR,pm.TR), 'same')'; % This is the same now
                     %}
+                case 'st'
+                    % Do nothing
                 otherwise
                     error('Model %s not implemented, select linear or CSS', pm.Type)
             end
