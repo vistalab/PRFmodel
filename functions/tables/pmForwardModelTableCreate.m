@@ -20,7 +20,7 @@ function synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS,varargin)
     COMBINE_PARAMETERS                    = struct();
     COMBINE_PARAMETERS.RF                 = struct();
     COMBINE_PARAMETERS.RF.sigmaMajor      = [1,2,3];
-    COMBINE_PARAMETERS.RF.sigmaMinor      = [1,2]; 
+    COMBINE_PARAMETERS.RF.sigmaMinor      = [1,2];
 synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats', 1);
 synthDT.RF(:,{'sigmaMinor','sigmaMajor','Centerx0','Centery0'})
 %}
@@ -29,8 +29,8 @@ synthDT.RF(:,{'sigmaMinor','sigmaMajor','Centerx0','Centery0'})
     COMBINE_PARAMETERS                    = struct();
     COMBINE_PARAMETERS.RF                 = struct();
     COMBINE_PARAMETERS.RF.sigmaMajor      = [1,2,3];
-    COMBINE_PARAMETERS.RF.sigmaMinor      = [1,2]; 
-    COMBINE_PARAMETERS.RF.Centerx0        = [1,2,3]; 
+    COMBINE_PARAMETERS.RF.sigmaMinor      = [1,2];
+    COMBINE_PARAMETERS.RF.Centerx0        = [1,2,3];
     COMBINE_PARAMETERS.RF.Centery0        = "same";
 synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats', 1);
 synthDT.RF(:,{'sigmaMinor','sigmaMajor','Centerx0','Centery0'})
@@ -40,7 +40,7 @@ synthDT.RF(:,{'sigmaMinor','sigmaMajor','Centerx0','Centery0'})
 % Check y = same works
     COMBINE_PARAMETERS                    = struct();
     COMBINE_PARAMETERS.RF                 = struct();
-    COMBINE_PARAMETERS.RF.Centerx0        = [1,2,3]; 
+    COMBINE_PARAMETERS.RF.Centerx0        = [1,2,3];
     COMBINE_PARAMETERS.RF.Centery0        = "same";
 synthDT = pmForwardModelTableCreate(COMBINE_PARAMETERS, 'repeats', 1);
 synthDT.RF(:,{'sigmaMinor','sigmaMajor','Centerx0','Centery0'})
@@ -56,7 +56,7 @@ varargin = mrvParamFormat(varargin);
 p = inputParser;
 p.addRequired('COMBINE_PARAMETERS' ,    @(x)(isa(x,'struct')));
 % By default do not create multiple copies
-p.addParameter('repeats'              , 1, @isnumeric); 
+p.addParameter('repeats'              , 1, @isnumeric);
 p.parse(COMBINE_PARAMETERS, varargin{:});
 % Assign it
 repeats = p.Results.repeats;
@@ -94,10 +94,10 @@ end
 
 
 
-% We don't want to have the defaults in the table if we did not specify them. 
-% First row is going to be the the first values of all the options. 
-% This means that we will run the loop twice, first populating the defaults, 
-% second, creating the additionnal rows. 
+% We don't want to have the defaults in the table if we did not specify them.
+% First row is going to be the the first values of all the options.
+% This means that we will run the loop twice, first populating the defaults,
+% second, creating the additionnal rows.
 fieldsToCombine = fieldnames(COMBINE_PARAMETERS);
 REDUCED_COMBINE_PARAMETERS = COMBINE_PARAMETERS;
 for ii=1:length(fieldsToCombine)
@@ -105,14 +105,30 @@ for ii=1:length(fieldsToCombine)
     fieldName   = fieldsToCombine{ii};
     fieldValues = COMBINE_PARAMETERS.(fieldName);
     switch fieldName
+        case {'Temporal'}
+            % We are only interested in the first array if there are more than one
+            nh          = 1;
+            completeTemporal = pmParamsCompletenessCheck(fieldValues(nh), ...
+                table2struct(pm.defaultsTable.Temporal));
+            % Do the same with params
+            completeTemporal.tParams = pmParamsCompletenessCheck(completeTemporal.tParams, ...
+                pm.defaultsTable.Temporal.tParams);
+            % Convert it to table
+            fieldValuesTable = struct2table(completeTemporal,'AsArray',true);
+            % Change the default
+            synthDT.(fieldName) = fieldValuesTable;
+            % If there is only only one HRF, then delete the variable
+            if length(fieldValues)==1
+                REDUCED_COMBINE_PARAMETERS = rmfield(REDUCED_COMBINE_PARAMETERS,'Temporal');
+            end
         case {'HRF','hrf'}
             % We are only interested in the first array if there are more than one
             nh          = 1;
             completeHRF = pmParamsCompletenessCheck(fieldValues(nh), ...
-                                            table2struct(pm.defaultsTable.HRF));
+                table2struct(pm.defaultsTable.HRF));
             % Do the same with params
             completeHRF.params = pmParamsCompletenessCheck(completeHRF.params, ...
-                                                    pm.defaultsTable.HRF.params);
+                pm.defaultsTable.HRF.params);
             % Convert it to table
             fieldValuesTable = struct2table(completeHRF,'AsArray',true);
             % Change the default
@@ -128,10 +144,10 @@ for ii=1:length(fieldsToCombine)
             % defaults, don't override the rest
             if isfield(fieldValues(nh),'voxel')
                 completeNoise = pmParamsCompletenessCheck(fieldValues(nh), ...
-                                            table2struct(pm.Noise.defaultsGet('voxel',fieldValues(nh).voxel)));
+                    table2struct(pm.Noise.defaultsGet('voxel',fieldValues(nh).voxel)));
             else
                 completeNoise = pmParamsCompletenessCheck(fieldValues(nh), ...
-                                            table2struct(pm.defaultsTable.Noise));
+                    table2struct(pm.defaultsTable.Noise));
             end
             % Convert it to table
             fieldValuesTable = struct2table(completeNoise,'AsArray',true);
@@ -177,9 +193,9 @@ for ii=1:length(fieldsToCombine)
                     if ~isstruct(fieldValues2)
                         % Change the default if provided
                         % if strcmp(fieldName,'Noise')
-                            
+                        
                         % else
-                            synthDT.(fieldName).(subFieldsToCombine{ii}) = fieldValues2(1);
+                        synthDT.(fieldName).(subFieldsToCombine{ii}) = fieldValues2(1);
                         % end
                         % If it is only one value, add it to defaults and delete it
                         if length(fieldValues2)==1
@@ -208,7 +224,7 @@ for ii=1:length(fieldsToCombine)
     % Construct fieldname
     fieldName   = fieldsToCombine{ii};
     fieldValues = REDUCED_COMBINE_PARAMETERS.(fieldName);
-    if ~isstruct(fieldValues) || ismember(fieldName, {'HRF','Noise'})
+    if ~isstruct(fieldValues) || ismember(fieldName, {'HRF','Noise','Temporal'})
         % Add rows with the combinations of parameters we want to check
         synthDT = pmForwardModelAddRows(synthDT, fieldName, fieldValues);
     else
@@ -222,7 +238,7 @@ for ii=1:length(fieldsToCombine)
                 % here, but everytime sigmaMajor is changed, change
                 % minor too.
                 if (strcmp(subFieldName,'sigmaMinor') && strcmp(fieldValues,'same')) || ...
-				   (strcmp(subFieldName,'Centery0') && strcmp(fieldValues,'same'))
+                        (strcmp(subFieldName,'Centery0') && strcmp(fieldValues,'same'))
                     continue
                 elseif strcmp(subFieldName,'sigmaMajor') && strcmp(REDUCED_COMBINE_PARAMETERS.RF.sigmaMinor,'same')
                     % Add rows with the combinations of parameters we want to check
@@ -255,12 +271,12 @@ synthDT = synthDT(keepRows, :);
 % DoG: delete row if sigmaMinor > sigmaMajor
 
 
-% Create multiple copies. 
+% Create multiple copies.
 if repeats > 1
     synthDT = repmat(synthDT,[repeats,1]);
 end
 
-% Add other variables 
+% Add other variables
 synthDT.SNR = 999 * ones(height(synthDT),1);
 % Change the order
 synthDT = synthDT(:,[1:(end-2),end,(end-1)]);
