@@ -86,8 +86,8 @@ tmpName = tempname(fullfile(pmRootPath,'local'));
 mkdir(tmpName);
         
 tic
-parfor (nn=1:nchcks, NumWorkers)
-% for nn=1:nchcks
+% parfor (nn=1:nchcks, NumWorkers)
+for nn=1:nchcks
     DT = DTcc{nn};
     % Initialize prev variables, for parallel toolbox
     dtprev = [];
@@ -179,6 +179,25 @@ parfor (nn=1:nchcks, NumWorkers)
         end
         pm.Noise.compute;
         
+        %% Temporal [st]
+        for jj=1:width(dt.Temporal)
+            paramName          = dt.Temporal.Properties.VariableNames{jj};
+            val                = dt.Temporal.(paramName);
+            if iscell(val)
+                pm.Temporal.(paramName) = val{:};
+            else
+                pm.Temporal.(paramName) = val;
+            end
+        end
+        if ii > 1
+            if isequal(dtprev.Temporal, dt.Temporal)
+                pm.Temporal.run_preds = pmprev.Temporal.run_preds;
+            else
+                pm.Temporal.compute;
+            end
+        else
+            pm.Temporal.compute;
+        end
         %% Compute the synthetic signal
         % The compute at the top level computes all the lovel level ones.
         % Just do it once here.
@@ -301,6 +320,9 @@ else
         fName  = fullfile(tmpName, sprintf('tmpDT_%04i.mat',nn));
         tmp    = load(fName,'DT');
         DTcalc = [DTcalc; tmp.DT];
+    end
+    if strcmp(DTcalc.Type,'st') % save st predictions as matfile
+        st_saveBOLD(DTcalc,outputdir);
     end
 end
 
