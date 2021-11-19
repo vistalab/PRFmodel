@@ -19,6 +19,25 @@ pm = prfModel;
 % variable that we want to expand
 tmp = synthDT;
 switch variableName
+    case {'Temporal'}
+        for ii=1:length(values)
+            % Add rows with the combinations of parameters we want to check
+            % Then check that the whole thing should be complete
+            complete = pmParamsCompletenessCheck(values(ii), ...
+                table2struct(pm.defaultsTable.Temporal));
+            % Check if only some of the fields in params where set
+            complete.tParams = pmParamsCompletenessCheck(complete.tParams, ...
+                pm.defaultsTable.Temporal.tParams);
+            % Convert it to table
+            fieldValuesTable = struct2table(complete,'AsArray',true);
+            % Take the copy of the existing table, and make everything equal
+            % except the one thing we are changing
+            tmp.(variableName)          = repmat(fieldValuesTable, [height(tmp),1]);
+            
+            % Now concatenate the original and the recently created one.
+            synthDT          = [synthDT; tmp];
+        end
+
     case {'HRF'}
         for ii=1:length(values)
             % Add rows with the combinations of parameters we want to check
