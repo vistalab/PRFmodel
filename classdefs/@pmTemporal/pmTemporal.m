@@ -24,20 +24,23 @@ classdef pmTemporal <   matlab.mixin.SetGet & matlab.mixin.Copyable
     
     properties
         PM;         % prfModel that has some of the variables we need, such as TR
-        %         stimseq          ;  % [st] exp A exp B  exp C
         temporalModel    ;  % [st] temporal modeling
-        IRFpath          ;  % [st] path to save IRF predictions
         chan_preds       ;  % [st] saves channel-wise predictions
         run_preds        ;  % [st] saves channel-wise X RF predictions
-        spc              ;  % [st] saves spc responses
         synBOLD          ;  % [st] saves final BOLD output with Noise added
-        synBOLDpath      ;  % [st] path to save BOLD+noise predictions
-        resolution       ;  % [st] Screen resolution (Hz)
-        stim_on          ;  % [st] Number of on frames for each trial
-        stim_off         ;  % [st] Number of off frames for each trial
-        predur           ;
         tParams          ;  % [st] temporal parameters
         fs               ;
+        
+        %                 spc              ;  % [st] saves spc responses
+        %         synBOLDpath      ;  % [st] path to save BOLD+noise predictions
+        %         resolution       ;  % [st] Screen resolution (Hz)
+        %         stim_on          ;  % [st] Number of on frames for each trial
+        %         stim_off         ;  % [st] Number of off frames for each trial
+        %         predur           ;
+        %         msStimpath       ;
+        %         stimseq          ;  % [st] exp A exp B  exp C
+        %         IRFpath          ;  % [st] path to save IRF predictions
+        
     end
     
     properties (SetAccess = private, GetAccess = public)
@@ -55,13 +58,17 @@ classdef pmTemporal <   matlab.mixin.SetGet & matlab.mixin.Copyable
     methods (Static)
         function d = defaultsGet
             d.temporalModel  = "None"; %stim temporal model
-            d.resolution     = "60"; % Screen refresh Rate (Hz)
-            d.predur = 0;
             d.fs = 1000;
             d.tParams.tParams = [];
-%             d.tParams = st_temporal_default(d.temporalModel);
-%             d.tParams = tparams.prm;
+            
+            %             d.predur = 0;
 
+            %             d.resolution     = "60"; % Screen refresh Rate (Hz)
+            %             d.msStimpath = fullfile(pmRootPath,'data','msStim');
+            %                         d.IRFpath = fullfile(pmRootPath,'data','IRF');
+            %             d.tParams = st_temporal_default(d.temporalModel);
+            %             d.tParams = tparams.prm;
+            
             % Convert to table and return
             d = struct2table(d,'AsArray',true);
             
@@ -79,20 +86,21 @@ classdef pmTemporal <   matlab.mixin.SetGet & matlab.mixin.Copyable
             p = inputParser;
             p.addRequired ('pm',     @(x)(isa(x,'prfModel')));
             p.addParameter('temporalModel',d.temporalModel   , @ischar);
-            p.addParameter('resolution',d.resolution   , @ischar);
-            p.addParameter('predur',d.predur   , @double);
             p.addParameter('tParams',d.tParams   , @isstruct);
-
+            
             p.parse(pm,varargin{:});
             
             % Initialize the pm model and hrf model parameters
             temporal.PM             = pm;
-            
             temporal.temporalModel    = p.Results.temporalModel;
-            temporal.resolution       = p.Results.resolution;
             temporal.tParams          = p.Results.tParams;
-            temporal.IRFpath          = Constants.getDir.sim_IRF_dir;
-                        
+            
+            %             p.addParameter('resolution',d.resolution   , @ischar);
+            %             p.addParameter('predur',d.predur   , @double);
+            %             temporal.resolution       = p.Results.resolution;
+            %             temporal.IRFpath          = p.Results.IRFpath;
+            %             temporal.IRFpath          = Constants.getDir.sim_IRF_dir;
+            
         end
         
         function v = get.TR(temporal)
@@ -108,18 +116,18 @@ classdef pmTemporal <   matlab.mixin.SetGet & matlab.mixin.Copyable
         end
         
         function nChan = get.nChan(temporal)
-           if contains(temporal.temporalModel,'2ch')
-               nChan = 2;
-           else
-               nChan = 1;
-           end
+            if contains(temporal.temporalModel,'2ch')
+                nChan = 2;
+            else
+                nChan = 1;
+            end
         end
         
-%         function tparams = get.tParams(temporal)
-%             tparams = st_temporal_default(temporal.temporalModel);
-%             tparams = tparams.prm;
-%         end
-
+        %         function tparams = get.tParams(temporal)
+        %             tparams = st_temporal_default(temporal.temporalModel);
+        %             tparams = tparams.prm;
+        %         end
+        
         
         %% Methods available to this class and childrens, if any
         
@@ -130,16 +138,13 @@ classdef pmTemporal <   matlab.mixin.SetGet & matlab.mixin.Copyable
                 temporal.PM.Stimulus.compute;
                 temporal.PM.RF.compute;
                 temporal.PM.HRF.compute;
-                hrf = resample(temporal.PM.HRF.values,1000,1)';
-
                 
-%                 c = Constants.getTemporalParams.temporalParams;
-%                 
-%                 for i = 1:length(c)
-%                     if strcmp(c{i}.type, temp_type)
-%                         idx = i;
-%                     end
-%                 end
+                % get ms HRF
+                hrf = resample(temporal.PM.HRF.values,temporal.fs,1)';
+                
+                % define TR
+                tr = temporal.TR; % seconds
+                
                 temp_type = char(temporal.temporalModel);
                 temporal_param = temporal.tParams.tParams;
                 if isempty(temporal_param)
@@ -148,49 +153,32 @@ classdef pmTemporal <   matlab.mixin.SetGet & matlab.mixin.Copyable
                 end
                 num_channels   = temporal.nChan;
                 
-                % define ms hrf
-%                 hrf = canonical_hrf(1 / temporal.fs, [5 14 28]);
-
-                % define TR
-                tr = Constants.getTemporalParams.tr; % seconds
+                %    hrf = canonical_hrf(1 / temporal.fs, [5 14 28]);
                 
-                % compute rfStim
                 [keep,msStim] = st_keepWindowStim(temporal.PM,0);
+                %
                 rf = temporal.PM.RF.values(keep);
                 rfStim = full(msStim'*sparse(rf));
                 
-                % account and clip the preduration period
-%                 rfStim = rfStim(temporal.predur*1000+1:end);
-
-                
                 t = 0.001 : 0.001 : size(rfStim,1)/temporal.fs;
                 
-                % compute rsp
+                % compute neural responses
                 rsp =st_tModel(temp_type,temporal_param,rfStim', t); % rsp = time (ms) x space
-                
-                % account and clip the preduration period
-                %                 rsp = cellfun(@(x) x(temporal.predur*1000+1:end,:),rsp,'UniformOutput',false);
-                
                 
                 temporal.run_preds = cellfun(@(X, Y) convolve_vecs(X, Y, temporal.fs, 1 /tr), ...
                     rsp, repmat({hrf}, size(rsp)), 'uni', false);
                 temporal.run_preds = cell2mat(temporal.run_preds);
                 temporal.run_preds = temporal.run_preds(:,1:num_channels);
                 
-                %                 normMax = @(x) x./max(x);
-                %                 run_preds = normMax(run_preds);
-                %
-                weight = 1; 
+                % normalize 2ch responses and sum across channels
                 if contains(temp_type,'2ch')
                     maxNorm = max(temporal.run_preds(:,1))/ max(temporal.run_preds(:,2));
                     temporal.run_preds(:,2) = temporal.run_preds(:,2)*maxNorm;
-                    weight = 0.5;
+                    temporal.run_preds = sum(temporal.run_preds,2);
                 end
                 
                 temporal.chan_preds      = rsp;
-                temporal.run_preds       = temporal.run_preds./max(temporal.run_preds)*weight;
-
-%                 temporal.run_preds       = temporal.run_preds*weight;
+                temporal.run_preds       = temporal.run_preds./max(temporal.run_preds);
             end
         end
         
@@ -199,5 +187,22 @@ classdef pmTemporal <   matlab.mixin.SetGet & matlab.mixin.Copyable
     end
 end
 
+%                 rsp1 = resample(rsp{1},1,1000)';
+%                 rsp2 = resample(rsp{2},1,1000)';
+% %                 convValues    = conv(temporal.PM.HRF.values',rsp1);
+% %                 BOLDconv = convValues(1:length(rsp1));
+% plot( zscore(BOLDconv)); hold on; plot(zscore(temporal.run_preds(:,1)))
+%        plot(zscore(BOLDconv)' - zscore(temporal.run_preds(:,1)))
 
 
+%                 [~,msStimName]=fileparts(temporal.PM.Stimulus.values);
+%                 temporal.msStimpath = fullfile(temporal.msStimpath,msStimName);
+%                 if ~exist(temporal.msStimpath,'dir')
+%                     mkdir(temporal.msStimpath);
+%                 end
+%                 if ~isfile(temporal.msStimpath) % cache ms stim
+%                     [keep,msStim] = st_keepWindowStim(temporal.PM,0);
+%                     save(temporal.msStimpath,'msStim','keep');
+%                 else
+%                     load(temporal.msStimpath);
+%                 end

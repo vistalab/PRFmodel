@@ -369,8 +369,12 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             % If the user passed its values, override this and maintain the default
             if iscell(stim.userVals)
                 uv = stim.userVals{:};
+                stimNameWithPath = fullfile(stim.DataPath, [stim.Name '.mat']);
+                stim.values        =  char(stimNameWithPath);
             else
                 uv = stim.userVals;
+                stimNameWithPath = fullfile(stim.DataPath, [stim.Name '.mat']);
+                stim.values        =  char(stimNameWithPath);
             end
             if isempty(uv)
                 stimNameWithPath = fullfile(stim.DataPath, [stim.Name '.mat']);
@@ -394,6 +398,21 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
                         % USERLOAD needs images and and sequence as structs
                         userStim = load(userLoadFile);
                         
+                        % check if needed struct fields are there
+                        if strcmp(stim.PM.Type,'st')
+                            if ~isfield(userStim,'images') || ...
+                               ~isfield(userStim,'sec_sequence') || ...
+                               ~isfield(userStim,'sequence')
+                                error("[st] model stimulus needs images & sec_sequence & sequence")
+                            end
+                        else
+                            if ~isfield(userStim,'images') || ~isfield(userStim,'sec_sequence')
+                                error("myload user stim needs images & sec_sequence ")
+                            end
+                        end
+                        
+                        seq = userStim.sec_sequence;
+
                         %resize image
                         nImages = size(userStim.images, 3);
                         nSamples = stim.ResizedHorz;
@@ -402,10 +421,28 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
                             tmp = imresize(userStim.images(:,:,ii), 1+2*[nSamples nSamples], 'nearest');
                             resampled(:, ii) = tmp(:);
                         end
-                        userStim.images = reshape(resampled, size(stim.XY{1},1),size(stim.XY{1},2),nImages);
-                        images = userStim.images;
-                        sequence = userStim.sequence;
-                        save(stimNameWithPath,'images','sequence')
+                        resampled = reshape(resampled, size(stim.XY{1},1),size(stim.XY{1},2),nImages);
+
+                        % populate temporal timecourse to the given images
+                        offMask = zeros([size(resampled,1) size(resampled,2)]);
+                        images = zeros(size(resampled,1),size(resampled,2),length(seq));
+                        
+                        for eachimage = 1:length(seq)
+                            if seq(eachimage) == 0
+                                images(:,:,eachimage) = offMask;
+                            elseif seq(eachimage) ~= 0
+                                images(:,:,eachimage) = resampled(:,:,seq(eachimage));
+                            end
+                        end
+                        
+                        if strcmp(stim.PM.Type,'st')
+                            sequence = userStim.sequence;
+                            save(stimNameWithPath,'resampled','images','sequence')
+                        else
+                            sequence = userStim.sec_sequence;
+                            save(stimNameWithPath,'images','sequence')
+
+                        end
                     end
                 end
                 % fprintf('Retrieving stimulus file in %s',stimNameWithPath)

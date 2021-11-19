@@ -381,9 +381,7 @@ pm.Noise.seed=12345;
             pm.HRF               = pmHRF(pm); 
             pm.RF                = pmRF(pm);
             pm.Noise             = pmNoise(pm);
-            if strcmp(pm.Type,'st')
-                pm.Temporal          = pmTemporal(pm);
-            end
+            pm.Temporal          = pmTemporal(pm);
         end
         % Functions that apply the setting of main parameters to subclasses
         function set.TR(pm, tr)
@@ -449,9 +447,7 @@ pm.Noise.seed=12345;
                 pm.Stimulus.compute;
                 pm.RF.compute;
                 pm.HRF.compute;
-                if strcmp(pm.Type,'st')
-                    pm.Temporal.compute;
-                end
+                pm.Temporal.compute;
             end            
             % Load stimulus
             stimValues = pm.Stimulus.getStimValues;
@@ -525,6 +521,11 @@ pm.Noise.seed=12345;
                     pm.showConvolution
                     hold on
                 end
+                
+                if strcmp(pm.Type,'st')
+                   pm.BOLDconv = pm.Temporal.run_preds';
+                end
+
             % Scale the signal so that it has the required mean and contrast
             
             % Convert the output requested in pm.signalPercentage 
@@ -778,7 +779,9 @@ pm.Noise.seed=12345;
                 pm.RF.compute;
                 pm.HRF.compute;
                 pm.Noise.compute;
-                
+%                 if strcmp(pm.Type,'st')
+                    pm.Temporal.compute;
+%                 end
             end
             % Compute BOLDconv signal
             pm.computeBOLD;
