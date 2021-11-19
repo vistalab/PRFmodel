@@ -188,7 +188,7 @@ if height(synthDT) > 32000
 	error("Attempting to write more than 32000 per dimension (%i). TODO: Matlab's niftiwrite will automatically use Nifti-2 to write 2^63 -1 (instead of the current 2^15 -1.", height(synthDT))
 end
 
-DTcalc = pmForwardModelCalculate(synthDT,'writefiles',true,'outputdir',output_dir,'subjectname',J.subjectName); 
+DTcalc = pmForwardModelCalculate(synthDT,'writefiles',false,'outputdir',output_dir,'subjectname',J.subjectName); 
 
 % DTcalc = pmForwardModelCalculate(synthDT, 'useparallel',J.useparallel,'writefiles',true,'outputdir',output_dir,'subjectname',J.subjectName); 
 %% Generate the files
