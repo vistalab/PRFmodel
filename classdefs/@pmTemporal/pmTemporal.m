@@ -87,7 +87,7 @@ classdef pmTemporal <   matlab.mixin.SetGet & matlab.mixin.Copyable
             p.addRequired ('pm',     @(x)(isa(x,'prfModel')));
             p.addParameter('temporalModel',d.temporalModel   , @ischar);
             p.addParameter('tParams',d.tParams   , @isstruct);
-            
+            p.addParameter('fs',d.tParams   , @isnumeric);
             p.parse(pm,varargin{:});
             
             % Initialize the pm model and hrf model parameters
@@ -141,7 +141,8 @@ classdef pmTemporal <   matlab.mixin.SetGet & matlab.mixin.Copyable
                 
                 % get ms HRF
                 hrf = resample(temporal.PM.HRF.values,temporal.fs,1)';
-                
+                hrf = hrf ./ sum(hrf(:));
+
                 % define TR
                 tr = temporal.TR; % seconds
                 
@@ -155,12 +156,13 @@ classdef pmTemporal <   matlab.mixin.SetGet & matlab.mixin.Copyable
                 
                 %    hrf = canonical_hrf(1 / temporal.fs, [5 14 28]);
                 
-                [keep,msStim] = st_keepWindowStim(temporal.PM,0);
+                [keep,msStim] = st_keepWindowStim(temporal.PM,1);
                 %
                 rf = temporal.PM.RF.values(keep);
                 rfStim = full(msStim'*sparse(rf));
                 
-                t = 0.001 : 0.001 : size(rfStim,1)/temporal.fs;
+%                 t = 0.001 : 0.001 : size(rfStim,1)/temporal.fs;
+                t = 1/temporal.fs  : 1/temporal.fs : size(rfStim,1)/temporal.fs;
                 
                 % compute neural responses
                 rsp =st_tModel(temp_type,temporal_param,rfStim', t); % rsp = time (ms) x space
@@ -170,15 +172,19 @@ classdef pmTemporal <   matlab.mixin.SetGet & matlab.mixin.Copyable
                 temporal.run_preds = cell2mat(temporal.run_preds);
                 temporal.run_preds = temporal.run_preds(:,1:num_channels);
                 
+                normMax = @(x) x./max(x);
+
                 % normalize 2ch responses and sum across channels
                 if contains(temp_type,'2ch')
-                    maxNorm = max(temporal.run_preds(:,1))/ max(temporal.run_preds(:,2));
-                    temporal.run_preds(:,2) = temporal.run_preds(:,2)*maxNorm;
+                    temporal.run_preds = normMax(temporal.run_preds);
+%                     maxNorm = max(temporal.run_preds(:,1))/ max(temporal.run_preds(:,2));
+%                     temporal.run_preds(:,2) = temporal.run_preds(:,2)*maxNorm;
                     temporal.run_preds = sum(temporal.run_preds,2);
                 end
                 
+
                 temporal.chan_preds      = rsp;
-                temporal.run_preds       = temporal.run_preds./max(temporal.run_preds);
+                temporal.run_preds       = normMax(temporal.run_preds);
             end
         end
         
