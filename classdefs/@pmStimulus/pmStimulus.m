@@ -315,7 +315,7 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             end
             % Calculate the spatial sampling parameters
             [X,Y] = meshgrid(x,y);
-            XY = [{X},{Y}];
+            XY = [{X},{-1*Y}];
         end
         function v = get.timePointsN(stim)
             v = size(stim.getStimValues,3);
@@ -369,12 +369,8 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             % If the user passed its values, override this and maintain the default
             if iscell(stim.userVals)
                 uv = stim.userVals{:};
-                stimNameWithPath = fullfile(stim.DataPath, [stim.Name '.mat']);
-                stim.values        =  char(stimNameWithPath);
             else
                 uv = stim.userVals;
-                stimNameWithPath = fullfile(stim.DataPath, [stim.Name '.mat']);
-                stim.values        =  char(stimNameWithPath);
             end
             if isempty(uv)
                 stimNameWithPath = fullfile(stim.DataPath, [stim.Name '.mat']);
@@ -445,14 +441,16 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
                         end
                     end
                 end
-                % fprintf('Retrieving stimulus file in %s',stimNameWithPath)
-                stim.values        =  char(stimNameWithPath);
-                % Default fileName if we want to write a video of the stimuli
-                stim.videoFileName = fullfile(stim.LocalPath,[stim.Name '.avi']);
-                % Default fileName if we want to write a nifti of the stimuli
-                stim.niftiFileName = fullfile(stim.LocalPath,[stim.Name '.nii.gz']);
 
             end
+            stimNameWithPath = fullfile(stim.DataPath, [stim.Name '.mat']);
+            % fprintf('Retrieving stimulus file in %s',stimNameWithPath)
+            stim.values        =  char(stimNameWithPath);
+            % Default fileName if we want to write a video of the stimuli
+            stim.videoFileName = fullfile(stim.LocalPath,[stim.Name '.avi']);
+            % Default fileName if we want to write a nifti of the stimuli
+            stim.niftiFileName = fullfile(stim.LocalPath,[stim.Name '.nii.gz']);
+
         end
         
         
