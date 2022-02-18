@@ -6,12 +6,13 @@ set +o verbose   # Command echo off
 
 # If run in debug mode, just exec bash:
 if [ "$1" = "DEBUG" ]
-then exec /bin/bash
+    then exec /bin/bash
 elif [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ "$1" = "-help" ] || [ "$1" = "help" ]
-then cat /opt/help.txt
-     exit 0
-else . /opt/conda/etc/profile.d/conda.sh
-     conda activate base
+    then cat /opt/help.txt
+    exit 0
+else 
+    source /opt/conda/etc/profile.d/conda.sh
+    conda activate scientific
 fi
 
 

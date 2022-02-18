@@ -1,8 +1,16 @@
 #! /bin/bash
 
+
+# latest=v95(2018b)
+# 3.0.0 = v99(2020b)
+
+
 [ -z "$USERTAG" ] && USERTAG=garikoitz
 [ -z "$SOLVER"  ] && SOLVER=base
-[ -z "$VERSION" ] && VERSION=latest
+[ -z "$VERSION" ] && VERSION=3.0.1
+# Versions
+# 3.0.0 first one using matlab 2020b, but maintaining old Python
+# 3.0.1 using the install method with the yml file and conda 3
 
 SCRIPTPATH="$( cd "$(dirname "$0")" && pwd -P )"
 
@@ -11,4 +19,5 @@ echo "  Path: $SCRIPTPATH"
 echo "------------------------------------------------------------"
 echo ""
 
-docker build "$@" --tag "$USERTAG/prfanalyze-$SOLVER:$VERSION" "$SCRIPTPATH"
+docker build --no-cache "$@" --tag "$USERTAG/prfanalyze-$SOLVER:$VERSION" "$SCRIPTPATH"
+# docker build  "$@" --tag "$USERTAG/prfanalyze-$SOLVER:$VERSION" "$SCRIPTPATH"
