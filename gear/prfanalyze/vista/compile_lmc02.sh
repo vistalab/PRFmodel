@@ -5,6 +5,7 @@ cat > build.m <<END
 % We do not want ToolboxToolbox to mess up the compiling
 restoredefaultpath();
 addpath(genpath('/bcbl/home/home_g-m/glerma/toolboxes/vistasoft'));
+rmpath(genpath('/bcbl/home/home_g-m/glerma/toolboxes/vistasoft/local'));
 addpath(genpath('/bcbl/home/home_g-m/glerma/toolboxes/jsonlab_v1.2'));
 addpath(genpath('/bcbl/home/home_g-m/glerma/toolboxes/JSONio'));
 addpath(genpath('/bcbl/home/home_g-m/glerma/toolboxes/garikoitzanalyzePRF'));
