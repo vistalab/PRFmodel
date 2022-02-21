@@ -2,7 +2,7 @@
 
 [ -z "$USERTAG" ] && USERTAG=garikoitz
 [ -z "$SOLVER"  ] && SOLVER=vista
-[ -z "$VERSION" ] && VERSION=2.0.8
+[ -z "$VERSION" ] && VERSION=2.1.0
 
 # 2.0.5: edited in master, fix in base/run.py for singularity
 
