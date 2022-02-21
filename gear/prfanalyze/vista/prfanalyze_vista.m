@@ -16,7 +16,19 @@ stim_file  = '/black/localhome/glerma/TESTDATA/prfmodel/jon_box/BIDS/stimuli/sub
 output_dir = '/black/localhome/glerma/TESTDATA/prfmodel/jon_box';
 opts_file  = '/black/localhome/glerma/TESTDATA/prfmodel/jon_box/prfanalyze-config-vista.json'
 %}
-    
+
+%{
+bdir       = '/export/home/glerma/TESTDATA/prfmodel/jon_box';
+bold_file  = fullfile(bdir,'BIDS/sub-01/ses-01/func/sub-01_ses-01_task-prf_acq-normal_run-01_bold.nii.gz');
+json_file  = fullfile(bdir,'tmpStim.json');
+stim_file  = fullfile(bdir,'BIDS/stimuli/sub-01_ses-01_task-prf_apertures.nii.gz');
+output_dir = bdir;
+opts_file  = fullfile(bdir,'prfanalyze-config-vista.json');
+%}
+
+% prfanalyze_vista(opts_file, json_file, bold_file, stim_file, output_dir)
+
+ 
 %% Initial checks
 tic
 % If nothing was passed in, display help and return
