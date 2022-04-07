@@ -204,8 +204,8 @@ else:
     tasks = conf['tasks'].split(']')[0].split('[')[-1].split(',')
     areas = conf['areas'].split(']')[0].split('[')[-1].split(',')
     
-    if 'prfprepareAnalysis' in conf.keys():
-        prfprep_analyis = conf['prfprepareAnalysis']
+    if 'prfprepareAnalysis' in opts.keys():
+        prfprep_analyis = opts['prfprepareAnalysis']
     else:
         print('You should consider adding an prfprepareAnalysisNumber in the config!')
         print('Automatically setting it to "01".')
@@ -219,31 +219,36 @@ else:
     
     # Finally, we need to find the output directory (in the OUTPUT directory's BIDS directory)
     # To figure out how we name the directory, we use the PRF_SOLVER environment variable
-    p = os.path.join(output_dir, 'BIDS', 'derivatives', solver_name)
-    outbids_dir = os.path.join(p, f'sub-{sub}', f'ses-{ses}')
-    # if this directory already exists, it's safe to assume that we need a temporary directory (unless
-    # the force option is invoked):
-    if not force and os.path.isdir(outbids_dir):
-        outbids_dir = None
-        for k in range(1000):
-            p = os.path.join(output_dir, 'BIDS', 'derivatives', solver_name + '_temp%03d' % k)
-            if not os.path.isdir(p):
-                # we've found it!
-                outbids_dir = os.path.join(p, f'sub-{sub}', f'ses-{ses}')
-                print("WARNING: Using temporary output directory: %s" % p)
-                break
-        if outbids_dir is None: die("Could not find a valid temporary directory!")
-    try:
-        if not os.path.isdir(outbids_dir): os.makedirs(outbids_dir)
-    except Exception:
-        die("Error creating output BIDS directory: %s" % outbids_dir)
+    analysis_number = 0
+    found_outbids_dir = False
+    while not found_outbids_dir and analysis_number<100:
+        analysis_number += 1
+        
+        p = os.path.join(output_dir, 'BIDS', 'derivatives', solver_name, f'analysis-{analysis_number:02d}')
+        outbids_dir = os.path.join(p, f'sub-{sub}', f'ses-{ses}')
+        opts_file = os.path.join(p, 'options.json')
+        
+        # if the analyis-XX directory exists check for the config file
+        if os.path.isdir(p) and os.path.isfile(opts_file):
+            with open(opts_file, 'r') as fl:
+                opts = json.load(fl)
+                
+            # check for the options file equal to the config            
+            if sorted(opts.items()) == sorted(conf['options'].items()):
+                found_outbids_dir = True
+        
+        # when we could not find a fitting analysis-XX forlder we make a new one
+        else:
+            if not os.path.isdir(outbids_dir):
+                os.makedirs(outbids_dir, exist_ok=True)
+                
+            # dump the options file in the output directory
+            with open(opts_file, 'w') as fl:
+                json.dump(opts, fl)
+                
+            found_outbids_dir = True
     note("Output BIDS directory: %s" % outbids_dir)
-    
-    # dump the options file in the output directory
-    opts_file = os.path.join(p, 'options.json')
-    with open(opts_file, 'w') as fl:
-        json.dump(opts, fl)
-    
+  
     # loop through specified areas and tasks
     for area in areas:
         for task in tasks:
@@ -254,9 +259,18 @@ else:
             processed = 0        
         
             for flnm in os.listdir(func_dir):
-                if not (flnm.startswith(bold_prefix) and flnm.endswith(bold_suffix)): continue
+                # check if input exists
+                if not (flnm.startswith(bold_prefix) and flnm.endswith(bold_suffix)): 
+                    continue
+            
+                # find all run numbers and bold images
                 runid = flnm[pn:-sn]
                 bold_image = os.path.join(func_dir, flnm)
+                
+                # check if outptut already exists
+                resflo = os.path.join(outbids_dir, f'sub-{sub}_ses-{ses}_task-{task}_run-{runid}_desc-{area}_results.mat')
+                if os.path.isfile(resflo) and not force:
+                    continue
                 
                 # we get the stimulus filename from the events file:
                 events_file = os.path.join(func_dir, f'sub-{sub}_ses-{ses}_task-{task}_run-{runid}_events.tsv')
@@ -322,7 +336,7 @@ else:
                     # decode the data...
                     dat = {k: np.asarray([u[k] for u in dat]) for k in dat[0].keys()}
                     for (k,v) in dat.items():
-                        if len(v.shape) == 2:            
+                        if len(v.shape) == 2:
                             im = nib.Nifti2Image(np.reshape(v, (v.shape[0], 1, 1, v.shape[-1])),
                                                  nii_base.affine, nii_base.header)
                         else:
@@ -334,7 +348,6 @@ else:
                 else:
                     note("No estimates.json file found.")
                 resfli = os.path.join(outbids_dir, 'results.mat')
-                resflo = os.path.join(outbids_dir, f'sub-{sub}_ses-{ses}_task-{task}_run-{runid}_desc-{area}_results.mat')
                 if os.path.isfile(resfli): os.rename(resfli, resflo)
                 processed += 1
         
