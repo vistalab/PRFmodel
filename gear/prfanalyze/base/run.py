@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-import json, os, sys, csv, pimms
+import json, os, sys, csv, pimms, glob
 import nibabel as nib
 
 output_dir  = '/flywheel/v0/output'
@@ -199,10 +199,19 @@ else:
     print("[base/run.py] Using real data, not coming from prfsynthesize.")
     
     # read additional bids fields for the filenames from the config.json
-    if not 'tasks' in conf.keys(): die('Specify the tasks in the config file!')
-    if not 'areas' in conf.keys(): die('Specify the areas in the config file!')
-    tasks = conf['tasks'].split(']')[0].split('[')[-1].split(',')
-    areas = conf['areas'].split(']')[0].split('[')[-1].split(',')
+    if not 'tasks' in conf.keys(): 
+        print('Specify the tasks in the config file!')
+        print('We now take all available tasks!')
+        tasks = ['all']
+    else:
+        tasks = conf['tasks'].split(']')[0].split('[')[-1].split(',')
+        
+    if not 'areas' in conf.keys(): 
+        print('Specify the areas in the config file!')
+        print('We now take all available areas!')
+        areas = ['all']
+    else:
+        areas = conf['areas'].split(']')[0].split('[')[-1].split(',')
     
     if 'prfprepareAnalysis' in opts.keys():
         prfprep_analyis = opts['prfprepareAnalysis']
@@ -244,31 +253,42 @@ else:
                 
             # dump the options file in the output directory
             with open(opts_file, 'w') as fl:
-                json.dump(opts, fl)
+                json.dump(conf['options'], fl)
                 
             found_outbids_dir = True
     note("Output BIDS directory: %s" % outbids_dir)
-  
-    # loop through specified areas and tasks
-    for area in areas:
-        for task in tasks:
-            # We may have any number of runs, find them all:
-            bold_prefix = f'sub-{sub}_ses-{ses}_task-{task}_run-'
-            bold_suffix = f'_desc-{area}_bold.nii.gz'
-            (pn,sn) = (len(bold_prefix), len(bold_suffix))
-            processed = 0        
-        
-            for flnm in os.listdir(func_dir):
-                # check if input exists
-                if not (flnm.startswith(bold_prefix) and flnm.endswith(bold_suffix)): 
-                    continue
+
+    processed = 0
+    
+    for taskL in tasks:
+        if taskL == 'all':
+            taskS = '*'
+        else:
+            taskS = taskL
+            
+        for areaL in areas:
+            if areaL == 'all':
+                areaS = '*'
+            else:
+                areaS = areaL
+
+            # filter(function, iterable)nd all files that match the input from config.json
+            bold_images = glob.glob(os.path.join(func_dir, f'sub-{sub}_ses-{ses}_task-{taskS}_run-*_hemi-*_desc-{areaS}-*_bold.nii.gz'))
+                            
+            print(bold_images)
+            print(len(bold_images))
+                    
+            for bold_image in bold_images:
             
                 # find all run numbers and bold images
-                runid = flnm[pn:-sn]
-                bold_image = os.path.join(func_dir, flnm)
-                
+                flnm  = os.path.basename(bold_image)
+                task  = flnm.split('task-')[-1].split('_run' )[0]
+                runid = flnm.split('run-' )[-1].split('_hemi')[0]
+                hemi  = flnm.split('hemi-')[-1].split('_desc')[0]
+                area  = flnm.split('desc-')[-1].split('_bold')[0]
+        
                 # check if outptut already exists
-                resflo = os.path.join(outbids_dir, f'sub-{sub}_ses-{ses}_task-{task}_run-{runid}_desc-{area}_results.mat')
+                resflo = os.path.join(outbids_dir, f'sub-{sub}_ses-{ses}_task-{task}_run-{runid}_hemi-{hemi}_desc-{area}_results.mat')
                 if os.path.isfile(resflo) and not force:
                     continue
                 
@@ -294,8 +314,7 @@ else:
                 stim_file = os.path.join(stims_dir, list(stim_file)[0])
                 if not os.path.isfile(stim_file):
                     die("Stimulus file (%s) not found" % stim_file)
-                
-                
+                                                     
                 if 'stimulus' not in conf:
                     die("In config.json, isPRFSynthData is False, but no stimulus settings were given.")
                 stim = conf['stimulus']
@@ -324,7 +343,7 @@ else:
                         os.wait()
                 except Exception:
                     die("Failed to exec /solve.sh script!")    
-    
+        
                 nii_base = nib.load(bold_image)
                 # If there are things to cleanup we do that; specifically, the estimates.json file:
                 estfl = os.path.join(outbids_dir, 'estimates.json')
@@ -335,6 +354,7 @@ else:
                         dat = json.load(fl)
                     # decode the data...
                     dat = {k: np.asarray([u[k] for u in dat]) for k in dat[0].keys()}
+                    print(f'Writing the estimates.json to nifti2 in outbids_dir: {outbids_dir}')
                     for (k,v) in dat.items():
                         if len(v.shape) == 2:
                             im = nib.Nifti2Image(np.reshape(v, (v.shape[0], 1, 1, v.shape[-1])),
@@ -342,9 +362,8 @@ else:
                         else:
                             im = nib.Nifti2Image(np.reshape(v, (-1, 1, 1, 1)),
                                                  nii_base.affine, nii_base.header)
-                        print("Writing the estimates.json to nifti2 in outbids_dir: {outbids_dir}")
-                        im.to_filename(os.path.join(outbids_dir, f'sub-{sub}_ses-{ses}_task-{task}_run-{runid}_desc-{area}_{k.lower()}.nii.gz'))
-                    os.rename(estfl, os.path.join(outbids_dir, f'sub-{sub}_ses-{ses}_task-{task}_run-{runid}_desc-{area}_estimates.json'))
+                        im.to_filename(os.path.join(outbids_dir, f'sub-{sub}_ses-{ses}_task-{task}_run-{runid}_hemi-{hemi}_desc-{area}_{k.lower()}.nii.gz'))
+                    os.rename(estfl, os.path.join(outbids_dir, f'sub-{sub}_ses-{ses}_task-{task}_run-{runid}_hemi-{hemi}_desc-{area}_estimates.json'))
                 else:
                     note("No estimates.json file found.")
                 resfli = os.path.join(outbids_dir, 'results.mat')
