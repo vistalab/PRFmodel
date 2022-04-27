@@ -131,7 +131,7 @@ if conf['isPRFSynthData']:
     # dump the options file in the output directory
     opts_file   = os.path.join(bids_link, 'options.json')
     with open(opts_file, 'w') as fl:
-        json.dump(opts, fl)
+        json.dump(opts, fl, indent=4)
     
     # We may have any number of runs, find them all:
     bold_prefix = 'sub-%s_ses-%s%s_run-' % (sub, ses, bids_fields)
@@ -205,14 +205,7 @@ else:
         tasks = ['all']
     else:
         tasks = conf['tasks'].split(']')[0].split('[')[-1].split(',')
-        
-    if not 'areas' in conf.keys(): 
-        print('Specify the areas in the config file!')
-        print('We now take all available areas!')
-        areas = ['all']
-    else:
-        areas = conf['areas'].split(']')[0].split('[')[-1].split(',')
-    
+            
     if 'prfprepareAnalysis' in opts.keys():
         prfprep_analyis = opts['prfprepareAnalysis']
     else:
@@ -253,7 +246,7 @@ else:
                 
             # dump the options file in the output directory
             with open(opts_file, 'w') as fl:
-                json.dump(conf['options'], fl)
+                json.dump(conf['options'], fl, indent=4)
                 
             found_outbids_dir = True
     note("Output BIDS directory: %s" % outbids_dir)
@@ -266,14 +259,8 @@ else:
         else:
             taskS = taskL
             
-        for areaL in areas:
-            if areaL == 'all':
-                areaS = '*'
-            else:
-                areaS = areaL
-
             # filter(function, iterable)nd all files that match the input from config.json
-            bold_images = glob.glob(os.path.join(func_dir, f'sub-{sub}_ses-{ses}_task-{taskS}_run-*_hemi-*_desc-{areaS}-*_bold.nii.gz'))
+            bold_images = glob.glob(os.path.join(func_dir, f'sub-{sub}_ses-{ses}_task-{taskS}_run-*_hemi-*_bold.nii.gz'))
                             
             print(bold_images)
             print(len(bold_images))
@@ -284,11 +271,10 @@ else:
                 flnm  = os.path.basename(bold_image)
                 task  = flnm.split('task-')[-1].split('_run' )[0]
                 runid = flnm.split('run-' )[-1].split('_hemi')[0]
-                hemi  = flnm.split('hemi-')[-1].split('_desc')[0]
-                area  = flnm.split('desc-')[-1].split('_bold')[0]
+                hemi  = flnm.split('hemi-')[-1].split('_bold')[0]
         
                 # check if outptut already exists
-                resflo = os.path.join(outbids_dir, f'sub-{sub}_ses-{ses}_task-{task}_run-{runid}_hemi-{hemi}_desc-{area}_results.mat')
+                resflo = os.path.join(outbids_dir, f'sub-{sub}_ses-{ses}_task-{task}_run-{runid}_hemi-{hemi}_results.mat')
                 if os.path.isfile(resflo) and not force:
                     continue
                 
@@ -330,7 +316,7 @@ else:
                 print("[base/run.py] This is the content: ")
                 print(stim)
                 with open(stimjs_file, 'w') as json_data:
-                       json.dump(stim, json_data)
+                       json.dump(stim, json_data, indent=4)
                        
                 # okay, we have the files; run the solver script!
                 try:
@@ -362,8 +348,8 @@ else:
                         else:
                             im = nib.Nifti2Image(np.reshape(v, (-1, 1, 1, 1)),
                                                  nii_base.affine, nii_base.header)
-                        im.to_filename(os.path.join(outbids_dir, f'sub-{sub}_ses-{ses}_task-{task}_run-{runid}_hemi-{hemi}_desc-{area}_{k.lower()}.nii.gz'))
-                    os.rename(estfl, os.path.join(outbids_dir, f'sub-{sub}_ses-{ses}_task-{task}_run-{runid}_hemi-{hemi}_desc-{area}_estimates.json'))
+                        im.to_filename(os.path.join(outbids_dir, f'sub-{sub}_ses-{ses}_task-{task}_run-{runid}_hemi-{hemi}_{k.lower()}.nii.gz'))
+                    os.rename(estfl, os.path.join(outbids_dir, f'sub-{sub}_ses-{ses}_task-{task}_run-{runid}_hemi-{hemi}_estimates.json'))
                 else:
                     note("No estimates.json file found.")
                 resfli = os.path.join(outbids_dir, 'results.mat')
