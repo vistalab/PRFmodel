@@ -1,4 +1,4 @@
-FROM garikoitz/prfanalyze-base:3.0.1
+FROM garikoitz/prfanalyze-base:3.0.2
 
 MAINTAINER Garikoitz Lerma-Usabiaga <garikoitz@gmail.com>
 
