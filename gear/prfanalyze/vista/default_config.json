@@ -1,8 +1,9 @@
 {
-    "subjectName" : "editThis",
-    "sessionName" : "editThis",
-    "solver"      : "vista",
-    "tasks"       : "[all]",
+    "subjectName"    : "editThis",
+    "sessionName"    : "editThis",
+    "solver"         : "vista",
+    "tasks"          : "[all]",
+    "isPRFSynthData" : false,
     "options": {
     	"prfprepareAnalysis" : "01",
         "model"              : "one gaussian",
