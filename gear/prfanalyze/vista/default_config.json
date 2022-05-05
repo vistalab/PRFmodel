@@ -1,16 +1,16 @@
 {
-    "subjectName": "editThis",
-    "sessionName": "editThis",
-    "solver":      "vista",
-    "tasks": "[bar,wedge]",
-    "areas": "[V1,V2]",
+    "subjectName"    : "editThis",
+    "sessionName"    : "editThis",
+    "solver"         : "vista",
+    "tasks"          : "[all]",
+    "isPRFSynthData" : false,
     "options": {
-    	"prfprepareAnalysis": "01",
-        "model":    "one gaussian",
-        "grid":     false,
-        "wsearch":  "coarse to fine",
-        "detrend":  1,
-        "keepAllPoints": false,
+    	"prfprepareAnalysis" : "01",
+        "model"              : "one gaussian",
+        "grid"               :  false,
+        "wsearch"            : "coarse to fine",
+        "detrend"            : 1,
+        "keepAllPoints"      : false,
         "numberStimulusGridPoints": 50
     },
     "stimulus": {
