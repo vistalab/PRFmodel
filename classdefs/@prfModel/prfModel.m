@@ -508,7 +508,7 @@ pm.Noise.seed=12345;
                 case 'st'
                     % Do nothing
                 otherwise
-                    error('Model %s not implemented, select linear or CSS', pm.Type)
+                    error('Model %s not implemented, select linear, CSS or st', pm.Type)
             end
                 convValues    = conv(pm.timeSeries',pm.HRF.values);
                 % Create the bold signal with the correct size
