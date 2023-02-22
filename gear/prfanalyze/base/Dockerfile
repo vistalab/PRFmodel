@@ -32,38 +32,32 @@ RUN apt-get update && apt-get install -y \
     wget \
     subversion\
     vim \
-    bsdtar 
+    bsdtar
 
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 
 ############################
-# install conda env 
-
-# David had this line, but I think it is messing the rest of the install
-# Install miniconda
+# install mamba and env
 ENV CONDA_DIR /opt/conda
-RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
-     /bin/bash ~/miniconda.sh -b -p /opt/conda
+ENV MAMBA_ROOT_PREFIX="/opt/conda"
+RUN wget --quiet https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$(uname)-$(uname -m).sh -O ~/mamba.sh && \
+      /bin/bash ~/mamba.sh -b -p /opt/conda
 
 # Put conda in path so we can use conda activate
 ENV PATH=$CONDA_DIR/bin:$PATH
 
+RUN mamba update -n base --all
 
-
-
-
-RUN conda update -n base -c defaults conda
- 
 # install conda env
 COPY scientific.yml ./
-RUN conda env create -f scientific.yml 
+RUN mamba env create -f scientific.yml
 RUN apt-get update && apt-get install -y jq
 
 
 ############################
 # Install the MCR dependencies and some things we'll need and download the MCR
 # from Mathworks -silently install it
-RUN mkdir /mcr-install && mkdir /opt/mcr && cd /mcr-install && \ 
+RUN mkdir /mcr-install && mkdir /opt/mcr && cd /mcr-install && \
     wget https://ssd.mathworks.com/supportfiles/downloads/R2020b/Release/6/deployment_files/installer/complete/glnxa64/MATLAB_Runtime_R2020b_Update_6_glnxa64.zip && \
     cd /mcr-install && \
     unzip -q MATLAB_Runtime_R2020b_Update_6_glnxa64.zip && \
@@ -97,7 +91,7 @@ RUN mkdir -p /running && chmod 755 /running
 # Configure entrypoints-
 ENTRYPOINT ["/flywheel/v0/run.sh"]
 
-#make it work under singularity 
-# RUN ldconfig: it fails in BCBL, check Stanford 
-#https://wiki.ubuntu.com/DashAsBinSh 
+#make it work under singularity
+# RUN ldconfig: it fails in BCBL, check Stanford
+#https://wiki.ubuntu.com/DashAsBinSh
 # RUN rm /bin/sh && ln -s /bin/bash /bin/sh
