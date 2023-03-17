@@ -4,7 +4,8 @@ LABEL MAINTAINER Garikoitz Lerma-Usabiaga <glerma@stanford.edu>
 
 # Install popeye...
 RUN . /opt/conda/etc/profile.d/conda.sh \
- && conda activate base \
+ && conda activate scientific \
+ && mamba install cython \
  && pip install popeye
 
 COPY default_config.json /opt/default_config.json
