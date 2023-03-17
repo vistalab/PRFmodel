@@ -2,7 +2,9 @@
 
 [ -z "$USERTAG" ] && USERTAG=garikoitz
 [ -z "$SOLVER"  ] && SOLVER=mlr
-[ -z "$VERSION" ] && VERSION=latest
+[ -z "$VERSION" ] && VERSION=2.0.0
+
+# 2.0.0 base 3.0.3
 
 SCRIPTPATH="$( cd "$(dirname "$0")" && pwd -P )"
 
