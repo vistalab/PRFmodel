@@ -5,9 +5,11 @@ set +o verbose   # Command echo off
 # If run in debug mode, just exec bash:
 if [ "$1" = "DEBUG" ]
 then exec /bin/bash
-else . /etc/profile.d/conda.sh
-     conda activate base
+else
+    source /opt/conda/etc/profile.d/conda.sh
+    conda activate scientific
 fi
+
 
 # How we print to stdout:
 function note {
