@@ -90,13 +90,18 @@ bold = bold_im.get_fdata()
 stim = stim_im.get_fdata()
 
 # stimulus width and height
-if 'Stimulus' in stim_json[0].keys() or 'fieldofviewVert' in stim_json.keys():
+if isinstance(stim_json, list):
     stdat = stim_json[0]['Stimulus']
     height = stdat['fieldofviewVert']
     width  = stdat['fieldofviewHorz']
-elif 'stimulus_diameter' in stim_json.keys():
-    height = stim_json['stimulus_diameter']
-    width  = stim_json['stimulus_diameter']
+else:
+    if 'fieldofviewVert' in stim_json.keys():
+        stdat = stim_json[0]['Stimulus']
+        height = stdat['fieldofviewVert']
+        width  = stdat['fieldofviewHorz']
+    elif 'stimulus_diameter' in stim_json.keys():
+        height = stim_json['stimulus_diameter']
+        width  = stim_json['stimulus_diameter']
 
 if 'TR' in stim_json[0].keys():
     tr = stim_json[0]['TR']
