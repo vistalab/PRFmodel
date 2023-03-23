@@ -1,10 +1,8 @@
 #! /bin/bash
 
-[ -z "$USERTAG" ] && USERTAG=garikoitz
-[ -z "$SOLVER"  ] && SOLVER=aprf
-[ -z "$VERSION" ] && VERSION=2.0.0
-
-# 2.0.0 base 3.0.3
+USERTAG=garikoitz
+SOLVER=aprf
+VERSION=2.0.0_3.1.0
 
 SCRIPTPATH="$( cd "$(dirname "$0")" && pwd -P )"
 

@@ -10,7 +10,7 @@
 # 2.1.0: same as 2.0.9 but with Matlab 2020b (using base 3.0.0)
 # 2.1.1: same as 2.0.9 but with Matlab 2020b (using base 3.0.1)
 # 2.2.0: includes david's changes to read experimental data from new prfprepare
-# 2.2.1: updated base to 3.0.3
+# 2.2.1: updated base to 3.1.0
 
 SCRIPTPATH="$( cd "$(dirname "$0")" && pwd -P )"
 

@@ -1,7 +1,6 @@
-FROM garikoitz/prfanalyze-base:3.0.3
+FROM garikoitz/prfanalyze-base:3.1.0
 
 LABEL MAINTAINER Garikoitz Lerma-Usabiaga <garikoitz@gmail.com>
-
 
 ADD /compiled /compiled
 

@@ -1,4 +1,4 @@
-FROM garikoitz/prfanalyze-base:3.0.3
+FROM garikoitz/prfanalyze-base:3.1.0
 
 LABEL MAINTAINER Garikoitz Lerma-Usabiaga <glerma@stanford.edu>
 
@@ -20,7 +20,6 @@ RUN cd /opt/code/afni/src \
  && make all \
  && make install
 RUN echo 'export PATH="$PATH:/opt/afni"' >> ~/.bashrc
-
 
 ADD /compiled /compiled
 RUN mkdir -p /compiled/data
