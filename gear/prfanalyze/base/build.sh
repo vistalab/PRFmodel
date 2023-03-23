@@ -5,9 +5,9 @@
 # 3.0.0 = v99(2020b)
 
 
-[ -z "$USERTAG" ] && USERTAG=garikoitz
-[ -z "$SOLVER"  ] && SOLVER=base
-[ -z "$VERSION" ] && VERSION=3.0.3
+USERTAG=garikoitz
+SOLVER=base
+VERSION=3.1.0
 # Versions
 # 3.0.0 first one using matlab 2020b, but maintaining old Python
 # 3.0.1 using the install method with the yml file and conda 3

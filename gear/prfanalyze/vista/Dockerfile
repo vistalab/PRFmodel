@@ -2,7 +2,6 @@ FROM garikoitz/prfanalyze-base:3.0.3
 
 MAINTAINER Garikoitz Lerma-Usabiaga <garikoitz@gmail.com>
 
-
 ADD /compiled /compiled
 
 # the solve script and related files
