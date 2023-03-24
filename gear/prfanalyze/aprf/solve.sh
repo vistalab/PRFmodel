@@ -23,7 +23,7 @@ function die {
 
 # all we have to do is exec python...
 export PRF_SOLVER="aprf"
-MCR_ROOT=/opt/mcr/v95/
+MCR_ROOT=/opt/mcr/v99/
 
 time /compiled/run_prfanalyze_aprf.sh "$MCR_ROOT" "$1" "$4" "$2" "$3" "$5"
 # Check exit status

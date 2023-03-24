@@ -22,7 +22,7 @@ function die {
 
 # all we have to do is exec python...
 export PRF_SOLVER="afni"
-MCR_ROOT=/opt/mcr/v95/
+MCR_ROOT=/opt/mcr/v99/
 
 export PATH="$PATH:/opt/afni"
 
