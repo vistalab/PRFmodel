@@ -3,9 +3,6 @@
 USERTAG=garikoitz
 SOLVER=vista
 VERSION=2.2.1_3.1.0
-USERTAG=garikoitz
-SOLVER=vista
-VERSION=2.2.1_3.1.0
 
 # 2.0.5: edited in master, fix in base/run.py for singularity
 # 2.0.8: with the fixed exp
