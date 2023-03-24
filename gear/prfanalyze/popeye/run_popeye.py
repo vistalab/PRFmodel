@@ -86,14 +86,15 @@ def fit_voxel(tup):
     return (ii, vx) + tuple(fit.overloaded_estimate) + (fit.prediction,)
 
 #############################################################
-bold = bold_im.get_fdata()
-stim = stim_im.get_fdata()
+bold = bold_im.get_fdata().squeeze()
+stim = stim_im.get_fdata().squeeze()
 
 # stimulus width and height
 if isinstance(stim_json, list):
     stdat = stim_json[0]['Stimulus']
     height = stdat['fieldofviewVert']
     width  = stdat['fieldofviewHorz']
+    tr = stim_json[0]['TR']
 else:
     if 'fieldofviewVert' in stim_json.keys():
         stdat = stim_json[0]['Stimulus']
@@ -103,15 +104,14 @@ else:
         height = stim_json['stimulus_diameter']
         width  = stim_json['stimulus_diameter']
 
-if 'TR' in stim_json[0].keys():
-    tr = stim_json[0]['TR']
-else:
-    tr = bold.header['pixdim'][4]
+    tr = bold_im.header['pixdim'][4]
 
 if isinstance(width, int) or isinstance(width, float):
     width = np.tile(width, len(bold))
 if isinstance(height, int) or isinstance(height, float):
     height = np.tile(height, len(bold))
+if isinstance(tr, int) or isinstance(tr, float):
+    tr = np.tile(tr, len(bold))
 
 if mps == 1:
     voxs = [fit_voxel((ii, vx, w, h)) for (ii, vx, w, h) in zip(range(len(bold)), bold, width, height, tr)]
