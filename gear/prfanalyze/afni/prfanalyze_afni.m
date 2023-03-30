@@ -46,7 +46,7 @@ end
 
 
 % Make the output directory
-mkdir(output_dir);
+if ~exist(output_dir,'dir');mkdir(output_dir);end
 
 %% check that the other relevant files eist
 if exist(bold_file, 'file') ~= 2
