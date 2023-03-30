@@ -2,7 +2,7 @@
 
 USERTAG=garikoitz
 SOLVER=aprf
-VERSION=2.0.0_3.1.0
+VERSION=2.0.0_3.1.1
 
 SCRIPTPATH="$( cd "$(dirname "$0")" && pwd -P )"
 

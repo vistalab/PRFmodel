@@ -1,4 +1,4 @@
-FROM garikoitz/prfanalyze-base:3.1.0
+FROM garikoitz/prfanalyze-base:3.1.1
 
 LABEL MAINTAINER Garikoitz Lerma-Usabiaga <glerma@stanford.edu>
 
