@@ -1,12 +1,13 @@
-FROM garikoitz/prfanalyze-base:3.1.1
+FROM nben/prfanalyze-afni:latest
 
 LABEL MAINTAINER Garikoitz Lerma-Usabiaga <glerma@stanford.edu>
 
 ADD /compiled /compiled
+RUN mkdir -p /compiled/data
 
 # the solve script and related files
 COPY solve.sh /solve.sh
 RUN chmod 755 /solve.sh
 COPY default_config.json /opt/default_config.json
-ENV PRF_SOLVER aprf
+ENV PRF_SOLVER afni
 

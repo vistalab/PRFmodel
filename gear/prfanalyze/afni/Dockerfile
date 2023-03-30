@@ -1,6 +1,6 @@
-FROM garikoitz/prfanalyze-base:3.1.0
+FROM garikoitz/prfanalyze-base:3.1.1
 
-MAINTAINER Garikoitz Lerma-Usabiaga <glerma@stanford.edu>
+LABEL MAINTAINER Garikoitz Lerma-Usabiaga <glerma@stanford.edu>
 
 # Install AFNI:
 RUN apt-get install -y \
@@ -20,7 +20,6 @@ RUN cd /opt/code/afni/src \
  && make all \
  && make install
 RUN echo 'export PATH="$PATH:/opt/afni"' >> ~/.bashrc
-
 
 ADD /compiled /compiled
 RUN mkdir -p /compiled/data
