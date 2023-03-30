@@ -83,7 +83,7 @@ def fit_voxel(tup):
     else:
         fit = og.GaussianFit(model, vx, grids, bounds, Ns=Ns,
                             voxel_index=(ii, 1, 1), auto_fit=True, verbose=2)
-    return (ii, vx) + tuple(fit.overloaded_estimate) + (fit.prediction,)
+    return (ii, vx) + tuple(fit.overloaded_estimate) + (fit.prediction, fit.rss, fit.rsquared)
 
 #############################################################
 bold = bold_im.get_fdata().squeeze()
@@ -110,7 +110,7 @@ if isinstance(width, int) or isinstance(width, float):
     width = np.tile(width, len(bold))
 if isinstance(height, int) or isinstance(height, float):
     height = np.tile(height, len(bold))
-if isinstance(tr, int) or isinstance(tr, float):
+if isinstance(tr, int) or isinstance(tr, float) or tr.dtype=='float32':
     tr = np.tile(tr, len(bold))
 
 if mps == 1:
@@ -120,26 +120,25 @@ else:
     with sharedmem.Pool(np=mps) as pool:
         voxs = pool.map(fit_voxel, tups)
     voxs = list(sorted(voxs, key=lambda tup:tup[0]))
+
 # Update the results to match the x0/y0, sigma style used by prfanalyze
-all_fields = ('index','voxel') + fields + ('pred',)
-res = {k:np.asarray([u[ii] for u in voxs]) for (ii,k) in enumerate(all_fields)}
-rr = {}
-rr['centerx0'] = np.cos(res['theta'])  * res['rho']
-rr['centery0'] = -np.sin(res['theta']) * res['rho']
-rr['sigmamajor'] = res['sigma']
-rr['sigmaminor'] = res['sigma']
-rr['beta'] = res['beta']
-rr['baseline'] = res['baseline']
-if fixed_hrf is False: rr['hrfdelay'] = res['hrfdelay']
-# Export the files
-for (k,v) in six.iteritems(rr):
-    im = nib.Nifti1Image(np.reshape(v, bold_im.shape[:-1]), bold_im.affine)
-    im.to_filename(os.path.join(outdir, k + '.nii.gz'))
-# Also export the prediction and testdata
-im = nib.Nifti1Image(np.reshape(bold, bold_im.shape), bold_im.affine)
-im.to_filename(os.path.join(outdir, 'testdata.nii.gz'))
-im = nib.Nifti1Image(np.reshape(res['pred'], bold_im.shape), bold_im.affine)
-im.to_filename(os.path.join(outdir, 'modelpred.nii.gz'))
+all_fields = ('index','voxel') + fields + ('pred','rss','R2')
+
+res = [dict([(f, vox[ii]) for ii,f in enumerate(all_fields)]) for vox in voxs]
+
+for r in res:
+    r['centerx0']   = np.cos(r['theta'])  * r['rho']
+    r['centery0']   = -np.sin(r['theta']) * r['rho']
+    r['testdata']   = r['voxel'].tolist()
+    r['modelpred']  = r['pred'].tolist()
+    r['sigmamajor'] = r['sigma']
+    r['sigmaminor'] = r['sigma']
+    r.pop('voxel')
+    r.pop('pred')
+    r.pop('sigma')
+
+with open(os.path.join(outdir, 'estimates.json'), 'w') as fl:
+    json.dump(res, fl, indent=4)
 
 # That's it!
 print("Popeye finished succesfully.")
