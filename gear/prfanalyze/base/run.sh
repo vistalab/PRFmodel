@@ -10,7 +10,7 @@ if [ "$1" = "DEBUG" ]
 elif [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ "$1" = "-help" ] || [ "$1" = "help" ]
     then cat /opt/help.txt
     exit 0
-else 
+else
     source /opt/conda/etc/profile.d/conda.sh
     conda activate scientific
 fi
@@ -112,11 +112,11 @@ python /scripts/run.py "$CONFIG_FILE" || die "Python startup script failed!"
 # ses=${ses:4}
 # sub=$(basename $subdir)
 # sub=${sub:4}
-# 
+#
 # # For any nifti, mat, or JSON file in the output directory, we want to BIDSify it:
 # prefix="sub-${sub}_ses-${ses}"
 # [ -n "$FIELDS" ] && prefix="${prefix}_${FIELDS}"
-# 
+#
 # nn=${#prefix}
 # if compgen -G "${OUTPUT_DIR}/out/*.nii" > /dev/null
 # then for fl in ${OUTPUT_DIR}/out/*.nii
@@ -152,8 +152,8 @@ python /scripts/run.py "$CONFIG_FILE" || die "Python startup script failed!"
 
 # Handle permissions of the outputs
 cd /flywheel/v0/output
-find "$OUTPUT_DIR" -type d -exec chmod 777 '{}' ';'
-find "$OUTPUT_DIR" -type f -exec chmod 666 '{}' ';'
+find "$OUTPUT_DIR/BIDS/derivatives/prfanalyze-$PRF_SOLVER" -type d -exec chmod 777 '{}' ';'
+find "$OUTPUT_DIR/BIDS/derivatives/prfanalyze-$PRF_SOLVER" -type f -exec chmod 666 '{}' ';'
 
 # we don't have any post-processing to do at this point (but later we might)
 exit 0
