@@ -279,7 +279,7 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
         end
         function stimValues = getStimValues(stim)
             % Obtain the values if it is a path
-            if iscell(stim.userVals);
+            if iscell(stim.userVals)
                 sv = stim.userVals{:};
             else
                 sv = stim.userVals;
@@ -307,15 +307,18 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             if strcmp(stim.PM.Type,'st')
                 x = (-stim.fieldofviewVert:stim.spatialSampleVert:stim.fieldofviewVert);
                 y = (-stim.fieldofviewHorz:stim.spatialSampleHorz:stim.fieldofviewHorz);
+                % Calculate the spatial sampling parameters
+                [X,Y] = meshgrid(x,y);
+                XY = [{X},{-1*Y}];
             else
                 x = (stim.spatialSampleVert:stim.spatialSampleVert:stim.fieldofviewVert);
                 x = x - mean(x);
                 y = (stim.spatialSampleHorz:stim.spatialSampleHorz:stim.fieldofviewHorz);
                 y = y - mean(y);
+                % Calculate the spatial sampling parameters
+                [X,Y] = meshgrid(x,y);
+                XY = [{X},{Y}];
             end
-            % Calculate the spatial sampling parameters
-            [X,Y] = meshgrid(x,y);
-            XY = [{X},{Y}];
         end
         function v = get.timePointsN(stim)
             v = size(stim.getStimValues,3);
@@ -369,12 +372,8 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             % If the user passed its values, override this and maintain the default
             if iscell(stim.userVals)
                 uv = stim.userVals{:};
-                stimNameWithPath = fullfile(stim.DataPath, [stim.Name '.mat']);
-                stim.values        =  char(stimNameWithPath);
             else
                 uv = stim.userVals;
-                stimNameWithPath = fullfile(stim.DataPath, [stim.Name '.mat']);
-                stim.values        =  char(stimNameWithPath);
             end
             if isempty(uv)
                 stimNameWithPath = fullfile(stim.DataPath, [stim.Name '.mat']);
@@ -445,14 +444,12 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
                         end
                     end
                 end
-                % fprintf('Retrieving stimulus file in %s',stimNameWithPath)
-                stim.values        =  char(stimNameWithPath);
-                % Default fileName if we want to write a video of the stimuli
-                stim.videoFileName = fullfile(stim.LocalPath,[stim.Name '.avi']);
-                % Default fileName if we want to write a nifti of the stimuli
-                stim.niftiFileName = fullfile(stim.LocalPath,[stim.Name '.nii.gz']);
-
             end
+            stimNameWithPath = fullfile(stim.DataPath, [stim.Name '.mat']);
+            stim.values        =  char(stimNameWithPath);
+            % Default fileName if we want to write a video of the stimuli
+            stim.videoFileName = fullfile(stim.LocalPath,[stim.Name '.avi']);
+            stim.niftiFileName = fullfile(stim.LocalPath,[stim.Name '.nii.gz']);
         end
         
         
