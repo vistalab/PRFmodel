@@ -1,13 +1,6 @@
-FROM garikoitz/prfanalyze-base:latest
+FROM garikoitz/prfanalyze-base:3.1.1
 
-MAINTAINER Garikoitz Lerma-Usabiaga <glerma@stanford.edu>
-
-
-# To avoid this runtime error:
-# Error using signal.internal.sigcheckfloattype
-#   Can't reload '/opt/mcr/v95/bin/glnxa64/libmwcoder_types.so'
-RUN apt install -y libxt6 libxcomposite1 libfontconfig1 libasound2
-
+LABEL MAINTAINER Garikoitz Lerma-Usabiaga <garikoitz@gmail.com>
 
 ADD /compiled /compiled
 

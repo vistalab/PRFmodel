@@ -6,12 +6,13 @@ set +o verbose   # Command echo off
 
 # If run in debug mode, just exec bash:
 if [ "$1" = "DEBUG" ]
-then exec /bin/bash
+    then exec /bin/bash
 elif [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ "$1" = "-help" ] || [ "$1" = "help" ]
-then cat /opt/help.txt
-     exit 0
-else . /opt/conda/etc/profile.d/conda.sh
-     conda activate base
+    then cat /opt/help.txt
+    exit 0
+else
+    source /opt/conda/etc/profile.d/conda.sh
+    conda activate scientific
 fi
 
 
@@ -104,55 +105,55 @@ python /scripts/run.py "$CONFIG_FILE" || die "Python startup script failed!"
 [ -d $OUTPUT_DIR ] || die "Python startup script failed to make output link!"
 
 # go to the output_bids path and extract subject and session...
-cd -P ${OUTPUT_DIR}/out
-sesdir=$PWD
-subdir=$(dirname $sesdir)
-ses=$(basename $sesdir)
-ses=${ses:4}
-sub=$(basename $subdir)
-sub=${sub:4}
-
-# For any nifti, mat, or JSON file in the output directory, we want to BIDSify it:
-prefix="sub-${sub}_ses-${ses}"
-[ -n "$FIELDS" ] && prefix="${prefix}_${FIELDS}"
-
-nn=${#prefix}
-if compgen -G "${OUTPUT_DIR}/out/*.nii" > /dev/null
-then for fl in ${OUTPUT_DIR}/out/*.nii
-     do bnm="`basename $fl .nii`"
-        dnm="`dirname $fl`"
-        [ "${bnm:0:$nn}" = "$prefix" ] || mv "$fl" "${dnm}/${prefix}_${bnm}.nii"
-     done
-fi
-if compgen -G "${OUTPUT_DIR}/out/*.nii.gz" > /dev/null
-then for fl in ${OUTPUT_DIR}/out/*.nii.gz
-     do bnm="`basename $fl .nii.gz`"
-        dnm="`dirname $fl`"
-        [ "${bnm:0:$nn}" = "$prefix" ] || mv "$fl" "${dnm}/${prefix}_${bnm}.nii.gz"
-     done
-fi
-if compgen -G "${OUTPUT_DIR}/out/*.mat" > /dev/null
-then for fl in ${OUTPUT_DIR}/out/*.mat
-     do bnm="`basename $fl .mat`"
-        dnm="`dirname $fl`"
-        [ "${bnm:0:$nn}" = "$prefix" ] || mv "$fl" "${dnm}/${prefix}_${bnm}.mat"
-     done
-fi
-if compgen -G "${OUTPUT_DIR}/out/*.json" > /dev/null
-then for fl in ${OUTPUT_DIR}/out/*.json
-     do bnm="`basename $fl .json`"
-        dnm="`dirname $fl`"
-        [ "${bnm:0:$nn}" = "$prefix" ] || {
-            cat "$fl" | python -m json.tool > "${dnm}/${prefix}_${bnm}.json"
-            rm "$fl"
-        }
-     done
-fi
+# cd -P ${OUTPUT_DIR}/out
+# sesdir=$PWD
+# subdir=$(dirname $sesdir)
+# ses=$(basename $sesdir)
+# ses=${ses:4}
+# sub=$(basename $subdir)
+# sub=${sub:4}
+#
+# # For any nifti, mat, or JSON file in the output directory, we want to BIDSify it:
+# prefix="sub-${sub}_ses-${ses}"
+# [ -n "$FIELDS" ] && prefix="${prefix}_${FIELDS}"
+#
+# nn=${#prefix}
+# if compgen -G "${OUTPUT_DIR}/out/*.nii" > /dev/null
+# then for fl in ${OUTPUT_DIR}/out/*.nii
+#      do bnm="`basename $fl .nii`"
+#         dnm="`dirname $fl`"
+#         [ "${bnm:0:$nn}" = "$prefix" ] || mv "$fl" "${dnm}/${prefix}_${bnm}.nii"
+#      done
+# fi
+# if compgen -G "${OUTPUT_DIR}/out/*.nii.gz" > /dev/null
+# then for fl in ${OUTPUT_DIR}/out/*.nii.gz
+#      do bnm="`basename $fl .nii.gz`"
+#         dnm="`dirname $fl`"
+#         [ "${bnm:0:$nn}" = "$prefix" ] || mv "$fl" "${dnm}/${prefix}_${bnm}.nii.gz"
+#      done
+# fi
+# if compgen -G "${OUTPUT_DIR}/out/*.mat" > /dev/null
+# then for fl in ${OUTPUT_DIR}/out/*.mat
+#      do bnm="`basename $fl .mat`"
+#         dnm="`dirname $fl`"
+#         [ "${bnm:0:$nn}" = "$prefix" ] || mv "$fl" "${dnm}/${prefix}_${bnm}.mat"
+#      done
+# fi
+# if compgen -G "${OUTPUT_DIR}/out/*.json" > /dev/null
+# then for fl in ${OUTPUT_DIR}/out/*.json
+#      do bnm="`basename $fl .json`"
+#         dnm="`dirname $fl`"
+#         [ "${bnm:0:$nn}" = "$prefix" ] || {
+#             cat "$fl" | python -m json.tool > "${dnm}/${prefix}_${bnm}.json"
+#             rm "$fl"
+#         }
+#      done
+# fi
 
 # Handle permissions of the outputs
 cd /flywheel/v0/output
-find "$OUTPUT_DIR" -type d -exec chmod 777 '{}' ';'
-find "$OUTPUT_DIR" -type f -exec chmod 666 '{}' ';'
+find "$OUTPUT_DIR/BIDS/derivatives/prfanalyze-$PRF_SOLVER" -type d -exec chmod 777 '{}' ';'
+find "$OUTPUT_DIR/BIDS/derivatives/prfanalyze-$PRF_SOLVER" -type f -exec chmod 666 '{}' ';'
 
 # we don't have any post-processing to do at this point (but later we might)
 exit 0

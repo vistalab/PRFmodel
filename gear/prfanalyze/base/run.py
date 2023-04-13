@@ -1,8 +1,6 @@
 #! /usr/bin/env python
 
-from __future__ import print_function
-
-import json, os, sys, csv, pimms
+import json, os, sys, csv, pimms, glob
 import nibabel as nib
 
 output_dir  = '/flywheel/v0/output'
@@ -12,8 +10,8 @@ bids_dir    = os.path.join(input_dir, 'BIDS')
 # bids_link   = '/running/out'
 # Fix so that it works in Singularity
 bids_link   = os.path.join(output_dir,'out')
-opts_file   = os.path.join(bids_link, 'options.json')
-verbose     = os.environ.get('VERBOSE', '0').strip() == '1'
+# verbose     = os.environ.get('VERBOSE', '0').strip() == '1'
+verbose = True
 force       = os.environ.get('FORCE', '0').strip() == '1'
 bids_fields = os.environ.get('FIELDS', 'task-prf_acq-normal')
 solver_name = os.environ.get('PRF_SOLVER', None)
@@ -21,7 +19,7 @@ bids_fieldmap = [ss.split('-') for ss in bids_fields.split('_')]
 bids_fields_noacq = '_'.join(['-'.join(ff) for ff in bids_fieldmap if ff[0] != 'acq'])
 if bids_fields != '': bids_fields = '_' + bids_fields
 if bids_fields_noacq != '': bids_fields_noacq = '_' + bids_fields_noacq
-    
+
 # check for a separate config file
 if len(sys.argv) > 1:
     config_file = sys.argv[1]
@@ -66,156 +64,342 @@ if not solver_name.startswith('prfanalyze-'):
 
 # we just have to find the relevant files then echo them for the calling script; in the case of the
 # config file, we write out a new one in the /running directory
-sub  = conf['subjectName']
-ses  = conf['sessionName']
 opts = conf.get('options', {})
 note("Preparing solver \"%s\":" % (solver_name,))
-note("  Subject: %s" % sub)
-note("  Session: %s" % ses)
-note("  Options: %s" % (opts,))
 
-# find the relevant files in the BIDS dir; first, the BOLD image is easy to find:
-func_dir = os.path.join(bids_dir, 'sub-' + sub, 'ses-' + ses, 'func')
-# we get the stimulus filename from the events file:
-events_file = os.path.join(func_dir, 'sub-%s_ses-%s%s_events.tsv' % (sub, ses, bids_fields_noacq))
-try:
-    with open(events_file, 'r') as fl:
-        rr = csv.reader(fl, delimiter='\t', quotechar='"')
-        l0 = next(rr)
-        if 'stim_file' not in l0:
-            die('stim_file must be a column in the events file (%s)' % events_file)
-        rows = [{k:v for (k,v) in zip(l0,r)} for r in rr]
-except Exception:
-    die("Could not load events file: %s" % events_file)
-stim_file = set([r['stim_file'] for r in rows])
-if len(stim_file) != 1:
-    die("Multiple stimulus files found in events file (%s)" % events_file)
-stim_file = os.path.join(bids_dir, 'stimuli', list(stim_file)[0])
-if not os.path.isfile(stim_file):
-    die("Stimulus file (%s) not found" % stim_file)
 
-# Finally, we need to find the output directory (in the OUTPUT directory's BIDS directory)
-# To figure out how we name the directory, we use the PRF_SOLVER environment variable
-outbids_dir = os.path.join(output_dir, 'BIDS', 'derivatives', solver_name, 'sub-'+sub, 'ses-'+ses)
-# if this directory already exists, it's safe to assume that we need a temporary directory (unless
-# the force option is invoked):
-if not force and os.path.isdir(outbids_dir):
-    outbids_dir = None
-    for k in range(1000):
-        p = os.path.join(output_dir, 'BIDS', 'derivatives', solver_name + '_temp%03d' % k)
-        if not os.path.isdir(p):
-            # we've found it!
-            outbids_dir = os.path.join(p, 'sub-'+sub, 'ses-'+ses)
-            print("WARNING: Using temporary output directory: %s" % p)
-            break
-    if outbids_dir is None: die("Could not find a valid temporary directory!")
-try:
-    if not os.path.isdir(outbids_dir): os.makedirs(outbids_dir)
-except Exception:
-    die("Error creating output BIDS directory: %s" % outbids_dir)
-note("Output BIDS directory: %s" % outbids_dir)
-# # we make a symlink from the output bids dir to /running
-# try:
-#     if os.path.islink(bids_link): os.remove(bids_link)
-#     os.symlink(outbids_dir, bids_link)
-# except Exception:
-#     die("Could not create output link: %s" % bids_link)
-
-# Noahs solution didnt work, there should be a symlink for run.sh
-## # we make a symlink from the output bids dir to /running
-try:
-    if os.path.islink(bids_link): os.remove(bids_link)
-    os.symlink(outbids_dir, bids_link)
-except Exception:
-    die("Could not create output link: %s" % bids_link)
-# dump the options file in the output directory
-with open(opts_file, 'w') as fl:
-    json.dump(opts, fl)
-
-# We may have any number of runs, find them all:
-bold_prefix = 'sub-%s_ses-%s%s_run-' % (sub, ses, bids_fields)
-bold_suffix = '_bold.nii.gz'
-(pn,sn) = (len(bold_prefix), len(bold_suffix))
-processed = 0
-for flnm in os.listdir(func_dir):
-    if not (flnm.startswith(bold_prefix) and flnm.endswith(bold_suffix)): continue
-    runid = flnm[pn:-sn]
-    bold_image = os.path.join(func_dir, flnm)
-    # if the data are from prfsynth, we also need the stimulus json file, which is in the
-    # derivatives directory
-    if synthQ:
-        stimjs_file = os.path.join(
-            bids_dir, 'derivatives', 'prfsynth', 'sub-'+sub, 'ses-'+ses,
-            'sub-%s_ses-%s%s_run-%s_bold.json' % (sub, ses, bids_fields, runid))
-        if not os.path.isfile(stimjs_file):
-            die("Stimulus JSON file (%s) not found" % stimjs_file)
+# do all the processing for PRFSynthData
+if conf['isPRFSynthData']:
+    # find the subjects
+    s  = conf['subjectName'].split(']')[0].split('[')[-1].split(',')
+    if s[0] == 'all':
+        subs = [ os.path.basename(b).split('-')[-1] for b in glob.glob(os.path.join(bids_dir, 'sub-*')) ]
     else:
-        print("[base/run.py] Using real data, not coming from prfsynthesize.")
-        # otherwise, we assume that the required options are in the config.json file
-        if 'stimulus' not in conf:
-            die("In config.json, isPRFSynthData is False, but no stimulus settings were given.")
-        stim = conf['stimulus']
-        if not isinstance(stim, dict):
-            die('In config.json, stimulus data must be a dictionary')
-        stim['isPRFSynthData'] = False
-        # make a temporary file
-        import tempfile
-        (fl, stimjs_file) = tempfile.mkstemp(suffix='.json', text=True)
-        print("[base/run.py] This is the temp file with stim info: ")
-        print(stimjs_file)
-        print("[base/run.py] This is the content: ")
-        print(stim)
-        with open(stimjs_file, 'w') as json_data:
-               json.dump(stim, json_data)
-        # json.dump(stim, fl)
-        # close(fl)
-    # okay, we have the files; run the solver script!
-    try:
-        pid = os.fork()
-        if pid == 0:
-            os.execl("/solve.sh", "/solve.sh",
-                     opts_file, bold_image, stim_file, stimjs_file, outbids_dir)
+        subs = s
+
+    # loop subs
+    for sub in sorted(subs):
+
+        # find the sessions
+        ss  = conf['sessionName'].split(']')[0].split('[')[-1].split(',')
+        if ss[0] == 'all':
+            sess = [ os.path.basename(b).split('-')[-1] for b in glob.glob(os.path.join(bids_dir, f'sub-{sub}', 'ses-*')) ]
         else:
-            note("Beginning os.wait() for /solve.sh, run=%s (child pid is %s)" % (runid, pid))
-            os.wait()
-    except Exception:
-        die("Failed to exec /solve.sh script!")
-    
-    nii_base = nib.load(bold_image)
-    # If there are things to cleanup we do that; specifically, the estimates.json file:
-    # estfl = os.path.join(bids_link, 'estimates.json')
-    estfl = os.path.join(outbids_dir, 'estimates.json')
-    if os.path.isfile(estfl):
-        note("Processing estimates.json file...")
-        import nibabel as nib, numpy as np
-        with open(estfl, 'r') as fl:
-            dat = json.load(fl)
-        # decode the data...
-        dat = {k: np.asarray([u[k] for u in dat]) for k in dat[0].keys()}
-        for (k,v) in dat.items():
-            if len(v.shape) == 2:            
-                im = nib.Nifti2Image(np.reshape(v, (v.shape[0], 1, 1, v.shape[-1])),
-                                     nii_base.affine, nii_base.header)
-            else:
-                im = nib.Nifti2Image(np.reshape(v, (-1, 1, 1, 1)),
-                                     nii_base.affine, nii_base.header)
-            print("Writing the estimates.json to nifti2 in outbids_dir: " + outbids_dir)
-            # im.to_filename(os.path.join(bids_link, 'run-%s_%s.nii.gz' % (runid,k.lower())))
-            im.to_filename(os.path.join(outbids_dir, 'run-%s_%s.nii.gz' % (runid,k.lower())))
-        # os.rename(estfl, os.path.join(bids_link, 'run-%s_estimates.json' % (runid,)))
-        os.rename(estfl, os.path.join(outbids_dir, 'run-%s_estimates.json' % (runid,)))
+            sess = ss
+
+        # loop sessions
+        for ses in sorted(sess):
+
+            # print some information
+            print("[base/run.py] Using synthetic data coming from prfsynthesize.")
+            note("  Subject: %s" % sub)
+            note("  Session: %s" % ses)
+            note("  Options: %s" % (opts,))
+
+            # find the relevant files in the BIDS dir; first, the BOLD image is easy to find:
+            func_dir = os.path.join(bids_dir, 'sub-' + sub, 'ses-' + ses, 'func')
+            # we get the stimulus filename from the events file:
+            events_file = os.path.join(func_dir, 'sub-%s_ses-%s%s_events.tsv' % (sub, ses, bids_fields_noacq))
+            try:
+                with open(events_file, 'r') as fl:
+                    rr = csv.reader(fl, delimiter='\t', quotechar='"')
+                    l0 = next(rr)
+                    if 'stim_file' not in l0:
+                        die('stim_file must be a column in the events file (%s)' % events_file)
+                    rows = [{k:v for (k,v) in zip(l0,r)} for r in rr]
+            except Exception:
+                die("Could not load events file: %s" % events_file)
+            stim_file = set([r['stim_file'] for r in rows])
+            if len(stim_file) != 1:
+                die("Multiple stimulus files found in events file (%s)" % events_file)
+            stim_file = os.path.join(bids_dir, 'stimuli', list(stim_file)[0])
+            if not os.path.isfile(stim_file):
+                die("Stimulus file (%s) not found" % stim_file)
+
+            # Finally, we need to find the output directory (in the OUTPUT directory's BIDS directory)
+            # To figure out how we name the directory, we use the PRF_SOLVER environment variable
+            outbids_dir = os.path.join(output_dir, 'BIDS', 'derivatives', solver_name, 'sub-'+sub, 'ses-'+ses)
+            # if this directory already exists, it's safe to assume that we need a temporary directory (unless
+            # the force option is invoked):
+            if not force and os.path.isdir(outbids_dir):
+                outbids_dir = None
+                for k in range(1000):
+                    p = os.path.join(output_dir, 'BIDS', 'derivatives', solver_name + '_temp%03d' % k)
+                    if not os.path.isdir(p):
+                        # we've found it!
+                        outbids_dir = os.path.join(p, 'sub-'+sub, 'ses-'+ses)
+                        print("WARNING: Using temporary output directory: %s" % p)
+                        break
+                if outbids_dir is None: die("Could not find a valid temporary directory!")
+            try:
+                if not os.path.isdir(outbids_dir): os.makedirs(outbids_dir)
+            except Exception:
+                die("Error creating output BIDS directory: %s" % outbids_dir)
+            note("Output BIDS directory: %s" % outbids_dir)
+            # # we make a symlink from the output bids dir to /running
+            # try:
+            #     if os.path.islink(bids_link): os.remove(bids_link)
+            #     os.symlink(outbids_dir, bids_link)
+            # except Exception:
+            #     die("Could not create output link: %s" % bids_link)
+
+            # Noahs solution didnt work, there should be a symlink for run.sh
+            ## # we make a symlink from the output bids dir to /running
+            try:
+                if os.path.islink(bids_link): os.remove(bids_link)
+                os.symlink(outbids_dir, bids_link)
+            except Exception:
+                die("Could not create output link: %s" % bids_link)
+
+            # We may have any number of runs, find them all:
+            bold_prefix = 'sub-%s_ses-%s%s_run-' % (sub, ses, bids_fields)
+            bold_suffix = '_bold.nii.gz'
+            (pn,sn) = (len(bold_prefix), len(bold_suffix))
+            processed = 0
+            for flnm in os.listdir(func_dir):
+                if not (flnm.startswith(bold_prefix) and flnm.endswith(bold_suffix)): continue
+                runid = flnm[pn:-sn]
+                bold_image = os.path.join(func_dir, flnm)
+                # if the data are from prfsynth, we also need the stimulus json file, which is in the
+                # derivatives directory
+                stimjs_file = os.path.join(
+                    bids_dir, 'derivatives', 'prfsynth', 'sub-'+sub, 'ses-'+ses,
+                    'sub-%s_ses-%s%s_run-%s_bold.json' % (sub, ses, bids_fields, runid))
+                if not os.path.isfile(stimjs_file):
+                    die("Stimulus JSON file (%s) not found" % stimjs_file)
+                # okay, we have the files; run the solver script!
+                try:
+                    pid = os.fork()
+                    if pid == 0:
+                        os.execl("/solve.sh", "/solve.sh",
+                                 opts_file, bold_image, stim_file, stimjs_file, outbids_dir)
+                    else:
+                        note("Beginning os.wait() for /solve.sh, run=%s (child pid is %s)" % (runid, pid))
+                        os.wait()
+                except Exception:
+                    die("Failed to exec /solve.sh script!")
+
+                nii_base = nib.load(bold_image)
+                # If there are things to cleanup we do that; specifically, the estimates.json file:
+                # estfl = os.path.join(bids_link, 'estimates.json')
+                estfl = os.path.join(outbids_dir, 'estimates.json')
+                if os.path.isfile(estfl):
+                    note("Processing estimates.json file...")
+                    import nibabel as nib, numpy as np
+                    with open(estfl, 'r') as fl:
+                        dat = json.load(fl)
+                    # decode the data...
+                    dat = {k: np.asarray([u[k] for u in dat]) for k in dat[0].keys()}
+                    for (k,v) in dat.items():
+                        if len(v.shape) == 2:
+                            im = nib.Nifti2Image(np.reshape(v, (v.shape[0], 1, 1, v.shape[-1])),
+                                                 nii_base.affine, nii_base.header)
+                        else:
+                            im = nib.Nifti2Image(np.reshape(v, (-1, 1, 1, 1)),
+                                                 nii_base.affine, nii_base.header)
+                        print("Writing the estimates.json to nifti2 in outbids_dir: " + outbids_dir)
+                        # im.to_filename(os.path.join(bids_link, 'run-%s_%s.nii.gz' % (runid,k.lower())))
+                        im.to_filename(os.path.join(outbids_dir, 'run-%s_%s.nii.gz' % (runid,k.lower())))
+                    # os.rename(estfl, os.path.join(bids_link, 'run-%s_estimates.json' % (runid,)))
+                    os.rename(estfl, os.path.join(outbids_dir, 'run-%s_estimates.json' % (runid,)))
+                else:
+                    note("No estimates.json file found.")
+                # also rename results,.mat if it's there
+                # resfli = os.path.join(bids_link, 'results.mat')
+                # resflo = os.path.join(bids_link, 'run-%s_results.mat' % (runid,))
+                resfli = os.path.join(outbids_dir, 'results.mat')
+                resflo = os.path.join(outbids_dir, 'run-%s_results.mat' % (runid,))
+                if os.path.isfile(resfli): os.rename(resfli, resflo)
+                processed += 1
+
+# if we have real data in prfprepare form
+else:
+
+    if 'prfprepareAnalysis' in opts.keys():
+        prfprep_analyis = opts['prfprepareAnalysis']
     else:
-        note("No estimates.json file found.")
-    # also rename results,.mat if it's there
-    # resfli = os.path.join(bids_link, 'results.mat')
-    # resflo = os.path.join(bids_link, 'run-%s_results.mat' % (runid,))
-    resfli = os.path.join(outbids_dir, 'results.mat')
-    resflo = os.path.join(outbids_dir, 'run-%s_results.mat' % (runid,))
-    if os.path.isfile(resfli): os.rename(resfli, resflo)
-    processed += 1
-    
+        print('You should consider adding an prfprepareAnalysisNumber in the config!')
+        print('Automatically setting it to "01".')
+        prfprep_analyis = '01'
+
+    # define the prfprepare folder
+    prfprep_dir = os.path.join(bids_dir, 'derivatives', 'prfprepare', f'analysis-{prfprep_analyis}')
+
+    # find the subjects
+    s  = conf['subjectName'].split(']')[0].split('[')[-1].split(',')
+    if s[0] == 'all':
+        subs = [ os.path.basename(b).split('-')[-1] for b in glob.glob(os.path.join(prfprep_dir, 'sub-*')) ]
+    else:
+        subs = s
+
+    # loop subs
+    for sub in sorted(subs):
+
+        # find the sessions
+        ss  = conf['sessionName'].split(']')[0].split('[')[-1].split(',')
+        if ss[0] == 'all':
+            sess = [ os.path.basename(b).split('-')[-1] for b in glob.glob(os.path.join(prfprep_dir, f'sub-{sub}', 'ses-*')) ]
+        else:
+            sess = ss
+
+        # loop sessions
+        for ses in sorted(sess):
+
+            # print some information
+            print("[base/run.py] Using real data, not coming from prfsynthesize.")
+            note("  Subject: %s" % sub)
+            note("  Session: %s" % ses)
+            note("  Options: %s" % (opts,))
+
+            # read additional bids fields for the filenames from the config.json
+            if not 'tasks' in conf.keys():
+                print('Specify the tasks in the config file!')
+                print('We now take all available tasks!')
+                tasks = ['all']
+            else:
+                tasks = conf['tasks'].split(']')[0].split('[')[-1].split(',')
+                note(f'These are the tasks: {tasks}')
+
+            # find the relevant files in the BIDS dir; first, the BOLD image is easy to find:
+            func_dir = os.path.join(prfprep_dir, f'sub-{sub}', f'ses-{ses}', 'func')
+
+            # Finally, we need to find the output directory (in the OUTPUT directory's BIDS directory)
+            # To figure out how we name the directory, we use the PRF_SOLVER environment variable
+            analysis_number = 0
+            found_outbids_dir = False
+            while not found_outbids_dir and analysis_number<100:
+                analysis_number += 1
+
+                p = os.path.join(output_dir, 'BIDS', 'derivatives', solver_name, f'analysis-{analysis_number:02d}')
+                outbids_dir = os.path.join(p, f'sub-{sub}', f'ses-{ses}')
+                opts_file = os.path.join(p, 'options.json')
+
+                # if the analyis-XX directory exists check for the config file
+                if os.path.isdir(p) and os.path.isfile(opts_file):
+                    with open(opts_file, 'r') as fl:
+                        opts = json.load(fl)
+
+                    # check for the options file equal to the config
+                    if sorted(opts.items()) == sorted(conf['options'].items()):
+                        found_outbids_dir = True
+
+                # when we could not find a fitting analysis-XX forlder we make a new one
+                else:
+                    if not os.path.isdir(outbids_dir):
+                        os.makedirs(outbids_dir, exist_ok=True)
+
+                    # dump the options file in the output directory
+                    with open(opts_file, 'w') as fl:
+                        json.dump(conf['options'], fl, indent=4)
+
+                    found_outbids_dir = True
+            note("Output BIDS directory: %s" % outbids_dir)
+
+            processed = 0
+
+            for taskL in tasks:
+                taskS = '*' if taskL == 'all' else taskL
+
+                note(f'task used in the glob command is {taskS}')
+                # filter(function, iterable)nd all files that match the input from config.json
+                bold_images = glob.glob(os.path.join(func_dir, f'sub-{sub}_ses-{ses}_task-{taskS}_run-*_hemi-*_bold.nii.gz'))
+
+                print(bold_images)
+                print(len(bold_images))
+
+                for bold_image in sorted(bold_images):
+
+                    # find all run numbers and bold images
+                    flnm  = os.path.basename(bold_image)
+                    task  = flnm.split('task-')[-1].split('_run' )[0]
+                    runid = flnm.split('run-' )[-1].split('_hemi')[0]
+                    hemi  = flnm.split('hemi-')[-1].split('_bold')[0]
+
+                    # check if outptut already exists
+                    resflo = os.path.join(outbids_dir, f'sub-{sub}_ses-{ses}_task-{task}_run-{runid}_hemi-{hemi}_results.mat')
+                    if os.path.isfile(resflo) and not force:
+                        continue
+
+                    # we get the stimulus filename from the events file:
+                    events_file = os.path.join(func_dir, f'sub-{sub}_ses-{ses}_task-{task}_run-{runid}_events.tsv')
+                    # if ther is no run specific events file use the one withour run param
+                    if not os.path.exists(events_file):
+                        events_file = os.path.join(func_dir, f'sub-{sub}_ses-{ses}_task-{task}_events.tsv')
+
+                    try:
+                        with open(events_file, 'r') as fl:
+                            rr = csv.reader(fl, delimiter='\t', quotechar='"')
+                            l0 = next(rr)
+                            if 'stim_file' not in l0:
+                                die('stim_file must be a column in the events file (%s)' % events_file)
+                            rows = [{k:v for (k,v) in zip(l0,r)} for r in rr]
+                    except Exception:
+                        die("Could not load events file: %s" % events_file)
+                    stim_file = set([r['stim_file'] for r in rows])
+                    if len(stim_file) != 1:
+                        die("Multiple stimulus files found in events file (%s)" % events_file)
+                    stims_dir = os.path.join(prfprep_dir, f'sub-{sub}', 'stimuli')
+                    stim_file = os.path.join(stims_dir, list(stim_file)[0])
+                    if not os.path.isfile(stim_file):
+                        die("Stimulus file (%s) not found" % stim_file)
+
+                    if 'stimulus' not in conf:
+                        die("In config.json, isPRFSynthData is False, but no stimulus settings were given.")
+                    stim = conf['stimulus']
+                    if not isinstance(stim, dict):
+                        die('In config.json, stimulus data must be a dictionary')
+                    stim['isPRFSynthData'] = False
+
+                    # make a temporary file
+                    import tempfile
+                    (fl, stimjs_file) = tempfile.mkstemp(suffix='.json', text=True)
+                    print("[base/run.py] This is the temp file with stim info: ")
+                    print(stimjs_file)
+                    print("[base/run.py] This is the content: ")
+                    print(stim)
+                    with open(stimjs_file, 'w') as json_data:
+                           json.dump(stim, json_data, indent=4)
+
+                    # okay, we have the files; run the solver script!
+                    try:
+                        pid = os.fork()
+                        if pid == 0:
+                            os.execl("/solve.sh", "/solve.sh",
+                                     opts_file, bold_image, stim_file, stimjs_file, outbids_dir)
+                        else:
+                            note("Beginning os.wait() for /solve.sh, run=%s (child pid is %s)" % (runid, pid))
+                            os.wait()
+                    except Exception:
+                        die("Failed to exec /solve.sh script!")
+
+                    nii_base = nib.load(bold_image)
+                    # If there are things to cleanup we do that; specifically, the estimates.json file:
+                    estfl = os.path.join(outbids_dir, 'estimates.json')
+                    if os.path.isfile(estfl):
+                        note("Processing estimates.json file...")
+                        import nibabel as nib, numpy as np
+                        with open(estfl, 'r') as fl:
+                            dat = json.load(fl)
+                        # decode the data...
+                        dat = {k: np.asarray([u[k] for u in dat]) for k in dat[0].keys()}
+                        print(f'Writing the estimates.json to nifti2 in outbids_dir: {outbids_dir}')
+                        for (k,v) in dat.items():
+                            if len(v.shape) == 2:
+                                im = nib.Nifti2Image(np.reshape(v, (v.shape[0], 1, 1, v.shape[-1])),
+                                                     nii_base.affine, nii_base.header)
+                            else:
+                                im = nib.Nifti2Image(np.reshape(v, (-1, 1, 1, 1)),
+                                                     nii_base.affine, nii_base.header)
+                            im.to_filename(os.path.join(outbids_dir, f'sub-{sub}_ses-{ses}_task-{task}_run-{runid}_hemi-{hemi}_{k.lower()}.nii.gz'))
+                        os.rename(estfl, os.path.join(outbids_dir, f'sub-{sub}_ses-{ses}_task-{task}_run-{runid}_hemi-{hemi}_estimates.json'))
+                    else:
+                        note("No estimates.json file found.")
+                    resfli = os.path.join(outbids_dir, 'results.mat')
+                    if os.path.isfile(resfli): os.rename(resfli, resflo)
+                    processed += 1
+
+
 if processed == 0: die("No BOLD images found!")
 
 # exit happily
 sys.exit(0)
-    

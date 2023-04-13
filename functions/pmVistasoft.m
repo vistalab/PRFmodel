@@ -227,8 +227,8 @@ mrvCleanWorkspace
 
 % Delete the temp folder with all the tmp files, we only want the results
 cd(homedir)
-cd('../')
-rmdir(homedir, 's')
+% cd('../')
+% rmdir(homedir, 's')
 
 %% Prepare results
 

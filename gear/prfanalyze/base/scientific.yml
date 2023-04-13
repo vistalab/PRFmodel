@@ -1,0 +1,13 @@
+name: scientific 
+channels:
+  - conda-forge
+dependencies:
+  - python=3.9
+  - numpy
+  - scipy
+  - nilearn
+  - nibabel
+  - pip
+  - pip:
+    - pybids
+    - neuropythy

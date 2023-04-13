@@ -14,7 +14,7 @@ fi
 # Some variables and functions #################################################
 
 CONTAINER="[garikoitz/prfsynth]"
-MCR_ROOT=/opt/mcr/v95/
+MCR_ROOT=/opt/mcr/v99/
 # Built to flywheel-v0 spec.
 FLYWHEEL_BASE=/flywheel/v0
 OUTPUT_DIR="$FLYWHEEL_BASE"/output
