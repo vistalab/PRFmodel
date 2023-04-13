@@ -1,6 +1,6 @@
 FROM nben/prfanalyze-afni:latest
 
-MAINTAINER Garikoitz Lerma-Usabiaga <glerma@stanford.edu>
+LABEL MAINTAINER Garikoitz Lerma-Usabiaga <glerma@stanford.edu>
 
 ADD /compiled /compiled
 RUN mkdir -p /compiled/data

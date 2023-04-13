@@ -32,24 +32,20 @@ mps = opts.get('multiprocess', True)
 if mps == 'auto' or mps is True: mps = multiprocessing.cpu_count()
 elif mps == 0: mps = 1
 
-# Walk through each voxel/stim description
-bold = np.reshape(np.asarray(bold_im.dataobj), (-1, bold_im.shape[-1]))
-stim = np.squeeze(np.asarray(stim_im.dataobj))
-if len(stim_json) != bold.shape[0]:
-    raise ValueError('BOLD Image and Stimulus JSON do not have the same number of data points')
-if fixed_hrf is not False: fields = ('theta', 'rho', 'sigma', 'beta', 'baseline')
-else: fields = ('theta', 'rho', 'sigma', 'hrfdelay', 'beta', 'baseline')
+if fixed_hrf is not False:
+    fields = ('theta', 'rho', 'sigma', 'beta', 'baseline')
+else:
+    fields = ('theta', 'rho', 'sigma', 'hrfdelay', 'beta', 'baseline')
+
+#############################################################
+# fitting function
 def fit_voxel(tup):
-    (ii, vx, js) = tup
-    stdat = js['Stimulus']
-    if pimms.is_list(stdat): stdat = stdat[0]
-    height = stdat['fieldofviewVert']
-    width = stdat['fieldofviewHorz']
+    (ii, vx, width, height, tr) = tup
     ### STIMULUS
     # First get a viewing distance and screen size
     dist = 100 # 100 cm is arbitrary
     stim_width = 2 * dist * np.tan(np.pi/180 * width/2)
-    stimulus = VisualStimulus(stim, dist, stim_width, 1.0, float(js['TR']), ctypes.c_int16)
+    stimulus = VisualStimulus(stim, dist, stim_width, 1.0, float(tr), ctypes.c_int16)
     if fixed_hrf is not False:
         model = og_nohrf.GaussianModel(stimulus, utils.double_gamma_hrf)
         model.hrf_delay = fixed_hrf
@@ -83,42 +79,70 @@ def fit_voxel(tup):
     # verbose = 2 is very verbose
     if fixed_hrf is not False:
         fit = og_nohrf.GaussianFit(model, vx, grids, bounds, Ns=Ns,
-                                   voxel_index=(ii, 1, 1), auto_fit=True, verbose=2)
+                                voxel_index=(ii, 1, 1), auto_fit=True, verbose=2)
     else:
         fit = og.GaussianFit(model, vx, grids, bounds, Ns=Ns,
-                             voxel_index=(ii, 1, 1), auto_fit=True, verbose=2)
-    return (ii, vx) + tuple(fit.overloaded_estimate) + (fit.prediction,)
-if mps == 1:
-    voxs = [fit_voxel((ii, vx, js)) for (ii, vx, js) in zip(range(len(bold)), bold, stim_json)]
+                            voxel_index=(ii, 1, 1), auto_fit=True, verbose=2)
+    return (ii, vx) + tuple(fit.overloaded_estimate) + (fit.prediction, fit.rss, fit.rsquared)
+
+#############################################################
+bold = bold_im.get_fdata().squeeze()
+stim = stim_im.get_fdata().squeeze()
+
+# stimulus width and height
+if isinstance(stim_json, list):
+    stdat = stim_json[0]['Stimulus']
+    height = stdat['fieldofviewVert']
+    width  = stdat['fieldofviewHorz']
+    tr = stim_json[0]['TR']
 else:
-    tups = list(zip(range(len(bold)), bold, stim_json))
+    if 'fieldofviewVert' in stim_json.keys():
+        stdat = stim_json[0]['Stimulus']
+        height = stdat['fieldofviewVert']
+        width  = stdat['fieldofviewHorz']
+    elif 'stimulus_diameter' in stim_json.keys():
+        height = stim_json['stimulus_diameter']
+        width  = stim_json['stimulus_diameter']
+
+    tr = bold_im.header['pixdim'][4]
+
+if isinstance(width, int) or isinstance(width, float):
+    width = np.tile(width, len(bold))
+if isinstance(height, int) or isinstance(height, float):
+    height = np.tile(height, len(bold))
+if isinstance(tr, int) or isinstance(tr, float) or tr.dtype=='float32':
+    tr = np.tile(tr, len(bold))
+
+if mps == 1:
+    voxs = [fit_voxel((ii, vx, w, h)) for (ii, vx, w, h) in zip(range(len(bold)), bold, width, height, tr)]
+else:
+    tups = list(zip(range(len(bold)), bold, width, height, tr))
     with sharedmem.Pool(np=mps) as pool:
         voxs = pool.map(fit_voxel, tups)
     voxs = list(sorted(voxs, key=lambda tup:tup[0]))
+
 # Update the results to match the x0/y0, sigma style used by prfanalyze
-all_fields = ('index','voxel') + fields + ('pred',)
-res = {k:np.asarray([u[ii] for u in voxs]) for (ii,k) in enumerate(all_fields)}
-rr = {}
-rr['centerx0'] = np.cos(res['theta'])  * res['rho']
-rr['centery0'] = -np.sin(res['theta']) * res['rho']
-rr['sigmamajor'] = res['sigma']
-rr['sigmaminor'] = res['sigma']
-rr['beta'] = res['beta']
-rr['baseline'] = res['baseline']
-if fixed_hrf is False: rr['hrfdelay'] = res['hrfdelay']
-# Export the files
-for (k,v) in six.iteritems(rr):
-    im = nib.Nifti1Image(np.reshape(v, bold_im.shape[:-1]), bold_im.affine)
-    im.to_filename(os.path.join(outdir, k + '.nii.gz'))
-# Also export the prediction and testdata
-im = nib.Nifti1Image(np.reshape(bold, bold_im.shape), bold_im.affine)
-im.to_filename(os.path.join(outdir, 'testdata.nii.gz'))
-im = nib.Nifti1Image(np.reshape(res['pred'], bold_im.shape), bold_im.affine)
-im.to_filename(os.path.join(outdir, 'modelpred.nii.gz'))
+all_fields = ('index','voxel') + fields + ('pred','rss','R2')
+
+res = [dict([(f, vox[ii]) for ii,f in enumerate(all_fields)]) for vox in voxs]
+
+for r in res:
+    r['centerx0']   = np.cos(r['theta'])  * r['rho']
+    r['centery0']   = -np.sin(r['theta']) * r['rho']
+    r['testdata']   = r['voxel'].tolist()
+    r['modelpred']  = r['pred'].tolist()
+    r['sigmamajor'] = r['sigma']
+    r['sigmaminor'] = r['sigma']
+    r.pop('voxel')
+    r.pop('pred')
+    r.pop('sigma')
+
+with open(os.path.join(outdir, 'estimates.json'), 'w') as fl:
+    json.dump(res, fl, indent=4)
 
 # That's it!
 print("Popeye finished succesfully.")
 sys.exit(0)
 
-    
-    
+
+

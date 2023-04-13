@@ -6,3 +6,6 @@ PRFmodel.wiki
 *.err
 *.asv
 __MACOSX*
+._.DS_Store
+.gitignore
+.DS_Store

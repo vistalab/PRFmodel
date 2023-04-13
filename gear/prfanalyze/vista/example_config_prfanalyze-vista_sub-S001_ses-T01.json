@@ -1,0 +1,26 @@
+{
+    "subjectName": "S001",
+    "sessionName": "T01",
+    "solver":      "vista",
+    "isPRFSynthData": false,
+    "tasks": "[HRFPRF,shuffledPRF,shuffledScotomaPRF,sweepPRF,sweepScotomaPRF]",
+    "options": {
+    	"prfprepareAnalysis": "01",
+        "model":    "css",
+        "grid":     false,
+        "wsearch":  "coarse to fine",
+        "detrend":  1,
+        "keepAllPoints": false,
+        "numberStimulusGridPoints": 50,
+        "obtainPreds": true
+    },
+    "stimulus": {
+    "fieldofviewHorz":24,
+	"fieldofviewVert":24,
+	"stimulus_diameter": 24,
+	"Binary":true,
+	"Resize":true,
+	"ResizedHorz":101,
+	"ResizedVert":101
+    }
+}
