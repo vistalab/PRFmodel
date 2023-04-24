@@ -31,6 +31,7 @@ mps = opts.get('multiprocess', True)
 # some post-processing
 if mps == 'auto' or mps is True: mps = multiprocessing.cpu_count()
 elif mps == 0: mps = 1
+elif isinstance(mps, int): mps = mps
 
 if fixed_hrf is not False:
     fields = ('theta', 'rho', 'sigma', 'beta', 'baseline')
@@ -114,7 +115,7 @@ if isinstance(tr, int) or isinstance(tr, float) or tr.dtype=='float32':
     tr = np.tile(tr, len(bold))
 
 if mps == 1:
-    voxs = [fit_voxel((ii, vx, w, h)) for (ii, vx, w, h) in zip(range(len(bold)), bold, width, height, tr)]
+    voxs = [fit_voxel((ii, vx, w, h, tr)) for (ii, vx, w, h, tr) in zip(range(len(bold)), bold, width, height, tr)]
 else:
     tups = list(zip(range(len(bold)), bold, width, height, tr))
     with sharedmem.Pool(np=mps) as pool:
