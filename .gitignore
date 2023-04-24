@@ -9,3 +9,4 @@ __MACOSX*
 .gitignore
 .DS_Store
 */*/*/compiled/*
+*/*/compiled/*
