@@ -71,7 +71,7 @@ end
 % Make the output directory
 if ~exist(output_dir,'dir');mkdir(output_dir);end
 
-%% check that the other relevant files eist
+%% check that the other relevant files exist
 if exist(bold_file, 'file') ~= 2
     disp(sprintf('Given BOLD 4D nifti file does not exist: %s', bold_file))
     return
