@@ -1,8 +1,9 @@
 FROM garikoitz/prfanalyze-base:3.1.1
 
-LABEL MAINTAINER Garikoitz Lerma-Usabiaga <glerma@stanford.edu>
+LABEL MAINTAINER Garikoitz Lerma-Usabiaga <garikoitz@gmail.com>
 
 ADD /compiled /compiled
+RUN chmod -R 777 /compiled
 
 # the solve script and related files
 COPY solve.sh /solve.sh
