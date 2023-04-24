@@ -28,19 +28,19 @@ RUN apt-get update -qq \
            tcsh \
            xfonts-base \
            xvfb \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
     && _reproenv_tmppath="$(mktemp -t tmp.XXXXXXXXXX.deb)" \
     && curl -fsSL --retry 5 -o "${_reproenv_tmppath}" http://archive.ubuntu.com/ubuntu/pool/main/g/glibc/multiarch-support_2.27-3ubuntu1.6_amd64.deb \
     && apt-get install --yes -q "${_reproenv_tmppath}" \
-    && rm "${_reproenv_tmppath}"
+    && rm "${_reproenv_tmppath}" \
     && _reproenv_tmppath="$(mktemp -t tmp.XXXXXXXXXX.deb)" \
     && curl -fsSL --retry 5 -o "${_reproenv_tmppath}" https://apt.ligo-wa.caltech.edu:8443/debian/pool/stretch/libxp6/libxp6_1.0.2-2_amd64.deb \
     && apt-get install --yes -q "${_reproenv_tmppath}" \
-    && rm "${_reproenv_tmppath}"
+    && rm "${_reproenv_tmppath}" \
     && _reproenv_tmppath="$(mktemp -t tmp.XXXXXXXXXX.deb)" \
     && curl -fsSL --retry 5 -o "${_reproenv_tmppath}" http://debian.snt.utwente.nl/debian-archive/debian/pool/main/libp/libpng/libpng12-0_1.2.49-1+deb7u2_amd64.deb \
     && apt-get install --yes --allow-downgrades -q "${_reproenv_tmppath}" \
-    && rm "${_reproenv_tmppath}"
+    && rm "${_reproenv_tmppath}" \
     %% apt-get update -qq \
     && apt-get install --yes --quiet --fix-missing \
     && rm -rf /var/lib/apt/lists/* \
