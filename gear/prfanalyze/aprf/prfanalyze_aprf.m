@@ -48,7 +48,7 @@ end
 if ~exist(output_dir,'dir');mkdir(output_dir);end
 
 
-%% check that the other relevant files eist
+%% check that the other relevant files exist
 if exist(bold_file, 'file') ~= 2
     disp(sprintf('Given BOLD 4D nifti file does not exist: %s', bold_file))
     return
@@ -57,6 +57,10 @@ if exist(stim_file, 'file') ~= 2
     disp(sprintf('Given stimulus 3D nifti file does not exist: %s', stim_file))
     return
 end
+
+
+%% TODO: check that the input stimuli file is [0,1]
+
 
 %% Call pmModelFit!
 [pmEstimates, results] = pmModelFit({bold_file, json_file, stim_file}, 'aprf', 'options',options);
