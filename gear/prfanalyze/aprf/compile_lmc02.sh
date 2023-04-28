@@ -13,7 +13,9 @@ if ~isdir(fullfile(toolbox_dir,'PRFmodel','gear','prfanalyze','aprf','compiled')
 end
 
 addpath(genpath(fullfile(toolbox_dir,'vistasoft')));
-addpath(genpath(fullfile(toolbox_dir,'analyzePRF')));
+% addpath(genpath(fullfile(toolbox_dir,'analyzePRF')));
+% we still need to maintain garikoitzanalyzeprf with branch extract_modelpred so that we have it in the output
+addpath(genpath(fullfile(toolbox_dir,'garikoitzanalyzePRF')));
 addpath(genpath(fullfile(toolbox_dir,'jsonlab_v1.2')));
 addpath(genpath(fullfile(toolbox_dir,'JSONio')));
 addpath(genpath(fullfile(toolbox_dir,'freesurfer_mrtrix_afni_matlab_tools')));
