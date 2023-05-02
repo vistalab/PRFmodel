@@ -35,7 +35,7 @@ if ~isempty(opts_file)
     tmp
     if ~isempty(tmp)
         options = struct();
-        options.vista = tmp;
+        options.aprf = tmp;
     else
         opts = {};
     end
