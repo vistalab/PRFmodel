@@ -1,6 +1,6 @@
 FROM garikoitz/prfanalyze-base:3.1.1
 
-LABEL MAINTAINER Garikoitz Lerma-Usabiaga <glerma@stanford.edu>
+LABEL MAINTAINER Garikoitz Lerma-Usabiaga <garikoitz@gmail.com>
 
 # Install popeye...
 RUN . /opt/conda/etc/profile.d/conda.sh \

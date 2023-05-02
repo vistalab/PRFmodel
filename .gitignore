@@ -2,10 +2,11 @@
 .DS_STORE
 PRFmodel.wiki
 *.swp
-*/*/compiled/*
 *.err
 *.asv
 __MACOSX*
 ._.DS_Store
 .gitignore
 .DS_Store
+*/*/*/compiled/*
+*/*/compiled/*
