@@ -43,6 +43,10 @@ else
     opts = {};
 end
 
+% Check if the hrf comes in rows, make it columns
+if size(options.aprf.hrf, 1) < size(options.aprf.hrf, 2)
+    options.aprf.hrf = options.aprf.hrf';
+end
 
 % Make the output directory
 if ~exist(output_dir,'dir');mkdir(output_dir);end

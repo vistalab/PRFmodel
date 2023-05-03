@@ -749,31 +749,37 @@ switch prfimplementation
         % Obtain the HRF: follow the steps on the 3dNLfim.help file
         % TODO: add to options what HRF to use
         afni_hrf = options.hrf;
-        switch afni_hrf
-            % TODO: synch it with the HRF creation process in pmHRF.m 
-            case {'GAM','gam'}
-                % Default GAM normalized to 1
-                system(['3dDeconvolve ' ...
-                          '-nodata 50 ' num2str(TR) ' ' ...
-                          '-polort -1 ' ... % Do not calculate detrending polinomials
-                          '-num_stimts 1 ' ...
-                          '-stim_times 1 "1D:0" GAM ' ... % k, tname, Rmodel
-                          '-x1D ' fullfile(tmpName, 'conv.ref.GAM.1D')]);
-                % Set the enviroment variable
-                setenv('AFNI_CONVMODEL_REF', fullfile(tmpName, 'conv.ref.GAM.1D'));
-            case {'SPM','spm'}
-                system(['3dDeconvolve ' ...
-                          '-nodata 50 ' num2str(TR) ' ' ...
-                          '-polort -1 ' ...
-                          '-num_stimts 1 ' ...
-                          '-stim_times 1 "1D:0" SPMG1\(0\) ' ...
-                          '-x1D ' fullfile(tmpName, 'sisar.conv.ref.SPMG1.1D')]);
-                % Set the enviroment variable
-                setenv('AFNI_CONVMODEL_REF', fullfile(tmpName, 'sisar.conv.ref.SPMG1.1D'));
-            otherwise
-                error('%s afni hrf not recognized',afni_hrf)
+        if ischar(afni_hrf)
+            switch afni_hrf
+                % TODO: synch it with the HRF creation process in pmHRF.m 
+                case {'GAM','gam'}
+                    % Default GAM normalized to 1
+                    system(['3dDeconvolve ' ...
+                              '-nodata 50 ' num2str(TR) ' ' ...
+                              '-polort -1 ' ... % Do not calculate detrending polinomials
+                              '-num_stimts 1 ' ...
+                              '-stim_times 1 "1D:0" GAM ' ... % k, tname, Rmodel
+                              '-x1D ' fullfile(tmpName, 'conv.ref.GAM.1D')]);
+                    % Set the enviroment variable
+                    setenv('AFNI_CONVMODEL_REF', fullfile(tmpName, 'conv.ref.GAM.1D'));
+                case {'SPM','spm'}
+                    system(['3dDeconvolve ' ...
+                              '-nodata 50 ' num2str(TR) ' ' ...
+                              '-polort -1 ' ...
+                              '-num_stimts 1 ' ...
+                              '-stim_times 1 "1D:0" SPMG1\(0\) ' ...
+                              '-x1D ' fullfile(tmpName, 'sisar.conv.ref.SPMG1.1D')]);
+                    % Set the enviroment variable
+                    setenv('AFNI_CONVMODEL_REF', fullfile(tmpName, 'sisar.conv.ref.SPMG1.1D'));
+                otherwise
+                    error('%s afni hrf not recognized',afni_hrf)
+            end
+        else
+            fname = fullfile(tmpName, 'customHRF.1D');
+            WriteBrik(afni_hrf, 'A', fname, 'I');
+            setenv('AFNI_CONVMODEL_REF',fname)
+            disp('A custom HRF will be used for fitting')
         end
-        
         %% SET OTHER CONTROL ENVIROMENTAL VARIABLES
         % Not sure about the options here, Reynolds sent them to us
         setenv('AFNI_MODEL_DEBUG', '3');
