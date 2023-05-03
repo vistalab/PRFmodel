@@ -806,7 +806,7 @@ switch prfimplementation
           vinfo.HISTORY_NOTE = [];
     vinfo.IDCODE_ANAT_PARENT = '';
             fname = fullfile(tmpName,'customHRF.1D');
-    WriteBrik(afni_hrf, 'A', fname, 'I');
+    WriteBrik(afni_hrf, vinfo);
             setenv('AFNI_CONVMODEL_REF',fname);
             disp('A custom HRF will be used for fitting')
         end
