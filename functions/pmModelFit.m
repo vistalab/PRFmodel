@@ -778,35 +778,38 @@ switch prfimplementation
             if size(afni_hrf,1) < size(afni_hrf,2)
                 afni_hrf = afni_hrf';
             end
-           vinfo = struct(); 
-              vinfo.RootName = fullfile(tmpName,'customHRF');
-          vinfo.Extension_1D = '.1D';
-              vinfo.TypeName = '';
-             vinfo.TypeBytes = 0;
-           vinfo.Orientation = '';
-             vinfo.ByteOrder = '';
+            fname = fullfile(tmpName,'customHRF.1D');
+            
+            vinfo = struct();
+            vinfo.TypeName = '';
+            vinfo.TypeBytes = 0;
+            vinfo.Orientation = '';
+            vinfo.ByteOrder = '';
             vinfo.FileFormat = '1D';
-    vinfo.DATASET_DIMENSIONS = [50 1 1 0 0];
-          vinfo.DATASET_RANK = [3 1 0 0 0 0 0 0];
-           vinfo.BRICK_TYPES = [];
-           vinfo.BRICK_STATS = [];
-      vinfo.BRICK_FLOAT_FACS = '';
-      vinfo.BYTEORDER_STRING = '';
-       vinfo.ORIENT_SPECIFIC = [];
-                vinfo.ORIGIN = [0 0 0];
-                 vinfo.DELTA = [1 1 1];
+            vinfo.DATASET_DIMENSIONS = [size(afni_hrf,1) 1 1 0 0];
+            vinfo.DATASET_RANK = [3 1 0 0 0 0 0 0];
+            vinfo.BRICK_TYPES = [];
+            vinfo.BRICK_STATS = [];
+            vinfo.BRICK_FLOAT_FACS = '';
+            vinfo.BYTEORDER_STRING = '';
+            vinfo.ORIENT_SPECIFIC = [];
+            vinfo.ORIGIN = [0 0 0];
+            vinfo.DELTA = [1 1 1];
             vinfo.BRICK_LABS = '';
-        vinfo.BRICK_KEYWORDS = '';
+            vinfo.BRICK_KEYWORDS = '';
             vinfo.SCENE_DATA = [];
             vinfo.TYPESTRING = '';
-         vinfo.IDCODE_STRING = '';
-           vinfo.IDCODE_DATE = '';
-         vinfo.BRICK_STATAUX = [];
-              vinfo.STAT_AUX = [];
-          vinfo.HISTORY_NOTE = [];
-    vinfo.IDCODE_ANAT_PARENT = '';
-            fname = fullfile(tmpName,'customHRF.1D');
-    WriteBrik(afni_hrf, vinfo);
+            vinfo.IDCODE_STRING = '';
+            vinfo.IDCODE_DATE = '';
+            vinfo.BRICK_STATAUX = [];
+            vinfo.STAT_AUX = [];
+            vinfo.HISTORY_NOTE = [];
+            vinfo.IDCODE_ANAT_PARENT = '';
+            
+            opt = struct();
+            opt.Prefix = fname;
+
+            WriteBrik(afni_hrf, vinfo, opt);
             setenv('AFNI_CONVMODEL_REF',fname);
             disp('A custom HRF will be used for fitting')
         end
