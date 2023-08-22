@@ -3,7 +3,7 @@
 "subjectName":"ellipse",
 "sessionName":"tr1dur300v3",
 "repeats":10,
-"useparallel":true,
+"useparallel":false,
 "TR":1,
 "Type":"linear",
 "cssexp":0.05,
