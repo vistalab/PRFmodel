@@ -41,6 +41,7 @@ startSignal = pm.BOLDnoise;
 for kk=1:pm.timePointsN
     kk
     pm.BOLDnoise = circshift(startSignal,kk-1);
+    options.hrf = [1,2,3,4,5,6,7];
     results      = pmModelFit(pm, 'vista', 'options',options);
     R2array      = [R2array, results.R2];
     ResultsArray = [ResultsArray; results];

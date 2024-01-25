@@ -6,6 +6,7 @@
     "isPRFSynthData" : false,
     "options": {
     	"prfprepareAnalysis" : "01",
+        "hrf": [],
         "model"              : "one gaussian",
         "grid"               :  false,
         "wsearch"            : "coarse to fine",

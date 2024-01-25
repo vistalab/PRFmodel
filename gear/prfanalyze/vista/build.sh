@@ -2,7 +2,7 @@
 
 USERTAG=garikoitz
 SOLVER=vista
-VERSION=2.2.1_3.1.1
+VERSION=2.2.2_3.1.1
 
 # 2.0.5: edited in master, fix in base/run.py for singularity
 # 2.0.8: with the fixed exp
@@ -12,6 +12,7 @@ VERSION=2.2.1_3.1.1
 # 2.2.0: includes david's changes to read experimental data from new prfprepare
 # 2.2.1: updated base to 3.0.3
 # 2.2.1_3.1.0: just changed the naming convention to equal it with the other containers. Removed the checks at the top of this file
+# 2.2.2_3.1.1: added custom hrf to vistasoft, you need to have  custom_hrf branch checked out
 
 SCRIPTPATH="$( cd "$(dirname "$0")" && pwd -P )"
 

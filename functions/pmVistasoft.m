@@ -32,6 +32,7 @@ p.addParameter('sessioncode'  , 'pRFsynthetic01', @ischar);
 p.addParameter('model'        , 'one gaussian'  , @ischar);
 p.addParameter('fixcssexp'    , 0               , @isnumeric);
 p.addParameter('grid'         , false           , @islogical);
+p.addParameter('hrf'         , []               , @isnumeric);
 p.addParameter('wsearch'      , 'coarse to fine', @ischar);
 p.addParameter('detrend'      , 1               , @isnumeric);
 p.addParameter('keepAllPoints', false           , @islogical);
@@ -41,6 +42,7 @@ p.parse(homedir, stimfile, datafile, stimradius, varargin{:});
 sessioncode   = p.Results.sessioncode;
 model         = p.Results.model;
 grid          = p.Results.grid;
+hrf           = p.Results.hrf;
 wSearch       = p.Results.wsearch;
 detrend       = p.Results.detrend;
 fixcssexp     = p.Results.fixcssexp;
@@ -52,6 +54,8 @@ fprintf('\n[pmVistasoft] This is homedir: %s\n',homedir)
 fprintf('\n[pmVistasoft] This is stimfile: %s\n',stimfile)
 fprintf('\n[pmVistasoft] This is datafile: %s\n',datafile)
 fprintf('\n[pmVistasoft] This is stimradius: %i\n',stimradius)
+fprintf('\n[pmVistasoft] This is the hrf:')
+hrf
 if strcmp(model,'css') && fixcssexp ~= 0
     fprintf('\n[pmVistasoft] CSS model selected with fixed exponent to %1.2g\n',fixcssexp)
 end
@@ -174,8 +178,14 @@ sParams.paramsFile = stimfileMat;    % file containing stimulus parameters
 % 'thresholdedBinary',  whenreading in images, treat any pixel value
 %                       different from background as a 1, else 0
 sParams.imFilter   = 'none';
-% we switch from the default positive Boynton hRF to the biphasic SPM style
-sParams.hrfType    = 'two gammas (SPM style)';
+% we added the option to have custom HRFs
+if isempty(hrf)
+    % we switch from the default positive Boynton hRF to the biphasic SPM style
+    sParams.hrfType    = 'two gammas (SPM style)';
+else
+    sParams.hrfType    = 'custom';
+    sParams.hrfCustom  = hrf;
+end    
 % pre-scan duration will be stored in frames for the rm, but was stored in
 % seconds in the stimulus file
 sParams.prescanDuration = 0;
