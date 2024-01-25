@@ -52,7 +52,15 @@ p.addParameter('useparallel'    ,  true        , @islogical);
     options       = struct();
     options.aprf  = struct('seedmode', [0 1 2], ...
                            'display' , 'off'  , ...
-                           'usecss'  , true  );
+                           'hrf', [], ...
+                           'maxpolydeg', [], ...
+                           'modelmode', 3, ...  % This removes css exponent, 1 for css two stages, 2 for css 1 stage
+                           'xvalmode', 0, ...
+                           'maxiter', 500, ...
+                           'algorithm',"levenberg-marquardt", ...
+                           'typicalgain', 10, ...
+                           'exptlowerbound', 0.001, ...
+                           'wantsparse',1 );
     options.vista = struct('model'        ,'one gaussian'   , ...
                            'grid'         , false           , ...
                            'wSearch'      , 'coarse to fine', ...
@@ -60,6 +68,7 @@ p.addParameter('useparallel'    ,  true        , @islogical);
                            'keepAllPoints', false           , ...
                            'obtainPreds'  , false           , ...
                            'fixcssexp'    , 0               , ...
+                           'hrf'          , []              , ...
                            'numberStimulusGridPoints',   50);
     options.afni  = struct('model','afni4', ...
                            'hrf'  , 'SPM');
@@ -243,6 +252,18 @@ switch prfimplementation
         if useParallel
             pmEstimates.testdata = data;
             
+            % Make sure the input stimulus is [0,1] as required by analyzePRF
+            % Normalize to 0>1 and binarize 
+            nstimulus  = stimulus - min(stimulus(:));
+            nstimulus  = nstimulus ./ max(nstimulus(:));
+            stimulus   = imbinarize(nstimulus,.5);
+            
+            
+            % Check if the HRF was passed, otherwise paste the default again
+            if isempty(options.hrf)
+                options.hrf = getcanonicalhrf(TR,TR)';
+            end
+                        
             % Calculate PRF
             results  = analyzePRF({stimulus}, {data}, TR, options);
             
@@ -453,6 +474,7 @@ switch prfimplementation
             
         end
         
+        
         %% Prepare the function call
         homedir       = tmpName;
         stimfile      = stimNiftiFname;
@@ -469,6 +491,7 @@ switch prfimplementation
         keepAllPoints = options.keepAllPoints;
         numberStimulusGridPoints = options.numberStimulusGridPoints;
         
+        
         % Make the call to the function based on Jon's script
         
         % TODO: save some steps if we already start with niftis
@@ -476,6 +499,7 @@ switch prfimplementation
         results = pmVistasoft(homedir, stimfile, datafile, stimradius,...
             'model'  , model, ...
             'grid'   , grid, ...
+            'hrf'    , options.hrf, ...
             'wSearch', wSearch, ...
             'detrend', detrend, ...
             'keepAllPoints', keepAllPoints, ...
@@ -729,31 +753,70 @@ switch prfimplementation
         % Obtain the HRF: follow the steps on the 3dNLfim.help file
         % TODO: add to options what HRF to use
         afni_hrf = options.hrf;
-        switch afni_hrf
-            % TODO: synch it with the HRF creation process in pmHRF.m 
-            case {'GAM','gam'}
-                % Default GAM normalized to 1
-                system(['3dDeconvolve ' ...
-                          '-nodata 50 ' num2str(TR) ' ' ...
-                          '-polort -1 ' ... % Do not calculate detrending polinomials
-                          '-num_stimts 1 ' ...
-                          '-stim_times 1 "1D:0" GAM ' ... % k, tname, Rmodel
-                          '-x1D ' fullfile(tmpName, 'conv.ref.GAM.1D')]);
-                % Set the enviroment variable
-                setenv('AFNI_CONVMODEL_REF', fullfile(tmpName, 'conv.ref.GAM.1D'));
-            case {'SPM','spm'}
-                system(['3dDeconvolve ' ...
-                          '-nodata 50 ' num2str(TR) ' ' ...
-                          '-polort -1 ' ...
-                          '-num_stimts 1 ' ...
-                          '-stim_times 1 "1D:0" SPMG1\(0\) ' ...
-                          '-x1D ' fullfile(tmpName, 'sisar.conv.ref.SPMG1.1D')]);
-                % Set the enviroment variable
-                setenv('AFNI_CONVMODEL_REF', fullfile(tmpName, 'sisar.conv.ref.SPMG1.1D'));
-            otherwise
-                error('%s afni hrf not recognized',afni_hrf)
+        if ischar(afni_hrf)
+            switch afni_hrf
+                % TODO: synch it with the HRF creation process in pmHRF.m 
+                case {'GAM','gam'}
+                    % Default GAM normalized to 1
+                    system(['3dDeconvolve ' ...
+                              '-nodata 50 ' num2str(TR) ' ' ...
+                              '-polort -1 ' ... % Do not calculate detrending polinomials
+                              '-num_stimts 1 ' ...
+                              '-stim_times 1 "1D:0" GAM ' ... % k, tname, Rmodel
+                              '-x1D ' fullfile(tmpName, 'conv.ref.GAM.1D')]);
+                    % Set the enviroment variable
+                    setenv('AFNI_CONVMODEL_REF', fullfile(tmpName, 'conv.ref.GAM.1D'));
+                case {'SPM','spm'}
+                    system(['3dDeconvolve ' ...
+                              '-nodata 50 ' num2str(TR) ' ' ...
+                              '-polort -1 ' ...
+                              '-num_stimts 1 ' ...
+                              '-stim_times 1 "1D:0" SPMG1\(0\) ' ...
+                              '-x1D ' fullfile(tmpName, 'sisar.conv.ref.SPMG1.1D')]);
+                    % Set the enviroment variable
+                    setenv('AFNI_CONVMODEL_REF', fullfile(tmpName, 'sisar.conv.ref.SPMG1.1D'));
+                otherwise
+                    error('%s afni hrf not recognized',afni_hrf)
+            end
+        else
+            if size(afni_hrf,1) < size(afni_hrf,2)
+                afni_hrf = afni_hrf';
+            end
+            fname = fullfile(tmpName,'customHRF.1D');
+            
+            vinfo = struct();
+            vinfo.TypeName = '';
+            vinfo.TypeBytes = 0;
+            vinfo.Orientation = '';
+            vinfo.ByteOrder = '';
+            vinfo.FileFormat = '1D';
+            vinfo.DATASET_DIMENSIONS = [size(afni_hrf,1) 1 1 0 0];
+            vinfo.DATASET_RANK = [3 1 0 0 0 0 0 0];
+            vinfo.BRICK_TYPES = [];
+            vinfo.BRICK_STATS = [];
+            vinfo.BRICK_FLOAT_FACS = '';
+            vinfo.BYTEORDER_STRING = '';
+            vinfo.ORIENT_SPECIFIC = [];
+            vinfo.ORIGIN = [0 0 0];
+            vinfo.DELTA = [1 1 1];
+            vinfo.BRICK_LABS = '';
+            vinfo.BRICK_KEYWORDS = '';
+            vinfo.SCENE_DATA = [];
+            vinfo.TYPESTRING = '';
+            vinfo.IDCODE_STRING = '';
+            vinfo.IDCODE_DATE = '';
+            vinfo.BRICK_STATAUX = [];
+            vinfo.STAT_AUX = [];
+            vinfo.HISTORY_NOTE = [];
+            vinfo.IDCODE_ANAT_PARENT = '';
+            
+            opt = struct();
+            opt.Prefix = fname;
+
+            WriteBrik(afni_hrf, vinfo, opt);
+            setenv('AFNI_CONVMODEL_REF',fname);
+            disp('A custom HRF will be used for fitting')
         end
-        
         %% SET OTHER CONTROL ENVIROMENTAL VARIABLES
         % Not sure about the options here, Reynolds sent them to us
         setenv('AFNI_MODEL_DEBUG', '3');

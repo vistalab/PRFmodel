@@ -1,9 +1,12 @@
 *~
 PRFmodel.wiki
 *.swp
-*/*/compiled/*
 *.err
 *.asv
 __MACOSX*
 */*/*30x30*
 .gitignore
+.DS_Store
+*/*/*/compiled/*
+*/*/compiled/*
+

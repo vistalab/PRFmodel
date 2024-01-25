@@ -3,8 +3,16 @@
     "sessionName": "editThis",
     "solver":      "aprf",
     "options": {
-        "usecss":   true,
         "display":  "off",
-        "seedmode": [0, 1, 2]
+        "seedmode": [0, 1, 2],
+        "hrf": [],
+        "maxpolydeg":[],
+        "modelmode":3,
+        "xvalmode":0,
+        "maxiter":500,
+        "algorithm":"levenberg-marquardt",
+        "typicalgain":10,
+        "exptlowerbound":0.001,
+        "wantsparse":1   
     }
 }

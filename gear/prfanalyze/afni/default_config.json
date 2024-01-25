@@ -4,7 +4,7 @@
     "solver":      "afni",
     "options": {
                  "hrf":"SPM",
-                 "model":"afni6"
+                 "model":"afni4"
 
     }
 }
