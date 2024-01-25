@@ -1,4 +1,4 @@
-function synthBOLDgenerator(json, output_dir)
+function DTcalc = synthBOLDgenerator(json, output_dir)
 % Takes a json file with parameters required to generate:
 %     1/ name.nii.gii    : nifti file with the synthetic BOLD signal
 %     2/ name.json       : json file with the parameters of the BOLD tSeries
@@ -117,8 +117,8 @@ end
 
 %% Create an output subfolder for the outputs 
 % outputSubFolder = [J.subjectName '_' datestr(datetime,'yyyymmddTHHMMSS','local')];
-outputSubFolder = [J.subjectName '_' J.sessionName];
-output_dir = fullfile(output_dir, outputSubFolder);
+% outputSubFolder = [J.subjectName '_' J.sessionName];
+% output_dir = fullfile(output_dir, outputSubFolder);
 mkdir(output_dir);
 
 %% Generate the table with the synthetic data
@@ -156,6 +156,9 @@ end
 PARAMETERS.HRF       = [PARAMETERS.HRF{:}];
 PARAMETERS.RF        = [PARAMETERS.RF{:}];
 PARAMETERS.Stimulus  = [PARAMETERS.Stimulus{:}];
+if isfield(PARAMETERS,'Temporal')
+    PARAMETERS.Temporal  = [PARAMETERS.Temporal{:}];
+end
 % Noise can have different amount of variables. Complete them and concatenate
 for nh=1:length(PARAMETERS.Noise)
     thisNoise = PARAMETERS.Noise(nh); 
@@ -169,19 +172,25 @@ for nh=1:length(PARAMETERS.Noise)
     PARAMETERS.Noise(nh) = {completeNoise};
 end
 PARAMETERS.Noise     = [PARAMETERS.Noise{:}];
+
 % Convert some char-s to string-s, char-s are treated as individual elements...
 PARAMETERS.Type             = string(PARAMETERS.Type);
 PARAMETERS.signalPercentage = string(PARAMETERS.signalPercentage);
 PARAMETERS.RF.Type          = string(PARAMETERS.RF.Type);
 PARAMETERS.Stimulus.expName = string(PARAMETERS.Stimulus.expName);
-
+if isfield(PARAMETERS.Stimulus,'myload')
+    PARAMETERS.Stimulus.myload = string(PARAMETERS.Stimulus.myload);
+end
 % Generate the same thing from the json file
 synthDT = pmForwardModelTableCreate(PARAMETERS, 'repeats', J.repeats);
 % I am having trouble with the parallel toolbox in docker, it takes too much memory. I am going to stablish a limit of 32000 for now
-% if height(synthDT) > 32000
-% 	error("Attempting to write more than 32000 per dimension (%i). TODO: Matlab's niftiwrite will automatically use Nifti-2 to write 2^63 -1 (instead of the current 2^15 -1.", height(synthDT))
-% end
-pmForwardModelCalculate(synthDT, 'useparallel',J.useparallel,'writefiles',true,'outputdir',output_dir,'subjectname',J.subjectName); 
+if height(synthDT) > 32000
+	error("Attempting to write more than 32000 per dimension (%i). TODO: Matlab's niftiwrite will automatically use Nifti-2 to write 2^63 -1 (instead of the current 2^15 -1.", height(synthDT))
+end
+
+DTcalc = pmForwardModelCalculate(synthDT,'writefiles',false,'outputdir',output_dir,'subjectname',J.subjectName); 
+
+% DTcalc = pmForwardModelCalculate(synthDT, 'useparallel',J.useparallel,'writefiles',true,'outputdir',output_dir,'subjectname',J.subjectName); 
 %% Generate the files
 
 

@@ -1,12 +1,12 @@
 *~
-.DS_STORE
 PRFmodel.wiki
 *.swp
 *.err
 *.asv
 __MACOSX*
-._.DS_Store
+*/*/*30x30*
 .gitignore
 .DS_Store
 */*/*/compiled/*
 */*/compiled/*
+

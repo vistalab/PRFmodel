@@ -1,8 +1,8 @@
 classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
     % This is a superclass for Stimulus-s. Every particular instance of this class
     % will have different parameters, so it will be a children class. For
-    % example, "bars" or "wedges". 
-    % TODO: Right now uses Kendrick's convention. Bars with words is 103. 
+    % example, "bars" or "wedges".
+    % TODO: Right now uses Kendrick's convention. Bars with words is 103.
     %
     % Syntax:
     %      stim = Stimulus;
@@ -24,7 +24,7 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
      mrvNewGraphWin;
      window = false;
      nrow = 2; ncol = 4;
-     pm               = prfModel;  
+     pm               = prfModel;
      pm.RF.sigmaMajor = 0.5;
      pm.RF.sigmaMinor = pm.RF.sigmaMajor;
      pm.Stimulus.frameduration = 4;
@@ -60,11 +60,11 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
      pm.plot('what','nonoisetimeseries','window',window)
       
     % RFSIZE = 2;
-     pm               = prfModel;  
+     pm               = prfModel;
      pm.RF.sigmaMajor = 2;
      pm.Stimulus.frameduration = 4;
-     pm.RF.sigmaMinor = pm.RF.sigmaMajor;    
-     % pm.RF.plot    
+     pm.RF.sigmaMinor = pm.RF.sigmaMajor;
+     % pm.RF.plot
    
      subplot(nrow,ncol,5)
      pm.TR = 1;
@@ -95,8 +95,8 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
      pm.Stimulus.compute
      % pm.Stimulus.plot
      pm.plot('what','nonoisetimeseries','window',window)
-   %} 
-   %{
+    %}
+    %{
      pm.TR = 4;
      pm.Stimulus.compute
      pm.Stimulus.plot
@@ -114,34 +114,35 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
      pm.Stimulus.compute
      pm.Stimulus.plot
      pm.plot('what','nonoise')
-   %}
+    %}
     
-   % Create a 15 second on/off stimulus, 5 off, 5 on, 5 off
-   %{
+    % Create a 15 second on/off stimulus, 5 off, 5 on, 5 off
+    %{
      See stimtests.m
     
-   %}
+    %}
     
     properties
         PM               ;   % prfModel that has some of the variables we need, such as TR
         fieldofviewHorz  ;   % Degrees
         fieldofviewVert  ;   % Degrees
-        expName          ;   
-        Binary           ;   % Logical. If true only apertures are shown. 
+        expName          ;
+        Binary           ;   % Logical. If true only apertures are shown.
         Resize           ;   % Logical. If true image resized according to ImageSideSize
         ResizedHorz      ;   % Numeric. Size in pixels of resized horizontal side
         ResizedVert      ;   % Numeric. Size in pixels of resized vertical side
         barWidth         ;   % Degrees
         durationSecs     ;   % Numeric, duration of the stimuli in secs, default 300secs
         frameduration    ;   % Numeric, how many frames we want a refresh to last
-        Shuffle          ;   
+        Shuffle          ;
         shuffleSeed      ;
         values           ;   % char/string with path to the stimulus .mat
         videoFileName    ;
         niftiFileName    ;
         DataPath         ;
         LocalPath        ;
-        userVals         ;  % No calculation required, accept values directly. Empty by default. 
+        userVals         ;  % No calculation required, accept values directly. Empty by default.
+        myload           ;  % user provides specific path to their own stim.
     end
     
     properties (Dependent = true, Access = public)
@@ -155,7 +156,7 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
     end
     properties(Dependent= true, SetAccess = private, GetAccess = public)
         TR;            % Seconds, it will be read from the parent class pm
-    end   
+    end
     
     
     %%
@@ -171,10 +172,10 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             d.ResizedVert     = 101;   % 101 is the default in mrVista
             d.barWidth        = 2;     % Degrees. TODO
             d.durationSecs    = 200;   % Seconds
-            d.frameduration   = 4;   
+            d.frameduration   = 4;
             d.Shuffle         = false; % Shuffle bars or content
             d.shuffleSeed     = 12345; % Can be 'shuffle' or an integer
-            
+            d.myload          = "none";
             % Convert to table and return
             d = struct2table(d,'AsArray',true);
         end
@@ -202,6 +203,7 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             p.addParameter('shuffle'        ,d.Shuffle        , @islogical);
             p.addParameter('shuffleseed'    ,d.shuffleSeed);
             p.addParameter('uservals'       ,[]               , @isnumeric);
+            p.addParameter('myload'         ,d.myload         , @ischar);
             p.parse(pm,varargin{:});
             
             % Initialize the PM model
@@ -220,6 +222,7 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             stim.Shuffle         = p.Results.shuffle;
             stim.shuffleSeed     = p.Results.shuffleseed;
             stim.userVals        = p.Results.uservals;
+            stim.myload          = p.Results.myload;
             
             % If we pass uservales, override the calculations
             if isempty(stim.userVals)
@@ -228,41 +231,47 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
                 stim.LocalPath       = fullfile(pmRootPath,'local');
                 stim.DataPath        = fullfile(pmRootPath,'data','stimulus');
                 stimNameWithPath     = fullfile(stim.DataPath, [stim.Name '.mat']);
-                if ~exist(stimNameWithPath, 'file')
-                    % TODO: add all parameters, see .compute below
-                    pmStimulusGenerate('filename', stimNameWithPath,...
-                        'totalduration',stim.durationSecs, ...
-                        'TR', stim.TR, ...
-                        'frameduration',stim.frameduration, ...
-                        'shuffle', stim.Shuffle, ...
-                        'shuffleseed', stim.shuffleSeed); % It can be 'shuffle' or any integer                                    
-                end
-                stim.values        =  char(stimNameWithPath);
-                % Default fileName if we want to write a video of the stimuli
-                stim.videoFileName = fullfile(stim.LocalPath,[stim.Name '.avi']);
-                % Default fileName if we want to write a nifti of the stimuli
-                stim.niftiFileName = fullfile(stim.LocalPath,[stim.Name '.nii.gz']);
+%                 if ~exist(stimNameWithPath, 'file')
+%                     % TODO: add all parameters, see .compute below
+%                     pmStimulusGenerate('filename', stimNameWithPath,...
+%                         'totalduration',stim.durationSecs, ...
+%                         'TR', stim.TR, ...
+%                         'frameduration',stim.frameduration, ...
+%                         'shuffle', stim.Shuffle, ...
+%                         'shuffleseed', stim.shuffleSeed); % It can be 'shuffle' or any integer
+%                 end
+%                 stim.values        =  char(stimNameWithPath);
+%                 % Default fileName if we want to write a video of the stimuli
+%                 stim.videoFileName = fullfile(stim.LocalPath,[stim.Name '.avi']);
+%                 % Default fileName if we want to write a nifti of the stimuli
+%                 stim.niftiFileName = fullfile(stim.LocalPath,[stim.Name '.nii.gz']);
             end
+            stim.values        =  char(stimNameWithPath);
+            % Default fileName if we want to write a video of the stimuli
+            stim.videoFileName = fullfile(stim.LocalPath,[stim.Name '.avi']);
+            % Default fileName if we want to write a nifti of the stimuli
+            stim.niftiFileName = fullfile(stim.LocalPath,[stim.Name '.nii.gz']);
+
         end
         function Name = get.Name(stim)
             shuffleseediftrue = '';
             if stim.Shuffle;shuffleseediftrue=['_Seed-' num2str(stim.shuffleSeed)];end
             Name = [...
-                   'Exp-'          char(stim.expName) ...
-                   '_bin-'         choose(stim.Binary,'true','false') ...
-                   '_size-'        num2str(stim.fieldofviewVert) 'x' ...
-                                   num2str(stim.fieldofviewHorz) ...
-                   '_resize-'      choose(stim.Resize,'true', 'false') ...
-                   '_Horz-'        num2str(stim.ResizedVert) 'x' ...
-                                   num2str(stim.ResizedHorz) ...
-                   '_barW-'        num2str(stim.barWidth) ...
-                   '_dur-'         num2str(stim.durationSecs) ...
-                   '_TR-'          num2str(stim.TR) ...
-                   '_framedur-'    num2str(stim.frameduration) ...
-                   '_Shuffle-'     choose(stim.Shuffle,'true', 'false') ...
-                                   shuffleseediftrue ...
-                   ];
-               assert(isa(Name, 'char'));
+                'Exp-'          char(stim.expName) ...
+                '_bin-'         choose(stim.Binary,'true','false') ...
+                '_size-'        num2str(stim.fieldofviewVert) 'x' ...
+                num2str(stim.fieldofviewHorz) ...
+                '_resize-'      choose(stim.Resize,'true', 'false') ...
+                '_Horz-'        num2str(stim.ResizedVert) 'x' ...
+                num2str(stim.ResizedHorz) ...
+                '_barW-'        num2str(stim.barWidth) ...
+                '_dur-'         num2str(stim.durationSecs) ...
+                '_TR-'          num2str(stim.TR) ...
+                '_framedur-'    num2str(stim.frameduration) ...
+                '_Shuffle-'     choose(stim.Shuffle,'true', 'false') ...
+                shuffleseediftrue ...
+                ];
+            assert(isa(Name, 'char'));
         end
         % Methods
         function v = get.TR(hrf)
@@ -270,7 +279,7 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
         end
         function stimValues = getStimValues(stim)
             % Obtain the values if it is a path
-            if iscell(stim.userVals);
+            if iscell(stim.userVals)
                 sv = stim.userVals{:};
             else
                 sv = stim.userVals;
@@ -283,22 +292,39 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
         end
         function spatialSampleHorz = get.spatialSampleHorz(stim)
             spatialSampleHorz = stim.fieldofviewHorz/size(stim.getStimValues,2);
+            if strcmp(stim.PM.Type,'st')
+                spatialSampleHorz = stim.fieldofviewHorz/stim.ResizedHorz;
+            end
         end
         function spatialSampleVert = get.spatialSampleVert(stim)
             % Obtain the values if it is a path
             spatialSampleVert = stim.fieldofviewHorz/size(stim.getStimValues,1);
+            if strcmp(stim.PM.Type,'st')
+                spatialSampleVert = stim.fieldofviewHorz/stim.ResizedHorz;
+            end
         end
         function XY = get.XY(stim)
-            x = (stim.spatialSampleVert:stim.spatialSampleVert:stim.fieldofviewVert);
-            x = x - mean(x);
-            y = (stim.spatialSampleHorz:stim.spatialSampleHorz:stim.fieldofviewHorz);
-            y = y - mean(y);
-            % Calculate the spatial sampling parameters
-            [X,Y] = meshgrid(x,y);
-            XY = [{X},{Y}];
+            if strcmp(stim.PM.Type,'st')
+                x = (-stim.fieldofviewVert:stim.spatialSampleVert:stim.fieldofviewVert);
+                y = (-stim.fieldofviewHorz:stim.spatialSampleHorz:stim.fieldofviewHorz);
+                % Calculate the spatial sampling parameters
+                [X,Y] = meshgrid(x,y);
+                XY = [{X},{-1*Y}];
+            else
+                x = (stim.spatialSampleVert:stim.spatialSampleVert:stim.fieldofviewVert);
+                x = x - mean(x);
+                y = (stim.spatialSampleHorz:stim.spatialSampleHorz:stim.fieldofviewHorz);
+                y = y - mean(y);
+                % Calculate the spatial sampling parameters
+                [X,Y] = meshgrid(x,y);
+                XY = [{X},{Y}];
+            end
         end
         function v = get.timePointsN(stim)
             v = size(stim.getStimValues,3);
+            if strcmp(stim.PM.Type,'st')
+                v = stim.durationSecs;
+            end
         end
         function timePointsSeries = get.timePointsSeries(stim)
             timePointsSeries = pmTimePointsSeries(stim.TR, stim.timePointsN);
@@ -337,7 +363,7 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             imageCentroid(2)     = (stim.spatialSampleHorz * imageCentroid(2));
             imageCentroid(1)     = (stim.spatialSampleVert * imageCentroid(1));
         end
-       
+        
         % COMPUTE
         function compute(stim)
             % If it does not exist, create the stim file.
@@ -352,21 +378,81 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             if isempty(uv)
                 stimNameWithPath = fullfile(stim.DataPath, [stim.Name '.mat']);
                 if ~exist(stimNameWithPath, 'file')
-                    fprintf('Computing and storing new stimulus file in %s',stimNameWithPath)
-                    % TODO: pass all the variables and make it more flexible
-                    pmStimulusGenerate('filename', stimNameWithPath,...
-                                        'totalduration',stim.durationSecs, ...
-                                        'TR', stim.TR, ...
-                                        'frameduration',stim.frameduration, ...
-                                        'shuffle', stim.Shuffle, ...
-                                        'shuffleseed', stim.shuffleSeed); % It can be 'shuffle' or any integer                                    
+                    if strcmp(stim.myload,"none")
+                        fprintf('Computing and storing new stimulus file in %s',stimNameWithPath)
+                        % TODO: pass all the variables and make it more flexible
+                        pmStimulusGenerate('filename', stimNameWithPath,...
+                            'totalduration',stim.durationSecs, ...
+                            'TR', stim.TR, ...
+                            'frameduration',stim.frameduration, ...
+                            'shuffle', stim.Shuffle, ...
+                            'shuffleseed', stim.shuffleSeed); % It can be 'shuffle' or any integer
+                        
+                    elseif ~strcmp(stim.myload,"none")
+                        userLoadFile = fullfile(stim.myload);
+                        if ~exist(userLoadFile, 'file')
+                            error('stimulus does not exist')
+                        end
+                        
+                        % USERLOAD needs images and and sequence as structs
+                        userStim = load(userLoadFile);
+                        
+                        % check if needed struct fields are there
+                        if strcmp(stim.PM.Type,'st')
+                            if ~isfield(userStim,'images') || ...
+                               ~isfield(userStim,'sec_sequence') || ...
+                               ~isfield(userStim,'sequence')
+                                error("[st] model stimulus needs images & sec_sequence & sequence")
+                            end
+                        else
+                            if ~isfield(userStim,'images') || ~isfield(userStim,'sec_sequence')
+                                error("myload user stim needs images & sec_sequence ")
+                            end
+                        end
+                        
+                        seq = userStim.sec_sequence;
+
+                        %resize image
+                        nImages = size(userStim.images, 3);
+                        nSamples = stim.ResizedHorz;
+                        resampled = zeros(length(stim.XY{1}(:)), nImages);
+                        for ii = 1:nImages
+                            tmp = imresize(userStim.images(:,:,ii), 1+2*[nSamples nSamples], 'nearest');
+                            resampled(:, ii) = tmp(:);
+                        end
+                        resampled = reshape(resampled, size(stim.XY{1},1),size(stim.XY{1},2),nImages);
+
+                        % populate temporal timecourse to the given images
+                        offMask = zeros([size(resampled,1) size(resampled,2)]);
+                        images = zeros(size(resampled,1),size(resampled,2),length(seq));
+                        
+                        for eachimage = 1:length(seq)
+                            if seq(eachimage) == 0
+                                images(:,:,eachimage) = offMask;
+                            elseif seq(eachimage) ~= 0
+                                images(:,:,eachimage) = resampled(:,:,seq(eachimage));
+                            end
+                        end
+                        
+                        if strcmp(stim.PM.Type,'st')
+                            sequence = userStim.sequence;
+                            save(stimNameWithPath,'resampled','images','sequence')
+                        else
+                            sequence = userStim.sec_sequence;
+                            save(stimNameWithPath,'images','sequence')
+
+                        end
+                    end
                 end
-                % fprintf('Retrieving stimulus file in %s',stimNameWithPath)
-                stim.values        =  char(stimNameWithPath);
             end
+            stimNameWithPath = fullfile(stim.DataPath, [stim.Name '.mat']);
+            stim.values        =  char(stimNameWithPath);
+            % Default fileName if we want to write a video of the stimuli
+            stim.videoFileName = fullfile(stim.LocalPath,[stim.Name '.avi']);
+            stim.niftiFileName = fullfile(stim.LocalPath,[stim.Name '.nii.gz']);
         end
         
-  
+        
         
         % VISUALIZATION
         % Plot it
@@ -386,11 +472,11 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             [sz1,sz2,sz3] = size(image3D);
             img = pmMakeMontage(image3D,slicelist);
             imagesc(img); colormap(gray);
-            grid off; axis equal off; 
+            grid off; axis equal off;
             aa = gca;text(1,aa.YLim(2)*(1.05),sprintf('%3.0fx%3.0fx%3.0f',sz1,sz2,sz3));
         end
         function toVideo(stim,varargin)
-             % Read the inputs
+            % Read the inputs
             varargin = mrvParamFormat(varargin);
             p = inputParser;
             p.addRequired ('stim'  ,  @(x)(isa(x,'pmStimulus')));
