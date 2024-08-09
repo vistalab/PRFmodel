@@ -12,7 +12,8 @@
         "detrend":  1,
         "keepAllPoints": false,
         "numberStimulusGridPoints": 50,
-        "obtainPreds": true
+        "obtainPreds": true,
+        "coarseDecimate", 2
     },
     "stimulus": {
     "fieldofviewHorz":24,

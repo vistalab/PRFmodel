@@ -12,7 +12,8 @@
         "wsearch"            : "coarse to fine",
         "detrend"            : 1,
         "keepAllPoints"      : false,
-        "numberStimulusGridPoints": 50
+        "numberStimulusGridPoints": 50,
+        "coarseDecimate": 2
     },
     "stimulus": {
     	"fieldofviewHorz":14

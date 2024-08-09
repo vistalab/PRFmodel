@@ -37,6 +37,7 @@ p.addParameter('wsearch'      , 'coarse to fine', @ischar);
 p.addParameter('detrend'      , 1               , @isnumeric);
 p.addParameter('keepAllPoints', false           , @islogical);
 p.addParameter('numberStimulusGridPoints', 50   , @isnumeric);
+p.addParameter('coarseDecimate', 2   , @isnumeric);
 p.parse(homedir, stimfile, datafile, stimradius, varargin{:});
 % Assign it
 sessioncode   = p.Results.sessioncode;
@@ -48,14 +49,14 @@ detrend       = p.Results.detrend;
 fixcssexp     = p.Results.fixcssexp;
 keepAllPoints = p.Results.keepAllPoints;
 numberStimulusGridPoints = p.Results.numberStimulusGridPoints;
+coarseDecimate = p.Results.coarseDecimate;
 
 % Disp the input files for debugging
 fprintf('\n[pmVistasoft] This is homedir: %s\n',homedir)
 fprintf('\n[pmVistasoft] This is stimfile: %s\n',stimfile)
 fprintf('\n[pmVistasoft] This is datafile: %s\n',datafile)
 fprintf('\n[pmVistasoft] This is stimradius: %i\n',stimradius)
-fprintf('\n[pmVistasoft] This is the hrf:')
-hrf
+
 if strcmp(model,'css') && fixcssexp ~= 0
     fprintf('\n[pmVistasoft] CSS model selected with fixed exponent to %1.2g\n',fixcssexp)
 end
@@ -209,7 +210,8 @@ vw = rmMain(vw, [], wSearch, ...
             'fixcssexp',fixcssexp, ... % this is new, fixing exponent
             'matFileName', 'tmpResults', ...
             'keepAllPoints', keepAllPoints, ...
-            'numberStimulusGridPoints', numberStimulusGridPoints);
+            'numberStimulusGridPoints', numberStimulusGridPoints, ...
+            'coarseDecimate', coarseDecimate);
 
 % Load the results        
 
