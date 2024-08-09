@@ -224,7 +224,7 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             stim.userVals        = p.Results.uservals;
             stim.myload          = p.Results.myload;
             
-            % If we pass uservales, override the calculations
+            % If we pass uservals, override the calculations
             if isempty(stim.userVals)
                 % If it does not exist, create the stim file.
                 % Always store just the path and the name
@@ -368,88 +368,106 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
         function compute(stim)
             % If it does not exist, create the stim file.
             % Store just the path and the name
-            
-            % If the user passed its values, override this and maintain the default
-            if iscell(stim.userVals)
-                uv = stim.userVals{:};
-            else
-                uv = stim.userVals;
-            end
-            if isempty(uv)
-                stimNameWithPath = fullfile(stim.DataPath, [stim.Name '.mat']);
-                if ~exist(stimNameWithPath, 'file')
-                    if strcmp(stim.myload,"none")
-                        fprintf('Computing and storing new stimulus file in %s',stimNameWithPath)
-                        % TODO: pass all the variables and make it more flexible
-                        pmStimulusGenerate('filename', stimNameWithPath,...
-                            'totalduration',stim.durationSecs, ...
-                            'TR', stim.TR, ...
-                            'frameduration',stim.frameduration, ...
-                            'shuffle', stim.Shuffle, ...
-                            'shuffleseed', stim.shuffleSeed); % It can be 'shuffle' or any integer
-                        
-                    elseif ~strcmp(stim.myload,"none")
-                        userLoadFile = fullfile(stim.myload);
-                        if ~exist(userLoadFile, 'file')
-                            error('stimulus does not exist')
-                        end
-                        
-                        % USERLOAD needs images and and sequence as structs
-                        userStim = load(userLoadFile);
-                        
-                        % check if needed struct fields are there
-                        if strcmp(stim.PM.Type,'st')
-                            if ~isfield(userStim,'images') || ...
-                               ~isfield(userStim,'sec_sequence') || ...
-                               ~isfield(userStim,'sequence')
-                                error("[st] model stimulus needs images & sec_sequence & sequence")
-                            end
-                        else
-                            if ~isfield(userStim,'images') || ~isfield(userStim,'sec_sequence')
-                                error("myload user stim needs images & sec_sequence ")
-                            end
-                        end
-                        
-                        seq = userStim.sec_sequence;
 
-                        %resize image
-                        nImages = size(userStim.images, 3);
-                        nSamples = stim.ResizedHorz;
-                        resampled = zeros(length(stim.XY{1}(:)), nImages);
-                        for ii = 1:nImages
-                            tmp = imresize(userStim.images(:,:,ii), 1+2*[nSamples nSamples], 'nearest');
-                            resampled(:, ii) = tmp(:);
-                        end
-                        resampled = reshape(resampled, size(stim.XY{1},1),size(stim.XY{1},2),nImages);
+            % New after Insub's code: if there are values inside myload, 
+            % then load and compute them, otherwise make them empty
 
-                        % populate temporal timecourse to the given images
-                        offMask = zeros([size(resampled,1) size(resampled,2)]);
-                        images = zeros(size(resampled,1),size(resampled,2),length(seq));
-                        
-                        for eachimage = 1:length(seq)
-                            if seq(eachimage) == 0
-                                images(:,:,eachimage) = offMask;
-                            elseif seq(eachimage) ~= 0
-                                images(:,:,eachimage) = resampled(:,:,seq(eachimage));
+
+            switch lower(stim.myload)
+                case {"none",'none', "", '', []}
+                    [p,n,e] = fileparts(char(stim.myload));
+                    out_stim = load(stim.myload);
+                    stim.PM.TR = out_stim.params.tr;
+
+                    stim.Name = [n,e];
+                    stim.values        =  char(stim.myload);
+                    % Default fileName if we want to write a video of the stimuli
+                    stim.videoFileName = fullfile(p,[stim.Name '.avi']);
+                    stim.niftiFileName = fullfile(p,[stim.Name '.nii.gz']);                    
+                otherwise
+                    % If the user passed its values, override this and maintain the default
+                    if iscell(stim.userVals)
+                        uv = stim.userVals{:};
+                    else
+                        uv = stim.userVals;
+                    end
+                    if isempty(uv)
+                        stimNameWithPath = fullfile(stim.DataPath, [stim.Name '.mat']);
+                        if ~exist(stimNameWithPath, 'file')
+                            if strcmp(stim.myload,"none")
+                                fprintf('Computing and storing new stimulus file in %s',stimNameWithPath)
+                                % TODO: pass all the variables and make it more flexible
+                                pmStimulusGenerate('filename', stimNameWithPath,...
+                                    'totalduration',stim.durationSecs, ...
+                                    'TR', stim.TR, ...
+                                    'frameduration',stim.frameduration, ...
+                                    'shuffle', stim.Shuffle, ...
+                                    'shuffleseed', stim.shuffleSeed); % It can be 'shuffle' or any integer
+                                
+                            elseif ~strcmp(stim.myload,"none")
+                                userLoadFile = fullfile(stim.myload);
+                                if ~exist(userLoadFile, 'file')
+                                    error('stimulus does not exist')
+                                end
+                                
+                                % USERLOAD needs images and and sequence as structs
+                                userStim = load(userLoadFile);
+                                
+                                % check if needed struct fields are there
+                                if strcmp(stim.PM.Type,'st')
+                                    if ~isfield(userStim,'images') || ...
+                                       ~isfield(userStim,'sec_sequence') || ...
+                                       ~isfield(userStim,'sequence')
+                                        error("[st] model stimulus needs images & sec_sequence & sequence")
+                                    end
+                                else
+                                    if ~isfield(userStim,'images') || ~isfield(userStim,'sec_sequence')
+                                        error("myload user stim needs images & sec_sequence ")
+                                    end
+                                end
+                                
+                                seq = userStim.sec_sequence;
+        
+                                %resize image
+                                nImages = size(userStim.images, 3);
+                                nSamples = stim.ResizedHorz;
+                                resampled = zeros(length(stim.XY{1}(:)), nImages);
+                                for ii = 1:nImages
+                                    tmp = imresize(userStim.images(:,:,ii), 1+2*[nSamples nSamples], 'nearest');
+                                    resampled(:, ii) = tmp(:);
+                                end
+                                resampled = reshape(resampled, size(stim.XY{1},1),size(stim.XY{1},2),nImages);
+        
+                                % populate temporal timecourse to the given images
+                                offMask = zeros([size(resampled,1) size(resampled,2)]);
+                                images = zeros(size(resampled,1),size(resampled,2),length(seq));
+                                
+                                for eachimage = 1:length(seq)
+                                    if seq(eachimage) == 0
+                                        images(:,:,eachimage) = offMask;
+                                    elseif seq(eachimage) ~= 0
+                                        images(:,:,eachimage) = resampled(:,:,seq(eachimage));
+                                    end
+                                end
+                                
+                                if strcmp(stim.PM.Type,'st')
+                                    sequence = userStim.sequence;
+                                    save(stimNameWithPath,'resampled','images','sequence')
+                                else
+                                    sequence = userStim.sec_sequence;
+                                    save(stimNameWithPath,'images','sequence')
+        
+                                end
                             end
-                        end
-                        
-                        if strcmp(stim.PM.Type,'st')
-                            sequence = userStim.sequence;
-                            save(stimNameWithPath,'resampled','images','sequence')
-                        else
-                            sequence = userStim.sec_sequence;
-                            save(stimNameWithPath,'images','sequence')
-
                         end
                     end
-                end
+                    stimNameWithPath = fullfile(stim.DataPath, [stim.Name '.mat']);
+                    stim.values        =  char(stimNameWithPath);
+                    % Default fileName if we want to write a video of the stimuli
+                    stim.videoFileName = fullfile(stim.LocalPath,[stim.Name '.avi']);
+                    stim.niftiFileName = fullfile(stim.LocalPath,[stim.Name '.nii.gz']);
             end
-            stimNameWithPath = fullfile(stim.DataPath, [stim.Name '.mat']);
-            stim.values        =  char(stimNameWithPath);
-            % Default fileName if we want to write a video of the stimuli
-            stim.videoFileName = fullfile(stim.LocalPath,[stim.Name '.avi']);
-            stim.niftiFileName = fullfile(stim.LocalPath,[stim.Name '.nii.gz']);
+                    
         end
         
         

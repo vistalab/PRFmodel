@@ -26,7 +26,7 @@ classdef prfModel < matlab.mixin.SetGet & matlab.mixin.Copyable
     %{
         % Check how size is modeled
         pm = prfModel;
-        pm.signalPercentage='frac'
+        pm.signalPercentage='frac';
         pm.BOLDcontrast  = 10;
         pm.RF.sigmaMajor = 1;
         pm.RF.sigmaMinor = pm.RF.sigmaMajor;

@@ -9,4 +9,5 @@ __MACOSX*
 .DS_Store
 */*/*/compiled/*
 */*/compiled/*
-
+local/
+scripts/realdata

@@ -12,6 +12,4 @@ rootPath = which('pmRootPath');
 
 rootPath = fileparts(rootPath);
 
-rootPath = '/export/home/glerma/testFolder/PRFmodel/ellipse'
-
 return
