@@ -334,11 +334,13 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
                 % Frequency [Hz]
                 fNoise = noise.cardiac_frequency*(1 + noise.jitter(1)*randn(1,1));
                 % Amplitude
-                aNoise = noise.cardiac_amplitude*(1 + noise.jitter(2)*randn(1,1));
+                aNoise = noise.cardiac_amplitude * abs(1 + noise.jitter(2)*randn(1,1));
                 % Time points
                 t      = noise.PM.timePointsSeries;
                 % Calculate the noise
-                tmpNoise{2} = aNoise * sin(2 * pi .* t .* fNoise);                
+                phi = 2*pi*rand(1,1);
+                tmp = aNoise * sin(2*pi.*t.*fNoise + phi);
+                tmpNoise{2} = tmp - mean(tmp);                
             end
             
             % RESPIRATORY
@@ -349,11 +351,13 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
                 % Frequency [Hz]
                 fNoise = noise.respiratory_frequency*(1 + noise.jitter(1)*randn(1,1));
                 % Amplitude
-                aNoise = noise.respiratory_amplitude * (1 + noise.jitter(2)*randn(1,1));
+                aNoise = noise.respiratory_amplitude * abs(1 + noise.jitter(2)*randn(1,1));
                 % Time points
                 t      = noise.PM.timePointsSeries;
                 % Calculate the noise
-                tmpNoise{3} = aNoise * sin(2 * pi .* t .* fNoise);                
+                phi = 2*pi*rand(1,1);
+                tmp = aNoise * sin(2*pi.*t.*fNoise + phi);
+                tmpNoise{3} = tmp - mean(tmp);                
             end
             
             % LOW FREQU DRIFT
@@ -370,7 +374,7 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
                 
                 % Jitter: see cardiac and respiratory
                 fNoise = noise.lowfrequ_frequ * (1 + noise.jitter(1)*randn(1,1));
-                aNoise = noise.lowfrequ_amplitude * (1 + noise.jitter(2)*randn(1,1));
+                aNoise = noise.lowfrequ_amplitude * abs(1 + noise.jitter(2)*randn(1,1));
                 
                 n = floor(2 * (noise.PM.timePointsN * noise.PM.TR)/fNoise + 1);
                 if (n < 3) 
@@ -380,7 +384,8 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
                 driftbase   = spmdrift(:,2:end);  % Eliminate the DC term
                 driftbase   = sum(driftbase,2)'; 
                 % Now we need to scale this noise to the actual noise values
-                tmpNoise{4} = aNoise * driftbase;
+                tmp = aNoise * driftbase;
+                tmpNoise{4} = tmp - mean(tmp);                
             end
             
             
@@ -393,6 +398,7 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
             end
             
             % RETURN VALUES
+            vals = vals - mean(vals);
             noise.values = vals;
 
         end
