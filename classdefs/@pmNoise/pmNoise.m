@@ -15,8 +15,8 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
     % Every particular instance of this class
     % will have different parameters, so it will be a children class. For
     % example:
-    %   - White noise (white)
     %
+    %   - White noise (white)
     %
     %   - Motion related (translation and rotation)
     %
@@ -34,8 +34,10 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
     %   - Hardware related instabilities
     %
     % TO-DO:
-    %    %   - Eye motion jitter
-    %     eyeMotionJitter = 1;  % Deg
+    %
+    %   - Eye motion jitter
+    %   
+    %   eyeMotionJitter = 1;  % Deg
     % Syntax:
     %      noise = Noise;
     %
@@ -52,6 +54,7 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
     % have an idea of how a representative noise looks
     
     % Examples
+    %
     %{
       pm = prfModel;
       pm.Noise.compute;
@@ -81,7 +84,7 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
       pm.Noise.compute;
       pm.Noise.plot
     %}
-        %{
+    %{
       pm = prfModel;
     pm.Noise.seed=1;
       pm.Noise.compute;
@@ -92,14 +95,14 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
       pm.Noise.compute;
       pm.Noise.plot
     %}
-   %{
+    %{
       pm = prfModel;
     pm.Noise.lowfrequ_amplitude=0;
     
       pm.Noise.compute;
       pm.Noise.plot
     %}
-     %{
+    %{
       pm = prfModel;
       pm.Noise.compute;
       F = abs(fft(pm.Noise.values'));
@@ -135,7 +138,6 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
       pm.TR=2;
       pm.Noise.plot;
     %}
-
     %{
       pm = prfModel;
       pm.Noise.white_amplitude  = 0;
@@ -150,16 +152,16 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
       pm.Noise.plot;
     %}    
     properties
-        PM;                 % prfModel that has some of the variables we need, such as TR
-        seed;               % 'none' for no noise, 'random' or numeric(seed) otherwise
-        jitter;             % 0-1 numeric 2 vector, [freq_jitter, amplitude_jitter], [0 0] for no jitter
-        white_amplitude;    % amplitude of white noise, the stdev of the gaussian, 0 for no white noise
-        cardiac_amplitude;  % amplitude of cardiac noise, 0 for no cardiac noise
-        cardiac_frequency;  % cardiac frequ in Hz
+        PM;                    % prfModel that has some of the variables we need, such as TR
+        seed;                  % 'none' for no noise, 'random' or numeric(seed) otherwise
+        jitter;                % numeric vector: [freq_jitter, amplitude_jitter, phase_jitter], [0 0] for backward-compatible no jitter
+        white_amplitude;       % amplitude of white noise, the stdev of the gaussian, 0 for no white noise
+        cardiac_amplitude;     % amplitude of cardiac noise, 0 for no cardiac noise
+        cardiac_frequency;     % cardiac frequ in Hz
         respiratory_amplitude; % amplitude of resp. noise, 0 for no resp. noise
         respiratory_frequency; % resp. frequ. in Hz
-        lowfrequ_frequ;     % Seconds
-        lowfrequ_amplitude; % amplitude for lowfrequ noise, 0 for no lowfrequ noise
+        lowfrequ_frequ;        % Seconds
+        lowfrequ_amplitude;    % Amplitude for lowfrequ noise, 0 for no lowfrequ noise
         values;
     end
     
@@ -261,9 +263,18 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
             noise.lowfrequ_amplitude     = p.Results.lowfrequ_amplitude;
             
             
-            % Check that jitter is between 0 and 1
+            % Check jitter vector length and value ranges
+            validateattributes(noise.jitter, {'numeric'},{'vector','nonempty'})
+            if ~(numel(noise.jitter) >= 1 && numel(noise.jitter) <= 3)
+                error('pm.Noise.jitter needs to be numeric of length 1, 2, or 3')
+            end
             validateattributes(noise.jitter(1), {'numeric'},{'>=',0,'<=',1})
-            validateattributes(noise.jitter(2), {'numeric'},{'>=',0})
+            if numel(noise.jitter) >= 2
+                validateattributes(noise.jitter(2), {'numeric'},{'>=',0})
+            end
+            if numel(noise.jitter) >= 3
+                validateattributes(noise.jitter(3), {'numeric'},{'>=',0})
+            end
         end
         
         function noise = setVoxelDefaults(noise,voxelType)
@@ -290,11 +301,12 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
                 noise.seed = noise.seed{:};
             end
             if length(noise.jitter)==1
-                noise.jitter = [noise.jitter,noise.jitter]; 
-                warning('Only one value for jitter provided, used it for amplitude and frequency')
-            end
-            if length(noise.jitter)~=2
-                error('pm.Noise.jitter needs to be numeric of length 2')
+                noise.jitter = [noise.jitter,noise.jitter,0];
+                warning('Only one value for jitter provided, used it for frequency and amplitude; phase jitter set to 0')
+            elseif length(noise.jitter)==2
+                noise.jitter = [noise.jitter,0];
+            elseif length(noise.jitter)~=3
+                error('pm.Noise.jitter needs to be numeric of length 1, 2, or 3')
             end
             % Set a seed so that the rands generates the same sequence
             switch noise.seed
@@ -335,10 +347,12 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
                 fNoise = noise.cardiac_frequency*(1 + noise.jitter(1)*randn(1,1));
                 % Amplitude
                 aNoise = noise.cardiac_amplitude*(1 + noise.jitter(2)*randn(1,1));
+                % Phase [rad], as a fraction of one cycle (2*pi)
+                pNoise = 2 * pi * noise.jitter(3) * randn(1,1);
                 % Time points
                 t      = noise.PM.timePointsSeries;
                 % Calculate the noise
-                tmpNoise{2} = aNoise * sin(2 * pi .* t .* fNoise);                
+                tmpNoise{2} = aNoise * sin(2 * pi .* t .* fNoise + pNoise);
             end
             
             % RESPIRATORY
@@ -350,10 +364,12 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
                 fNoise = noise.respiratory_frequency*(1 + noise.jitter(1)*randn(1,1));
                 % Amplitude
                 aNoise = noise.respiratory_amplitude * (1 + noise.jitter(2)*randn(1,1));
+                % Phase [rad], as a fraction of one cycle (2*pi)
+                pNoise = 2 * pi * noise.jitter(3) * randn(1,1);
                 % Time points
                 t      = noise.PM.timePointsSeries;
                 % Calculate the noise
-                tmpNoise{3} = aNoise * sin(2 * pi .* t .* fNoise);                
+                tmpNoise{3} = aNoise * sin(2 * pi .* t .* fNoise + pNoise);
             end
             
             % LOW FREQU DRIFT
@@ -515,6 +531,20 @@ end
        pm.Noise.plot;title('0.5 jitter')
        % close all
     %}
+     %{
+         % Check jitter including phase: [frequency, amplitude, phase]
+         pm = prfModel;
+         pm.TR=1.5;
+         pm.BOLDcontrast = 16;
+         pm.Noise.seed = 12345;
+         pm.Noise.white_amplitude=0;
+         pm.Noise.lowfrequ_amplitude=0;
+         pm.Noise.cardiac_amplitude=0;
+         pm.Noise.respiratory_amplitude=1;
+         pm.Noise.respiratory_frequency=0.2;
+         pm.Noise.jitter = [0.1, 0.1, 0.25];
+         pm.Noise.plot;title('jitter with phase component')
+     %}
 
     
 
