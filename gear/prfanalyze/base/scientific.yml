@@ -1,11 +1,21 @@
-name: scientific 
+name: scientific
 channels:
   - conda-forge
 dependencies:
   - python=3.9
-  - numpy
-  - scipy
-  - nilearn
+  # Pin numpy/scipy/nilearn to versions whose C extensions link against
+  # libstdc++ <= 6.0.25 (GLIBCXX_3.4.25). MCR R2020b ships only that
+  # version under /opt/mcr/v99/sys/os/glnxa64 and prepends it to
+  # LD_LIBRARY_PATH, so newer scipy (which needs GLIBCXX_3.4.26)
+  # ImportErrors as soon as /scripts/run.py runs. Symptom seen on
+  # modern hosts (apptainer 1.4 + kernel 6.x + glibc 2.39): BIDS app
+  # exits in ~7 s with "Failed to exec /solve.sh" and no estimates.json.
+  - numpy=1.21.6
+  - scipy=1.7.3
+  - nilearn=0.9.2
+  # Pin pandas too — newer pandas wheels are built against the newer
+  # numpy ABI and fail to import C extensions once numpy is downgraded.
+  - pandas=1.4.4
   - nibabel
   - pip
   - pip:
