@@ -150,6 +150,10 @@ if conf['isPRFSynthData']:
                 os.symlink(outbids_dir, bids_link)
             except Exception:
                 die("Could not create output link: %s" % bids_link)
+            # dump the options file in the output directory; /solve.sh receives its path as first argument
+            opts_file = os.path.join(bids_link, 'options.json')
+            with open(opts_file, 'w') as fl:
+                json.dump(opts, fl, indent=4)
 
             # We may have any number of runs, find them all:
             bold_prefix = 'sub-%s_ses-%s%s_run-' % (sub, ses, bids_fields)
