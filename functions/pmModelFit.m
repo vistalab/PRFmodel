@@ -117,9 +117,12 @@ if iscell(input)
     TRdata   = data.pixdim(end);
     % Synthetic datasets larger than 32000 rows come in more dimensions
     % Convert it to 2D again concatenating
+    % NIfTI-1 dimensions are int16 (max 32767), so a dataset with more voxels is packed as
+    % [s1,s2,(s3),nTimePoints]. Flatten every dimension but time to voxels x time (first
+    % dimension fastest); this equals squeeze() for the [nVoxels,1,1,nTimePoints] layout.
     % [s1,s2,s3,s4] = size(data.data);
     % if s1>1 && s2 == 1 && s3==1 && s4>1
-        data = squeeze(data.data);
+        data = reshape(data.data, [], size(data.data, ndims(data.data)));
     % elseif s1>1 && s2 > 1 && s3==1 && s4>1
     %     % A reshape might do, but just wanted control...
     %     tmp = zeros(s1*s2,s4);
@@ -519,7 +522,7 @@ switch prfimplementation
         % Add the time series as well
         if niftiInputs
             data                   = niftiRead(BOLDname);
-            pmEstimates.testdata   = squeeze(data.data);
+            pmEstimates.testdata   = reshape(data.data, [], size(data.data, ndims(data.data)));
         else
             pmEstimates.testdata   = repmat(ones([1,pm1.timePointsN]), ...
                 [height(pmEstimates),1]);
@@ -593,7 +596,7 @@ switch prfimplementation
         % Add the time series as well
         if niftiInputs
             data                   = niftiRead(BOLDname);
-            pmEstimates.testdata   = squeeze(data.data);
+            pmEstimates.testdata   = reshape(data.data, [], size(data.data, ndims(data.data)));
         else
             pmEstimates.testdata   = repmat(ones([1,pm1.timePointsN]), ...
                 [height(pmEstimates),1]);
